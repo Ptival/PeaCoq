@@ -1,0 +1,39 @@
+Name:                rooster
+Version:             0.1
+Synopsis:            Project Synopsis Here
+Description:         Project Description Here
+License:             AllRightsReserved
+Author:              Author
+Maintainer:          maintainer@example.com
+Stability:           Experimental
+Category:            Web
+Build-type:          Simple
+Cabal-version:       >=1.2
+
+Executable rooster
+  hs-source-dirs: src
+  main-is: Main.hs
+
+  Build-depends:
+    base                      >= 4     && < 5,
+    bytestring                >= 0.9.1 && < 0.11,
+    conduit                   >= 1.1   && < 1.2,
+    conduit-extra             >= 1.1   && < 1.2,
+    data-default              >= 0.5   && < 0.6,
+    exceptions                >= 0.5   && < 0.6,
+    MonadCatchIO-transformers >= 0.2.1 && < 0.4,
+    mtl                       >= 2     && < 3,
+    process                   >= 1.2   && < 1.3,
+    snap-core                 >= 0.9   && < 0.11,
+    snap-server               >= 0.9   && < 0.11,
+    tagsoup                   >= 0.13  && < 0.14,
+    text                      >= 1.1   && < 1.2,
+    transformers              >= 0.3   && < 0.4,
+    xml-conduit               >= 1.2   && < 1.3,
+    xml-types                 >= 0.3   && < 0.4
+
+  if impl(ghc >= 6.12.0)
+    ghc-options: -threaded -Wall -fwarn-tabs -funbox-strict-fields -O2
+                 -fno-warn-unused-do-bind
+  else
+    ghc-options: -threaded -Wall -fwarn-tabs -funbox-strict-fields -O2
