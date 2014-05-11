@@ -1,24 +1,21 @@
 {-# LANGUAGE OverloadedStrings, RankNTypes #-}
+
 module Main where
 
-import Control.Applicative ((<$>), (<*), (<|>))
-import Control.Monad.Catch
-import Control.Monad.IO.Class
-import qualified Data.ByteString as BS
+import           Control.Applicative ((<$>), (<|>))
+import           Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString.Char8 as BSC
-import Data.Conduit
-import Data.Conduit.Binary (sourceHandle)
-import Data.Default
-import Data.Maybe (fromMaybe)
-import qualified Data.Text as T
-import Data.XML.Types
-import Snap.Core
-import Snap.Util.FileServe
-import Snap.Http.Server
-import System.IO
-import System.Process (runInteractiveCommand)
-import Text.HTML.TagSoup.Entity (escapeXML)
-import Text.XML.Stream.Parse
+import           Data.List (nubBy)
+import           Data.Maybe (catMaybes)
+import           Snap.Core
+import           Snap.Extras.JSON
+import           Snap.Http.Server (quickHttpServe)
+import           Snap.Util.FileServe (serveFile, serveDirectory)
+import           System.IO
+import           System.Process (runInteractiveCommand)
+
+import           CoqTypes
+import           Coqtop
 
 startCoqtop :: IO (Handle, Handle)
 startCoqtop = do
@@ -38,8 +35,9 @@ site hi ho =
   ifTop (serveFile "web/rooster.html")
   <|> route [ ("query", queryHandler hi ho) ]
   <|> serveDirectory "web/"
+  <|> serveDirectory "web/jquery-ui-1.10.4.custom/css/south-street/"
 
-pprintResponse :: CoqResponse [String] -> String
+pprintResponse :: CoqtopResponse [String] -> String
 pprintResponse (Fail s) = s
 pprintResponse (Good l) = concatMap (++ "\n") l
 
@@ -54,60 +52,20 @@ queryHandler hi ho = do
         let query = BSC.unpack queryBS
         putStrLn $ "LOG: " ++ query
         hInterp hi query
-        response <- pprintResponse <$> hForceValueResponse ho
-        return response
-      writeBS (BSC.pack response)
+        response <- hForceValueResponse ho
+        hGoal hi
+        goal <- hParseGoalResponse ho
 
--- Parsers
+        simpleQueries <- catMaybes <$> hQueries hi ho queries
+        constructorQueries <- hQueriesUntilFail hi ho constructors
 
-type ParseXML a = Consumer Event IO a
+        let queryResults =
+              nubBy (\q1 q2 -> snd q1 == snd q2)
+              . filter (\qr -> snd qr /= goal)
+              $ simpleQueries ++ constructorQueries
 
-parseCoqString :: ParseXML (Maybe String)
-parseCoqString = tagNoAttr "string" (T.unpack <$> content)
+        let nexts = map (\(x, y) -> (x, map show y))
+                    $ queryResults
 
-parseGenericResponse :: ParseXML t -> ParseXML (Maybe (CoqResponse t))
-parseGenericResponse k =
-  tagName "value" (requireAttr "val" <* ignoreAttrs) $ \val ->
-    case val of
-      "fail" -> do
-        c <- content
-        return . Fail $ T.unpack c
-      "good" -> do
-        s <- k
-        return $ Good s
-
-data CoqResponse r
-  = Fail String
-  | Good r
-  deriving (Eq)
-
-instance Default (CoqResponse r) where
-  def = Fail "DEFAULT"
-
-parseValueResponse :: ParseXML (Maybe (CoqResponse [String]))
-parseValueResponse = parseGenericResponse (many parseCoqString)
-
-forceValueResponse :: ParseXML (CoqResponse [String])
-forceValueResponse = force "value" parseValueResponse
-
-xmlConduit :: (MonadThrow m) => Conduit BS.ByteString m Event
-xmlConduit = parseBytes $ def { psDecodeEntities = decodeHtmlEntities }
-
-xmlSource :: Handle -> Producer IO Event
-xmlSource h = sourceHandle h $= xmlConduit
-
--- Handle IO
-
-hCall :: Handle -> String -> String -> IO ()
-hCall h qt q = do
-  let query = "<call id=\"0\" val=\"" ++ qt ++ "\">" ++ escapeXML q ++ "</call>"
-  hPutStrLn h query
-
-hInterp :: Handle -> String -> IO ()
-hInterp h = hCall h "interp"
-
-hGoal :: Handle -> IO ()
-hGoal h = hCall h "goal" ""
-
-hForceValueResponse :: Handle -> IO (CoqResponse [String])
-hForceValueResponse h = xmlSource h $$ forceValueResponse
+        return $ MkRoosterResponse goal nexts response
+      writeJSON response

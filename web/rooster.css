@@ -3,3 +3,5 @@ body { font-family: monospace; }
 .query { background-color: lightblue; }
 
 .response { background-color: lightgreen; }
+
+.goal { background-color: orange; }
