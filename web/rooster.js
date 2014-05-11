@@ -103,7 +103,4 @@ $(document).ready(function() {
 
     syncQuery('Show.');
 
-    //$('#input').val('Theorem tryme : forall x y z, x + (y + z) = (x + y) + z.');
-    $('#input').val('Theorem tryme : 1 + 2 = 1 + 1 + 1.');
-
 });
