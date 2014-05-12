@@ -80,7 +80,7 @@ queryHandler hi ho = do
               ++ l2rQueries
               ++ r2lQueries
 
-        let nexts = map (\(x, y) -> (x, map show y))
+        let nexts = map (\(x, y) -> (x, y))
                     $ queryResults
 
         return $ MkRoosterResponse goals nexts response

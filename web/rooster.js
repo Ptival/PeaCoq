@@ -31,6 +31,13 @@ function addBlock(t, c) {
 
 function addQuery(t) { addBlock(t, 'query'); }
 
+function strOfGoal(g) {
+    var res = '';
+    _.forEach(g.gHyps, function(h) { res = res + h + '<br/>'; });
+    res = res + '====================<br/>' + g.gGoal;
+    return res;
+}
+
 function addResponse(response) {
     var r = response.coqtopResponse.contents[0];
 
@@ -43,23 +50,30 @@ function addResponse(response) {
 
     addBlock(r, 'response');
 
-    var currentGoal = response.currentGoal[0];
-    if(currentGoal) {
-        var t = '';
-        _.forEach(currentGoal.gHyps, function(h) { t = t + h + '<br/>'; });
-        t = t + '====================<br/>' + currentGoal.gGoal;
-        addBlock(t, 'goal');
-    }
-
     clearTabs();
+
+    var currentGoal = response.currentGoals[0];
+    if(currentGoal) {
+        addBlock(strOfGoal(currentGoal), 'goal');
+
+    var nbGoals = response.currentGoals.length;
+
     _.forEach(response.nextGoals, function(g, i){
         var tactic = g[0];
         var d = $('<div>');
 
-        _(g[1]).forEach(function(e){d.append('&nbsp;' + str2html(e) + '<br/><br/>');});
+        if(g[1].length < nbGoals) {
+            d.append('SOLVED THE CURRENT GOAL!<br/><br/>');
+        }
+
+        _(g[1]).forEach(function(g){
+            d.append(strOfGoal(g) + '<br/><br/>');
+        });
 
         addTab('tab' + i, tactic, d.html());
     })
+
+    }
 }
 
 function addTab(tabId, tabName, tabContent) {
