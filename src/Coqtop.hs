@@ -39,13 +39,20 @@ hParseValueResponse h = xmlSource h $$ parseValueResponse
 hForceValueResponse :: Handle -> IO (CoqtopResponse [String])
 hForceValueResponse h = xmlSource h $$ forceValueResponse
 
-hParseGoalResponse :: Handle -> IO [Goal]
+hParseGoalResponse :: Handle -> IO (CoqtopResponse [Goal])
 hParseGoalResponse h = xmlSource h $$ parseGoalResponse
 
 hQueryGoal :: Handle -> Handle -> IO [Goal]
 hQueryGoal hi ho = do
   hGoal hi
-  hParseGoalResponse ho
+  rg <- hParseGoalResponse ho
+  case rg of
+    Good g -> return g
+    Fail _ -> return []
+
+gCurHypsNames :: [Goal] -> [String]
+gCurHypsNames []      = []
+gCurHypsNames (g : _) = map (takeWhile (/= ' ')) $ gHyps g
 
 hQuery :: Handle -> Handle -> Query -> IO (Maybe (Query, [Goal]))
 hQuery hi ho q = do
@@ -55,10 +62,13 @@ hQuery hi ho q = do
   case mr1 of
     Just (Good _) -> do
       hGoal hi
-      gs <- hParseGoalResponse ho
+      rgs <- hParseGoalResponse ho
       hCall hi [("val", "rewind"), ("steps", "1")] ""
       _ <- hParseValueResponse ho
-      return $ Just (q, gs)
+      return $
+        case rgs of
+          Good gs -> Just (q, gs)
+          Fail _ -> Nothing
     Just (Fail _) -> return Nothing
 
 hQueries :: Handle -> Handle -> [Query] -> IO [Maybe (Query, [Goal])]
@@ -81,14 +91,10 @@ queries =
   [ "assumption."
   , "auto."
   , "congruence."
-  , "destruct 0."
-  , "destruct 1."
   , "f_equal."
-  , "induction 0."
-  , "induction 1."
   , "intro."
+  , "intros."
   , "match goal with H: _ |- _ => revert H end."
-  , "omega."
   , "reflexivity."
   , "simpl."
   , "simpl in *."

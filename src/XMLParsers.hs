@@ -50,11 +50,13 @@ parseGenericCoqtopResponse k =
         s <- k
         return $ Good s
 
+{-
 parseSuccessfulCoqtopResponse :: ParseXML t -> ParseXML (Maybe t)
 parseSuccessfulCoqtopResponse k =
   tagName "value" (requireAttr "val" <* ignoreAttrs) $ \val ->
     case val of
       "good" -> k
+-}
 
 parseValueResponse :: ParseXML (Maybe (CoqtopResponse [String]))
 parseValueResponse =
@@ -79,8 +81,8 @@ parseGoals =
     _ <- forceList contentMaybe
     return goals
 
-parseGoalResponse :: ParseXML [Goal]
+parseGoalResponse :: ParseXML (CoqtopResponse [Goal])
 parseGoalResponse =
-  force "response" $ parseSuccessfulCoqtopResponse $ do
+  force "response" $ parseGenericCoqtopResponse $ do
     mgs <- forceOption $ parseGoals
     return $ fromMaybe [] mgs

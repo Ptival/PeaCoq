@@ -53,19 +53,29 @@ queryHandler hi ho = do
         putStrLn $ "LOG: " ++ query
         hInterp hi query
         response <- hForceValueResponse ho
-        hGoal hi
-        goal <- hParseGoalResponse ho
+
+        goals <- hQueryGoal hi ho
+
+        let hyps = gCurHypsNames goals
+
+        let destructs = map (\h -> "destruct " ++ h ++ ".") hyps
+        let inductions = map (\h -> "induction " ++ h ++ ".") hyps
 
         simpleQueries <- catMaybes <$> hQueries hi ho queries
+        destructQueries <- catMaybes <$> hQueries hi ho destructs
+        inductionQueries <- catMaybes <$> hQueries hi ho inductions
         constructorQueries <- hQueriesUntilFail hi ho constructors
 
         let queryResults =
               nubBy (\q1 q2 -> snd q1 == snd q2)
-              . filter (\qr -> snd qr /= goal)
-              $ simpleQueries ++ constructorQueries
+              . filter (\qr -> snd qr /= goals)
+              $ simpleQueries
+              ++ destructQueries
+              ++ inductionQueries
+              ++ constructorQueries
 
         let nexts = map (\(x, y) -> (x, map show y))
                     $ queryResults
 
-        return $ MkRoosterResponse goal nexts response
+        return $ MkRoosterResponse goals nexts response
       writeJSON response

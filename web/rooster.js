@@ -86,6 +86,18 @@ function clearTabs() {
     $('#tabs > div').remove();
 }
 
+function addTheorem(theorem) {
+    var b = $('<button>', {
+        text: theorem,
+        click: function() {
+            syncQuery('Abort All.');
+            syncQuery(theorem);
+        }
+    });
+
+    $('#theorems').append(b).append('<br/>');
+}
+
 $(document).ready(function() {
 
     $('#tabs').tabs();
@@ -102,5 +114,8 @@ $(document).ready(function() {
     $('#input').focus();
 
     syncQuery('Show.');
+
+    addTheorem('Theorem plus_comm : forall x y, x + y = y + x.');
+    addTheorem('Theorem plus_assoc : forall x y z, (x + y) + z = x + (y + z).');
 
 });
