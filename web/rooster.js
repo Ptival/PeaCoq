@@ -23,7 +23,7 @@ function addBlock(t, c) {
     var textBlock = $('<div>');
     $(textBlock).addClass(c);
     $(textBlock).html(t);
-    $(textBlock).insertBefore($('#tabs'));
+    $(textBlock).insertBefore($('#doit'));
     $('body').animate({
         scrollTop: $('#input').offset().top
     });
@@ -58,17 +58,6 @@ function addResponse(response) {
 
         _(g[1]).forEach(function(e){d.append('&nbsp;' + str2html(e) + '<br/><br/>');});
 
-        var b = $('<button>', {
-            text: 'DO IT!',
-            id: 'submit' + i
-        });
-
-        $('#tabs').on('click', '#submit' + i, function(e){
-            e.stopImmediatePropagation();
-            asyncQuery(tactic);
-        });
-
-        $(d).append(b);
         addTab('tab' + i, tactic, d.html());
     })
 }
@@ -79,6 +68,13 @@ function addTab(tabId, tabName, tabContent) {
     $('#tabs > ul').append(li);
     $('#tabs').append(div);
     $('#tabs').tabs('refresh');
+    $('#tabs').tabs({
+        activate: function(e, u) {
+            $('#doit').off().on('click', function(){
+                asyncQuery(u.newTab.text());
+            });
+        }
+    });
 }
 
 function clearTabs() {

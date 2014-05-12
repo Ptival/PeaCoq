@@ -60,11 +60,15 @@ queryHandler hi ho = do
 
         let destructs = map (\h -> "destruct " ++ h ++ ".") hyps
         let inductions = map (\h -> "induction " ++ h ++ ".") hyps
+        let l2r = map (\h -> "rewrite -> " ++ h ++ ".") hyps
+        let r2l = map (\h -> "rewrite <- " ++ h ++ ".") hyps
 
         simpleQueries <- catMaybes <$> hQueries hi ho queries
         destructQueries <- catMaybes <$> hQueries hi ho destructs
         inductionQueries <- catMaybes <$> hQueries hi ho inductions
         constructorQueries <- hQueriesUntilFail hi ho constructors
+        l2rQueries <- catMaybes <$> hQueries hi ho l2r
+        r2lQueries <- catMaybes <$> hQueries hi ho r2l
 
         let queryResults =
               nubBy (\q1 q2 -> snd q1 == snd q2)
@@ -73,6 +77,8 @@ queryHandler hi ho = do
               ++ destructQueries
               ++ inductionQueries
               ++ constructorQueries
+              ++ l2rQueries
+              ++ r2lQueries
 
         let nexts = map (\(x, y) -> (x, map show y))
                     $ queryResults
