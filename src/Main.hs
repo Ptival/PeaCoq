@@ -4,7 +4,7 @@ module Main where
 
 import Control.Applicative ((<$>), (<|>))
 import Control.Monad.IO.Class (liftIO)
-import Data.ByteString.UTF8
+import Data.ByteString.UTF8 (toString)
 import Data.List (nubBy)
 import Data.Maybe (catMaybes)
 import Snap.Core
@@ -35,12 +35,57 @@ site :: Handle -> Handle -> Snap ()
 site hi ho =
   ifTop (serveFile "web/rooster.html")
   <|> route [ ("query", queryHandler hi ho) ]
+  <|> route [ ("undo", undoHandler hi ho) ]
   <|> serveDirectory "web/"
   <|> serveDirectory "web/jquery-ui-1.10.4.custom/css/south-street/"
 
 pprintResponse :: CoqtopResponse [String] -> String
 pprintResponse (Fail s) = s
 pprintResponse (Good l) = concatMap (++ "\n") l
+
+proofContext :: Handle -> Handle -> IO ([Goal], [(Query, [Goal])])
+proofContext hi ho = do
+  goals <- hQueryGoal hi ho
+
+  -- maybe not do that every time? :)
+  hCall hi [("val", "search")] ""
+  rthms <- hParseSearchResponse ho
+
+  let thms = case rthms of
+        Good ts -> ts
+        Fail _  -> []
+
+  let hyps = gCurHypsNames goals
+
+  let destructs = map (\h -> "destruct " ++ h ++ ".") hyps
+  let inductions = map (\h -> "induction " ++ h ++ ".") hyps
+  let l2r = map (\h -> "rewrite -> " ++ h ++ ".") hyps
+  let r2l = map (\h -> "rewrite <- " ++ h ++ ".") hyps
+  let applies = map (\t -> "apply " ++ thName t ++ ".") thms
+
+  simpleQueries <- catMaybes <$> hQueries hi ho queries
+  destructQueries <- catMaybes <$> hQueries hi ho destructs
+  inductionQueries <- catMaybes <$> hQueries hi ho inductions
+  constructorQueries <- hQueriesUntilFail hi ho constructors
+  l2rQueries <- catMaybes <$> hQueries hi ho l2r
+  r2lQueries <- catMaybes <$> hQueries hi ho r2l
+  applyQueries <- catMaybes <$> hQueries hi ho applies
+
+  let queryResults =
+        nubBy (\q1 q2 -> snd q1 == snd q2)
+        . filter (\qr -> snd qr /= goals)
+        $ simpleQueries
+        ++ destructQueries
+        ++ inductionQueries
+        ++ constructorQueries
+        ++ l2rQueries
+        ++ r2lQueries
+        ++ applyQueries
+
+  let nexts = map (\(x, y) -> (x, y))
+              $ queryResults
+
+  return (goals, nexts)
 
 queryHandler :: Handle -> Handle -> Snap ()
 queryHandler hi ho = do
@@ -50,51 +95,19 @@ queryHandler hi ho = do
     Just queryBS -> do
       response <- liftIO $ do
         -- might want to sanitize? :3
-        --let query = BSC.unpack queryBS
         let query = toString queryBS
         putStrLn $ "LOG: " ++ query
         hInterp hi query
-        response <- hForceValueResponse ho
+        hForceValueResponse ho
+      respond hi ho response
 
-        goals <- hQueryGoal hi ho
+respond :: Handle -> Handle -> CoqtopResponse [String] -> Snap ()
+respond hi ho response = do
+  (goals, nexts) <- liftIO $ proofContext hi ho
+  writeJSON $ MkRoosterResponse goals nexts response
 
-        -- maybe not do that every time? :)
-        hCall hi [("val", "search")] ""
-        rthms <- hParseSearchResponse ho
-
-        let thms = case rthms of
-              Good ts -> ts
-              Fail _  -> []
-
-        let hyps = gCurHypsNames goals
-
-        let destructs = map (\h -> "destruct " ++ h ++ ".") hyps
-        let inductions = map (\h -> "induction " ++ h ++ ".") hyps
-        let l2r = map (\h -> "rewrite -> " ++ h ++ ".") hyps
-        let r2l = map (\h -> "rewrite <- " ++ h ++ ".") hyps
-        let applies = map (\t -> "apply " ++ thName t ++ ".") thms
-
-        simpleQueries <- catMaybes <$> hQueries hi ho queries
-        destructQueries <- catMaybes <$> hQueries hi ho destructs
-        inductionQueries <- catMaybes <$> hQueries hi ho inductions
-        constructorQueries <- hQueriesUntilFail hi ho constructors
-        l2rQueries <- catMaybes <$> hQueries hi ho l2r
-        r2lQueries <- catMaybes <$> hQueries hi ho r2l
-        applyQueries <- catMaybes <$> hQueries hi ho applies
-
-        let queryResults =
-              nubBy (\q1 q2 -> snd q1 == snd q2)
-              . filter (\qr -> snd qr /= goals)
-              $ simpleQueries
-              ++ destructQueries
-              ++ inductionQueries
-              ++ constructorQueries
-              ++ l2rQueries
-              ++ r2lQueries
-              ++ applyQueries
-
-        let nexts = map (\(x, y) -> (x, y))
-                    $ queryResults
-
-        return $ MkRoosterResponse goals nexts response
-      writeJSON response
+undoHandler :: Handle -> Handle -> Snap ()
+undoHandler hi ho = do
+  liftIO $ hCall hi [("val", "rewind"), ("steps", "1")] ""
+  r <- liftIO $ hForceValueResponse ho
+  respond hi ho r

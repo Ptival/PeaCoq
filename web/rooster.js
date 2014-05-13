@@ -135,6 +135,10 @@ $(document).ready(function() {
         if(tactic) { asyncQuery(tactic); }
     });
 
+    $('#undoit').click(function() {
+        $.post('undo', {}, function(response) { addResponse(response); });
+    });
+
     $('#tabs').tabs();
 
     $('#form')
