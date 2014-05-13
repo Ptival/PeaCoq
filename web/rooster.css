@@ -5,3 +5,5 @@ body { font-family: monospace; }
 .response { background-color: lightgreen; }
 
 .goal { background-color: orange; }
+
+.error { background-color: salmon; }

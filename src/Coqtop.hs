@@ -1,4 +1,4 @@
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE OverloadedStrings, RankNTypes #-}
 
 module Coqtop where
 
@@ -19,7 +19,10 @@ xmlConduit :: (MonadThrow m) => Conduit BS.ByteString m Event
 xmlConduit = parseBytes $ def { psDecodeEntities = decodeHtmlEntities }
 
 xmlSource :: Handle -> Producer IO Event
-xmlSource h = sourceHandle h $= xmlConduit
+xmlSource h =
+  yield ("<?xml version=\"1.0\" encoding=\"utf-8\"?>" :: BS.ByteString)
+  =$= sourceHandle h
+  $= xmlConduit
 
 hCall :: Handle -> [(String, String)] -> String -> IO ()
 hCall h args q = do
@@ -91,17 +94,30 @@ hQueriesUntilFail hi ho l =
 
 queries :: [Query]
 queries =
-  [ "assumption."
-  , "auto."
-  , "congruence."
-  , "f_equal."
+  [
+    -- Terminators
+    "assumption."
+
+    -- Introduction
   , "intro."
   , "intros."
-  , "match goal with H: _ |- _ => revert H end."
+
+    -- Deal with equality
   , "reflexivity."
+  , "congruence."
+  , "f_equal."
+
+    -- Changing your mind
+  , "match goal with H: _ |- _ => revert H end."
+
+  , "transitivity."
+
+    -- Simplifiers
   , "simpl."
   , "simpl in *."
-  , "transitivity."
+
+    -- I'd rather see auto last as it is very non-informative
+  , "auto."
   ]
 
 constructors :: [Query]

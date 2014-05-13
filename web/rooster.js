@@ -1,3 +1,13 @@
+var theorems =
+    [
+        'Theorem trivial : True.',
+        'Theorem plus_O_n : ∀n, 0 + n = n.',
+        'Theorem plus_1_l : ∀ n, 1 + n = S n.',
+        'Theorem plus_id_example : ∀ n m, n = m → n + n = m + m.',
+        'Theorem mult_0_l : ∀ n, 0 * n = 0.',
+        'Theorem plus_comm : forall x y, x + y = y + x.',
+        'Theorem plus_assoc : forall x y z, (x + y) + z = x + (y + z).',
+    ]
 
 function str2html (str) {
     return (str + '')
@@ -39,6 +49,11 @@ function strOfGoal(g) {
 }
 
 function addResponse(response) {
+    if (response.coqtopResponse.tag == 'Fail') {
+        addBlock(response.coqtopResponse.contents, 'error');
+        return;
+    }
+
     var r = response.coqtopResponse.contents[0];
 
     // remove this warning
@@ -135,8 +150,6 @@ $(document).ready(function() {
 
     syncQuery('Show.');
 
-    addTheorem('Theorem trivial : True.');
-    addTheorem('Theorem plus_comm : forall x y, x + y = y + x.');
-    addTheorem('Theorem plus_assoc : forall x y z, (x + y) + z = x + (y + z).');
+    _(theorems).map(function(t) { addTheorem(t); });
 
 });

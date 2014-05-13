@@ -2,20 +2,20 @@
 
 module Main where
 
-import           Control.Applicative ((<$>), (<|>))
-import           Control.Monad.IO.Class (liftIO)
-import qualified Data.ByteString.Char8 as BSC
-import           Data.List (nubBy)
-import           Data.Maybe (catMaybes)
-import           Snap.Core
-import           Snap.Extras.JSON
-import           Snap.Http.Server (quickHttpServe)
-import           Snap.Util.FileServe (serveFile, serveDirectory)
-import           System.IO
-import           System.Process (runInteractiveCommand)
+import Control.Applicative ((<$>), (<|>))
+import Control.Monad.IO.Class (liftIO)
+import Data.ByteString.UTF8
+import Data.List (nubBy)
+import Data.Maybe (catMaybes)
+import Snap.Core
+import Snap.Extras.JSON
+import Snap.Http.Server (quickHttpServe)
+import Snap.Util.FileServe (serveFile, serveDirectory)
+import System.IO
+import System.Process (runInteractiveCommand)
 
-import           CoqTypes
-import           Coqtop
+import CoqTypes
+import Coqtop
 
 startCoqtop :: IO (Handle, Handle)
 startCoqtop = do
@@ -23,6 +23,7 @@ startCoqtop = do
   hSetBinaryMode hi False
   hSetBuffering stdin LineBuffering
   hSetBuffering hi NoBuffering
+  hInterp hi "Require Import Unicode.Utf8."
   return (hi, ho)
 
 main :: IO ()
@@ -49,7 +50,8 @@ queryHandler hi ho = do
     Just queryBS -> do
       response <- liftIO $ do
         -- might want to sanitize? :3
-        let query = BSC.unpack queryBS
+        --let query = BSC.unpack queryBS
+        let query = toString queryBS
         putStrLn $ "LOG: " ++ query
         hInterp hi query
         response <- hForceValueResponse ho
