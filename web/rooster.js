@@ -82,18 +82,23 @@ function addTab(tabId, tabName, tabContent) {
     $('#tabs > ul').append(li);
     $('#tabs').append(div);
     $('#tabs').tabs('refresh');
+/*
     $('#tabs').tabs({
         activate: function(e, u) {
-            $('#doit').off().on('click', function(){
-                asyncQuery(u.newTab.text());
-            });
+            $('#doit')
+                .off()
+                .on('click', function(){
+                    asyncQuery(u.newTab.text());
+                });
         }
     });
+*/
 }
 
 function clearTabs() {
     $('#tabs > ul').empty();
     $('#tabs > div').remove();
+    //$('#doit').off();
 }
 
 function addTheorem(theorem) {
@@ -110,6 +115,11 @@ function addTheorem(theorem) {
 
 $(document).ready(function() {
 
+    $('#doit').click(function() {
+        var tactic = $('#tabs > ul > li[aria-selected="true"]').text();
+        if(tactic) { asyncQuery(tactic); }
+    });
+
     $('#tabs').tabs();
 
     $('#form')
@@ -125,6 +135,7 @@ $(document).ready(function() {
 
     syncQuery('Show.');
 
+    addTheorem('Theorem trivial : True.');
     addTheorem('Theorem plus_comm : forall x y, x + y = y + x.');
     addTheorem('Theorem plus_assoc : forall x y z, (x + y) + z = x + (y + z).');
 

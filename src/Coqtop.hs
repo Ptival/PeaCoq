@@ -42,6 +42,9 @@ hForceValueResponse h = xmlSource h $$ forceValueResponse
 hParseGoalResponse :: Handle -> IO (CoqtopResponse [Goal])
 hParseGoalResponse h = xmlSource h $$ parseGoalResponse
 
+hParseSearchResponse :: Handle -> IO (CoqtopResponse [Theorem])
+hParseSearchResponse h = xmlSource h $$ parseSearchResponse
+
 hQueryGoal :: Handle -> Handle -> IO [Goal]
 hQueryGoal hi ho = do
   hGoal hi

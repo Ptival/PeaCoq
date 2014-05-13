@@ -56,12 +56,21 @@ queryHandler hi ho = do
 
         goals <- hQueryGoal hi ho
 
+        -- maybe not do that every time? :)
+        hCall hi [("val", "search")] ""
+        rthms <- hParseSearchResponse ho
+
+        let thms = case rthms of
+              Good ts -> ts
+              Fail _  -> []
+
         let hyps = gCurHypsNames goals
 
         let destructs = map (\h -> "destruct " ++ h ++ ".") hyps
         let inductions = map (\h -> "induction " ++ h ++ ".") hyps
         let l2r = map (\h -> "rewrite -> " ++ h ++ ".") hyps
         let r2l = map (\h -> "rewrite <- " ++ h ++ ".") hyps
+        let applies = map (\t -> "apply " ++ thName t ++ ".") thms
 
         simpleQueries <- catMaybes <$> hQueries hi ho queries
         destructQueries <- catMaybes <$> hQueries hi ho destructs
@@ -69,6 +78,7 @@ queryHandler hi ho = do
         constructorQueries <- hQueriesUntilFail hi ho constructors
         l2rQueries <- catMaybes <$> hQueries hi ho l2r
         r2lQueries <- catMaybes <$> hQueries hi ho r2l
+        applyQueries <- catMaybes <$> hQueries hi ho applies
 
         let queryResults =
               nubBy (\q1 q2 -> snd q1 == snd q2)
@@ -79,6 +89,7 @@ queryHandler hi ho = do
               ++ constructorQueries
               ++ l2rQueries
               ++ r2lQueries
+              ++ applyQueries
 
         let nexts = map (\(x, y) -> (x, y))
                     $ queryResults

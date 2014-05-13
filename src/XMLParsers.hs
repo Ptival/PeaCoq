@@ -5,6 +5,7 @@ module XMLParsers where
 import           Control.Applicative ((<$>), (<*))
 import           Control.Monad.Catch ()
 import           Data.Conduit
+import           Data.List (intersperse)
 import           Data.Maybe (fromMaybe)
 import qualified Data.Text as T
 import           Data.XML.Types
@@ -86,3 +87,15 @@ parseGoalResponse =
   force "response" $ parseGenericCoqtopResponse $ do
     mgs <- forceOption $ parseGoals
     return $ fromMaybe [] mgs
+
+parseTheorem =
+  tagNoAttr "coq_object" $
+  do
+    modules <- forceList parseCoqString
+    name <- forceList parseCoqString
+    typ <- forceCoqString
+    return $ MkTheorem (concat . intersperse "." $ modules) (name !! 0) typ
+
+parseSearchResponse :: ParseXML (CoqtopResponse [Theorem])
+parseSearchResponse =
+  force "search" $ parseGenericCoqtopResponse $ forceList parseTheorem

@@ -43,3 +43,11 @@ data RoosterResponse
   deriving (Generic)
 
 instance ToJSON RoosterResponse where
+
+data Theorem
+  = MkTheorem
+    { thModule :: String
+    , thName :: String
+    , thType :: String
+    }
+  deriving (Show)
