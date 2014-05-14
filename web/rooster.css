@@ -1,4 +1,4 @@
-body { font-family: monospace; }
+body { font-family: monospace; margin: 0; }
 
 .query { background-color: lightblue; }
 
@@ -7,3 +7,20 @@ body { font-family: monospace; }
 .goal { background-color: orange; }
 
 .error { background-color: salmon; }
+
+#proof { width: 100%; }
+
+#current, #tabs, #spacing {
+    display: table-cell;
+    border: 0;
+    margin: 0;
+    padding: 0;
+    vertical-align: top;
+}
+
+#spacing {
+    padding: 10px;
+    text-align: center;
+}
+
+#doit, #undoit, #qed { width: 100px; }

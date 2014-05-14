@@ -11,22 +11,33 @@
   </head>
   <body>
 
-    <button id="doit">DO IT!</button>
+    <div id="proof">
+      <div id="current">
+        <p>Current goal:</p>
+        <div id="goal"></div>
+      </div>
 
-    <button id="undoit">UNDO IT!</button>
+      <div id="spacing">
 
-    <div id="tabs">
+        <button id="doit">DO IT</button><br/>
+        <button id="undoit">UNDO</button><br/>
+        <button id="qed">QED</button><br/>
 
-      <ul>
-        <!-- Tabs go here -->
-      </ul>
+      </div>
 
-      <!-- Tabs' content goes here -->
-
+      <div id="tabs">
+        <ul>
+          <!-- Tabs go here -->
+        </ul>
+        <!-- Tabs' content goes here -->
+        </div>
     </div>
 
-    Here you may input arbitrary commands:<br/>
-    <form id="form" action="#">
+    <p>
+      Here you may input arbitrary commands:<br/>
+    </p>
+
+    <form id="form" action="#" autocomplete="off">
       <input id="input" type="text" value="" size="100"/>
     </form>
 

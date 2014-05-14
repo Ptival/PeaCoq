@@ -107,17 +107,12 @@ queries =
   , "congruence."
   , "f_equal."
 
-    -- Changing your mind
-  , "match goal with H: _ |- _ => revert H end."
-
   , "transitivity."
 
     -- Simplifiers
   , "simpl."
   , "simpl in *."
 
-    -- I'd rather see auto last as it is very non-informative
-  , "auto."
   ]
 
 constructors :: [Query]

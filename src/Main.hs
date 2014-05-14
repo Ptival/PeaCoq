@@ -36,6 +36,7 @@ site hi ho =
   ifTop (serveFile "web/rooster.html")
   <|> route [ ("query", queryHandler hi ho) ]
   <|> route [ ("undo", undoHandler hi ho) ]
+  <|> route [ ("qed", qedHandler hi ho) ]
   <|> serveDirectory "web/"
   <|> serveDirectory "web/jquery-ui-1.10.4.custom/css/south-street/"
 
@@ -47,6 +48,7 @@ proofContext :: Handle -> Handle -> IO ([Goal], [(Query, [Goal])])
 proofContext hi ho = do
   goals <- hQueryGoal hi ho
 
+{-
   -- maybe not do that every time? :)
   hCall hi [("val", "search")] ""
   rthms <- hParseSearchResponse ho
@@ -54,6 +56,7 @@ proofContext hi ho = do
   let thms = case rthms of
         Good ts -> ts
         Fail _  -> []
+-}
 
   let hyps = gCurHypsNames goals
 
@@ -61,7 +64,9 @@ proofContext hi ho = do
   let inductions = map (\h -> "induction " ++ h ++ ".") hyps
   let l2r = map (\h -> "rewrite -> " ++ h ++ ".") hyps
   let r2l = map (\h -> "rewrite <- " ++ h ++ ".") hyps
-  let applies = map (\t -> "apply " ++ thName t ++ ".") thms
+  --let applies = map (\t -> "apply " ++ thName t ++ ".") thms
+  let applyhyps = map (\h -> "apply " ++ h ++ ".") hyps
+  let reverts = map (\h -> "revert " ++ h ++ ".") hyps
 
   simpleQueries <- catMaybes <$> hQueries hi ho queries
   destructQueries <- catMaybes <$> hQueries hi ho destructs
@@ -69,7 +74,9 @@ proofContext hi ho = do
   constructorQueries <- hQueriesUntilFail hi ho constructors
   l2rQueries <- catMaybes <$> hQueries hi ho l2r
   r2lQueries <- catMaybes <$> hQueries hi ho r2l
-  applyQueries <- catMaybes <$> hQueries hi ho applies
+  --applyQueries <- catMaybes <$> hQueries hi ho applies
+  applyHypsQueries <- catMaybes <$> hQueries hi ho applyhyps
+  revertQueries <- catMaybes <$> hQueries hi ho reverts
 
   let queryResults =
         nubBy (\q1 q2 -> snd q1 == snd q2)
@@ -80,7 +87,9 @@ proofContext hi ho = do
         ++ constructorQueries
         ++ l2rQueries
         ++ r2lQueries
-        ++ applyQueries
+        -- ++ applyQueries
+        ++ applyHypsQueries
+        ++ revertQueries
 
   let nexts = map (\(x, y) -> (x, y))
               $ queryResults
@@ -109,5 +118,11 @@ respond hi ho response = do
 undoHandler :: Handle -> Handle -> Snap ()
 undoHandler hi ho = do
   liftIO $ hCall hi [("val", "rewind"), ("steps", "1")] ""
+  r <- liftIO $ hForceValueResponse ho
+  respond hi ho r
+
+qedHandler :: Handle -> Handle -> Snap ()
+qedHandler hi ho = do
+  liftIO $ hInterp hi "Qed."
   r <- liftIO $ hForceValueResponse ho
   respond hi ho r

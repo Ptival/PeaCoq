@@ -33,7 +33,7 @@ function addBlock(t, c) {
     var textBlock = $('<div>');
     $(textBlock).addClass(c);
     $(textBlock).html(t);
-    $(textBlock).insertBefore($('#doit'));
+    $(textBlock).insertBefore($('#proof'));
     $('body').animate({
         scrollTop: $('#input').offset().top
     });
@@ -68,25 +68,26 @@ function addResponse(response) {
     clearTabs();
 
     var currentGoal = response.currentGoals[0];
+
     if(currentGoal) {
-        addBlock(strOfGoal(currentGoal), 'goal');
+        $('#goal').html(strOfGoal(currentGoal));
 
-    var nbGoals = response.currentGoals.length;
+        var nbGoals = response.currentGoals.length;
 
-    _.forEach(response.nextGoals, function(g, i){
-        var tactic = g[0];
-        var d = $('<div>');
+        _.forEach(response.nextGoals, function(g, i){
+            var tactic = g[0];
+            var d = $('<div>');
 
-        if(g[1].length < nbGoals) {
-            d.append('SOLVED THE CURRENT GOAL!<br/><br/>');
-        }
+            if(g[1].length < nbGoals) {
+                d.append('SOLVED THE CURRENT GOAL!<br/><br/>');
+            }
 
-        _(g[1]).forEach(function(g){
-            d.append(strOfGoal(g) + '<br/><br/>');
+            _(g[1]).forEach(function(g){
+                d.append(strOfGoal(g) + '<br/><br/>');
+            });
+
+            addTab('tab' + i, tactic, d.html());
         });
-
-        addTab('tab' + i, tactic, d.html());
-    })
 
     }
 }
@@ -125,7 +126,7 @@ function addTheorem(theorem) {
         }
     });
 
-    $('#theorems').append(b).append('<br/>');
+    $('#theorems').append(b);
 }
 
 $(document).ready(function() {
@@ -137,6 +138,15 @@ $(document).ready(function() {
 
     $('#undoit').click(function() {
         $.post('undo', {}, function(response) { addResponse(response); });
+    });
+
+    $('#qed').click(function() {
+        $.post('qed', {}, function(response) {
+            if (response.coqtopResponse.contents == '') {
+                response.coqtopResponse.contents = '■';
+            }
+            addResponse(response);
+        });
     });
 
     $('#tabs').tabs();
@@ -152,7 +162,13 @@ $(document).ready(function() {
 
     $('#input').focus();
 
-    syncQuery('Show.');
+    // update the view
+    $.post('query', {query : 'Show.'}, function(response) {
+        // Hijack the response to avoid confusing the user
+        response.coqtopResponse.tag = 'Good';
+        response.coqtopResponse.contents = '✓';
+        addResponse(response);
+    });
 
     _(theorems).map(function(t) { addTheorem(t); });
 
