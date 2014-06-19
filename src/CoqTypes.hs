@@ -24,10 +24,19 @@ instance Show Goal where
 
 instance ToJSON Goal where
 
+data Goals
+  = MkGoals
+    { focused :: [Goal]
+    , unfocused :: [([Goal], [Goal])]
+    }
+  deriving (Eq, Generic, Show)
+
+instance ToJSON Goals where
+
 data CoqtopResponse r
   = Fail String
   | Good r
-  deriving (Eq, Generic)
+  deriving (Eq, Generic, Show)
 
 instance ToJSON r => ToJSON (CoqtopResponse r) where
 
@@ -36,8 +45,8 @@ instance Default (CoqtopResponse r) where
 
 data RoosterResponse
   = MkRoosterResponse
-    { currentGoals :: [Goal]
-    , nextGoals :: [(Query, [Goal])]
+    { currentGoals :: Goals
+    , nextGoals :: [(Query, Goals)]
     , coqtopResponse :: CoqtopResponse [String]
     }
   deriving (Generic)

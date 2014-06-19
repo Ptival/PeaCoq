@@ -44,7 +44,7 @@ pprintResponse :: CoqtopResponse [String] -> String
 pprintResponse (Fail s) = s
 pprintResponse (Good l) = concatMap (++ "\n") l
 
-proofContext :: Handle -> Handle -> IO ([Goal], [(Query, [Goal])])
+proofContext :: Handle -> Handle -> IO (Goals, [(Query, Goals)])
 proofContext hi ho = do
   goals <- hQueryGoal hi ho
 

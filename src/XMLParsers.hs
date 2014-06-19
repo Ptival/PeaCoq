@@ -40,6 +40,16 @@ parseList p = tagNoAttr "list" $ many p
 forceList :: ParseXML (Maybe a) -> ParseXML [a]
 forceList p = force "list" $ parseList p
 
+parsePair :: ParseXML a -> ParseXML b -> ParseXML (Maybe (a, b))
+parsePair pa pb =
+  tagNoAttr "pair" $ do
+    a <- pa
+    b <- pb
+    return (a, b)
+
+forcePair :: ParseXML a -> ParseXML b -> ParseXML (a, b)
+forcePair pa pb = force "pair" $ parsePair pa pb
+
 parseGenericCoqtopResponse :: ParseXML t -> ParseXML (Maybe (CoqtopResponse t))
 parseGenericCoqtopResponse k =
   tagName "value" (requireAttr "val" <* ignoreAttrs) $ \val ->
@@ -75,18 +85,21 @@ parseGoal =
     goal <- forceCoqString
     return $ MkGoal hyps goal
 
-parseGoals :: ParseXML (Maybe [Goal])
+forceGoalList :: ParseXML [Goal]
+forceGoalList = forceList parseGoal
+
+parseGoals :: ParseXML (Maybe Goals)
 parseGoals =
   tagNoAttr "goals" $ do
-    goals <- forceList parseGoal
-    _ <- forceList contentMaybe
-    return goals
+    foc <- forceList parseGoal
+    unfoc <- forceList (parsePair forceGoalList forceGoalList)
+    return $ MkGoals foc unfoc
 
-parseGoalResponse :: ParseXML (CoqtopResponse [Goal])
+parseGoalResponse :: ParseXML (CoqtopResponse Goals)
 parseGoalResponse =
   force "response" $ parseGenericCoqtopResponse $ do
-    mgs <- forceOption $ parseGoals
-    return $ fromMaybe [] mgs
+    mgs <- forceOption parseGoals
+    return $ fromMaybe (MkGoals [] []) mgs
 
 parseTheorem =
   tagNoAttr "coq_object" $

@@ -42,25 +42,25 @@ hParseValueResponse h = xmlSource h $$ parseValueResponse
 hForceValueResponse :: Handle -> IO (CoqtopResponse [String])
 hForceValueResponse h = xmlSource h $$ forceValueResponse
 
-hParseGoalResponse :: Handle -> IO (CoqtopResponse [Goal])
+hParseGoalResponse :: Handle -> IO (CoqtopResponse Goals)
 hParseGoalResponse h = xmlSource h $$ parseGoalResponse
 
 hParseSearchResponse :: Handle -> IO (CoqtopResponse [Theorem])
 hParseSearchResponse h = xmlSource h $$ parseSearchResponse
 
-hQueryGoal :: Handle -> Handle -> IO [Goal]
+hQueryGoal :: Handle -> Handle -> IO Goals
 hQueryGoal hi ho = do
   hGoal hi
   rg <- hParseGoalResponse ho
   case rg of
     Good g -> return g
-    Fail _ -> return []
+    Fail _ -> return (MkGoals [] [])
 
-gCurHypsNames :: [Goal] -> [String]
-gCurHypsNames []      = []
-gCurHypsNames (g : _) = map (takeWhile (/= ' ')) $ gHyps g
+gCurHypsNames :: Goals -> [String]
+gCurHypsNames (MkGoals []      _) = []
+gCurHypsNames (MkGoals (g : _) _) = map (takeWhile (/= ' ')) $ gHyps g
 
-hQuery :: Handle -> Handle -> Query -> IO (Maybe (Query, [Goal]))
+hQuery :: Handle -> Handle -> Query -> IO (Maybe (Query, Goals))
 hQuery hi ho q = do
   hInterp hi q
   mr1 <- hParseValueResponse ho
@@ -77,10 +77,10 @@ hQuery hi ho q = do
           Fail _ -> Nothing
     Just (Fail _) -> return Nothing
 
-hQueries :: Handle -> Handle -> [Query] -> IO [Maybe (Query, [Goal])]
+hQueries :: Handle -> Handle -> [Query] -> IO [Maybe (Query, Goals)]
 hQueries hi ho = mapM (hQuery hi ho)
 
-hQueriesUntilFail :: Handle -> Handle -> [Query] -> IO [(Query, [Goal])]
+hQueriesUntilFail :: Handle -> Handle -> [Query] -> IO [(Query, Goals)]
 hQueriesUntilFail hi ho l =
   case l of
     [] -> return []
@@ -117,3 +117,9 @@ queries =
 
 constructors :: [Query]
 constructors = map (\i -> "constructor " ++ show i ++ ".") [1 :: Integer ..]
+
+hDo :: Handle -> Handle -> Query -> IO ()
+hDo hi ho q = do
+  hInterp hi q
+  mr <- hParseValueResponse ho
+  print mr
