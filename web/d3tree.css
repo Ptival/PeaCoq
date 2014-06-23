@@ -1,0 +1,27 @@
+.link {
+    fill: none;
+    stroke: black;
+    stroke-width: 2px;
+}
+
+.goal, .tactic {
+    stroke: black;
+    stroke-width: 2px;
+}
+
+.goal {
+    fill: lightsteelblue;
+}
+
+.tactic {
+    fill: orange;
+}
+
+.solved {
+    fill: green;
+}
+
+.current {
+    stroke: lightgreen;
+    stroke-width: 4px;
+}
