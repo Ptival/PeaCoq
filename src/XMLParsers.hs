@@ -80,10 +80,10 @@ forceValueResponse = force "value" parseValueResponse
 parseGoal :: ParseXML (Maybe Goal)
 parseGoal =
   tagNoAttr "goal" $ do
-    forceCoqString
+    goalId <- forceCoqString
     hyps <- forceList parseCoqString
     goal <- forceCoqString
-    return $ MkGoal hyps goal
+    return $ MkGoal goalId hyps goal
 
 forceGoalList :: ParseXML [Goal]
 forceGoalList = forceList parseGoal

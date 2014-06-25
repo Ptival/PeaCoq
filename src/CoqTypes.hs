@@ -11,13 +11,18 @@ type Query = String
 
 data Goal
   = MkGoal
-    { gHyps :: [String]
+    { gId   :: String
+    , gHyps :: [String]
     , gGoal :: String
     }
-  deriving (Eq, Generic)
+  deriving (Generic)
+
+instance Eq Goal where
+  (==) (MkGoal _ hyps1 goal1) (MkGoal _ hyps2 goal2) =
+    hyps1 == hyps2 && goal1 == goal2
 
 instance Show Goal where
-  show (MkGoal hyps goal) =
+  show (MkGoal _ hyps goal) =
     concat (intersperse "\n" hyps)
     ++ "\n" ++ replicate 40 '=' ++ "\n"
     ++ goal

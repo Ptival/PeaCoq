@@ -54,18 +54,24 @@ function mkGoalNode(g, ndx) {
     return {
         "id": i++,
         "name": g.gGoal,
-        "ndx" : ndx + 1,
+        "ndx": ndx + 1,
+        "gid": g.gId,
     };
 }
 
-function mkTacticNode(t) {
-    return {
-        "id": i++,
-        "name": t[0],
-        "_children": _(t[1].focused)
-            .map(mkGoalNode)
-            .value(),
-    };
+function mkTacticNode(ancestorSubgoals) {
+    return function(t) {
+        return {
+            "id": i++,
+            "name": t[0],
+            "_children": _(t[1].focused)
+                .filter(function(n) {
+                    return !contains(ancestorSubgoals, n.gId);
+                })
+                .map(mkGoalNode)
+                .value(),
+        };
+    }
 }
 
 function hInit(response) {
@@ -77,7 +83,7 @@ function hInit(response) {
         "x0": width / 2,
         "y0": 0,
         "_children": _(response.nextGoals)
-            .map(mkTacticNode)
+            .map(mkTacticNode([]))
             .value(),
     };
 
@@ -226,6 +232,13 @@ function update(source) {
 
 }
 
+function contains(container, thing) { return (container.indexOf(thing) > -1); }
+
+function nbDashes(s) {
+    var n = s.match(/-/g);
+    return (n || []).length;
+}
+
 function click(d) {
 
     d.children = d._children;
@@ -236,9 +249,22 @@ function click(d) {
 
         if (isGoal(d)) {
             syncQuery('Show.', function(response) {
+
+                console.log(response);
+
+                var ancestorSubgoals = [];
+
+                if (d.parent) {
+                    _(d.parent._children)
+                        .forEach(function(g) {
+                            ancestorSubgoals.push(g.gid);
+                        });
+                }
+
                 d._children = _(response.nextGoals)
-                    .map(mkTacticNode)
+                    .map(mkTacticNode(ancestorSubgoals))
                     .value();
+
             });
         }
 
@@ -296,7 +322,7 @@ function commonAncestor(n1, n2) {
     if (n1.depth < n2.depth) {
         return commonAncestor(n1, n2.parent);
     } else if (n1.depth > n2.depth) {
-        return commonAncestor(n1.parent, n2.parent);
+        return commonAncestor(n1.parent, n2);
     } else {
         return commonAncestor(n1.parent, n2.parent);
     }
@@ -324,9 +350,9 @@ function path(n1, n2) {
     }
 }
 
-function navigateTo(n) {
-    var a = commonAncestor(curNode, n);
-    var p = path(curNode, n);
+function navigateTo(dest) {
+    var a = commonAncestor(curNode, dest);
+    var p = path(curNode, dest);
     var goingUp = true;
     _(p)
         .each(function(n) {
@@ -339,7 +365,7 @@ function navigateTo(n) {
                 if(isTactic(n)) {
                     syncQuery('Undo.', hIgnore);
                 } else {
-                    syncQuery('UnFocus', hIgnore);
+                    syncQuery('Unfocus.', hIgnore);
                 }
             } else {
                 // collapse tactic nodes of branches not taken
@@ -355,7 +381,7 @@ function navigateTo(n) {
             }
         })
     ;
-    curNode = n;
+    curNode = dest;
 }
 
 function isTactic(n) { return (n.depth % 2 == 1); }
@@ -373,5 +399,6 @@ function syncQuery(q, h) {
     });
 }
 
-function hIgnore(response) { return; }
-
+function hIgnore(response) {
+    console.log(response);
+}

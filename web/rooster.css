@@ -1,4 +1,7 @@
-body { font-family: monospace; margin: 0; }
+body {
+    font-family: monospace;
+    margin: 10px;
+}
 
 .query { background-color: lightblue; }
 
@@ -24,3 +27,19 @@ body { font-family: monospace; margin: 0; }
 }
 
 #doit, #undoit, #qed { width: 100px; }
+
+#log {
+    position:absolute;
+    top:10px;
+    font-size:1.0em;
+    font-weight:bold;
+    color:#23A4FF;
+}
+
+#infovis {
+    position:relative;
+    width:600px;
+    height:600px;
+    margin:auto;
+    overflow:hidden;
+}
