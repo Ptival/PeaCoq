@@ -39,6 +39,7 @@ $(document).ready(function() {
 
     syncQuery('Abort All.', hIgnore);
     syncQuery('Theorem plus_0_r : forall x, x + 0 = x.', hInit);
+    syncQuery('Focus 1', hLog);
 
 /*
     curNode = root;
@@ -363,9 +364,13 @@ function navigateTo(dest) {
             else if (goingUp) {
                 collapseChildren(n);
                 if(isTactic(n)) {
-                    syncQuery('Undo.', hIgnore);
+                    // Apparently we need to Undo twice for subgoals solved
+                    if(n._children.length == 0) {
+                        syncQuery('Undo.', hIgnore);
+                    }
+                    syncQuery('Undo.', hLog);
                 } else {
-                    syncQuery('Unfocus.', hIgnore);
+                    syncQuery('Unfocus.', hLog);
                 }
             } else {
                 // collapse tactic nodes of branches not taken
@@ -374,9 +379,9 @@ function navigateTo(dest) {
                 }
 
                 if (isTactic(n)) {
-                    syncQuery(n.name, hIgnore);
+                    syncQuery(n.name, hLog);
                 } else {
-                    syncQuery('Focus ' + n.ndx + '.');
+                    syncQuery('Focus ' + n.ndx + '.', hLog);
                 }
             }
         })
@@ -399,6 +404,10 @@ function syncQuery(q, h) {
     });
 }
 
+function hLog(response) {
+    console.log('Current goal:');
+    console.log(response.currentGoals.focused[0].gGoal);
+}
+
 function hIgnore(response) {
-    console.log(response);
 }
