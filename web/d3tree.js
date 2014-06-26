@@ -1,8 +1,8 @@
 
 var i = 1; // unique identifier
 
-var width = 1000;
-var height = 320;
+var width = 1200;
+var height = 600;
 var margin = {top: 20, right: 20, bottom: 20, left: 20};
 var rectMargin = {top: 2, right: 4, bottom: 2, left: 4};
 
@@ -16,7 +16,33 @@ var rootId = i++;
 
 var root = null;
 
+var thms = [
+    'Theorem plus_0_r : forall x, x + 0 = x.',
+    'Theorem plus_comm : ∀n m : nat, n + m = m + n.',
+    'Theorem mult_0_r : ∀n:nat, n * 0 = 0.',
+    'Theorem plus_assoc : ∀n m p : nat, n + (m + p) = (n + m) + p.',
+];
+
+function addTheorem(theorem) {
+    var b = $('<button>', {
+        text: theorem,
+        click: function() { newTheorem(theorem); }
+    });
+
+    $('#buttons').append(b);
+}
+
 $(document).ready(function() {
+
+    _(thms).each(addTheorem);
+
+    newTheorem(thms[0], hInit);
+
+});
+
+function newTheorem(theorem) {
+
+    d3.select("svg").remove();
 
     tree = d3.layout.tree()
         .size([width, height])
@@ -38,19 +64,10 @@ $(document).ready(function() {
     ;
 
     syncQuery('Abort All.', hIgnore);
-    //syncQuery('Theorem plus_comm : ∀n m : nat, n + m = m + n.', hInit);
-    syncQuery('Theorem plus_0_r : forall x, x + 0 = x.', hInit);
+    syncQuery(theorem, hInit);
     syncQuery('Focus 1.', hLog);
 
-/*
-    curNode = root;
-
-    update(root);
-
-    click(root);
-*/
-
-});
+}
 
 function mkGoalNode(g, ndx) {
     return {
