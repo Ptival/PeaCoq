@@ -250,7 +250,7 @@ function click(d) {
         if (isGoal(d)) {
             syncQuery('Show.', function(response) {
 
-                console.log(response);
+                //console.log(response);
 
                 d._children = _(response.nextGoals)
                     .map(mkTacticNode)
@@ -392,8 +392,12 @@ function navigateTo(dest) {
                     // 'Undo.' works in -ideslave
                     // 'Undo.' does not care about 'Show.' commands
 
+                    if (n.solved) {
+                        syncQuery('Undo.', hLog);
+                    }
+
                     // Undo the 'Focus.' command
-                    syncQuery('Unfocus.', hLog);
+                    syncQuery('Undo.', hLog);
                 }
             } else {
                 // collapse tactic nodes of branches not taken
