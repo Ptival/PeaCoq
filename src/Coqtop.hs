@@ -42,8 +42,8 @@ hParseValueResponse h = xmlSource h $$ parseValueResponse
 hForceValueResponse :: Handle -> IO (CoqtopResponse [String])
 hForceValueResponse h = xmlSource h $$ forceValueResponse
 
-hParseGoalResponse :: Handle -> IO (CoqtopResponse Goals)
-hParseGoalResponse h = xmlSource h $$ parseGoalResponse
+hForceGoalResponse :: Handle -> IO (CoqtopResponse Goals)
+hForceGoalResponse h = xmlSource h $$ forceGoalResponse
 
 hParseSearchResponse :: Handle -> IO (CoqtopResponse [Theorem])
 hParseSearchResponse h = xmlSource h $$ parseSearchResponse
@@ -51,7 +51,7 @@ hParseSearchResponse h = xmlSource h $$ parseSearchResponse
 hQueryGoal :: Handle -> Handle -> IO Goals
 hQueryGoal hi ho = do
   hGoal hi
-  rg <- hParseGoalResponse ho
+  rg <- hForceGoalResponse ho
   case rg of
     Good g -> return g
     Fail _ -> return (MkGoals [] [])
@@ -68,7 +68,7 @@ hQuery hi ho q = do
   case mr1 of
     Just (Good _) -> do
       hGoal hi
-      rgs <- hParseGoalResponse ho
+      rgs <- hForceGoalResponse ho
       hCall hi [("val", "rewind"), ("steps", "1")] ""
       _ <- hParseValueResponse ho
       return $

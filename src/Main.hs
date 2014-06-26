@@ -5,7 +5,7 @@ module Main where
 import Control.Applicative ((<$>), (<|>))
 import Control.Monad.IO.Class (liftIO)
 import Data.ByteString.UTF8 (toString)
-import Data.List (nubBy)
+import Data.List (nubBy, (\\))
 import Data.Maybe (catMaybes)
 import Snap.Core
 import Snap.Extras.JSON
@@ -44,7 +44,13 @@ pprintResponse :: CoqtopResponse [String] -> String
 pprintResponse (Fail s) = s
 pprintResponse (Good l) = concatMap (++ "\n") l
 
-proofContext :: Handle -> Handle -> IO (Goals, [(Query, Goals)])
+goalsOfGoals :: Goals -> [Goal]
+goalsOfGoals (MkGoals foc unfoc) = foc ++ concatMap (uncurry (++)) unfoc
+
+newGoals :: Goals -> Goals -> [Goal]
+newGoals old new = goalsOfGoals new \\ goalsOfGoals old
+
+proofContext :: Handle -> Handle -> IO (Goals, [(Query, [Goal])])
 proofContext hi ho = do
   goals <- hQueryGoal hi ho
 
@@ -79,7 +85,9 @@ proofContext hi ho = do
   revertQueries <- catMaybes <$> hQueries hi ho reverts
 
   let queryResults =
+        -- remove duplicates when multiple queries have equivalent effect
         nubBy (\q1 q2 -> snd q1 == snd q2)
+        -- remove queries that don't affect the state
         . filter (\qr -> snd qr /= goals)
         $ simpleQueries
         ++ destructQueries
@@ -91,10 +99,10 @@ proofContext hi ho = do
         ++ applyHypsQueries
         ++ revertQueries
 
-  let nexts = map (\(x, y) -> (x, y))
-              $ queryResults
+  let queryResults' =
+        map (\(q, goals') -> (q, newGoals goals goals')) queryResults
 
-  return (goals, nexts)
+  return (goals, queryResults')
 
 queryHandler :: Handle -> Handle -> Snap ()
 queryHandler hi ho = do
@@ -105,7 +113,7 @@ queryHandler hi ho = do
       response <- liftIO $ do
         -- might want to sanitize? :3
         let query = toString queryBS
-        putStrLn $ "LOG: " ++ query
+        putStrLn $ query
         hInterp hi query
         hForceValueResponse ho
       respond hi ho response

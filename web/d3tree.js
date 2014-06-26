@@ -2,7 +2,7 @@
 var i = 1; // unique identifier
 
 var width = 1000;
-var height = 400;
+var height = 320;
 var margin = {top: 20, right: 20, bottom: 20, left: 20};
 var rectMargin = {top: 2, right: 4, bottom: 2, left: 4};
 
@@ -38,8 +38,9 @@ $(document).ready(function() {
     ;
 
     syncQuery('Abort All.', hIgnore);
+    //syncQuery('Theorem plus_comm : ∀n m : nat, n + m = m + n.', hInit);
     syncQuery('Theorem plus_0_r : forall x, x + 0 = x.', hInit);
-    syncQuery('Focus 1', hLog);
+    syncQuery('Focus 1.', hLog);
 
 /*
     curNode = root;
@@ -60,22 +61,19 @@ function mkGoalNode(g, ndx) {
     };
 }
 
-function mkTacticNode(ancestorSubgoals) {
-    return function(t) {
-        return {
-            "id": i++,
-            "name": t[0],
-            "_children": _(t[1].focused)
-                .filter(function(n) {
-                    return !contains(ancestorSubgoals, n.gId);
-                })
-                .map(mkGoalNode)
-                .value(),
-        };
-    }
+function mkTacticNode(t) {
+    return {
+        "id": i++,
+        "name": t[0],
+        "_children": _(t[1])
+            .map(mkGoalNode)
+            .value(),
+    };
 }
 
 function hInit(response) {
+
+    //console.log(response);
 
     // There should only be one goal at that point
     root = {
@@ -84,7 +82,7 @@ function hInit(response) {
         "x0": width / 2,
         "y0": 0,
         "_children": _(response.nextGoals)
-            .map(mkTacticNode([]))
+            .map(mkTacticNode)
             .value(),
     };
 
@@ -179,7 +177,8 @@ function update(source) {
     canvas
         .selectAll("rect")
         .classed("tactic", function(d) { return isTactic(d); })
-        .classed("goal", function(d) { return isGoal(d); })
+        .classed("goal", function(d) { return isGoal(d) && !d.solved; })
+        .classed("solvedgoal", function(d) { return isGoal(d) && d.solved; })
         .classed("current", function(d) {
             return d.id && (d.id == curNode.id);
         })
@@ -246,27 +245,22 @@ function click(d) {
 
     navigateTo(d);
 
-    if (!d._children) {
+    if (!d._children || d._children.length == 0) {
 
         if (isGoal(d)) {
             syncQuery('Show.', function(response) {
 
                 console.log(response);
 
-                var ancestorSubgoals = [];
-
-                if (d.parent) {
-                    _(d.parent._children)
-                        .forEach(function(g) {
-                            ancestorSubgoals.push(g.gid);
-                        });
-                }
-
                 d._children = _(response.nextGoals)
-                    .map(mkTacticNode(ancestorSubgoals))
+                    .map(mkTacticNode)
                     .value();
 
             });
+        }
+        // otherwise, this is a terminating tactic for this goal!
+        else {
+            solved(d.parent);
         }
 
     }
@@ -276,6 +270,27 @@ function click(d) {
     expand(d);
 
     update(d);
+
+    if(isTactic(d) && d._children[0]) {
+        click(d._children[0]);
+    }
+}
+
+function solved(goalNode) {
+    goalNode.solved = true;
+    collapse(goalNode);
+
+    if (goalNode.parent) {
+        // Bubble up if this was the last subgoal
+        var lastSubgoal =
+            _(goalNode.parent._children)
+            .every(function(n) { return n.solved == true })
+        ;
+
+        if (lastSubgoal) {
+            solved(goalNode.parent.parent);
+        }
+    }
 }
 
 function toggle(d) {
@@ -365,11 +380,19 @@ function navigateTo(dest) {
                 collapseChildren(n);
                 if(isTactic(n)) {
                     // Apparently we need to Undo twice for subgoals solved
+/*
                     if(n._children.length == 0) {
                         syncQuery('Undo.', hIgnore);
                     }
+*/
                     syncQuery('Undo.', hLog);
                 } else {
+                    // 'Back.' does not work in -ideslave
+                    // 'Back.' takes one step to undo 'Show.'
+                    // 'Undo.' works in -ideslave
+                    // 'Undo.' does not care about 'Show.' commands
+
+                    // Undo the 'Focus.' command
                     syncQuery('Unfocus.', hLog);
                 }
             } else {
@@ -394,7 +417,8 @@ function isTactic(n) { return (n.depth % 2 == 1); }
 function isGoal(n) { return (n.depth % 2 == 0); }
 
 function syncQuery(q, h) {
-    console.log('Query: ' + q);
+    console.log(q);
+    //console.log('Query: ' + q);
     $.ajax({
         type: 'POST',
         url: 'query',
@@ -405,8 +429,7 @@ function syncQuery(q, h) {
 }
 
 function hLog(response) {
-    console.log('Current goal:');
-    console.log(response.currentGoals.focused[0].gGoal);
+    //console.log(response);
 }
 
 function hIgnore(response) {

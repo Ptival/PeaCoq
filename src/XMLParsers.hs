@@ -95,8 +95,8 @@ parseGoals =
     unfoc <- forceList (parsePair forceGoalList forceGoalList)
     return $ MkGoals foc unfoc
 
-parseGoalResponse :: ParseXML (CoqtopResponse Goals)
-parseGoalResponse =
+forceGoalResponse :: ParseXML (CoqtopResponse Goals)
+forceGoalResponse =
   force "response" $ parseGenericCoqtopResponse $ do
     mgs <- forceOption parseGoals
     return $ fromMaybe (MkGoals [] []) mgs

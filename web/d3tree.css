@@ -13,12 +13,12 @@
     fill: lightsteelblue;
 }
 
-.tactic {
-    fill: orange;
+.solvedgoal {
+    fill: green;
 }
 
-.solved {
-    fill: green;
+.tactic {
+    fill: orange;
 }
 
 .current {
