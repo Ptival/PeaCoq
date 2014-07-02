@@ -7,7 +7,8 @@ TODO:
 var i = 1; // unique identifier
 
 var margin = {top: 20, right: 240, bottom: 20, left: 240};
-var width = 1400 - (margin.left + margin.right);
+var scrollbarWidth = 20; // I could compute this if I cared enough
+var width = $(window).width() - (scrollbarWidth + margin.left + margin.right);
 var height = 200;
 var rectMargin = {top: 2, right: 8, bottom: 2, left: 8};
 var xFactor = 1;
