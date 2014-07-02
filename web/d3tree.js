@@ -547,6 +547,7 @@ function navigateTo(dest) {
             if (goingUp) {
 
                 collapseChildren(src);
+                if (isGoal(src)) { collapse(src); }
 
                 if (isTactic(src)) {
                     // need to Undo twice for terminating tactics
@@ -559,12 +560,6 @@ function navigateTo(dest) {
                     // 'Back.' takes one step to undo 'Show.'
                     // 'Undo.' works in -ideslave
                     // 'Undo.' does not care about 'Show.' commands
-
-/*
-                    if (src.solved) {
-                        syncQuery('Undo.', hLog);
-                    }
-*/
 
                     // Undo the 'Focus.' command.
                     // Do not use 'Unfocus.' as it is itself undone by 'Undo.'
@@ -607,7 +602,7 @@ function syncQuery(q, h) {
 }
 
 function hLog(response) {
-    console.log(response);
+    //console.log(response);
 }
 
 function hIgnore(response) {
