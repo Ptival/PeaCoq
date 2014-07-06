@@ -2,14 +2,16 @@
 /*
 TODO:
 - bug where a terminating tactic does not show up green
+- bug where after everything is done, curNode is wrong and the remaining node
+is not centered
 */
 
-var i = 1; // unique identifier
+var i = 1; // unique identifier, should closure it to avoid drama
 
 var margin = {top: 20, right: 240, bottom: 20, left: 240};
 var scrollbarWidth = 20; // I could compute this if I cared enough
 var width = $(window).width() - (scrollbarWidth + margin.left + margin.right);
-var height = 200;
+var height = 400;
 var rectMargin = {top: 2, right: 8, bottom: 2, left: 8};
 var xFactor = 1;
 var yFactor = 1;
@@ -137,19 +139,6 @@ function hInit(response) {
     update(rootNode);
 
 }
-
-/*
-function getClosestAncestorCoord0(n) {
-    if (!n.hasOwnProperty('parent')) { return [n.cX0, n.cY0]; }
-    if (n.parent.hasOwnProperty('cX0')
-        && n.parent.hasOwnProperty('cY0')) {
-        return [n.parent.cX0, n.parent.cY0];
-    }
-    else if (n.parent.hasOwnProperty('parent')) {
-        return getClosestAncestorCoord0(n.parent);
-    }
-}
-*/
 
 function update(source) {
 
@@ -433,23 +422,34 @@ function click(d) {
 
 }
 
-function solved(goalNode) {
-    goalNode.solved = true;
+function solved(n) {
+    n.solved = true;
 
-    collapse(goalNode);
+    if (isGoal(n)) {
+        collapse(n);
+    }
+    else {
+        collapseChildren(n);
+    }
 
-    if (goalNode.hasOwnProperty('parent')) {
-        navigateTo(goalNode.parent);
+    if (n.hasOwnProperty('parent')) {
 
-        // Bubble up if this was the last subgoal
-        var lastSubgoal =
-            _(goalNode.parent._children)
-            .every(function(n) { return n.solved == true })
-        ;
-
-        if (lastSubgoal) {
-            solved(goalNode.parent.parent);
+        if (isGoal(n)) {
+            navigateTo(n.parent);
+            solved(n.parent);
         }
+        else {
+            // Bubble up if this was the last subgoal
+            var lastSubgoal =
+                _(n._children)
+                .every(function(n) { return n.solved == true })
+            ;
+            if (lastSubgoal) {
+                navigateTo(n.parent);
+                solved(n.parent);
+            }
+        }
+
     }
 }
 
