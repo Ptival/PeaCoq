@@ -105,7 +105,7 @@ queries =
     -- Deal with equality
   , "reflexivity."
   , "congruence."
-  , "f_equal."
+  --, "f_equal."
 
   , "transitivity."
 

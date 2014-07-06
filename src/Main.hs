@@ -72,7 +72,7 @@ proofContext hi ho = do
   let r2l = map (\h -> "rewrite <- " ++ h ++ ".") hyps
   --let applies = map (\t -> "apply " ++ thName t ++ ".") thms
   let applyhyps = map (\h -> "apply " ++ h ++ ".") hyps
-  let reverts = map (\h -> "revert " ++ h ++ ".") hyps
+  --let reverts = map (\h -> "revert " ++ h ++ ".") hyps
 
   simpleQueries <- catMaybes <$> hQueries hi ho queries
   destructQueries <- catMaybes <$> hQueries hi ho destructs
@@ -82,7 +82,7 @@ proofContext hi ho = do
   r2lQueries <- catMaybes <$> hQueries hi ho r2l
   --applyQueries <- catMaybes <$> hQueries hi ho applies
   applyHypsQueries <- catMaybes <$> hQueries hi ho applyhyps
-  revertQueries <- catMaybes <$> hQueries hi ho reverts
+  --revertQueries <- catMaybes <$> hQueries hi ho reverts
 
   let queryResults =
         -- remove duplicates when multiple queries have equivalent effect
@@ -97,7 +97,7 @@ proofContext hi ho = do
         ++ r2lQueries
         -- ++ applyQueries
         ++ applyHypsQueries
-        ++ revertQueries
+        -- ++ revertQueries
 
   let queryResults' =
         map (\(q, goals') -> (q, newGoals goals goals')) queryResults
