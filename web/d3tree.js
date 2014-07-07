@@ -5,8 +5,8 @@ TODO:
 */
 
 // CONFIGURATION
-var nodeWidth = 320;
-var nodeHeight = 50;
+var nodeMinSpacing = 5;
+var nodeHeight = 75;
 var rectMargin = {top: 2, right: 8, bottom: 2, left: 8};
 var scrollbarWidth = 20; // I could compute this if I cared enough
 var height = 400;
@@ -15,6 +15,14 @@ var animationDuration = 500;
 
 // OTHER GLOBALS
 var i = 1; // unique identifier, should closure it to avoid drama
+var maxNodesOnLine = Math.pow(nbChildrenToShow, 2);
+var nodeWidth =
+    (
+        $(window).width()
+            - scrollbarWidth
+            - (maxNodesOnLine * (rectMargin.left + rectMargin.right + nodeMinSpacing))
+    )
+    / maxNodesOnLine;
 var nodeTranslation = 'translate(-' + (nodeWidth / 2) + ', -' + (nodeHeight / 2) + ')';
 var marginH = (nodeWidth + rectMargin.left + rectMargin.right) / 2;
 var marginV = (nodeHeight + rectMargin.top + rectMargin.bottom) / 2;
@@ -231,20 +239,10 @@ function update(source) {
         .min()
         .value();
 
-    if (curNode.hasOwnProperty('minX')) {
-        minX = Math.min(minX, curNode.minX);
-    }
-    curNode.minX = minX;
-
     var maxX = _(visibleNodes)
         .map(function(d) { return d.x; })
         .max()
         .value();
-
-    if (curNode.hasOwnProperty('maxX')) {
-        maxX = Math.max(maxX, curNode.maxX);
-    }
-    curNode.maxX = maxX;
 
     var minY = _(visibleNodes)
         .map(function(d) { return d.y; })
@@ -256,6 +254,14 @@ function update(source) {
         .max()
         .value();
 
+    // We want the current node to stay fixed as we scroll through
+    // its children, so we always center the viewpoint around it
+
+    var leftdX = curNode.x - minX;
+    var rightdX = maxX - curNode.x;
+    var halfdX = Math.max(leftdX, rightdX);
+    var minX = curNode.x - halfdX;
+    var maxX = curNode.x + halfdX;
     var dX = maxX - minX;
     var dY = maxY - minY;
 
