@@ -25,3 +25,17 @@
     stroke: lightgreen;
     stroke-width: 4px;
 }
+
+.node {
+    font-family: Monaco, DejaVu Sans Mono, monospace;
+    font-size: 18px;
+    word-wrap: break-word;
+}
+
+.leftarrow, .rightarrow {
+    font-size: 42px;
+}
+
+.invisible {
+    display: none;
+}

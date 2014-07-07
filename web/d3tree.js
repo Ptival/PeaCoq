@@ -2,17 +2,24 @@
 /*
 TODO:
 - bug where a terminating tactic does not show up green
-- bug where after everything is done, curNode is wrong and the remaining node
-is not centered
 */
 
-var i = 1; // unique identifier, should closure it to avoid drama
-
-var margin = {top: 20, right: 240, bottom: 20, left: 240};
-var scrollbarWidth = 20; // I could compute this if I cared enough
-var width = $(window).width() - (scrollbarWidth + margin.left + margin.right);
-var height = 400;
+// CONFIGURATION
+var nodeWidth = 320;
+var nodeHeight = 50;
 var rectMargin = {top: 2, right: 8, bottom: 2, left: 8};
+var scrollbarWidth = 20; // I could compute this if I cared enough
+var height = 400;
+var nbChildrenToShow = 2;
+var animationDuration = 500;
+
+// OTHER GLOBALS
+var i = 1; // unique identifier, should closure it to avoid drama
+var nodeTranslation = 'translate(-' + (nodeWidth / 2) + ', -' + (nodeHeight / 2) + ')';
+var marginH = (nodeWidth + rectMargin.left + rectMargin.right) / 2;
+var marginV = (nodeHeight + rectMargin.top + rectMargin.bottom) / 2;
+var margin = {top: marginV, right: marginH, bottom: marginV, left: marginH};
+var width = $(window).width() - (scrollbarWidth + margin.left + margin.right);
 var xFactor = 1;
 var yFactor = 1;
 
@@ -63,13 +70,48 @@ function newTheorem(theorem) {
         .separation(function(n1, n2) {
             if (n1.id == n2.id || n1.depth != n2.depth) { return 1; }
             // This is just a heuristic...
-            return (n1.name.length + n2.name.length) / (1 + n1.depth * n2.depth);
+            //return (n1.name.length + n2.name.length) / (1 + n1.depth * n2.depth);
+            //return n1.depth * n2.depth;
+            return 1;
         })
+
     ;
 
     svg = d3.select("body")
+        .on("keydown", function() {
+            //console.log(d3.event);
+            switch (d3.event.keyIdentifier) {
+            case "Left": shiftLeft(curNode); break;
+            case "Right": shiftRight(curNode); break;
+            case "Up":
+                if(curNode.hasOwnProperty('parent')) {
+                    click(curNode.parent);
+                }
+                break;
+            case "Down":
+                if (isTactic(curNode)) {
+                    var dest = _(curNode.children).find(function(n) {
+                        return !(n.solved);
+                    });
+                    if (dest) { click(dest); }
+                } else {
+                    if (curNode.children[0]) { click(curNode.children[0]); }
+                }
+                break;
+            case "U+0031": case "U+0041":
+                if (curNode.children[0]) { click(curNode.children[0]); }
+                break;
+            case "U+0032": case "U+0042":
+                if (curNode.children[1]) { click(curNode.children[1]); }
+                break;
+            case "U+0033": case "U+0043":
+                if (curNode.children[2]) { click(curNode.children[2]); }
+                break;
+            default: return;
+            }
+        })
         .style("margin", 0)
-        .append("svg")
+        .insert("svg", ":first-child")
         .attr("width", margin.left + width + margin.right)
         .attr("height", margin.top + height + margin.bottom)
         .style("border", "1px solid black")
@@ -99,6 +141,7 @@ function mkGoalNode(g, ndx) {
         "name": g.gGoal,
         "ndx": ndx + 1,
         "gid": g.gId,
+        "offset": 0,
     };
 }
 
@@ -112,7 +155,8 @@ function mkTacticNode(t) {
         "id": i++,
         "name": t[0],
         "_children": children,
-        "children": children,
+        "children": children.slice(0, nbChildrenToShow),
+        "offset": 0,
     };
 }
 
@@ -130,6 +174,8 @@ function hInit(response) {
             .map(mkTacticNode)
             .value(),
         "ndx": 1,
+        "depth": 0, // need to set depth for isGoal() to work early
+        "offset": 0,
     };
 
     curNode = rootNode;
@@ -138,6 +184,12 @@ function hInit(response) {
 
     update(rootNode);
 
+}
+
+function isCurnodeOrChild(n) {
+    if (n.id == curNode.id) { return true; }
+    if (n.hasOwnProperty('parent') && n.parent.id == curNode.id) { return true; }
+    return false;
 }
 
 function update(source) {
@@ -179,10 +231,20 @@ function update(source) {
         .min()
         .value();
 
+    if (curNode.hasOwnProperty('minX')) {
+        minX = Math.min(minX, curNode.minX);
+    }
+    curNode.minX = minX;
+
     var maxX = _(visibleNodes)
         .map(function(d) { return d.x; })
         .max()
         .value();
+
+    if (curNode.hasOwnProperty('maxX')) {
+        maxX = Math.max(maxX, curNode.maxX);
+    }
+    curNode.maxX = maxX;
 
     var minY = _(visibleNodes)
         .map(function(d) { return d.y; })
@@ -202,7 +264,7 @@ function update(source) {
 
     canvas
         .transition()
-        .duration(750)
+        .duration(animationDuration)
         .attr("transform", "translate("
               + (margin.left - (((dX == 0) ? 0 : minX) * xFactor))
               + ", "
@@ -233,23 +295,24 @@ function update(source) {
     ;
 
     nodeEnter
-        .append("text")
-        .attr("font-family", "Monaco, DejaVu Sans Mono, monospace")
-        .attr("font-size", "20")
-        .style("text-anchor", "middle")
-        .style("dominant-baseline", "middle")
-        .text(function(d) {
-            return d.name;
+        .append("foreignObject")
+        .attr("width", nodeWidth)
+        .attr("height", nodeHeight)
+        .attr("transform", nodeTranslation)
+        .html(function(d) {
+              return '<div class="node">'
+                + d.name.replace(', ', ',<br/>&nbsp;&nbsp;')
+                + '</div>';
         })
     ;
 
     nodeEnter
         .insert("rect", ":first-child")
         .attr("x", function(){
-            return this.nextSibling.getBBox().x - rectMargin.left;
+            return this.nextSibling.getBBox().x - rectMargin.left - nodeWidth / 2;
         })
         .attr("y", function(){
-            return this.nextSibling.getBBox().y - rectMargin.top;
+            return this.nextSibling.getBBox().y - rectMargin.top - nodeHeight / 2;
         })
         .attr("width", function(n){
             var w = rectMargin.left
@@ -267,6 +330,63 @@ function update(source) {
         })
     ;
 
+    nodeEnter
+        .append("text")
+        .attr('class', 'leftarrow')
+        .text('←')
+        .attr("x", function() {
+            var pb = this.parentElement.firstChild.getBBox();
+            return pb.x;
+        })
+        .attr("y", function() {
+            var pb = this.parentElement.firstChild.getBBox();
+            return pb.y + pb.height + 26;
+        })
+        .on('click', function(n) {
+            shiftLeft(n);
+            d3.event.stopPropagation();
+        })
+    ;
+
+    nodeEnter
+        .append("text")
+        .attr('class', 'rightarrow')
+        .text('→')
+        .attr("x", function() {
+            var pb = this.parentElement.firstChild.getBBox();
+            return pb.x + pb.width - 26;
+        })
+        .attr("y", function() {
+            var pb = this.parentElement.firstChild.getBBox();
+            return pb.y + pb.height + 26;
+        })
+        .on('click', function(n) {
+            shiftRight(n);
+            d3.event.stopPropagation();
+        })
+    ;
+
+    node
+        .selectAll('.leftarrow')
+        .classed('invisible', function(d) {
+            return !(
+                // visible when:
+                d.offset > 0 && isCurnodeOrChild(d)
+            );
+        })
+    ;
+
+    node
+        .selectAll('.rightarrow')
+        .classed('invisible', function(d) {
+            return !(
+                // visible when:
+                d.offset + nbChildrenToShow < _(d._children).size()
+                && isCurnodeOrChild(d)
+            );
+        })
+    ;
+
     // All the nodes need to move to their new position, according to the
     // new tree layout and the new zoom factors
 
@@ -279,7 +399,7 @@ function update(source) {
 
     node
         .transition()
-        .duration(750)
+        .duration(animationDuration)
         .attr("transform", function(d) {
             return "translate(" + d.cX + ", " + d.cY + ")";
         })
@@ -313,7 +433,7 @@ function update(source) {
 
     nodeExit
         .transition()
-        .duration(750)
+        .duration(animationDuration)
         .attr("transform", function(d) {
             var parentAlsoExiting = nodeIsExiting(d.parent);
             var nodeToReach = parentAlsoExiting ? d.parent.parent : d.parent;
@@ -336,7 +456,7 @@ function update(source) {
 
     link
         .transition()
-        .duration(750)
+        .duration(animationDuration)
         .attr("d", function(d) {
             return diagonal(
                 {
@@ -350,7 +470,7 @@ function update(source) {
     link
         .exit()
         .transition()
-        .duration(750)
+        .duration(animationDuration)
         .attr("d", function(d) {
             var sourceAlsoExiting = nodeIsExiting(d.source);
             var sourceNode = sourceAlsoExiting ? d.source.parent : d.source;
@@ -376,6 +496,25 @@ function update(source) {
         d.cY0 = d.cY;
     });
 
+}
+
+function updateVisibleChildren(n) {
+    n.children = n._children.slice(n.offset, n.offset + nbChildrenToShow);
+    update(n);
+}
+
+function shiftLeft(n) {
+    if (n.offset > 0) {
+        n.offset--;
+        updateVisibleChildren(n);
+    }
+}
+
+function shiftRight(n) {
+    if (n.offset + nbChildrenToShow < n._children.length) {
+        n.offset++;
+        updateVisibleChildren(n);
+    }
 }
 
 function contains(container, thing) { return (container.indexOf(thing) > -1); }
@@ -482,11 +621,11 @@ function collapseExcept(d, e) {
 }
 
 function expand(d) {
-    d.children = d._children;
+    d.children = d._children.slice(d.offset, d.offset + nbChildrenToShow);
     if (isGoal(d)) {
         _(d.children)
             .each(function(c) {
-                c.children = c._children;
+                c.children = c._children.slice(c.offset, c.offset + nbChildrenToShow);
             });
     }
 }
