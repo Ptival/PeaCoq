@@ -303,10 +303,16 @@ function update(source) {
         return [];
     }).flatten();
 
-    // guess
-    var leftmostNode = grandChildren.first();
-    if (leftmostNode == undefined) { leftmostNode = children.first(); }
+    var firstGrandChild = grandChildren.first();
+    var firstChild = children.first();
+
+    var leftmostNode = firstGrandChild;
+    if (leftmostNode == undefined) { leftmostNode = firstChild; }
     if (leftmostNode == undefined) { leftmostNode = curNode; }
+
+    var lastGrandChild = grandChildren.last();
+    var lastChild = children.last();
+
     var rightmostNode = grandChildren.last();
     if (rightmostNode == undefined) { rightmostNode = children.first(); }
     if (rightmostNode == undefined) { rightmostNode = curNode; }
@@ -314,8 +320,6 @@ function update(source) {
     xFactor = (dX == 0)
         ? width
         : ((width - nodeWidth) / dX);
-
-    // TODO: fix
 
     // the top-most node is always the parent if it exists, the current otherwise
     var topmostNode = curNode.hasOwnProperty('parent') ? curNode.parent : curNode;
