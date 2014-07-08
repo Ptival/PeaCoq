@@ -16,14 +16,14 @@ var animationDuration = 500;
 // OTHER GLOBALS
 var i = 1; // unique identifier, should closure it to avoid drama
 var maxNodesOnLine = Math.pow(nbChildrenToShow, 2);
-var xFactor = 1;
-var yFactor = 1;
 var diagonal = d3.svg.diagonal();
 var rootId = i++;
 var animationRunning = false;
 
 // GLOBALS TO BE INITIALIZED LATER
-var tree, svg, canvas, nodeWidth, width, height, curNode, rootNode;
+var tree, svg, canvas;
+var nodeWidth, width, height, curNode, rootNode;
+var xFactor, yFactor;
 
 var thms = [
     'Theorem plus_0_r : forall x, x + 0 = x.',
@@ -68,6 +68,8 @@ $(document).ready(function() {
         + (maxNodesOnLine - 1) * nodeMinSpacing;
     // now that the buttons are here, we can compute the remaining height
     height = $(window).height() - ($('#tips').height() + $('#buttons').height());
+    xFactor = width;
+    yFactor = height;
 
     newTheorem(thms[1], hInit);
 });
@@ -320,7 +322,7 @@ function update(source) {
     if (rightmostNode == undefined) { rightmostNode = curNode; }
 
     xFactor = (dX == 0)
-        ? width
+        ? xFactor
         : ((width - nodeWidth) / dX);
 
     // the top-most node is always the parent if it exists, the current otherwise
@@ -337,7 +339,7 @@ function update(source) {
     if (bottommostNode == -Infinity) { bottommostNode = curNode; }
 
     yFactor = (dY == 0)
-        ? height
+        ? yFactor
         : ((height - (topmostNode.height / 2) - (bottommostNode.height / 2)) / dY);
 
     canvas
@@ -347,14 +349,14 @@ function update(source) {
               "translate("
               + (
                   (dX == 0)
-                      ? 0
-                      : nodeWidth / 2 - minX * xFactor
+                      ? (width / 2 - minX * xFactor)
+                      : (nodeWidth / 2 - minX * xFactor)
               )
               + ", "
               + (
                   (dY == 0)
                       ? 0
-                      : topmostNode.height / 2 - minY * yFactor
+                      : (topmostNode.height / 2 - minY * yFactor)
                 )
               + ")")
     ;
