@@ -20,6 +20,7 @@ var xFactor = 1;
 var yFactor = 1;
 var diagonal = d3.svg.diagonal();
 var rootId = i++;
+var animationRunning = false;
 
 // GLOBALS TO BE INITIALIZED LATER
 var tree, svg, canvas, nodeWidth, width, height, curNode, rootNode;
@@ -89,6 +90,7 @@ function newTheorem(theorem) {
 
     svg = d3.select("body")
         .on("keydown", function() {
+            if (animationRunning) { return; }
             //console.log(d3.event);
             switch (d3.event.keyIdentifier) {
             case "Left": shiftLeft(curNode); break;
@@ -572,6 +574,9 @@ function update(source) {
         d.cY0 = d.cY;
     });
 
+    animationRunning = true;
+    window.setTimeout(function() { animationRunning = false; }, animationDuration);
+
 }
 
 function updateVisibleChildren(n) {
@@ -601,6 +606,8 @@ function nbDashes(s) {
 }
 
 function click(d) {
+
+    if (animationRunning) { return; }
 
     navigateTo(d);
 
