@@ -6,40 +6,23 @@ TODO:
 
 // CONFIGURATION
 var nodeMinSpacing = 5;
-var nodeHeight = 75;
+var nodeStroke = 2;
+var nodeHeight = 25;
 var rectMargin = {top: 2, right: 8, bottom: 2, left: 8};
-var scrollbarWidth = 20; // I could compute this if I cared enough
-var height = 400;
+var scrollbarWidth = 0; // I could compute this if I cared enough
 var nbChildrenToShow = 2;
 var animationDuration = 500;
 
 // OTHER GLOBALS
 var i = 1; // unique identifier, should closure it to avoid drama
 var maxNodesOnLine = Math.pow(nbChildrenToShow, 2);
-var nodeWidth =
-    (
-        $(window).width()
-            - scrollbarWidth
-            - (maxNodesOnLine * (rectMargin.left + rectMargin.right + nodeMinSpacing))
-    )
-    / maxNodesOnLine;
-var nodeTranslation = 'translate(-' + (nodeWidth / 2) + ', -' + (nodeHeight / 2) + ')';
-var marginH = (nodeWidth + rectMargin.left + rectMargin.right) / 2;
-var marginV = (nodeHeight + rectMargin.top + rectMargin.bottom) / 2;
-var margin = {top: marginV, right: marginH, bottom: marginV, left: marginH};
-var width = $(window).width() - (scrollbarWidth + margin.left + margin.right);
 var xFactor = 1;
 var yFactor = 1;
-
-var tree, svg, canvas;
-
 var diagonal = d3.svg.diagonal();
-
-var curNode = null;
-
 var rootId = i++;
 
-var rootNode = null;
+// GLOBALS TO BE INITIALIZED LATER
+var tree, svg, canvas, nodeWidth, width, height, curNode, rootNode;
 
 var thms = [
     'Theorem plus_0_r : forall x, x + 0 = x.',
@@ -47,6 +30,11 @@ var thms = [
     'Theorem mult_0_r : ∀n:nat, n * 0 = 0.',
     'Theorem plus_assoc : ∀n m p : nat, n + (m + p) = (n + m) + p.',
 ];
+
+function evenFloor(x) {
+    var r = Math.floor(x);
+    return (r % 2 == 0) ? r : r - 1;
+}
 
 function treeDepth(root) {
     return (
@@ -66,7 +54,21 @@ function addTheorem(theorem) {
 
 $(document).ready(function() {
     _(thms).each(addTheorem);
-    newTheorem(thms[0], hInit);
+
+    nodeWidth = evenFloor(
+        ($(window).width()
+         - scrollbarWidth
+         - ((maxNodesOnLine - 1) * nodeMinSpacing)
+        )
+        / maxNodesOnLine
+    );
+    width =
+        maxNodesOnLine * nodeWidth
+        + (maxNodesOnLine - 1) * nodeMinSpacing;
+    // now that the buttons are here, we can compute the remaining height
+    height = $(window).height() - ($('#tips').height() + $('#buttons').height());
+
+    newTheorem(thms[1], hInit);
 });
 
 function newTheorem(theorem) {
@@ -117,12 +119,12 @@ function newTheorem(theorem) {
                 break;
             default: return;
             }
+            // Prevent arrows from scrolling the webpage
+            d3.event.preventDefault();
         })
-        .style("margin", 0)
         .insert("svg", ":first-child")
-        .attr("width", margin.left + width + margin.right)
-        .attr("height", margin.top + height + margin.bottom)
-        .style("border", "1px solid black")
+        .attr("width", width)
+        .attr("height", height)
     ;
 
     canvas =
@@ -130,7 +132,7 @@ function newTheorem(theorem) {
         .append("g")
         .attr("id", "viewport")
         .attr("class", "canvas")
-        .attr("transform", "translate(" + margin.left + ", " + margin.top + ")")
+        //.attr("transform", "translate(" + margin.left + ", " + margin.top + ")")
     ;
 
     svg
@@ -220,6 +222,33 @@ function update(source) {
             return d.id = d.source.id + "," + d.target.id;
         });
 
+    var nodeEnter = node.enter();
+
+    var gs = nodeEnter
+        .append("g")
+        .attr("class", "node")
+        .on("click", click)
+    ;
+
+    var foreignObjects =
+        gs
+        .append("foreignObject")
+    // fix the width
+        .attr("width", nodeWidth - rectMargin.left - rectMargin.right)
+    // render the div
+        .html(function(d) {
+              return '<div class="node">'
+                + d.name.replace(', ', ',<br/>')
+                + '</div>';
+        })
+    // now retrieve the computed height of the div
+        .attr("height", function(d) {
+            var h = this.firstChild.getBoundingClientRect().height;
+            d.height = h + 2 * nodeStroke;
+            return h;
+        })
+    ;
+
     // Compute the new visible nodes, determine the translation and zoom
 
     var visibleNodes = [];
@@ -265,78 +294,115 @@ function update(source) {
     var dX = maxX - minX;
     var dY = maxY - minY;
 
-    xFactor = (dX == 0) ? width : (width / dX);
-    yFactor = (dY == 0) ? height : (height / dY);
+    var children = _(curNode.children);
+
+    var grandChildren = _(children).map(function(c) {
+        if (c.hasOwnProperty('children')) {
+            return _(c.children).value();
+        }
+        return [];
+    }).flatten();
+
+    // guess
+    var leftmostNode = grandChildren.first();
+    if (leftmostNode == undefined) { leftmostNode = children.first(); }
+    if (leftmostNode == undefined) { leftmostNode = curNode; }
+    var rightmostNode = grandChildren.last();
+    if (rightmostNode == undefined) { rightmostNode = children.first(); }
+    if (rightmostNode == undefined) { rightmostNode = curNode; }
+
+    xFactor = (dX == 0)
+        ? width
+        : ((width - nodeWidth) / dX);
+
+    // TODO: fix
+
+    // the top-most node is always the parent if it exists, the current otherwise
+    var topmostNode = curNode.hasOwnProperty('parent') ? curNode.parent : curNode;
+
+    // the bottom-most node is either the grand-child of largest height
+    var bottommostNode =
+        grandChildren.max(function(c) { return c.height; }).value();
+    // or the child of largest height
+    if (bottommostNode == -Infinity) {
+        bottommostNode = children.max(function(c) { return c.height; }).value();
+    }
+    // or the current node
+    if (bottommostNode == -Infinity) { bottommostNode = curNode; }
+
+    yFactor = (dY == 0)
+        ? height
+        : ((height - (topmostNode.height / 2) - (bottommostNode.height / 2)) / dY);
 
     canvas
         .transition()
         .duration(animationDuration)
-        .attr("transform", "translate("
-              + (margin.left - (((dX == 0) ? 0 : minX) * xFactor))
+        .attr("transform",
+              "translate("
+              + (
+                  (dX == 0)
+                      ? 0
+                      : nodeWidth / 2 - minX * xFactor
+              )
               + ", "
-              + (margin.top  - (((dY == 0) ? 0 : minY) * yFactor))
+              + (
+                  (dY == 0)
+                      ? 0
+                      : topmostNode.height / 2 - minY * yFactor
+                )
               + ")")
     ;
 
-    // New nodes need to be spawned at their parent's previous location,
-    // stored in (cX0, cY0) at the end of this method
-
-    var nodeEnter =
-        node
-        .enter()
-        .append("g")
-        .attr("class", "node")
+    gs
         .attr("transform", function(d) {
             if (d.hasOwnProperty('parent')) {
+                // non-roots are spawned at their parent's (cX0, cY0)
                 d.cX0 = d.parent.cX0;
                 d.cY0 = d.parent.cY0;
             } else {
-                // for the root, put it according to its (x0, y0)
+                // the root stores its own (x0, y0)
                 d.cX0 = d.x0 * xFactor;
                 d.cY0 = d.y0 * yFactor;
             }
             return "translate(" + d.cX0 + "," + d.cY0 + ")";
         })
-        .on("click", click)
-    ;
 
-    nodeEnter
-        .append("foreignObject")
-        .attr("width", nodeWidth)
-        .attr("height", nodeHeight)
-        .attr("transform", nodeTranslation)
-        .html(function(d) {
-              return '<div class="node">'
-                + d.name.replace(', ', ',<br/>&nbsp;&nbsp;')
-                + '</div>';
+    foreignObjects
+        .attr("transform", function(d) {
+            return 'translate(-'
+                + ((nodeWidth / 2) - rectMargin.left)
+                + ', -'
+                + ((d.height / 2) - rectMargin.top)
+                + ')'
+            ;
         })
     ;
 
-    nodeEnter
+    gs
         .insert("rect", ":first-child")
-        .attr("x", function(){
-            return this.nextSibling.getBBox().x - rectMargin.left - nodeWidth / 2;
+        .attr("x", function() {
+            return this.nextSibling.getBBox().x - nodeWidth / 2;
         })
-        .attr("y", function(){
-            return this.nextSibling.getBBox().y - rectMargin.top - nodeHeight / 2;
+        .attr("y", function(d) {
+            return this.nextSibling.getBBox().y - d.height / 2;
         })
-        .attr("width", function(n){
+        .attr("width", function(n) {
             var w = rectMargin.left
                 + this.nextSibling.getBBox().width
-                + rectMargin.right;
-            n.width = w;
-            return w;
+                + rectMargin.right
+            ;
+            return w - nodeStroke;
         })
-        .attr("height", function(n){
+        .attr("height", function(n) {
             var h = rectMargin.top
                 + this.nextSibling.getBBox().height
                 + rectMargin.bottom;
-            n.height = h;
-            return h;
+            return h - nodeStroke;
         })
+        .attr("stroke-width", nodeStroke)
     ;
 
-    nodeEnter
+    gs
         .append("text")
         .attr('class', 'leftarrow')
         .text('←')
@@ -354,7 +420,7 @@ function update(source) {
         })
     ;
 
-    nodeEnter
+    gs
         .append("text")
         .attr('class', 'rightarrow')
         .text('→')

@@ -1,3 +1,7 @@
+body {
+    margin: 0;
+}
+
 .link {
     fill: none;
     stroke: black;
@@ -6,11 +10,11 @@
 
 .goal, .tactic {
     stroke: black;
-    stroke-width: 2px;
 }
 
 .goal {
     fill: lightsteelblue;
+    margin: 0;
 }
 
 .solvedgoal {
@@ -23,7 +27,6 @@
 
 .current {
     stroke: lightgreen;
-    stroke-width: 4px;
 }
 
 .node {
@@ -38,4 +41,12 @@
 
 .invisible {
     display: none;
+}
+
+button, p, ul, svg {
+    margin: 0;
+}
+
+svg {
+    vertical-align:top;
 }
