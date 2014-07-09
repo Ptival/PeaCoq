@@ -451,7 +451,7 @@ function update(source) {
         .classed('invisible', function(d) {
             return !(
                 // visible when:
-                d.offset > 0 && isCurnodeOrChild(d)
+                !d.solved && d.offset > 0 && isCurnodeOrChild(d)
             );
         })
     ;
@@ -461,7 +461,8 @@ function update(source) {
         .classed('invisible', function(d) {
             return !(
                 // visible when:
-                d.offset + nbChildrenToShow < _(d._children).size()
+                ! d.solved
+                && d.offset + nbChildrenToShow < _(d._children).size()
                 && isCurnodeOrChild(d)
             );
         })
@@ -587,6 +588,7 @@ function updateVisibleChildren(n) {
 }
 
 function shiftLeft(n) {
+    if (n.solved) { return; }
     if (n.offset > 0) {
         n.offset--;
         updateVisibleChildren(n);
@@ -594,6 +596,7 @@ function shiftLeft(n) {
 }
 
 function shiftRight(n) {
+    if (n.solved) { return; }
     if (n.offset + nbChildrenToShow < n._children.length) {
         n.offset++;
         updateVisibleChildren(n);
@@ -613,6 +616,8 @@ function click(d) {
 
     navigateTo(d);
 
+    if (d.solved) { return; }
+
     if (!d._children || d._children.length == 0) {
 
         if (isGoal(d)) {
@@ -628,7 +633,7 @@ function click(d) {
         }
         // otherwise, this is a terminating tactic for this goal!
         else {
-            solved(d.parent);
+            solved(d);
         }
 
     }
