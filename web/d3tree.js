@@ -26,10 +26,18 @@ var nodeWidth, width, height, curNode, rootNode;
 var xFactor, yFactor;
 
 var thms = [
-    'Theorem plus_0_r : forall x, x + 0 = x.',
-    'Theorem plus_comm : ∀n m : nat, n + m = m + n.',
-    'Theorem mult_0_r : ∀n:nat, n * 0 = 0.',
-    'Theorem plus_assoc : ∀n m p : nat, n + (m + p) = (n + m) + p.',
+'Theorem plus_O_n : ∀ n : nat, 0 + n = n.',
+'Theorem plus_1_l : ∀ n : nat, 1 + n = S n.',
+'Theorem mult_0_l : ∀ n : nat, 0 * n = 0.',
+'Theorem plus_id_example : ∀n m:nat, n = m → n + n = m + m.',
+'Theorem plus_id_exercise : ∀ n m o : nat, n = m → m = o → n + m = m + o.',
+'Theorem mult_0_plus : ∀ n m : nat, (0 + n) * m = n * m.',
+'Theorem mult_S_1 : ∀n m : nat, m = S n → m * (1 + n) = m * m.',
+'Theorem plus_1_neq_0 : ∀ n : nat, beq_nat (n + 1) 0 = false.',
+'Theorem negb_involutive : ∀ b : bool, negb (negb b) = b.',
+'Theorem zero_nbeq_plus_1 : ∀ n : nat, beq_nat 0 (n + 1) = false.',
+'Theorem identity_fn_applied_twice : ∀(f : bool → bool), (∀(x : bool), f x = x) → ∀(b : bool), f (f b) = b.',
+'Theorem andb_eq_orb : ∀(b c : bool), (andb b c = orb b c) → b = c.'
 ];
 
 function evenFloor(x) {
