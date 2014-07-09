@@ -355,7 +355,7 @@ function update(source) {
               + ", "
               + (
                   (dY == 0)
-                      ? 0
+                      ? topmostNode.height / 2
                       : (topmostNode.height / 2 - minY * yFactor)
                 )
               + ")")
