@@ -28,6 +28,7 @@ var smallestNodeWidth, width, height, curNode, rootNode;
 var xFactor, yFactor;
 
 var thms = [
+'Theorem trivial : ∀ c : comparison, True.',
 'Theorem plus_O_n : ∀ n : nat, 0 + n = n.',
 'Theorem plus_1_l : ∀ n : nat, 1 + n = S n.',
 'Theorem mult_0_l : ∀ n : nat, 0 * n = 0.',
@@ -40,7 +41,6 @@ var thms = [
 //'Theorem zero_nbeq_plus_1 : ∀ n : nat, beq_nat 0 (n + 1) = false.',
 'Theorem identity_fn_applied_twice : ∀(f : bool → bool), (∀(x : bool), f x = x) → ∀(b : bool), f (f b) = b.',
 'Theorem andb_eq_orb : ∀(b c : bool), (andb b c = orb b c) → b = c.'
-
 ];
 
 function evenFloor(x) {
@@ -50,13 +50,8 @@ function evenFloor(x) {
 
 function nodeWidth(d) {
     return smallestNodeWidth
-        * (
-            (isCurNode(d) || isCurNodeParent(d))
-                ? maxNodesOnLine
-                : (isCurNodeChild(d)
-                   ? 1 //nbChildrenToShow
-                   : 1
-                ));
+        //* ((isCurNode(d) || isCurNodeParent(d)) ? nbChildrenToShow : 1)
+    ;
 }
 
 function treeDepth(root) {
@@ -93,25 +88,23 @@ $(document).ready(function() {
     xFactor = width;
     yFactor = height;
 
-    newTheorem(thms[9], hInit);
+    newTheorem(thms[0], hInit);
 });
 
 function newTheorem(theorem) {
-
     d3.select("svg").remove();
 
     tree = d3.layout.tree()
         .children(function(d) {
+            if (d.solved) { return []; }
+            if (isCurNode(d)) { return d.allChildren; }
+            if (isCurNodeParent(d) && isTactic(d)) { return d.allChildren; }
             return d.visibleChildren;
         })
         .separation(function(n1, n2) {
-            if (n1.id == n2.id || n1.depth != n2.depth) { return 1; }
-            // This is just a heuristic...
-            //return (n1.name.length + n2.name.length) / (1 + n1.depth * n2.depth);
-            //return n1.depth * n2.depth;
+            //if (isCurNode(n1) || isCurNode(n2)) { return nbChildrenToShow; }
             return 1;
         })
-
     ;
 
     svg = d3.select("body")
@@ -160,7 +153,14 @@ function newTheorem(theorem) {
         .append("g")
         .attr("id", "viewport")
         .attr("class", "canvas")
-        //.attr("transform", "translate(" + margin.left + ", " + margin.top + ")")
+    // an okay approximation of the canvas initial translation
+        .attr("transform",
+              "translate("
+              + width / maxNodesOnLine
+              + ", "
+              + 0
+              + ")"
+             )
     ;
 
     svg
@@ -361,9 +361,27 @@ function update(source) {
     if (rightmostNode == undefined) { rightmostNode = children.first(); }
     if (rightmostNode == undefined) { rightmostNode = curNode; }
 
-    xFactor = (dX == 0)
+    // We need to scale the view so that two adjacent nodes do not overlap and
+    // are well spaced.
+
+    // siblings = [ [gc0, gc1], [gc1, gc2], ... ] ++ [ [c0, c1], [c1, c2], ... ]
+    var gcSiblings = _.zip(grandChildren.value(), grandChildren.rest().value());
+    gcSiblings.pop(); // removes [gc_last, undefined] at the end
+    var cSiblings = _.zip(children.value(), children.rest().value());
+    cSiblings.pop(); // removes [c_last, undefined] at the end
+    var siblings = gcSiblings.concat(cSiblings);
+
+    var siblingsDistances = siblings.map(function(e) {
+        return (e[1].x - e[0].x);
+    });
+
+    var siblingMinDistance = _.min(siblingsDistances);
+
+    xFactor = (siblingMinDistance == Infinity)
         ? xFactor
-        : ((width - smallestNodeWidth) / dX);
+        : ((smallestNodeWidth + nodeMinSpacing)
+           / siblingMinDistance)
+    ;
 
     // the top-most node is always the parent if it exists, the current otherwise
     var topmostNode = curNode.hasOwnProperty('parent') ? curNode.parent : curNode;
@@ -381,25 +399,6 @@ function update(source) {
     yFactor = (dY == 0)
         ? yFactor
         : ((height - (topmostNode.height / 2) - (bottommostNode.height / 2)) / dY);
-
-    canvas
-        .transition()
-        .duration(animationDuration)
-        .attr("transform",
-              "translate("
-              + (
-                  (dX == 0)
-                      ? (width / 2 - minX * xFactor)
-                      : (smallestNodeWidth / 2 - minX * xFactor)
-              )
-              + ", "
-              + (
-                  (dY == 0)
-                      ? topmostNode.height / 2
-                      : (topmostNode.height / 2 - minY * yFactor)
-                )
-              + ")")
-    ;
 
     gs
         .attr("transform", function(d) {
@@ -502,9 +501,42 @@ function update(source) {
 
     _(nodes)
         .each(function(n) {
-            n.cX = n.x * xFactor;
+            if (isCurNode(n) || isCurNodeParent(n)) {
+                // We move these two nodes around the focused children
+                var v = _(curNode.visibleChildren);
+                if (v.first() == undefined) {
+                    n.cX = n.x * xFactor;
+                } else {
+                    var centerX = (v.first().x + v.last().x) / 2;
+                    n.cX = centerX * xFactor;
+                }
+            } else {
+                n.cX = n.x * xFactor;
+            }
             n.cY = n.y * yFactor;
         })
+    ;
+
+    canvas
+        .transition()
+        .duration(animationDuration)
+        .attr("transform",
+              "translate("
+              + (
+                  width / 2 - curNode.cX
+/*
+                  (dX == 0)
+                      ? (width / 2 - minX * xFactor)
+                      : (smallestNodeWidth / 2 - minX * xFactor)
+*/
+              )
+              + ", "
+              + (
+                  (dY == 0)
+                      ? topmostNode.height / 2
+                      : (topmostNode.height / 2 - minY * yFactor)
+                )
+              + ")")
     ;
 
     node
@@ -543,9 +575,9 @@ function update(source) {
                 + ')'
             ;
         })
-/*
-        .transition()
-        .duration(animationDuration)
+/* TODO: this seems not to work, is the height registered once on transition
+   triggering instead of being recomputed at each step?
+
         .attr("height", function(d) {
             var h = this.firstChild.getBoundingClientRect().height;
             d.height = h + 2 * nodeStroke;
@@ -717,34 +749,30 @@ function click(d) {
 
 }
 
+// called when n has been solved
 function solved(n) {
     n.solved = true;
-
-    if (isGoal(n)) {
-        collapse(n);
-    }
-    else {
-        collapseChildren(n);
-    }
-
+    collapse(n);
     if (n.hasOwnProperty('parent')) {
+        navigateTo(n.parent);
+        window.setTimeout(function () {
+            childSolved(n.parent);
+            update(n.parent);
+        }, animationDuration);
+    }
+}
 
-        if (isGoal(n)) {
-            navigateTo(n.parent);
-            solved(n.parent);
-        }
-        else {
-            // Bubble up if this was the last subgoal
-            var lastSubgoal =
-                _(n.allChildren)
-                .every(function(n) { return n.solved == true })
-            ;
-            if (lastSubgoal) {
-                navigateTo(n.parent);
-                solved(n.parent);
-            }
-        }
-
+// called when a child of n has become solved
+function childSolved(n) {
+    if (isGoal(n)) {
+        solved(n);
+    } else {
+        // Bubble up if this was the last subgoal
+        var lastSubgoal =
+            _(n.allChildren)
+            .every(function(n) { return n.solved == true })
+        ;
+        if (lastSubgoal) { solved(n); }
     }
 }
 
@@ -830,10 +858,9 @@ function navigateTo(dest) {
 
     var p = path(curNode, dest);
 
-    var p1 = p;
-    var p2 = _(p).rest().value();
-    var q = _.zip(p1, p2);
-    q.pop();
+    // morally, q = [ [p0, p1], [p1, p2], ... ]
+    var q = _.zip(p, _(p).rest().value());
+    q.pop(); // remove the extra [p_last, undefined] at the end
 
     _(q)
         .each(function(elt) {
