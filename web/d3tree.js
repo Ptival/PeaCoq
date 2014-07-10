@@ -267,9 +267,11 @@ function update(source) {
         })
     // render the div
         .html(function(d) {
-              return '<div class="node">'
-                + d.name.replace(', ', ',<br/>')
-                + '</div>';
+            // Note: you can't only replace the first comma, because of
+            // (∀ x, P x) → Q
+              return '<div class="node"><span>'
+                + d.name
+                + '</span></div>';
         })
     // now retrieve the computed height of the div
         .attr("height", function(d) {
