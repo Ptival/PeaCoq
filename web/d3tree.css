@@ -50,3 +50,7 @@ button, p, ul, svg {
 svg {
     vertical-align:top;
 }
+
+.node {
+    text-align: center;
+}

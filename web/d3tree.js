@@ -22,7 +22,7 @@ var animationRunning = false;
 
 // GLOBALS TO BE INITIALIZED LATER
 var tree, svg, canvas;
-var nodeWidth, width, height, curNode, rootNode;
+var smallestNodeWidth, width, height, curNode, rootNode;
 var xFactor, yFactor;
 
 var thms = [
@@ -45,6 +45,17 @@ function evenFloor(x) {
     return (r % 2 == 0) ? r : r - 1;
 }
 
+function nodeWidth(d) {
+    return smallestNodeWidth
+        * (
+            (isCurNode(d) || isCurNodeParent(d))
+                ? maxNodesOnLine
+                : (isCurNodeChild(d)
+                   ? 1 //nbChildrenToShow
+                   : 1
+                ));
+}
+
 function treeDepth(root) {
     return (
         root.children
@@ -64,7 +75,7 @@ function addTheorem(theorem) {
 $(document).ready(function() {
     _(thms).each(addTheorem);
 
-    nodeWidth = evenFloor(
+    smallestNodeWidth = evenFloor(
         ($(window).width()
          - scrollbarWidth
          - ((maxNodesOnLine - 1) * nodeMinSpacing)
@@ -72,7 +83,7 @@ $(document).ready(function() {
         / maxNodesOnLine
     );
     width =
-        maxNodesOnLine * nodeWidth
+        maxNodesOnLine * smallestNodeWidth
         + (maxNodesOnLine - 1) * nodeMinSpacing;
     // now that the buttons are here, we can compute the remaining height
     height = $(window).height() - ($('#tips').height() + $('#buttons').height());
@@ -208,8 +219,13 @@ function hInit(response) {
 
 }
 
-function isCurnodeOrChild(n) {
-    if (n.id == curNode.id) { return true; }
+function isCurNode(n) { return (n.id == curNode.id); }
+
+function isCurNodeParent(n) {
+    return (curNode.hasOwnProperty('parent') && curNode.parent.id == n.id);
+}
+
+function isCurNodeChild(n) {
     if (n.hasOwnProperty('parent') && n.parent.id == curNode.id) { return true; }
     return false;
 }
@@ -242,11 +258,12 @@ function update(source) {
         .on("click", click)
     ;
 
-    var foreignObjects =
-        gs
+    gs
         .append("foreignObject")
     // fix the width
-        .attr("width", nodeWidth - rectMargin.left - rectMargin.right)
+        .attr("width", function(d) {
+            return nodeWidth(d) - rectMargin.left - rectMargin.right;
+        })
     // render the div
         .html(function(d) {
               return '<div class="node">'
@@ -258,6 +275,14 @@ function update(source) {
             var h = this.firstChild.getBoundingClientRect().height;
             d.height = h + 2 * nodeStroke;
             return h;
+        })
+        .attr("transform", function(d) {
+            return 'translate(-'
+                + ((nodeWidth(d) / 2) - rectMargin.left)
+                + ', -'
+                + ((d.height / 2) - rectMargin.top)
+                + ')'
+            ;
         })
     ;
 
@@ -331,7 +356,7 @@ function update(source) {
 
     xFactor = (dX == 0)
         ? xFactor
-        : ((width - nodeWidth) / dX);
+        : ((width - smallestNodeWidth) / dX);
 
     // the top-most node is always the parent if it exists, the current otherwise
     var topmostNode = curNode.hasOwnProperty('parent') ? curNode.parent : curNode;
@@ -358,7 +383,7 @@ function update(source) {
               + (
                   (dX == 0)
                       ? (width / 2 - minX * xFactor)
-                      : (nodeWidth / 2 - minX * xFactor)
+                      : (smallestNodeWidth / 2 - minX * xFactor)
               )
               + ", "
               + (
@@ -383,21 +408,10 @@ function update(source) {
             return "translate(" + d.cX0 + "," + d.cY0 + ")";
         })
 
-    foreignObjects
-        .attr("transform", function(d) {
-            return 'translate(-'
-                + ((nodeWidth / 2) - rectMargin.left)
-                + ', -'
-                + ((d.height / 2) - rectMargin.top)
-                + ')'
-            ;
-        })
-    ;
-
     gs
         .insert("rect", ":first-child")
-        .attr("x", function() {
-            return this.nextSibling.getBBox().x - nodeWidth / 2;
+        .attr("x", function(d) {
+            return this.nextSibling.getBBox().x - nodeWidth(d) / 2;
         })
         .attr("y", function(d) {
             return this.nextSibling.getBBox().y - d.height / 2;
@@ -459,7 +473,7 @@ function update(source) {
         .classed('invisible', function(d) {
             return !(
                 // visible when:
-                !d.solved && d.offset > 0 && isCurnodeOrChild(d)
+                !d.solved && d.offset > 0 && (isCurNode(d) || isCurNodeChild(d))
             );
         })
     ;
@@ -471,7 +485,7 @@ function update(source) {
                 // visible when:
                 ! d.solved
                 && d.offset + nbChildrenToShow < _(d._children).size()
-                && isCurnodeOrChild(d)
+                && (isCurNode(d) || isCurNodeChild(d))
             );
         })
     ;
@@ -494,6 +508,45 @@ function update(source) {
         })
     ;
 
+    node
+        .selectAll('rect')
+        .transition()
+        .duration(animationDuration)
+        .attr("width", nodeWidth)
+        .attr("x", function(d) {
+            return this.nextSibling.getBBox().x - nodeWidth(d) / 2;
+        })
+    ;
+
+    node
+    // Webkit bug, cannot selectAll on camel case names :(
+        .selectAll(function() {
+            return this.getElementsByTagName("foreignObject");
+        })
+        .transition()
+        .duration(animationDuration)
+        .attr("width", function(d) {
+            return nodeWidth(d) - rectMargin.left - rectMargin.right;
+        })
+        .attr("transform", function(d) {
+            return 'translate(-'
+                + ((nodeWidth(d) / 2) - rectMargin.left)
+                + ', -'
+                + ((d.height / 2) - rectMargin.top)
+                + ')'
+            ;
+        })
+/*
+        .transition()
+        .duration(animationDuration)
+        .attr("height", function(d) {
+            var h = this.firstChild.getBoundingClientRect().height;
+            d.height = h + 2 * nodeStroke;
+            return h;
+        })
+*/
+    ;
+
     canvas
         .selectAll("rect")
         .classed("tactic", function(d) { return isTactic(d); })
@@ -503,9 +556,7 @@ function update(source) {
                      || (isTactic(d) && d._children.length == 0)
                    );
         })
-        .classed("current", function(d) {
-            return d.id && (d.id == curNode.id);
-        })
+        .classed("current", isCurNode)
     ;
 
     var nodeExit = node.exit();
