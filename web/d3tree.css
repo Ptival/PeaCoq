@@ -27,11 +27,12 @@ body {
 
 .current {
     stroke: lightgreen;
+    stroke-width: 5px;
 }
 
 .node {
-    font-family: Monaco, DejaVu Sans Mono, monospace;
-    font-size: 18px;
+    font-family: DejaVu Sans Mono, monospace;
+    font-size: 16px;
     word-wrap: break-word;
 }
 
