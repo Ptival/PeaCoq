@@ -2,6 +2,8 @@
 /*
 TODO:
 - bug where a terminating tactic does not show up green
+- display all children but focus on the visible ones
+- make it so that each instance has its own tactic set
 */
 
 // CONFIGURATION
@@ -59,8 +61,8 @@ function nodeWidth(d) {
 
 function treeDepth(root) {
     return (
-        root.children
-            ? 1 + _(root.children).map(treeDepth).max()
+        root.visibleChildren
+            ? 1 + _(root.visibleChildren).map(treeDepth).max()
             : 0
     );
 }
@@ -91,7 +93,7 @@ $(document).ready(function() {
     xFactor = width;
     yFactor = height;
 
-    newTheorem(thms[8], hInit);
+    newTheorem(thms[9], hInit);
 });
 
 function newTheorem(theorem) {
@@ -99,7 +101,9 @@ function newTheorem(theorem) {
     d3.select("svg").remove();
 
     tree = d3.layout.tree()
-
+        .children(function(d) {
+            return d.visibleChildren;
+        })
         .separation(function(n1, n2) {
             if (n1.id == n2.id || n1.depth != n2.depth) { return 1; }
             // This is just a heuristic...
@@ -124,22 +128,22 @@ function newTheorem(theorem) {
                 break;
             case "Down":
                 if (isTactic(curNode)) {
-                    var dest = _(curNode.children).find(function(n) {
+                    var dest = _(curNode.visibleChildren).find(function(n) {
                         return !(n.solved);
                     });
                     if (dest) { click(dest); }
                 } else {
-                    if (curNode.children[0]) { click(curNode.children[0]); }
+                    if (curNode.visibleChildren[0]) { click(curNode.visibleChildren[0]); }
                 }
                 break;
             case "U+0031": case "U+0041":
-                if (curNode.children[0]) { click(curNode.children[0]); }
+                if (curNode.visibleChildren[0]) { click(curNode.visibleChildren[0]); }
                 break;
             case "U+0032": case "U+0042":
-                if (curNode.children[1]) { click(curNode.children[1]); }
+                if (curNode.visibleChildren[1]) { click(curNode.visibleChildren[1]); }
                 break;
             case "U+0033": case "U+0043":
-                if (curNode.children[2]) { click(curNode.children[2]); }
+                if (curNode.visibleChildren[2]) { click(curNode.visibleChildren[2]); }
                 break;
             default: return;
             }
@@ -188,8 +192,8 @@ function mkTacticNode(t) {
     return {
         "id": i++,
         "name": t[0],
-        "_children": children,
-        "children": children.slice(0, nbChildrenToShow),
+        "allChildren": children,
+        "visibleChildren": children.slice(0, nbChildrenToShow),
         "offset": 0,
     };
 }
@@ -204,7 +208,7 @@ function hInit(response) {
         "name": response.currentGoals.focused[0].gGoal,
         "x0": 0.5,
         "y0": 0,
-        "_children": _(response.nextGoals)
+        "allChildren": _(response.nextGoals)
             .map(mkTacticNode)
             .value(),
         "ndx": 1,
@@ -294,11 +298,11 @@ function update(source) {
     var visibleNodes = [];
     visibleNodes = visibleNodes.concat(curNode.parent || []);
     visibleNodes = visibleNodes.concat([curNode]);
-    visibleNodes = visibleNodes.concat(curNode.children || []);
+    visibleNodes = visibleNodes.concat(curNode.visibleChildren || []);
 
     visibleNodes = visibleNodes.concat(
-        _(curNode.children || [])
-        .map(function(n) { return (n.children || []); })
+        _(curNode.visibleChildren || [])
+        .map(function(n) { return (n.visibleChildren || []); })
         .flatten()
         .value()
     );
@@ -334,11 +338,11 @@ function update(source) {
     var dX = maxX - minX;
     var dY = maxY - minY;
 
-    var children = _(curNode.children);
+    var children = _(curNode.visibleChildren);
 
     var grandChildren = _(children).map(function(c) {
-        if (c.hasOwnProperty('children')) {
-            return _(c.children).value();
+        if (c.hasOwnProperty('visibleChildren')) {
+            return _(c.visibleChildren).value();
         }
         return [];
     }).flatten();
@@ -487,7 +491,7 @@ function update(source) {
             return !(
                 // visible when:
                 ! d.solved
-                && d.offset + nbChildrenToShow < _(d._children).size()
+                && d.offset + nbChildrenToShow < _(d.allChildren).size()
                 && (isCurNode(d) || isCurNodeChild(d))
             );
         })
@@ -556,7 +560,7 @@ function update(source) {
         .classed("goal", function(d) { return isGoal(d) && !d.solved; })
         .classed("solvedgoal", function(d) {
             return ( (isGoal(d) && d.solved)
-                     || (isTactic(d) && d._children.length == 0)
+                     || (isTactic(d) && d.allChildren.length == 0)
                    );
         })
         .classed("current", isCurNode)
@@ -645,7 +649,7 @@ function update(source) {
 }
 
 function updateVisibleChildren(n) {
-    n.children = n._children.slice(n.offset, n.offset + nbChildrenToShow);
+    n.visibleChildren = n.allChildren.slice(n.offset, n.offset + nbChildrenToShow);
     update(n);
 }
 
@@ -659,7 +663,7 @@ function shiftLeft(n) {
 
 function shiftRight(n) {
     if (n.solved) { return; }
-    if (n.offset + nbChildrenToShow < n._children.length) {
+    if (n.offset + nbChildrenToShow < n.allChildren.length) {
         n.offset++;
         updateVisibleChildren(n);
     }
@@ -680,14 +684,14 @@ function click(d) {
 
     if (d.solved) { return; }
 
-    if (!d._children || d._children.length == 0) {
+    if (!d.allChildren || d.allChildren.length == 0) {
 
         if (isGoal(d)) {
             syncQuery('Show.', function(response) {
 
                 //console.log(response);
 
-                d._children = _(response.nextGoals)
+                d.allChildren = _(response.nextGoals)
                     .map(mkTacticNode)
                     .value();
 
@@ -706,8 +710,8 @@ function click(d) {
 
 /*
     // when the user clicks on a tactic node, bring them to the first goal
-    if(isTactic(d) && d._children[0]) {
-        click(d._children[0]);
+    if(isTactic(d) && d.allChildren[0]) {
+        click(d.allChildren[0]);
     }
 */
 
@@ -732,7 +736,7 @@ function solved(n) {
         else {
             // Bubble up if this was the last subgoal
             var lastSubgoal =
-                _(n._children)
+                _(n.allChildren)
                 .every(function(n) { return n.solved == true })
             ;
             if (lastSubgoal) {
@@ -745,21 +749,21 @@ function solved(n) {
 }
 
 function toggle(d) {
-    if (d.children) {
-        d.children = null;
+    if (d.visibleChildren) {
+        d.visibleChildren = [];
     } else {
-        d.children = d._children;
+        d.visibleChildren = d.allChildren;
     }
 }
 
 function collapse(d) {
-    if (d.children) {
-        d.children = null;
+    if (d.visibleChildren) {
+        d.visibleChildren = [];
     }
 }
 
 function collapseChildren(d) {
-    _(d.children)
+    _(d.visibleChildren)
         .forEach(function(n) {
             collapse(n);
         })
@@ -767,17 +771,17 @@ function collapseChildren(d) {
 }
 
 function collapseExcept(d, e) {
-    if (d.children) {
-        d.children = [e];
+    if (d.visibleChildren) {
+        d.visibleChildren = [e];
     }
 }
 
 function expand(d) {
-    d.children = d._children.slice(d.offset, d.offset + nbChildrenToShow);
+    d.visibleChildren = d.allChildren.slice(d.offset, d.offset + nbChildrenToShow);
     if (isGoal(d)) {
-        _(d.children)
+        _(d.visibleChildren)
             .each(function(c) {
-                c.children = c._children.slice(c.offset, c.offset + nbChildrenToShow);
+                c.visibleChildren = c.allChildren.slice(c.offset, c.offset + nbChildrenToShow);
             });
     }
 }
@@ -816,7 +820,9 @@ function path(n1, n2) {
     }
 }
 
-function hasVisibleChild(n) { return (n.children && n.children[0]) ? true : false; }
+function hasVisibleChild(n) {
+    return (n.visibleChildren && n.visibleChildren[0]) ? true : false;
+}
 
 function navigateTo(dest) {
 
@@ -843,7 +849,7 @@ function navigateTo(dest) {
 
                 if (isTactic(src)) {
                     // need to Undo twice for terminating tactics
-                    if(src._children.length == 0) {
+                    if(src.allChildren.length == 0) {
                         syncQuery('Undo.', hLog);
                     }
                     syncQuery('Undo.', hLog);
