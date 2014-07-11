@@ -172,9 +172,11 @@ function newTheorem(theorem) {
 }
 
 function mkGoalNode(g, ndx) {
+    console.log(g);
     return {
         "id": i++,
         "name": g.gGoal,
+        "hyps": g.gHyps,
         "ndx": ndx + 1,
         "gid": g.gId,
         "offset": 0,
@@ -274,11 +276,21 @@ function update(source) {
         })
     // render the div
         .html(function(d) {
-            // Note: you can't only replace the first comma, because of
-            // (∀ x, P x) → Q
-              return '<div class="node"><span>'
-                + d.name
-                + '</span></div>';
+            if (isGoal(d)) {
+                var hyps = '';
+                _(d.hyps).each(function(h) {
+                    hyps = hyps + '<span>' + h + '</span><br/>';
+                });
+                return '<div class="node">'
+                    + hyps
+                    + '<span>====================</span><br/><span>'
+                    + d.name
+                    + '</span></div>';
+            } else {
+                return '<div class="node"><span>'
+                    + d.name
+                    + '</span></div>'
+            }
         })
     // now retrieve the computed height of the div
         .attr("height", function(d) {
@@ -502,17 +514,20 @@ function update(source) {
     // All the nodes need to move to their new position, according to the
     // new tree layout and the new zoom factors
 
+    // We want
+    // (firstChild.cX + lastChild.cX) / 2 = curNode.cX
+    // We offset all the descendants to achieve this
+    var visible = _(curNode.visibleChildren);
+    var firstVisibleChild = visible.first();
+    var lastVisibleChild = visible.last();
+    var xMiddle = (firstVisibleChild.x + lastVisibleChild.x) / 2;
+
+    var descendantsXOffset = curNode.x - xMiddle;
+
     _(nodes)
         .each(function(n) {
-            if (isCurNode(n) || isCurNodeParent(n)) {
-                // We move these two nodes around the focused children
-                var v = _(curNode.visibleChildren);
-                if (v.first() == undefined) {
-                    n.cX = n.x * xFactor;
-                } else {
-                    var centerX = (v.first().x + v.last().x) / 2;
-                    n.cX = centerX * xFactor;
-                }
+            if (isCurNodeChild(n) || isCurNodeGrandChild(n)) {
+                n.cX = (n.x + descendantsXOffset) * xFactor;
             } else {
                 n.cX = n.x * xFactor;
             }
