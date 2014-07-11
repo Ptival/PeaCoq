@@ -55,3 +55,7 @@ svg {
 .node {
     text-align: center;
 }
+
+hr {
+    border-color: black;
+}

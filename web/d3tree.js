@@ -43,7 +43,7 @@ var thms = [
 
 function evenFloor(x) {
     var r = Math.floor(x);
-    return (r % 2 == 0) ? r : r - 1;
+    return (r % 2 === 0) ? r : r - 1;
 }
 
 function nodeWidth(d) {
@@ -113,7 +113,7 @@ function newTheorem(theorem) {
             case "Left": shiftLeft(curNode); break;
             case "Right": shiftRight(curNode); break;
             case "Up":
-                if(curNode.hasOwnProperty('parent')) {
+                if(hasParent(curNode)) {
                     click(curNode.parent);
                 }
                 break;
@@ -224,19 +224,28 @@ function hInit(response) {
 
 }
 
-function isCurNode(n) { return (n.id == curNode.id); }
+function hasParent(n) {
+    return (n.hasOwnProperty('parent'));
+}
+
+function hasGrandParent(n) {
+    return (n.hasOwnProperty('parent')
+            && n.parent.hasOwnProperty('parent'));
+}
+
+function isCurNode(n) { return (n.id === curNode.id); }
 
 function isCurNodeParent(n) {
-    return (curNode.hasOwnProperty('parent') && curNode.parent.id == n.id);
+    return (hasParent(curNode) && curNode.parent.id === n.id);
 }
 
 function isCurNodeChild(n) {
-    if (n.hasOwnProperty('parent') && isCurNode(n.parent)) { return true; }
+    if (hasParent(n) && isCurNode(n.parent)) { return true; }
     return false;
 }
 
 function isCurNodeGrandChild(n) {
-    if (n.hasOwnProperty('parent') && isCurNodeChild(n.parent)) { return true; }
+    if (hasParent(n) && isCurNodeChild(n.parent)) { return true; }
     return false;
 }
 
@@ -279,11 +288,12 @@ function update(source) {
             if (isGoal(d)) {
                 var hyps = '';
                 _(d.hyps).each(function(h) {
+                    // TODO: show diff instead of all
                     hyps = hyps + '<span>' + h + '</span><br/>';
                 });
                 return '<div class="node">'
-                    + hyps
-                    + '<span>====================</span><br/><span>'
+                    + ((hyps !== '') ? (hyps + '<hr/>') : '')
+                    + '<span>'
                     + d.name
                     + '</span></div>';
             } else {
@@ -353,36 +363,45 @@ function update(source) {
     var dX = maxX - minX;
     var dY = maxY - minY;
 
-    var children = _(curNode.allChildren);
+    var allChildren = _(curNode.allChildren);
 
-    var grandChildren = _(children).map(function(c) {
+    var allGrandChildren = _(allChildren).map(function(c) {
         if (c.hasOwnProperty('allChildren')) {
             return _(c.allChildren).value();
         }
         return [];
     }).flatten();
 
-    var firstGrandChild = grandChildren.first();
-    var firstChild = children.first();
+    var firstChild = allChildren.first();
+    var lastChild = allChildren.last();
+    var firstGrandChild = allGrandChildren.first();
+    var lastGrandChild = allGrandChildren.last();
+
+    var visibleChildren = _(curNode.visibleChildren);
+    var visibleGrandChildren = _(visibleChildren).map(function(c) {
+        if (c.hasOwnProperty('visibleChildren')) {
+            return _(c.visibleChildren).value();
+        }
+        return [];
+    }).flatten();
+    var firstVisibleChild = visibleChildren.first();
+    var lastVisibleChild = visibleChildren.last();
 
     var leftmostNode = firstGrandChild;
-    if (leftmostNode == undefined) { leftmostNode = firstChild; }
-    if (leftmostNode == undefined) { leftmostNode = curNode; }
+    if (leftmostNode === undefined) { leftmostNode = firstChild; }
+    if (leftmostNode === undefined) { leftmostNode = curNode; }
 
-    var lastGrandChild = grandChildren.last();
-    var lastChild = children.last();
-
-    var rightmostNode = grandChildren.last();
-    if (rightmostNode == undefined) { rightmostNode = children.first(); }
-    if (rightmostNode == undefined) { rightmostNode = curNode; }
+    var rightmostNode = lastGrandChild;
+    if (rightmostNode === undefined) { rightmostNode = lastChild; }
+    if (rightmostNode === undefined) { rightmostNode = curNode; }
 
     // We need to scale the view so that two adjacent nodes do not overlap and
     // are well spaced.
 
     // siblings = [ [gc0, gc1], [gc1, gc2], ... ] ++ [ [c0, c1], [c1, c2], ... ]
-    var gcSiblings = _.zip(grandChildren.value(), grandChildren.rest().value());
+    var gcSiblings = _.zip(allGrandChildren.value(), allGrandChildren.rest().value());
     gcSiblings.pop(); // removes [gc_last, undefined] at the end
-    var cSiblings = _.zip(children.value(), children.rest().value());
+    var cSiblings = _.zip(allChildren.value(), allChildren.rest().value());
     cSiblings.pop(); // removes [c_last, undefined] at the end
     var siblings = gcSiblings.concat(cSiblings);
 
@@ -392,32 +411,36 @@ function update(source) {
 
     var siblingMinDistance = _.min(siblingsDistances);
 
-    xFactor = (siblingMinDistance == Infinity)
+    xFactor = (siblingMinDistance === Infinity)
         ? xFactor
         : ((smallestNodeWidth + nodeMinSpacing)
            / siblingMinDistance)
     ;
 
     // the top-most node is always the parent if it exists, the current otherwise
-    var topmostNode = curNode.hasOwnProperty('parent') ? curNode.parent : curNode;
+    var topmostNode = hasParent(curNode) ? curNode.parent : curNode;
 
-    // the bottom-most node is either the grand-child of largest height
+    // the bottom-most node is either the grand-child of largest height...
     var bottommostNode =
-        grandChildren.max(function(c) { return c.height; }).value();
-    // or the child of largest height
-    if (bottommostNode == -Infinity) {
-        bottommostNode = children.max(function(c) { return c.height; }).value();
+        (isGoal(curNode))
+        ? allGrandChildren.max(function(c) { return c.height; }).value()
+        : -Infinity
+    ;
+    // ...or the child of largest height...
+    if (bottommostNode === -Infinity) {
+        bottommostNode = allChildren.max(function(c) { return c.height; }).value();
     }
-    // or the current node
-    if (bottommostNode == -Infinity) { bottommostNode = curNode; }
+    // ...or the current node
+    if (bottommostNode === -Infinity) { bottommostNode = curNode; }
 
-    yFactor = (dY == 0)
+    yFactor = (dY === 0)
         ? yFactor
-        : ((height - (topmostNode.height / 2) - (bottommostNode.height / 2)) / dY);
+        : ((height - (topmostNode.height / 2) - (bottommostNode.height / 2)) / dY)
+    ;
 
     gs
         .attr("transform", function(d) {
-            if (d.hasOwnProperty('parent')) {
+            if (hasParent(d)) {
                 // non-roots are spawned at their parent's (cX0, cY0)
                 d.cX0 = d.parent.cX0;
                 d.cY0 = d.parent.cY0;
@@ -466,8 +489,8 @@ function update(source) {
             return pb.y + pb.height + 26;
         })
         .on('click', function(n) {
-            shiftLeft(n);
-            d3.event.stopPropagation();
+                shiftLeft(n);
+                d3.event.stopPropagation();
         })
     ;
 
@@ -490,23 +513,27 @@ function update(source) {
     ;
 
     node
-        .selectAll('.leftarrow')
+        .selectAll('text.leftarrow')
         .classed('invisible', function(d) {
             return !(
                 // visible when:
-                !d.solved && d.offset > 0 && (isCurNode(d) || isCurNodeChild(d))
+                !d.solved
+                    && d.offset > 0
+                    && (isCurNode(d) || isCurNodeChild(d))
+                    && !_.isEmpty(d.visibleChildren)
             );
         })
     ;
 
     node
-        .selectAll('.rightarrow')
+        .selectAll('text.rightarrow')
         .classed('invisible', function(d) {
             return !(
                 // visible when:
                 ! d.solved
-                && d.offset + nbChildrenToShow < _(d.allChildren).size()
-                && (isCurNode(d) || isCurNodeChild(d))
+                    && d.offset + nbChildrenToShow < _(d.allChildren).size()
+                    && (isCurNode(d) || isCurNodeChild(d))
+                    && !_.isEmpty(d.visibleChildren)
             );
         })
     ;
@@ -517,10 +544,11 @@ function update(source) {
     // We want
     // (firstChild.cX + lastChild.cX) / 2 = curNode.cX
     // We offset all the descendants to achieve this
-    var visible = _(curNode.visibleChildren);
-    var firstVisibleChild = visible.first();
-    var lastVisibleChild = visible.last();
-    var xMiddle = (firstVisibleChild.x + lastVisibleChild.x) / 2;
+    var xMiddle =
+        (firstVisibleChild !== undefined && lastVisibleChild !== undefined)
+        ? (firstVisibleChild.x + lastVisibleChild.x) / 2
+        : curNode.x
+    ;
 
     var descendantsXOffset = curNode.x - xMiddle;
 
@@ -543,14 +571,14 @@ function update(source) {
               + (
                   width / 2 - curNode.cX
 /*
-                  (dX == 0)
+                  (dX === 0)
                       ? (width / 2 - minX * xFactor)
                       : (smallestNodeWidth / 2 - minX * xFactor)
 */
               )
               + ", "
               + (
-                  (dY == 0)
+                  (dY === 0)
                       ? topmostNode.height / 2
                       : (topmostNode.height / 2 - minY * yFactor)
                 )
@@ -619,7 +647,7 @@ function update(source) {
         // Apparently 'some' is not properly overridden for selections,
         // so use 'each' instead...
         nodeExit.each(function(n2) {
-            if (n1.id == n2.id) { exiting = true; }
+            if (n1.id === n2.id) { exiting = true; }
         });
         return exiting;
     }
@@ -715,22 +743,12 @@ function shiftRight(n) {
     }
 }
 
-function contains(container, thing) { return (container.indexOf(thing) > -1); }
-
-function nbDashes(s) {
-    var n = s.match(/-/g);
-    return (n || []).length;
-}
-
 function click(d) {
-
     if (animationRunning) { return; }
-
     navigateTo(d);
-
     if (d.solved) { return; }
 
-    if (!d.hasOwnProperty('allChildren') || d.allChildren.length == 0) {
+    if (!d.hasOwnProperty('allChildren') || d.allChildren.length === 0) {
         if (isGoal(d)) {
             syncQuery('Show.', function(response) {
                 //console.log(response);
@@ -748,7 +766,6 @@ function click(d) {
     }
 
     expand(d);
-
     update(d);
 
 /*
@@ -766,7 +783,7 @@ function solved(n) {
     n.visibleChildren = [];
     n.allChildren = [];
     collapse(n);
-    if (n.hasOwnProperty('parent')) {
+    if (hasParent(n)) {
         navigateTo(n.parent);
         animationRunning = true;
         window.setTimeout(function () {
@@ -785,7 +802,7 @@ function childSolved(n) {
         // Bubble up if this was the last subgoal
         var lastSubgoal =
             _(n.allChildren)
-            .every(function(n) { return n.solved == true })
+            .every(function(n) { return n.solved === true })
         ;
         if (lastSubgoal) { solved(n); }
     }
@@ -830,8 +847,8 @@ function expand(d) {
 }
 
 function commonAncestor(n1, n2) {
-    if (n1.id == rootNode.id || n2.id == rootNode.id) { return rootNode; }
-    if (n1.id == n2.id) { return n1; }
+    if (n1.id === rootNode.id || n2.id === rootNode.id) { return rootNode; }
+    if (n1.id === n2.id) { return n1; }
     if (n1.depth < n2.depth) {
         return commonAncestor(n1, n2.parent);
     } else if (n1.depth > n2.depth) {
@@ -846,7 +863,7 @@ function commonAncestor(n1, n2) {
   is the shortest path from a to b in the tree
 */
 function path(n1, n2) {
-    if (n1.id == n2.id) { return [n1]; }
+    if (n1.id === n2.id) { return [n1]; }
     if (n1.depth < n2.depth) {
         var res = path(n1, n2.parent);
         res.push(n2);
@@ -891,7 +908,7 @@ function navigateTo(dest) {
 
                 if (isTactic(src)) {
                     // need to Undo twice for terminating tactics
-                    if(src.allChildren.length == 0) {
+                    if(src.allChildren.length === 0) {
                         syncQuery('Undo.', hLog);
                     }
                     syncQuery('Undo.', hLog);
@@ -926,9 +943,9 @@ function navigateTo(dest) {
 
 }
 
-function isTactic(n) { return (n.depth % 2 == 1); }
+function isTactic(n) { return (n.depth % 2 === 1); }
 
-function isGoal(n) { return (n.depth % 2 == 0); }
+function isGoal(n) { return (n.depth % 2 === 0); }
 
 function syncQuery(q, h) {
     console.log(q);
