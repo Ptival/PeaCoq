@@ -11,7 +11,7 @@ var nodeHeight = 25;
 var rectMargin = {top: 2, right: 8, bottom: 2, left: 8};
 var scrollbarWidth = 0; // I could compute this if I cared enough
 var nbChildrenToShow = 2;
-var animationDuration = 500;
+var animationDuration = 420;
 
 // OTHER GLOBALS
 var i = 1; // unique identifier, should closure it to avoid drama
@@ -229,7 +229,12 @@ function isCurNodeParent(n) {
 }
 
 function isCurNodeChild(n) {
-    if (n.hasOwnProperty('parent') && n.parent.id == curNode.id) { return true; }
+    if (n.hasOwnProperty('parent') && isCurNode(n.parent)) { return true; }
+    return false;
+}
+
+function isCurNodeGrandChild(n) {
+    if (n.hasOwnProperty('parent') && isCurNodeChild(n.parent)) { return true; }
     return false;
 }
 
@@ -336,11 +341,11 @@ function update(source) {
     var dX = maxX - minX;
     var dY = maxY - minY;
 
-    var children = _(curNode.visibleChildren);
+    var children = _(curNode.allChildren);
 
     var grandChildren = _(children).map(function(c) {
-        if (c.hasOwnProperty('visibleChildren')) {
-            return _(c.visibleChildren).value();
+        if (c.hasOwnProperty('allChildren')) {
+            return _(c.allChildren).value();
         }
         return [];
     }).flatten();
@@ -710,24 +715,21 @@ function click(d) {
 
     if (d.solved) { return; }
 
-    if (!d.allChildren || d.allChildren.length == 0) {
-
+    if (!d.hasOwnProperty('allChildren') || d.allChildren.length == 0) {
         if (isGoal(d)) {
             syncQuery('Show.', function(response) {
-
                 //console.log(response);
-
-                d.allChildren = _(response.nextGoals)
+                d.allChildren =
+                    _(response.nextGoals)
                     .map(mkTacticNode)
-                    .value();
-
+                    .value()
+                ;
             });
         }
         // otherwise, this is a terminating tactic for this goal!
         else {
             solved(d);
         }
-
     }
 
     expand(d);
@@ -745,13 +747,17 @@ function click(d) {
 
 // called when n has been solved
 function solved(n) {
-    n.solved = true;
+    n.solved = true
+    n.visibleChildren = [];
+    n.allChildren = [];
     collapse(n);
     if (n.hasOwnProperty('parent')) {
         navigateTo(n.parent);
+        animationRunning = true;
         window.setTimeout(function () {
             childSolved(n.parent);
             update(n.parent);
+            animationRunning = false;
         }, animationDuration);
     }
 }
