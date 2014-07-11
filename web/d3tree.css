@@ -17,12 +17,12 @@ body {
     margin: 0;
 }
 
-.solvedgoal {
-    fill: green;
-}
-
 .tactic {
     fill: orange;
+}
+
+.solved {
+    fill: green;
 }
 
 .current {

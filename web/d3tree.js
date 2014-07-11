@@ -1,8 +1,6 @@
 
 /*
 TODO:
-- bug where a terminating tactic does not show up green
-- display all children but focus on the visible ones
 - make it so that each instance has its own tactic set
 */
 
@@ -588,13 +586,9 @@ function update(source) {
 
     canvas
         .selectAll("rect")
-        .classed("tactic", function(d) { return isTactic(d); })
+        .classed("tactic", function(d) { return isTactic(d) && !d.solved; })
         .classed("goal", function(d) { return isGoal(d) && !d.solved; })
-        .classed("solvedgoal", function(d) {
-            return ( (isGoal(d) && d.solved)
-                     || (isTactic(d) && d.allChildren.length == 0)
-                   );
-        })
+        .classed("solved", function(d) { return (d.solved); })
         .classed("current", isCurNode)
     ;
 
