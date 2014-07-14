@@ -132,7 +132,14 @@ function newTheorem(theorem) {
         .on("keydown", function() {
             if (animationRunning) { return; }
             //console.log(d3.event);
-            switch (d3.event.keyIdentifier) {
+            var event = null;
+            if (d3.event.hasOwnProperty('keyIdentifier')) { // Chrome
+                event = d3.event.keyIdentifier;
+            } else if ('key' in d3.event) { // Firefox
+                event = d3.event.key;
+            }
+            console.log('Event:', event);
+            switch (event) {
             case "Left": shiftLeft(curNode); break;
             case "Right": shiftRight(curNode); break;
             case "Up":
