@@ -41,6 +41,15 @@ var thms = [
 'Theorem andb_eq_orb : ∀(b c : bool), (andb b c = orb b c) → b = c.'
 ];
 
+function parseSVGTransform(a) {
+    var b = {};
+    for (var i in a = a.match(/(\w+\((\-?\d+\.?\d*,?)+\))+/g)) {
+        var c = a[i].match(/[\w\.\-]+/g);
+        b[c.shift()] = c;
+    }
+    return b;
+}
+
 function evenFloor(x) {
     var r = Math.floor(x);
     return (r % 2 === 0) ? r : r - 1;
@@ -250,6 +259,22 @@ function isCurNodeGrandChild(n) {
 }
 
 function update(source) {
+
+    // if the viewpoint has been zoomed, cancel the zoom so that the computed
+    // sizes are correct
+    var m = parseSVGTransform(canvas.attr('transform'));
+    if (m.hasOwnProperty('matrix')) {
+        m = m.matrix;
+        canvas.attr('transform',
+                    'matrix(1'
+                    + ',' + m[1]
+                    + ',' + m[2]
+                    + ', 1'
+                    + ',' + m[4]
+                    + ',' + m[5]
+                    +')')
+        ;
+    }
 
     var nodes = tree.nodes(rootNode);
     var links = tree.links(nodes);
