@@ -26,19 +26,33 @@ var smallestNodeWidth, width, height, curNode, rootNode;
 var xFactor, yFactor;
 
 var thms = [
-'Theorem trivial : ∀ c : comparison, True.',
-'Theorem plus_O_n : ∀ n : nat, 0 + n = n.',
-'Theorem plus_1_l : ∀ n : nat, 1 + n = S n.',
-'Theorem mult_0_l : ∀ n : nat, 0 * n = 0.',
+'Theorem trivial : ∀c : comparison, True.',
+'Theorem plus_O_n : ∀n : nat, 0 + n = n.',
+'Theorem plus_1_l : ∀n : nat, 1 + n = S n.',
+'Theorem mult_0_l : ∀n : nat, 0 * n = 0.',
 'Theorem plus_id_example : ∀n m:nat, n = m → n + n = m + m.',
-'Theorem plus_id_exercise : ∀ n m o : nat, n = m → m = o → n + m = m + o.',
-'Theorem mult_0_plus : ∀ n m : nat, (0 + n) * m = n * m.',
+'Theorem plus_id_exercise : ∀n m o : nat, n = m → m = o → n + m = m + o.',
+'Theorem mult_0_plus : ∀n m : nat, (0 + n) * m = n * m.',
 'Theorem mult_S_1 : ∀n m : nat, m = S n → m * (1 + n) = m * m.',
-//'Theorem plus_1_neq_0 : ∀ n : nat, beq_nat (n + 1) 0 = false.',
-'Theorem negb_involutive : ∀ b : bool, negb (negb b) = b.',
-//'Theorem zero_nbeq_plus_1 : ∀ n : nat, beq_nat 0 (n + 1) = false.',
+'Theorem negb_involutive : ∀b : bool, negb (negb b) = b.',
 'Theorem identity_fn_applied_twice : ∀(f : bool → bool), (∀(x : bool), f x = x) → ∀(b : bool), f (f b) = b.',
-'Theorem andb_eq_orb : ∀(b c : bool), (andb b c = orb b c) → b = c.'
+'Theorem andb_eq_orb : ∀(b c : bool), (andb b c = orb b c) → b = c.',
+'Theorem andb_true_elim1 : ∀b c : bool, andb b c = true → b = true.',
+'Theorem andb_true_elim2 : ∀b c : bool, andb b c = true → c = true.',
+'Theorem plus_0_r : ∀n:nat, n + 0 = n.',
+'Theorem minus_diag : ∀n, minus n n = 0.',
+'Theorem mult_0_r : ∀n:nat, n * 0 = 0.',
+'Theorem plus_n_Sm : ∀n m : nat, S (n + m) = n + (S m).',
+'Theorem plus_comm : ∀n m : nat, n + m = m + n.',
+'Theorem plus_assoc : ∀n m p : nat, n + (m + p) = (n + m) + p.',
+'Theorem plus_rearrange : ∀n m p q : nat, (n + m) + (p + q) = (m + n) + (p + q).',
+'Theorem plus_swap : ∀n m p : nat, n + (m + p) = m + (n + p).',
+'Theorem mult_comm : ∀m n : nat, m * n = n * m.',
+'Theorem andb_false_r : ∀b : bool, andb b false = false.',
+'Theorem mult_1_l : ∀n:nat, 1 * n = n.',
+'Theorem all3_spec : ∀b c : bool, orb (andb b c) (orb (negb b) (negb c)) = true.',
+'Theorem mult_plus_distr_r : ∀n m p : nat, (n + m) * p = (n * p) + (m * p).',
+'Theorem mult_assoc : ∀n m p : nat, n * (m * p) = (n * m) * p.',
 ];
 
 function parseSVGTransform(a) {
@@ -95,7 +109,7 @@ $(document).ready(function() {
     xFactor = width;
     yFactor = height;
 
-    newTheorem(thms[0], hInit);
+    newTheorem(thms[17], hInit);
 });
 
 function newTheorem(theorem) {
@@ -312,10 +326,27 @@ function update(source) {
         .html(function(d) {
             if (isGoal(d)) {
                 var hyps = '';
-                _(d.hyps).each(function(h) {
-                    // TODO: show diff instead of all
-                    hyps = hyps + '<span>' + h + '</span><br/>';
-                });
+
+                if (hasGrandParent(d)) {
+                    var gpHyps = d.parent.parent.hyps;
+                    _(gpHyps).each(function(h) {
+                        if (!_(d.hyps).contains(h)) {
+                            hyps = hyps
+                                + '<span class="diff-minus">⊖ ' + h + '</span><br/>';
+                        }
+                    });
+                    _(d.hyps).each(function(h) {
+                        if (!_(gpHyps).contains(h)) {
+                            hyps = hyps
+                                + '<span class="diff-plus">⊕ ' + h + '</span><br/>';
+                        }
+                    });
+                } else {
+                    _(d.hyps).each(function(h) {
+                        hyps = hyps + '<span>' + h + '</span><br/>';
+                    });
+                }
+
                 return '<div class="node">'
                     + ((hyps !== '') ? (hyps + '<hr/>') : '')
                     + '<span>'
