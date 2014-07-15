@@ -108,7 +108,7 @@ $(document).ready(function() {
     xFactor = width;
     yFactor = height;
 
-    newTheorem(thms[17], hInit);
+    newTheorem(thms[16], hInit);
 });
 
 function newTheorem(theorem) {
