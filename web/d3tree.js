@@ -26,7 +26,6 @@ var smallestNodeWidth, width, height, curNode, rootNode;
 var xFactor, yFactor;
 
 var thms = [
-'Theorem trivial : ∀c : comparison, True.',
 'Theorem plus_O_n : ∀n : nat, 0 + n = n.',
 'Theorem plus_1_l : ∀n : nat, 1 + n = S n.',
 'Theorem mult_0_l : ∀n : nat, 0 * n = 0.',
