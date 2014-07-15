@@ -21,7 +21,7 @@ var rootId = i++;
 var animationRunning = false;
 
 // GLOBALS TO BE INITIALIZED LATER
-var tree, svg, canvas;
+var tree, svg, canvas, context;
 var smallestNodeWidth, width, height, curNode, rootNode;
 var xFactor, yFactor;
 
@@ -188,6 +188,65 @@ function newTheorem(theorem) {
               + 0
               + ")"
              )
+    ;
+
+    context =
+        svg
+        .append("g")
+        .attr("class", "context")
+    ;
+
+    var contextWidth = smallestNodeWidth - rectMargin.left - rectMargin.right;
+    var contextHeight;
+
+    context
+        .append("foreignObject")
+        .attr('x', rectMargin.left)
+    // fix the width
+        .attr("width", smallestNodeWidth - rectMargin.left - rectMargin.right)
+    // render
+        .html('<div><p>Empty context</p></div>')
+    // now retrieve the computed height of the div
+        .attr("height", function() {
+            contextHeight = this.firstChild.getBoundingClientRect().height
+            return contextHeight;
+        })
+    ;
+
+    context
+        .insert("rect", ":first-child")
+        .attr("width", contextWidth)
+        .attr("height", contextHeight)
+    ;
+
+    debug =
+        svg
+        .append("g")
+        .attr("class", "debug")
+    ;
+
+    var debugWidth = smallestNodeWidth - rectMargin.left - rectMargin.right;
+    var debugHeight;
+
+    debug
+        .append("foreignObject")
+        .attr('x', width - smallestNodeWidth + rectMargin.left)
+    // fix the width
+        .attr("width", smallestNodeWidth - rectMargin.left - rectMargin.right)
+    // render
+        .html('<div><p>No debug information</p></div>')
+    // now retrieve the computed height of the div
+        .attr("height", function() {
+            debugHeight = this.firstChild.getBoundingClientRect().height
+            return debugHeight;
+        })
+    ;
+
+    debug
+        .insert("rect", ":first-child")
+        .attr("x", width - smallestNodeWidth)
+        .attr("width", debugWidth)
+        .attr("height", debugHeight)
     ;
 
     svg
@@ -778,6 +837,8 @@ function update(source) {
         d.cY0 = d.cY;
     });
 
+    updateContext();
+
     animationRunning = true;
     window.setTimeout(function() { animationRunning = false; }, animationDuration);
 
@@ -812,7 +873,6 @@ function click(d) {
     if (!d.hasOwnProperty('allChildren') || d.allChildren.length === 0) {
         if (isGoal(d)) {
             syncQuery('Show.', function(response) {
-                //console.log(response);
                 d.allChildren =
                     _(response.nextGoals)
                     .map(mkTacticNode)
@@ -842,7 +902,9 @@ function click(d) {
 function solved(n) {
     n.solved = true
     n.visibleChildren = [];
-    n.allChildren = [];
+    // WARNING: if you uncomment the following line, you need to change
+    // the detection of nodes that need to be 'Undo'ne multiple times
+    // n.allChildren = [];
     collapse(n);
     if (hasParent(n)) {
         navigateTo(n.parent);
@@ -968,11 +1030,12 @@ function navigateTo(dest) {
                 if (isGoal(src)) { collapse(src); }
 
                 if (isTactic(src)) {
-                    // need to Undo twice for terminating tactics
+                    // TODO: actually, need to Undo as many times as the
+                    // focus depth difference between before and after the tactic...
                     if(src.allChildren.length === 0) {
-                        syncQuery('Undo.', hLog);
+                        syncQuery('Undo.', hIgnore);
                     }
-                    syncQuery('Undo.', hLog);
+                    syncQuery('Undo.', hIgnore);
                 } else {
                     // 'Back.' does not work in -ideslave
                     // 'Back.' takes one step to undo 'Show.'
@@ -981,7 +1044,7 @@ function navigateTo(dest) {
 
                     // Undo the 'Focus.' command.
                     // Do not use 'Unfocus.' as it is itself undone by 'Undo.'
-                    syncQuery('Undo.', hLog);
+                    syncQuery('Undo.', hIgnore);
                 }
             } else { // going down
 
@@ -991,9 +1054,9 @@ function navigateTo(dest) {
                 }
 
                 if (isTactic(dst)) {
-                    syncQuery(dst.name, hLog);
+                    syncQuery(dst.name, hIgnore);
                 } else {
-                    syncQuery('Focus ' + dst.ndx + '.', hLog);
+                    syncQuery('Focus ' + dst.ndx + '.', hIgnore);
                 }
 
             }
@@ -1015,13 +1078,75 @@ function syncQuery(q, h) {
         url: 'query',
         data: {query : q},
         async: false,
-        success: h
+        success: function(response) {
+            updateDebug(response);
+            h(response);
+        }
     });
 }
 
-function hLog(response) {
-    //console.log(response);
+function hIgnore(response) { }
+
+function updateNodeHeight(selector) {
+    var div = selector.select('div');
+
+    selector
+    // Webkit bug, cannot selectAll on camel case names :(
+        .selectAll(function() {
+            return this.getElementsByTagName("foreignObject");
+        })
+        .attr("height", function() {
+            var height = div[0][0].getBoundingClientRect().height;
+            context
+                .select('rect')
+                .attr('height', height)
+            ;
+            return height;
+        })
+    ;
 }
 
-function hIgnore(response) {
+function updateContext() {
+
+    var contextDiv = context.select('div');
+    var curGoal = (isGoal(curNode)) ? curNode : curNode.parent;
+    var curHyps = curGoal.hyps;
+
+    contextDiv.html("");
+
+    if (hasGrandParent(curGoal)) {
+        _(curHyps).each(function(h) {
+            contextDiv
+                .append('p')
+                .text(h);
+            ;
+        });
+    } else {
+        _(curHyps).each(function(h) {
+            contextDiv
+                .append('p')
+                .text(h);
+            ;
+        });
+    }
+
+    if (contextDiv.html() === "") {
+        contextDiv.append("p").text("Empty context");
+    }
+
+    updateNodeHeight(context);
+
+}
+
+function updateDebug(response) {
+
+    var debugDiv = debug.select('div');
+    if (response.currentGoals.focused.length > 0) {
+        debugDiv.html(response.currentGoals.focused[0].gGoal);
+    } else {
+        debugDiv.html(response.coqtopResponse.contents[0]);
+    }
+
+    updateNodeHeight(debug);
+
 }

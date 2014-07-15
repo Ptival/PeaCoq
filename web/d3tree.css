@@ -2,13 +2,17 @@ body {
     margin: 0;
 }
 
+.debug {
+    display: none;
+}
+
 .link {
     fill: none;
     stroke: black;
     stroke-width: 2px;
 }
 
-.goal, .tactic {
+.goal, .tactic, .context, .debug {
     stroke: black;
 }
 
@@ -25,6 +29,13 @@ body {
     fill: green;
 }
 
+.context, .debug {
+    font-family: DejaVu Sans Mono, monospace;
+    font-size: 18px;
+    word-wrap: break-word;
+    fill: lightgray;
+}
+
 .current {
     stroke: lightgreen;
     stroke-width: 5px;
@@ -34,6 +45,7 @@ body {
     font-family: DejaVu Sans Mono, monospace;
     font-size: 18px;
     word-wrap: break-word;
+    text-align: center;
 }
 
 .leftarrow, .rightarrow {
@@ -50,10 +62,6 @@ button, p, ul, svg {
 
 svg {
     vertical-align:top;
-}
-
-.node {
-    text-align: center;
 }
 
 hr {
