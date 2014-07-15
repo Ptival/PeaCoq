@@ -138,7 +138,6 @@ function newTheorem(theorem) {
             } else if ('key' in d3.event) { // Firefox
                 event = d3.event.key;
             }
-            console.log('Event:', event);
             switch (event) {
             case "Left": shiftLeft(curNode); break;
             case "Right": shiftRight(curNode); break;
@@ -202,7 +201,6 @@ function newTheorem(theorem) {
 }
 
 function mkGoalNode(g, ndx) {
-    console.log(g);
     return {
         "id": i++,
         "name": g.gGoal,
