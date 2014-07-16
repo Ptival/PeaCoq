@@ -1119,7 +1119,7 @@ function updateNodeHeight(selector) {
         })
         .attr("height", function() {
             var height = div[0][0].getBoundingClientRect().height;
-            context
+            selector
                 .select('rect')
                 .attr('height', height)
             ;
