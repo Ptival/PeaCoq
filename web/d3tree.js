@@ -1007,6 +1007,13 @@ function hasVisibleChild(n) {
     return (n.visibleChildren && n.visibleChildren[0]) ? true : false;
 }
 
+/*
+We need to compute how many layers of focusing are solved by a terminating
+tactic because of the way Undo works.
+Since we Undo every proved branch before navigating to another branch, this
+depth is always how deep the node is to its first ancestor with more than
+one child (since the other child will then remain to be proved).
+*/
 function depthSolved(tacNode) {
 
     if (!hasGrandParent(tacNode)) { return 1; }
