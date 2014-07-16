@@ -266,6 +266,7 @@ function mkGoalNode(g, ndx) {
         "ndx": ndx + 1,
         "gid": g.gId,
         "offset": 0,
+        "solved": false,
     };
 }
 
@@ -281,6 +282,8 @@ function mkTacticNode(t) {
         "allChildren": children,
         "visibleChildren": children.slice(0, nbChildrenToShow),
         "offset": 0,
+        "terminating": _(children).isEmpty(),
+        "solved": false,
     };
 }
 
@@ -901,9 +904,7 @@ function click(d) {
 function solved(n) {
     n.solved = true
     n.visibleChildren = [];
-    // WARNING: if you uncomment the following line, you need to change
-    // the detection of nodes that need to be 'Undo'ne multiple times
-    // n.allChildren = [];
+    n.allChildren = [];
     collapse(n);
     if (hasParent(n)) {
         navigateTo(n.parent);
@@ -924,7 +925,7 @@ function childSolved(n) {
         // Bubble up if this was the last subgoal
         var lastSubgoal =
             _(n.allChildren)
-            .every(function(n) { return n.solved === true })
+            .every(function(n) { return n.solved === true; })
         ;
         if (lastSubgoal) { solved(n); }
     }
@@ -1006,6 +1007,18 @@ function hasVisibleChild(n) {
     return (n.visibleChildren && n.visibleChildren[0]) ? true : false;
 }
 
+function depthSolved(tacNode) {
+
+    if (!hasGrandParent(tacNode)) { return 1; }
+
+    if (_(tacNode.children).size() <= 1) {
+        return 1 + depthSolved(tacNode.parent.parent);
+    } else {
+        return 0;
+    }
+
+}
+
 function navigateTo(dest) {
 
     var a = commonAncestor(curNode, dest);
@@ -1029,10 +1042,12 @@ function navigateTo(dest) {
                 if (isGoal(src)) { collapse(src); }
 
                 if (isTactic(src)) {
-                    // TODO: actually, need to Undo as many times as the
-                    // focus depth difference between before and after the tactic...
-                    if(src.allChildren.length === 0) {
-                        syncQuery('Undo.', hIgnore);
+                    // need to Undo as many times as the focus depth difference
+                    // between before and after the terminating tactic + 1
+                    if(src.terminating) {
+                        _(_.range(depthSolved(src))).each(function() {
+                            syncQuery('Undo.', hIgnore);
+                        });
                     }
                     syncQuery('Undo.', hIgnore);
                 } else {
@@ -1078,6 +1093,7 @@ function syncQuery(q, h) {
         data: {query : q},
         async: false,
         success: function(response) {
+            //console.log('response', response);
             updateDebug(response);
             h(response);
         }
