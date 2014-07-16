@@ -195,14 +195,14 @@ function newTheorem(theorem) {
         .attr("class", "context")
     ;
 
-    var contextWidth = smallestNodeWidth - rectMargin.left - rectMargin.right;
+    var contextDivWidth = smallestNodeWidth - rectMargin.left - rectMargin.right;
     var contextHeight;
 
     context
         .append("foreignObject")
         .attr('x', rectMargin.left)
     // fix the width
-        .attr("width", smallestNodeWidth - rectMargin.left - rectMargin.right)
+        .attr("width", contextDivWidth)
     // render
         .html('<div><p>Empty context</p></div>')
     // now retrieve the computed height of the div
@@ -214,7 +214,7 @@ function newTheorem(theorem) {
 
     context
         .insert("rect", ":first-child")
-        .attr("width", contextWidth)
+        .attr("width", smallestNodeWidth)
         .attr("height", contextHeight)
     ;
 
