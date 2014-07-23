@@ -9,7 +9,7 @@ var nodeMinSpacing = 5;
 var nodeStroke = 2;
 var nodeHeight = 25;
 var rectMargin = {top: 2, right: 8, bottom: 2, left: 8};
-var scrollbarWidth = 0; // I could compute this if I cared enough
+var scrollbarWidth = 20; // I could compute this if I cared enough
 var nbChildrenToShow = 2;
 var animationDuration = 420;
 
@@ -91,6 +91,7 @@ function addTheorem(theorem) {
 }
 
 $(document).ready(function() {
+
     _(thms).each(addTheorem);
 
     smallestNodeWidth = evenFloor(
@@ -104,11 +105,12 @@ $(document).ready(function() {
         maxNodesOnLine * smallestNodeWidth
         + (maxNodesOnLine - 1) * nodeMinSpacing;
     // now that the buttons are here, we can compute the remaining height
-    height = $(window).height() - ($('#tips').height() + $('#buttons').height());
+    height = $(window).height();
     xFactor = width;
     yFactor = height;
 
     newTheorem(thms[16], hInit);
+
 });
 
 function newTheorem(theorem) {
@@ -203,6 +205,7 @@ function newTheorem(theorem) {
         .attr('x', rectMargin.left)
     // fix the width
         .attr("width", contextDivWidth)
+        .append("xhtml:body")
     // render
         .html('<div><p>Empty context</p></div>')
     // now retrieve the computed height of the div
@@ -230,11 +233,9 @@ function newTheorem(theorem) {
     debug
         .append("foreignObject")
         .attr('x', width - smallestNodeWidth + rectMargin.left)
-    // fix the width
         .attr("width", smallestNodeWidth - rectMargin.left - rectMargin.right)
-    // render
+        .append("xhtml:body")
         .html('<div><p>No debug information</p></div>')
-    // now retrieve the computed height of the div
         .attr("height", function() {
             debugHeight = this.firstChild.getBoundingClientRect().height
             return debugHeight;
@@ -303,6 +304,7 @@ function hInit(response) {
         "ndx": 1,
         "depth": 0, // need to set depth for isGoal() to work early
         "offset": 0,
+        "hyps": [],
     };
 
     curNode = rootNode;
@@ -336,6 +338,10 @@ function isCurNodeChild(n) {
 function isCurNodeGrandChild(n) {
     if (hasParent(n) && isCurNodeChild(n.parent)) { return true; }
     return false;
+}
+
+function hypName(h) {
+    return h.slice(0, h.indexOf(':') - 1);
 }
 
 function update(source) {
@@ -382,49 +388,106 @@ function update(source) {
         .on("click", click)
     ;
 
-    gs
+    var fo =
+        gs
         .append("foreignObject")
-    // fix the width
         .attr("width", function(d) {
             return nodeWidth(d) - rectMargin.left - rectMargin.right;
         })
-    // render the div
-        .html(function(d) {
+    ;
+
+    fo
+        .append("xhtml:body")
+        .each(function(d) {
+
+            var jqObject = $(d3.select(this).node());
+            var jQDiv = $("<div>").addClass("node");
+            jqObject.append(jQDiv);
+
             if (isGoal(d)) {
-                var hyps = '';
 
                 if (hasGrandParent(d)) {
-                    var gpHyps = d.parent.parent.hyps;
-                    _(gpHyps).each(function(h) {
-                        if (!_(d.hyps).contains(h)) {
-                            hyps = hyps
-                                + '<span class="diff-minus">⊖ ' + h + '</span><br/>';
-                        }
-                    });
+
+                    // clone since I'm going to pull() from it
+                    var gpHyps = _(_(d.parent.parent.hyps).clone());
+
+                    var removed = [], changed = [], added = [];
+
                     _(d.hyps).each(function(h) {
-                        if (!_(gpHyps).contains(h)) {
-                            hyps = hyps
-                                + '<span class="diff-plus">⊕ ' + h + '</span><br/>';
+
+                        var previousH =
+                            _(gpHyps).find(function(h0) {
+                                return hypName(h0) === hypName(h);
+                            });
+
+                        if (previousH === undefined) {
+                            added.push(h);
+                        } else {
+                            if (previousH !== h) {
+                                changed.push({"before": previousH, "after": h});
+                            }
+                            gpHyps.pull(previousH);
                         }
+
                     });
+
+                    removed = gpHyps.value();
+
+                    _(removed).each(function(h) {
+                        jQDiv.append($("<span>").addClass("removed").text('⊖ ' + h));
+                        jQDiv.append($("<br>"));
+                    });
+
+                    var fo = d3.select(this);
+
+                    _(changed).each(function(hs) {
+
+                        fo
+                            .select("div")
+                            .append("span")
+                            .text(hs.after)
+                            .attr("class", "changed")
+                            .on("mouseover", function() {
+                                d3.select(this)
+                                    .attr("class", "removed").text(hs.before);
+                            })
+                            .on("mouseout", function(d) {
+                                d3.select(this)
+                                    .attr("class", "changed").text(hs.after);
+                            })
+                        ;
+
+                        fo.select("div").append("br");
+
+                    });
+
+                    _(added).each(function(h) {
+                        jQDiv.append($("<span>").addClass("added").text('⊕ ' + h));
+                        jQDiv.append($("<br>"));
+                    });
+
+                    jQDiv.append($('<hr>'));
+
                 } else {
+
                     _(d.hyps).each(function(h) {
-                        hyps = hyps + '<span>' + h + '</span><br/>';
+                        jQDiv.append($("<span>").addClass("added").text('⊕ ' + h));
                     });
+
+                    if (!_(d.hyps).isEmpty()) { jQDiv.append($('<hr>')); }
+
                 }
 
-                return '<div class="node">'
-                    + ((hyps !== '') ? (hyps + '<hr/>') : '')
-                    + '<span>'
-                    + d.name
-                    + '</span></div>';
-            } else {
-                return '<div class="node"><span>'
-                    + d.name
-                    + '</span></div>'
             }
+
+            jQDiv
+                .append($("<span>").text(d.name))
+            ;
+
         })
-    // now retrieve the computed height of the div
+    ;
+
+    fo
         .attr("height", function(d) {
             var h = this.firstChild.getBoundingClientRect().height;
             d.height = h + 2 * nodeStroke;
@@ -438,7 +501,7 @@ function update(source) {
                 + ')'
             ;
         })
-    ;
+;
 
     // Compute the new visible nodes, determine the translation and zoom
 
@@ -611,8 +674,8 @@ function update(source) {
             return pb.y + pb.height + 26;
         })
         .on('click', function(n) {
-                shiftLeft(n);
-                d3.event.stopPropagation();
+            shiftLeft(n);
+            d3.event.stopPropagation();
         })
     ;
 
@@ -745,7 +808,6 @@ function update(source) {
         })
 /* TODO: this seems not to work, is the height registered once on transition
    triggering instead of being recomputed at each step?
-
         .attr("height", function(d) {
             var h = this.firstChild.getBoundingClientRect().height;
             d.height = h + 2 * nodeStroke;

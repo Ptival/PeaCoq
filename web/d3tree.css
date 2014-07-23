@@ -68,10 +68,6 @@ hr {
     border-color: black;
 }
 
-.diff-plus {
-    color: green;
-}
-
-.diff-minus {
-    color: red;
-}
+.removed { color: red; }
+.changed { color: blue; }
+.added { color: green; }
