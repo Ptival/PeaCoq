@@ -1,8 +1,9 @@
 
-/*
-TODO:
-- make it so that each instance has its own tactic set
-*/
+/*** TODO ***/
+
+// make it so that each instance has its own tactic set
+
+// sort the tactic nodes by progress and complexity
 
 // CONFIGURATION
 var nodeMinSpacing = 5;
@@ -101,10 +102,10 @@ $(document).ready(function() {
         )
         / maxNodesOnLine
     );
+
     width =
         maxNodesOnLine * smallestNodeWidth
         + (maxNodesOnLine - 1) * nodeMinSpacing;
-    // now that the buttons are here, we can compute the remaining height
     height = $(window).height();
     xFactor = width;
     yFactor = height;
@@ -133,7 +134,7 @@ function newTheorem(theorem) {
         .on("keydown", function() {
             if (animationRunning) { return; }
             //console.log(d3.event);
-            var event = null;
+            var event;
             if (d3.event.hasOwnProperty('keyIdentifier')) { // Chrome
                 event = d3.event.keyIdentifier;
             } else if ('key' in d3.event) { // Firefox
@@ -203,10 +204,8 @@ function newTheorem(theorem) {
     context
         .append("foreignObject")
         .attr('x', rectMargin.left)
-    // fix the width
         .attr("width", contextDivWidth)
         .append("xhtml:body")
-    // render
         .html('<div><p>Empty context</p></div>')
     // now retrieve the computed height of the div
         .attr("height", function() {
@@ -806,14 +805,6 @@ function update(source) {
                 + ')'
             ;
         })
-/* TODO: this seems not to work, is the height registered once on transition
-   triggering instead of being recomputed at each step?
-        .attr("height", function(d) {
-            var h = this.firstChild.getBoundingClientRect().height;
-            d.height = h + 2 * nodeStroke;
-            return h;
-        })
-*/
     ;
 
     canvas
