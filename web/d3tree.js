@@ -146,25 +146,22 @@ function newTheorem(thmTac) {
 
     svg = d3.select("body")
         .on("keydown", function() {
-            // Prevent arrows from scrolling the webpage
-            d3.event.preventDefault();
-            if (animationRunning) { return; }
-            //console.log(d3.event);
-            var event;
-            if (d3.event.hasOwnProperty('keyIdentifier')) { // Chrome
-                event = d3.event.keyIdentifier;
-            } else if ('key' in d3.event) { // Firefox
-                event = d3.event.key;
+            if (animationRunning) {
+                // all keys are frozen during animation
+                d3.event.preventDefault();
+                return;
             }
-            switch (event) {
-            case "Left": shiftLeft(curNode); break;
-            case "Right": shiftRight(curNode); break;
-            case "Up":
+            switch (d3.event.keyCode) {
+            case 37: case 65: // Left, a
+                shiftLeft(curNode); break;
+            case 39: case 68: // Right, d
+                shiftRight(curNode); break;
+            case 38: case 87: // Up, w
                 if(hasParent(curNode)) {
                     click(curNode.parent);
                 }
                 break;
-            case "Down":
+            case 40: case 83: // Down, s
                 if (isTactic(curNode)) {
                     var dest = _(curNode.visibleChildren).find(function(n) {
                         return !(n.solved);
@@ -174,17 +171,19 @@ function newTheorem(thmTac) {
                     if (curNode.visibleChildren[0]) { click(curNode.visibleChildren[0]); }
                 }
                 break;
-            case "U+0031": case "U+0041":
+            case 49: case 97: // 1, K1
                 if (curNode.visibleChildren[0]) { click(curNode.visibleChildren[0]); }
                 break;
-            case "U+0032": case "U+0042":
+            case 50: case 98: // 2, K2
                 if (curNode.visibleChildren[1]) { click(curNode.visibleChildren[1]); }
                 break;
-            case "U+0033": case "U+0043":
+            case 51: case 99: // 3, K3
                 if (curNode.visibleChildren[2]) { click(curNode.visibleChildren[2]); }
                 break;
             default: return;
             }
+            // if we haven't returned, we don't want the normal key behavior
+            d3.event.preventDefault();
         })
         .insert("svg", ":first-child")
         .attr("width", width)
