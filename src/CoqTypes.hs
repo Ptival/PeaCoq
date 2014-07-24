@@ -50,9 +50,8 @@ instance Default (CoqtopResponse r) where
 
 data RoosterResponse
   = MkRoosterResponse
-    { currentGoals :: Goals
-    , nextGoals :: [(Query, [Goal])]
-    , coqtopResponse :: CoqtopResponse [String]
+    { rGoals :: Goals
+    , rResponse :: CoqtopResponse [String]
     }
   deriving (Generic)
 

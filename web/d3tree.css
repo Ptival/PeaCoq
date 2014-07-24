@@ -26,7 +26,7 @@ body {
 }
 
 .solved {
-    fill: green;
+    fill: lightgreen;
 }
 
 .context, .debug {

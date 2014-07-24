@@ -36,6 +36,7 @@ site hi ho =
   ifTop (serveFile "web/rooster.html")
   <|> route [ ("query", queryHandler hi ho) ]
   <|> route [ ("undo", undoHandler hi ho) ]
+  <|> route [ ("queryundo", queryUndoHandler hi ho) ]
   <|> route [ ("qed", qedHandler hi ho) ]
   <|> serveDirectory "web/"
   <|> serveDirectory "web/jquery-ui-1.10.4.custom/css/south-street/"
@@ -50,8 +51,8 @@ goalsOfGoals (MkGoals foc unfoc) = foc ++ concatMap (uncurry (++)) unfoc
 newGoals :: Goals -> Goals -> [Goal]
 newGoals old new = goalsOfGoals new \\ goalsOfGoals old
 
-proofContext :: Handle -> Handle -> IO (Goals, [(Query, [Goal])])
-proofContext hi ho = do
+proofContextWithNext :: Handle -> Handle -> IO (Goals, [(Query, [Goal])])
+proofContextWithNext hi ho = do
   goals <- hQueryGoal hi ho
 
 {-
@@ -120,8 +121,8 @@ queryHandler hi ho = do
 
 respond :: Handle -> Handle -> CoqtopResponse [String] -> Snap ()
 respond hi ho response = do
-  (goals, nexts) <- liftIO $ proofContext hi ho
-  writeJSON $ MkRoosterResponse goals nexts response
+  goals <- liftIO $ hQueryGoal hi ho
+  writeJSON $ MkRoosterResponse goals response
 
 undoHandler :: Handle -> Handle -> Snap ()
 undoHandler hi ho = do
@@ -134,3 +135,25 @@ qedHandler hi ho = do
   liftIO $ hInterp hi "Qed."
   r <- liftIO $ hForceValueResponse ho
   respond hi ho r
+
+queryUndoHandler :: Handle -> Handle -> Snap ()
+queryUndoHandler hi ho = do
+  param <- getParam "query"
+  case param of
+    Nothing -> return ()
+    Just queryBS -> do
+      response <- liftIO $ do
+        -- might want to sanitize? :3
+        let query = toString queryBS
+        putStrLn $ query
+        hInterp hi query
+        hForceValueResponse ho
+      respond hi ho response
+      case response of
+        Fail _ ->
+          return ()
+        Good _ ->
+          do
+            liftIO $ hCall hi [("val", "rewind"), ("steps", "1")] ""
+            liftIO $ hForceValueResponse ho
+            return ()

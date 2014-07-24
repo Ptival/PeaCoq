@@ -15,44 +15,54 @@ var nbChildrenToShow = 2;
 var animationDuration = 420;
 
 // OTHER GLOBALS
-var i = 1; // unique identifier, should closure it to avoid drama
 var maxNodesOnLine = Math.pow(nbChildrenToShow, 2);
 var diagonal = d3.svg.diagonal();
-var rootId = i++;
+var rootId = _.uniqueId();
 var animationRunning = false;
+var thmNdx = 0;
 
 // GLOBALS TO BE INITIALIZED LATER
-var tree, svg, canvas, context;
+var tree, svg, canvas, context, tactics;
 var smallestNodeWidth, width, height, curNode, rootNode;
 var xFactor, yFactor;
 
+// These tactic sets each build on top of the previous one
+var tSet = ['simpl', 'reflexivity', 'intro', 'rewrite', 'destruct', 'induction'];
+var tReflexivity = tSet.slice(0, 2);
+var tIntro       = tSet.slice(0, 3);
+var tRewrite     = tSet.slice(0, 4);
+var tDestruct    = tSet.slice(0, 5);
+var tInduction   = tSet.slice(0, 6);
+// These ones are more special
+var tCompute = tReflexivity.concat(['compute']);
+
 var thms = [
-'Theorem plus_O_n : ∀n : nat, 0 + n = n.',
-'Theorem plus_1_l : ∀n : nat, 1 + n = S n.',
-'Theorem mult_0_l : ∀n : nat, 0 * n = 0.',
-'Theorem plus_id_example : ∀n m:nat, n = m → n + n = m + m.',
-'Theorem plus_id_exercise : ∀n m o : nat, n = m → m = o → n + m = m + o.',
-'Theorem mult_0_plus : ∀n m : nat, (0 + n) * m = n * m.',
-'Theorem mult_S_1 : ∀n m : nat, m = S n → m * (1 + n) = m * m.',
-'Theorem negb_involutive : ∀b : bool, negb (negb b) = b.',
-'Theorem identity_fn_applied_twice : ∀(f : bool → bool), (∀(x : bool), f x = x) → ∀(b : bool), f (f b) = b.',
-'Theorem andb_eq_orb : ∀(b c : bool), (andb b c = orb b c) → b = c.',
-'Theorem andb_true_elim1 : ∀b c : bool, andb b c = true → b = true.',
-'Theorem andb_true_elim2 : ∀b c : bool, andb b c = true → c = true.',
-'Theorem plus_0_r : ∀n:nat, n + 0 = n.',
-'Theorem minus_diag : ∀n, minus n n = 0.',
-'Theorem mult_0_r : ∀n:nat, n * 0 = 0.',
-'Theorem plus_n_Sm : ∀n m : nat, S (n + m) = n + (S m).',
-'Theorem plus_comm : ∀n m : nat, n + m = m + n.',
-'Theorem plus_assoc : ∀n m p : nat, n + (m + p) = (n + m) + p.',
-'Theorem plus_rearrange : ∀n m p q : nat, (n + m) + (p + q) = (m + n) + (p + q).',
-'Theorem plus_swap : ∀n m p : nat, n + (m + p) = m + (n + p).',
-'Theorem mult_comm : ∀m n : nat, m * n = n * m.',
-'Theorem andb_false_r : ∀b : bool, andb b false = false.',
-'Theorem mult_1_l : ∀n:nat, 1 * n = n.',
-'Theorem all3_spec : ∀b c : bool, orb (andb b c) (orb (negb b) (negb c)) = true.',
-'Theorem mult_plus_distr_r : ∀n m p : nat, (n + m) * p = (n * p) + (m * p).',
-'Theorem mult_assoc : ∀n m p : nat, n * (m * p) = (n * m) * p.',
+['Theorem plus_O_n : ∀n : nat, 0 + n = n.', tIntro],
+['Theorem plus_1_l : ∀n : nat, 1 + n = S n.', tIntro],
+['Theorem mult_0_l : ∀n : nat, 0 * n = 0.', tIntro],
+['Theorem plus_id_example : ∀n m:nat, n = m → n + n = m + m.', tRewrite],
+['Theorem plus_id_exercise : ∀n m o : nat, n = m → m = o → n + m = m + o.', tRewrite],
+['Theorem mult_0_plus : ∀n m : nat, (0 + n) * m = n * m.', tRewrite],
+['Theorem mult_S_1 : ∀n m : nat, m = S n → m * (1 + n) = m * m.', tRewrite],
+['Theorem negb_involutive : ∀b : bool, negb (negb b) = b.', tDestruct],
+['Theorem identity_fn_applied_twice : ∀(f : bool → bool), (∀(x : bool), f x = x) → ∀(b : bool), f (f b) = b.', tDestruct],
+['Theorem andb_eq_orb : ∀(b c : bool), (andb b c = orb b c) → b = c.', tDestruct],
+['Theorem andb_true_elim1 : ∀b c : bool, andb b c = true → b = true.', tDestruct],
+['Theorem andb_true_elim2 : ∀b c : bool, andb b c = true → c = true.', tDestruct],
+['Theorem plus_0_r : ∀n:nat, n + 0 = n.', tDestruct],
+['Theorem minus_diag : ∀n, minus n n = 0.', tDestruct],
+['Theorem mult_0_r : ∀n:nat, n * 0 = 0.', tDestruct],
+['Theorem plus_n_Sm : ∀n m : nat, S (n + m) = n + (S m).', tInduction],
+['Theorem plus_comm : ∀n m : nat, n + m = m + n.', tInduction],
+['Theorem plus_assoc : ∀n m p : nat, n + (m + p) = (n + m) + p.', tInduction],
+['Theorem plus_rearrange : ∀n m p q : nat, (n + m) + (p + q) = (m + n) + (p + q).', tInduction],
+['Theorem plus_swap : ∀n m p : nat, n + (m + p) = m + (n + p).', tInduction],
+['Theorem mult_comm : ∀m n : nat, m * n = n * m.', tInduction],
+['Theorem andb_false_r : ∀b : bool, andb b false = false.', tInduction],
+['Theorem mult_1_l : ∀n:nat, 1 * n = n.', tInduction],
+['Theorem all3_spec : ∀b c : bool, orb (andb b c) (orb (negb b) (negb c)) = true.', tInduction],
+['Theorem mult_plus_distr_r : ∀n m p : nat, (n + m) * p = (n * p) + (m * p).', tInduction],
+['Theorem mult_assoc : ∀n m p : nat, n * (m * p) = (n * m) * p.', tInduction],
 ];
 
 function parseSVGTransform(a) {
@@ -83,10 +93,10 @@ function treeDepth(root) {
     );
 }
 
-function addTheorem(theorem) {
+function addTheorem(t) {
     var b = $('<button>', {
-        text: theorem,
-        click: function() { newTheorem(theorem); }
+        text: t[0],
+        click: function() { newTheorem(t); }
     });
     $('#buttons').append(b);
 }
@@ -110,11 +120,15 @@ $(document).ready(function() {
     xFactor = width;
     yFactor = height;
 
-    newTheorem(thms[16], hInit);
+    newTheorem(thms[thmNdx]);
 
 });
 
-function newTheorem(theorem) {
+function newTheorem(thmTac) {
+
+    var theorem = thmTac[0];
+    tactics = thmTac[1];
+
     d3.select("svg").remove();
 
     tree = d3.layout.tree()
@@ -260,7 +274,7 @@ function newTheorem(theorem) {
 
 function mkGoalNode(g, ndx) {
     return {
-        "id": i++,
+        "id": _.uniqueId(),
         "name": g.gGoal,
         "hyps": g.gHyps,
         "ndx": ndx + 1,
@@ -270,36 +284,116 @@ function mkGoalNode(g, ndx) {
     };
 }
 
-function mkTacticNode(t) {
-    var children = _(t[1])
+function mkTacticNode(tactic, goals) {
+
+    var children = _(goals)
         .map(mkGoalNode)
         .value()
     ;
 
     return {
-        "id": i++,
-        "name": t[0],
+        "id": _.uniqueId(),
+        "name": tactic,
         "allChildren": children,
         "visibleChildren": children.slice(0, nbChildrenToShow),
         "offset": 0,
         "terminating": _(children).isEmpty(),
         "solved": false,
     };
+
+}
+
+function tryAllTactics() {
+
+    var res = [];
+    var unfocusedBefore;
+
+    syncQueryUndo('idtac.', function(response) {
+        unfocusedBefore = response.rGoals.unfocused;
+        res.push(mkTacticNode('idtac.', response.rGoals.focused));
+    });
+
+    var run = function(t) {
+        syncQueryUndo(t + '.', function(response) {
+
+            if(response.rResponse.tag === "Good") {
+                if (_.isEqual(response.rGoals.unfocused, unfocusedBefore)) {
+                    res.push(mkTacticNode(t + '.', response.rGoals.focused));
+                } else {
+                    res.push(mkTacticNode(t + '.', []));
+                }
+            }
+
+/*
+            else {
+                console.log('Bad response for tactic ' + t + ': ', response);
+            }
+*/
+
+        });
+    }
+
+    var curHyps = [];
+    if (curNode !== undefined) {
+        var curGoal = (isGoal(curNode)) ? curNode : curNode.parent;
+        curHyps = curGoal.hyps;
+    }
+
+    _(tactics).each(function(t) {
+        switch (t) {
+        case "destruct":
+            _(curHyps).each(function(n) {
+                run('destruct ' + hypName(n));
+            });
+            break;
+        case "induction":
+            
+            break;
+        case "intro":
+            run('intro');
+            run('intros');
+            break;
+        case "rewrite":
+            _(curHyps).each(function(n) {
+                run('rewrite -> ' + hypName(n));
+                run('rewrite <- ' + hypName(n));
+            });
+            break;
+        default:
+            run(t);
+            break;
+        }
+    });
+
+    res =
+        _(res)
+        .uniq(false, function(e) {
+            return JSON.stringify(
+                _(e.allChildren)
+                    .map(function(c) {
+                        return {"name": c.name, "hyps": c.hyps};
+                    })
+                .value()
+            );
+        })
+        .rest() // remove idtac
+        .sortBy(function(e) { return e.allChildren.length; })
+        .value()
+    ;
+
+    return res;
+
 }
 
 function hInit(response) {
 
-    //console.log(response);
-
     // There should only be one goal at that point
     rootNode = {
         "id": rootId,
-        "name": response.currentGoals.focused[0].gGoal,
+        "name": response.rGoals.focused[0].gGoal,
         "x0": 0.5,
         "y0": 0,
-        "allChildren": _(response.nextGoals)
-            .map(mkTacticNode)
-            .value(),
+        "allChildren": tryAllTactics(),
         "ndx": 1,
         "depth": 0, // need to set depth for isGoal() to work early
         "offset": 0,
@@ -368,7 +462,7 @@ function update(source) {
         canvas
         .selectAll("g.node")
         .data(nodes, function(d) {
-            return d.id || (d.id = i++);
+            return d.id || (d.id = _.uniqueId());
         })
     ;
 
@@ -927,13 +1021,7 @@ function click(d) {
 
     if (!d.hasOwnProperty('allChildren') || d.allChildren.length === 0) {
         if (isGoal(d)) {
-            syncQuery('Show.', function(response) {
-                d.allChildren =
-                    _(response.nextGoals)
-                    .map(mkTacticNode)
-                    .value()
-                ;
-            });
+            d.allChildren = tryAllTactics();
         }
         // otherwise, this is a terminating tactic for this goal!
         else {
@@ -967,6 +1055,10 @@ function solved(n) {
             update(n.parent);
             animationRunning = false;
         }, animationDuration);
+    } else {
+        // This goal is solved, let's try to solve the next one!
+        thmNdx++;
+        window.setTimeout(function() { newTheorem(thms[thmNdx]); }, animationDuration);
     }
 }
 
@@ -1145,20 +1237,23 @@ function isTactic(n) { return (n.depth % 2 === 1); }
 
 function isGoal(n) { return (n.depth % 2 === 0); }
 
-function syncQuery(q, h) {
-    console.log(q);
+function syncRequest(r, q, h) {
+    if (r === 'query') { console.log(q); }
     $.ajax({
         type: 'POST',
-        url: 'query',
+        url: r,
         data: {query : q},
         async: false,
         success: function(response) {
             //console.log('response', response);
-            updateDebug(response);
+            if (r === 'query') { updateDebug(response); }
             h(response);
         }
     });
 }
+
+function syncQuery(q, h) { syncRequest('query', q, h); }
+function syncQueryUndo(q, h) { syncRequest('queryundo', q, h); }
 
 function hIgnore(response) { }
 
@@ -1181,6 +1276,7 @@ function updateNodeHeight(selector) {
     ;
 }
 
+// TODO: this should use d3 data binding rather than manual management...
 function updateContext() {
 
     var contextDiv = context.select('div');
@@ -1216,10 +1312,10 @@ function updateContext() {
 function updateDebug(response) {
 
     var debugDiv = debug.select('div');
-    if (response.currentGoals.focused.length > 0) {
-        debugDiv.html(response.currentGoals.focused[0].gGoal);
+    if (response.rGoals.focused.length > 0) {
+        debugDiv.html(response.rGoals.focused[0].gGoal);
     } else {
-        debugDiv.html(response.coqtopResponse.contents[0]);
+        debugDiv.html(response.rResponse.contents[0]);
     }
 
     updateNodeHeight(debug);
