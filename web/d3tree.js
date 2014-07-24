@@ -163,15 +163,21 @@ function newTheorem(thmTac) {
                 return;
             }
             switch (d3.event.keyCode) {
+
             case 37: case 65: // Left, a
-                shiftLeft(curNode); break;
+                shiftLeft(curNode);
+                break;
+
             case 39: case 68: // Right, d
-                shiftRight(curNode); break;
+                shiftRight(curNode);
+                break;
+
             case 38: case 87: // Up, w
                 if(hasParent(curNode)) {
                     click(curNode.parent);
                 }
                 break;
+
             case 40: case 83: // Down, s
                 if (isTactic(curNode)) {
                     var dest = _(curNode.visibleChildren).find(function(n) {
@@ -179,18 +185,30 @@ function newTheorem(thmTac) {
                     });
                     if (dest) { click(dest); }
                 } else {
-                    if (curNode.visibleChildren[0]) { click(curNode.visibleChildren[0]); }
+                    if (curNode.visibleChildren[0]) {
+                        click(curNode.visibleChildren[0]);
+                    }
                 }
                 break;
+
             case 49: case 97: // 1, K1
-                if (curNode.visibleChildren[0]) { click(curNode.visibleChildren[0]); }
+                if (curNode.visibleChildren.length > 0) {
+                    click(curNode.visibleChildren[0]);
+                }
                 break;
+
             case 50: case 98: // 2, K2
-                if (curNode.visibleChildren[1]) { click(curNode.visibleChildren[1]); }
+                if (curNode.visibleChildren.length > 1) {
+                    click(curNode.visibleChildren[1]);
+                }
                 break;
+
             case 51: case 99: // 3, K3
-                if (curNode.visibleChildren[2]) { click(curNode.visibleChildren[2]); }
+                if (curNode.visibleChildren.length > 2) {
+                    click(curNode.visibleChildren[2]);
+                }
                 break;
+
             default: return;
             }
             // if we haven't returned, we don't want the normal key behavior
@@ -1042,8 +1060,15 @@ function shiftRight(n) {
 
 function click(d) {
     if (animationRunning) { return; }
+
+    if (d.solved) {
+        if (hasParent(d)) {
+            click(d.parent);
+        }
+        return;
+    }
+
     navigateTo(d);
-    if (d.solved) { return; }
 
     if (!d.hasOwnProperty('allChildren') || d.allChildren.length === 0) {
         if (isGoal(d)) {
