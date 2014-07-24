@@ -2,6 +2,10 @@ body {
     margin: 0;
 }
 
+svg {
+    font-size: 14px;
+}
+
 .debug {
     display: none;
 }
@@ -31,7 +35,6 @@ body {
 
 .context, .debug {
     font-family: DejaVu Sans Mono, monospace;
-    font-size: 18px;
     word-wrap: break-word;
     fill: lightgray;
 }
@@ -43,7 +46,6 @@ body {
 
 .node {
     font-family: DejaVu Sans Mono, monospace;
-    font-size: 18px;
     word-wrap: break-word;
     text-align: center;
 }

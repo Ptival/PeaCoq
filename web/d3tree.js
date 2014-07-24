@@ -1,10 +1,6 @@
 
 /*** TODO ***/
 
-// make it so that each instance has its own tactic set
-
-// sort the tactic nodes by progress and complexity
-
 // CONFIGURATION
 var nodeMinSpacing = 5;
 var nodeStroke = 2;
@@ -23,7 +19,7 @@ var thmNdx = 0;
 
 // GLOBALS TO BE INITIALIZED LATER
 var tree, svg, canvas, context, tactics;
-var smallestNodeWidth, width, height, curNode, rootNode;
+var smallestNodeWidth, bigNodeWidth, width, height, curNode, rootNode;
 var xFactor, yFactor;
 
 // These tactic sets each build on top of the previous one
@@ -37,6 +33,7 @@ var tInduction   = tSet.slice(0, 6);
 var tCompute = tReflexivity.concat(['compute']);
 
 var thms = [
+['Theorem branching : ∀(a b : comparison), a = Eq → b = Eq → a = b.', tDestruct],
 ['Theorem plus_O_n : ∀n : nat, 0 + n = n.', tIntro],
 ['Theorem plus_1_l : ∀n : nat, 1 + n = S n.', tIntro],
 ['Theorem mult_0_l : ∀n : nat, 0 * n = 0.', tIntro],
@@ -46,7 +43,7 @@ var thms = [
 ['Theorem mult_S_1 : ∀n m : nat, m = S n → m * (1 + n) = m * m.', tRewrite],
 ['Theorem negb_involutive : ∀b : bool, negb (negb b) = b.', tDestruct],
 ['Theorem identity_fn_applied_twice : ∀(f : bool → bool), (∀(x : bool), f x = x) → ∀(b : bool), f (f b) = b.', tDestruct],
-['Theorem andb_eq_orb : ∀(b c : bool), (andb b c = orb b c) → b = c.', tDestruct],
+['Theorem andb_eq_orb : ∀(b c : bool), (andb b c = orb b c) → b = c.', tDestruct.concat(['admit'])],
 ['Theorem andb_true_elim1 : ∀b c : bool, andb b c = true → b = true.', tDestruct],
 ['Theorem andb_true_elim2 : ∀b c : bool, andb b c = true → c = true.', tDestruct],
 ['Theorem plus_0_r : ∀n:nat, n + 0 = n.', tDestruct],
@@ -80,8 +77,16 @@ function evenFloor(x) {
 }
 
 function nodeWidth(d) {
-    return smallestNodeWidth
-        //* ((isCurNode(d) || isCurNodeParent(d)) ? nbChildrenToShow : 1)
+    //return smallestNodeWidth;
+    return (isCurNode(d) || isCurNodeParent(d))
+        ? (
+            (
+                $(window).width()
+                    - scrollbarWidth
+                    - (2 * nodeMinSpacing)
+            ) / 3
+        )
+        : smallestNodeWidth
     ;
 }
 
@@ -109,8 +114,14 @@ $(document).ready(function() {
         ($(window).width()
          - scrollbarWidth
          - ((maxNodesOnLine - 1) * nodeMinSpacing)
-        )
-        / maxNodesOnLine
+        ) / maxNodesOnLine
+    );
+
+    bigNodeWidth = evenFloor (
+        ($(window).width()
+         - scrollbarWidth
+         - (2 * nodeMinSpacing)
+        ) / 3
     );
 
     width =
@@ -211,7 +222,7 @@ function newTheorem(thmTac) {
         .attr("class", "context")
     ;
 
-    var contextDivWidth = smallestNodeWidth - rectMargin.left - rectMargin.right;
+    var contextDivWidth = bigNodeWidth - rectMargin.left - rectMargin.right;
     var contextHeight;
 
     context
@@ -229,7 +240,7 @@ function newTheorem(thmTac) {
 
     context
         .insert("rect", ":first-child")
-        .attr("width", smallestNodeWidth)
+        .attr("width", bigNodeWidth)
         .attr("height", contextHeight)
     ;
 
@@ -239,13 +250,13 @@ function newTheorem(thmTac) {
         .attr("class", "debug")
     ;
 
-    var debugWidth = smallestNodeWidth - rectMargin.left - rectMargin.right;
+    var debugWidth = bigNodeWidth - rectMargin.left - rectMargin.right;
     var debugHeight;
 
     debug
         .append("foreignObject")
-        .attr('x', width - smallestNodeWidth + rectMargin.left)
-        .attr("width", smallestNodeWidth - rectMargin.left - rectMargin.right)
+        .attr('x', width - bigNodeWidth + rectMargin.left)
+        .attr("width", bigNodeWidth - rectMargin.left - rectMargin.right)
         .append("xhtml:body")
         .html('<div><p>No debug information</p></div>')
         .attr("height", function() {
@@ -256,7 +267,7 @@ function newTheorem(thmTac) {
 
     debug
         .insert("rect", ":first-child")
-        .attr("x", width - smallestNodeWidth)
+        .attr("x", width - bigNodeWidth)
         .attr("width", debugWidth)
         .attr("height", debugHeight)
     ;
@@ -432,6 +443,10 @@ function isCurNodeChild(n) {
 function isCurNodeGrandChild(n) {
     if (hasParent(n) && isCurNodeChild(n.parent)) { return true; }
     return false;
+}
+
+function isCurNodeSibling(n) {
+    return (!isCurNode(n) && hasParent(n) && isCurNodeParent(n.parent));
 }
 
 function hypName(h) {
@@ -680,11 +695,11 @@ function update(source) {
     // siblings = [ [gc0, gc1], [gc1, gc2], ... ] ++ [ [c0, c1], [c1, c2], ... ]
     var gcSiblings =
         isGoal(curNode)
-        ? _.zip(allGrandChildren.value(), allGrandChildren.rest().value())
+        ? _.zip(visibleGrandChildren.value(), visibleGrandChildren.rest().value())
         : [] // because grand-children don't appear for tactic nodes
     ;
     gcSiblings.pop(); // removes [gc_last, undefined] at the end
-    var cSiblings = _.zip(allChildren.value(), allChildren.rest().value());
+    var cSiblings = _.zip(visibleChildren.value(), visibleChildren.rest().value());
     cSiblings.pop(); // removes [c_last, undefined] at the end
     var siblings = gcSiblings.concat(cSiblings);
 
@@ -821,11 +836,8 @@ function update(source) {
         })
     ;
 
-    // All the nodes need to move to their new position, according to the
-    // new tree layout and the new zoom factors
-
     // We want
-    // (firstChild.cX + lastChild.cX) / 2 = curNode.cX
+    // (firstVisibleChild.cX + lastVisibleChild.cX) / 2 = curNode.cX
     // We offset all the descendants to achieve this
     var xMiddle =
         (firstVisibleChild !== undefined && lastVisibleChild !== undefined)
@@ -839,6 +851,15 @@ function update(source) {
         .each(function(n) {
             if (isCurNodeChild(n) || isCurNodeGrandChild(n)) {
                 n.cX = (n.x + descendantsXOffset) * xFactor;
+            } else if (isCurNodeSibling(n)) {
+                var smallBigDelta = bigNodeWidth - smallestNodeWidth;
+                if (n.ndx < curNode.ndx) {
+                    n.cX = n.x * xFactor - smallBigDelta / 2;
+                } else {
+                    n.cX = n.x * xFactor + smallBigDelta / 2;
+                }
+            } else if (isCurNodeParent(n)) {
+                n.cX = curNode.x * xFactor;
             } else {
                 n.cX = n.x * xFactor;
             }
