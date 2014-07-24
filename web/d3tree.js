@@ -1068,6 +1068,17 @@ function click(d) {
         return;
     }
 
+    // when the user clicks on a tactic node below
+    // bring them to the first unsolved goal instead
+    if(isTactic(d) && d.depth > curNode.depth && d.allChildren.length > 0) {
+        var firstUnsolved = _(d.allChildren)
+            .find(function(e) { return !e.solved; });
+        if (firstUnsolved !== undefined) {
+            click(firstUnsolved);
+            return;
+        }
+    }
+
     navigateTo(d);
 
     if (!d.hasOwnProperty('allChildren') || d.allChildren.length === 0) {
@@ -1082,13 +1093,6 @@ function click(d) {
 
     expand(d);
     update(d);
-
-/*
-    // when the user clicks on a tactic node, bring them to the first goal
-    if(isTactic(d) && d.allChildren[0]) {
-        click(d.allChildren[0]);
-    }
-*/
 
 }
 
