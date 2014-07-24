@@ -146,6 +146,8 @@ function newTheorem(thmTac) {
 
     svg = d3.select("body")
         .on("keydown", function() {
+            // Prevent arrows from scrolling the webpage
+            d3.event.preventDefault();
             if (animationRunning) { return; }
             //console.log(d3.event);
             var event;
@@ -183,8 +185,6 @@ function newTheorem(thmTac) {
                 break;
             default: return;
             }
-            // Prevent arrows from scrolling the webpage
-            d3.event.preventDefault();
         })
         .insert("svg", ":first-child")
         .attr("width", width)
