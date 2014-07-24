@@ -679,7 +679,11 @@ function update(source) {
     // are well spaced.
 
     // siblings = [ [gc0, gc1], [gc1, gc2], ... ] ++ [ [c0, c1], [c1, c2], ... ]
-    var gcSiblings = _.zip(allGrandChildren.value(), allGrandChildren.rest().value());
+    var gcSiblings =
+        isGoal(curNode)
+        ? _.zip(allGrandChildren.value(), allGrandChildren.rest().value())
+        : [] // because grand-children don't appear for tactic nodes
+    ;
     gcSiblings.pop(); // removes [gc_last, undefined] at the end
     var cSiblings = _.zip(allChildren.value(), allChildren.rest().value());
     cSiblings.pop(); // removes [c_last, undefined] at the end
