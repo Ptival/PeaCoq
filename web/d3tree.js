@@ -347,7 +347,9 @@ function tryAllTactics() {
             });
             break;
         case "induction":
-            
+            _(curHyps).each(function(n) {
+                run('induction ' + hypName(n));
+            });
             break;
         case "intro":
             run('intro');
