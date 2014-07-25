@@ -3,6 +3,7 @@ body {
 }
 
 svg {
+    font-family: DejaVu Sans Mono, monospace;
     font-size: 14px;
 }
 
@@ -34,7 +35,6 @@ svg {
 }
 
 .context, .debug {
-    font-family: DejaVu Sans Mono, monospace;
     word-wrap: break-word;
     fill: lightgray;
 }
@@ -45,7 +45,6 @@ svg {
 }
 
 .node {
-    font-family: DejaVu Sans Mono, monospace;
     word-wrap: break-word;
     text-align: center;
 }
