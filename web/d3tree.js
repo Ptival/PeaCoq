@@ -46,9 +46,9 @@ var thms = [
 ['Theorem andb_eq_orb : ∀(b c : bool), (andb b c = orb b c) → b = c.', tDestruct.concat(['admit'])],
 ['Theorem andb_true_elim1 : ∀b c : bool, andb b c = true → b = true.', tDestruct],
 ['Theorem andb_true_elim2 : ∀b c : bool, andb b c = true → c = true.', tDestruct],
-['Theorem plus_0_r : ∀n:nat, n + 0 = n.', tDestruct],
-['Theorem minus_diag : ∀n, minus n n = 0.', tDestruct],
-['Theorem mult_0_r : ∀n:nat, n * 0 = 0.', tDestruct],
+['Theorem plus_0_r : ∀n:nat, n + 0 = n.', tInduction],
+['Theorem minus_diag : ∀n, minus n n = 0.', tInduction],
+['Theorem mult_0_r : ∀n:nat, n * 0 = 0.', tInduction],
 ['Theorem plus_n_Sm : ∀n m : nat, S (n + m) = n + (S m).', tInduction],
 ['Theorem plus_comm : ∀n m : nat, n + m = m + n.', tInduction],
 ['Theorem plus_assoc : ∀n m p : nat, n + (m + p) = (n + m) + p.', tInduction],
@@ -98,10 +98,13 @@ function treeDepth(root) {
     );
 }
 
-function addTheorem(t) {
+function addTheorem(t, ndx) {
     var b = $('<button>', {
         text: t[0],
-        click: function() { newTheorem(t); }
+        click: function() {
+            thmNdx = ndx;
+            newTheorem(t);
+        }
     });
     $('#buttons').append(b);
 }
