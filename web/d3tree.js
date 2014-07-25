@@ -79,23 +79,16 @@ function evenFloor(x) {
 function nodeWidth(d) {
     //return smallestNodeWidth;
     return (isCurNode(d) || isCurNodeParent(d))
-        ? (
-            (
-                $(window).width()
-                    - scrollbarWidth
-                    - (2 * nodeMinSpacing)
-            ) / 3
-        )
+        ? bigNodeWidth
         : smallestNodeWidth
     ;
 }
 
 function treeDepth(root) {
-    return (
-        root.visibleChildren
-            ? 1 + _(root.visibleChildren).map(treeDepth).max()
-            : 0
-    );
+    return (root.visibleChildren.length > 0)
+        ? 1 + _(root.visibleChildren).map(treeDepth).max()
+        : 0
+    ;
 }
 
 function addTheorem(t, ndx) {
@@ -159,64 +152,7 @@ function newTheorem(thmTac) {
     ;
 
     svg = d3.select("body")
-        .on("keydown", function() {
-            if (animationRunning) {
-                // all keys are frozen during animation
-                d3.event.preventDefault();
-                return;
-            }
-            switch (d3.event.keyCode) {
-
-            case 37: case 65: // Left, a
-                shiftLeft(curNode);
-                break;
-
-            case 39: case 68: // Right, d
-                shiftRight(curNode);
-                break;
-
-            case 38: case 87: // Up, w
-                if(hasParent(curNode)) {
-                    click(curNode.parent);
-                }
-                break;
-
-            case 40: case 83: // Down, s
-                if (isTactic(curNode)) {
-                    var dest = _(curNode.visibleChildren).find(function(n) {
-                        return !(n.solved);
-                    });
-                    if (dest) { click(dest); }
-                } else {
-                    if (curNode.visibleChildren[0]) {
-                        click(curNode.visibleChildren[0]);
-                    }
-                }
-                break;
-
-            case 49: case 97: // 1, K1
-                if (curNode.visibleChildren.length > 0) {
-                    click(curNode.visibleChildren[0]);
-                }
-                break;
-
-            case 50: case 98: // 2, K2
-                if (curNode.visibleChildren.length > 1) {
-                    click(curNode.visibleChildren[1]);
-                }
-                break;
-
-            case 51: case 99: // 3, K3
-                if (curNode.visibleChildren.length > 2) {
-                    click(curNode.visibleChildren[2]);
-                }
-                break;
-
-            default: return;
-            }
-            // if we haven't returned, we don't want the normal key behavior
-            d3.event.preventDefault();
-        })
+        .on("keydown", keydownHandler)
         .insert("svg", ":first-child")
         .attr("width", width)
         .attr("height", height)
@@ -1377,5 +1313,68 @@ function updateDebug(response) {
     }
 
     updateNodeHeight(debug);
+
+}
+
+function keydownHandler() {
+
+    if (animationRunning) {
+        // all keys are frozen during animation
+        d3.event.preventDefault();
+        return;
+    }
+
+    switch (d3.event.keyCode) {
+
+    case 37: case 65: // Left, a
+        shiftLeft(curNode);
+        break;
+
+    case 39: case 68: // Right, d
+        shiftRight(curNode);
+        break;
+
+    case 38: case 87: // Up, w
+        if(hasParent(curNode)) {
+            click(curNode.parent);
+        }
+        break;
+
+    case 40: case 83: // Down, s
+        if (isTactic(curNode)) {
+            var dest = _(curNode.visibleChildren).find(function(n) {
+                return !(n.solved);
+            });
+            if (dest) { click(dest); }
+        } else {
+            if (curNode.visibleChildren[0]) {
+                click(curNode.visibleChildren[0]);
+            }
+        }
+        break;
+
+    case 49: case 97: // 1, K1
+        if (curNode.visibleChildren.length > 0) {
+            click(curNode.visibleChildren[0]);
+        }
+        break;
+
+    case 50: case 98: // 2, K2
+        if (curNode.visibleChildren.length > 1) {
+            click(curNode.visibleChildren[1]);
+        }
+        break;
+
+    case 51: case 99: // 3, K3
+        if (curNode.visibleChildren.length > 2) {
+            click(curNode.visibleChildren[2]);
+        }
+        break;
+
+    default: return;
+    }
+
+    // if we haven't returned, we don't want the normal key behavior
+    d3.event.preventDefault();
 
 }
