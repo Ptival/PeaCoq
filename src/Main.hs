@@ -145,7 +145,6 @@ queryUndoHandler hi ho = do
       response <- liftIO $ do
         -- might want to sanitize? :3
         let query = toString queryBS
-        putStrLn $ query
         hInterp hi query
         hForceValueResponse ho
       respond hi ho response
