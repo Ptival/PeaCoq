@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveFunctor, DeriveGeneric #-}
 
 module CoqTypes where
 
@@ -41,12 +41,12 @@ instance ToJSON Goals where
 data CoqtopResponse r
   = Fail String
   | Good r
-  deriving (Eq, Generic, Show)
+  deriving (Eq, Functor, Generic, Show)
 
 instance ToJSON r => ToJSON (CoqtopResponse r) where
 
-instance Default (CoqtopResponse r) where
-  def = Fail "DEFAULT"
+instance Default r => Default (CoqtopResponse r) where
+  def = Fail def
 
 data RoosterResponse
   = MkRoosterResponse
