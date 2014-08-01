@@ -24,6 +24,9 @@ forceCoqString = force "string" parseCoqString
 parseCoqInt :: ParseXML (Maybe String)
 parseCoqInt = tagNoAttr "int" (T.unpack <$> content)
 
+forceCoqInt :: ParseXML String
+forceCoqInt = force "int" parseCoqInt
+
 parseOption :: ParseXML (Maybe a) -> ParseXML (Maybe (Maybe a))
 parseOption pJust =
   tagName "option" (requireAttr "val") $ \val ->
@@ -112,3 +115,19 @@ parseTheorem =
 parseSearchResponse :: ParseXML (CoqtopResponse [Theorem])
 parseSearchResponse =
   force "search" $ parseGenericCoqtopResponse $ forceList parseTheorem
+
+type Status = ([String], Maybe String, [String], String, String)
+
+parseStatusResponse :: ParseXML (Maybe Status)
+parseStatusResponse =
+  tagNoAttr "status" $ do
+    l1 <- forceList parseCoqString
+    o1 <- forceOption parseCoqString
+    l2 <- forceList parseCoqString
+    i1 <- forceCoqInt
+    i2 <- forceCoqInt
+    return (l1, o1, l2, i1, i2)
+
+forceStatusResponse =
+  force "status" $ parseGenericCoqtopResponse $
+  force "status" parseStatusResponse

@@ -37,6 +37,8 @@ site hi ho =
   <|> route [ ("query", queryHandler hi ho) ]
   <|> route [ ("undo", undoHandler hi ho) ]
   <|> route [ ("queryundo", queryUndoHandler hi ho) ]
+  <|> route [ ("status", statusHandler hi ho) ]
+  <|> route [ ("rewind", rewindHandler hi ho) ]
   <|> route [ ("qed", qedHandler hi ho) ]
   <|> serveDirectory "web/"
   <|> serveDirectory "web/jquery-ui-1.10.4.custom/css/south-street/"
@@ -129,6 +131,22 @@ undoHandler hi ho = do
   liftIO $ hCall hi [("val", "rewind"), ("steps", "1")] ""
   r <- liftIO $ hForceValueResponse ho
   respond hi ho r
+
+statusHandler :: Handle -> Handle -> Snap ()
+statusHandler hi ho = do
+  liftIO $ hCall hi [("val", "status")] ""
+  r <- liftIO $ hForceStatusResponse ho
+  respond hi ho (return . show <$> r)
+
+rewindHandler :: Handle -> Handle -> Snap ()
+rewindHandler hi ho = do
+  param <- getParam "query"
+  case param of
+    Nothing -> return ()
+    Just stepsBS -> do
+      liftIO $ hCall hi [("val", "rewind"), ("steps", toString stepsBS)] ""
+      r <- liftIO $ hForceValueResponse ho
+      respond hi ho (return . show <$> r)
 
 qedHandler :: Handle -> Handle -> Snap ()
 qedHandler hi ho = do
