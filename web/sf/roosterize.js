@@ -36,6 +36,15 @@ function resetCoq() {
 
 }
 
+var commands = [
+    "Definition",
+    "Inductive",
+    "Example",
+    "Check",
+    "Eval",
+    "Notation",
+]
+
 function separateCode() {
 
     $(".code")
@@ -47,7 +56,7 @@ function separateCode() {
                 _.reduce(
                     $(this).contents(),
                     function(acc, elt){
-                        if (_(["Definition", "Inductive", "Example", "Check", "Eval"]).contains($(elt).text())) {
+                        if (_(commands).contains($(elt).text())) {
                             acc.append($('<div class="code">').css("clear", "left").append(elt));
                         } else {
                             acc.children(":last").append(elt);
