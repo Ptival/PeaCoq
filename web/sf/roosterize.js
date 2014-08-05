@@ -1,6 +1,8 @@
 
 $(document).ready(function() {
 
+    setupTextareaResizing();
+
     includeLodash();
 
     resetCoq();
@@ -10,6 +12,29 @@ $(document).ready(function() {
     makeCodeInteractive();
 
 });
+
+function setupTextareaResizing() {
+
+    var hiddenDiv = $("<div id='invisible'>")
+        .css("font-family", "monospace")
+        //.css("display", "none")
+        .css("float", "right")
+    ;
+
+    $("body").append(hiddenDiv);
+
+    var resizeTextarea = function() {
+        content = $(this).val();
+        hiddenDiv.html(content.replace(/\n/g, '&nbsp;&nbsp;<br>').replace(/ /g, '&nbsp;') + '&nbsp;&nbsp;<br>');
+        $(this).css('width', Math.max(hiddenDiv.width(), 10));
+        $(this).css('height', Math.max(hiddenDiv.height(), 16));
+    };
+
+    $(document)
+        .on('change keyup keydown paste', 'textarea', resizeTextarea)
+    ;
+
+}
 
 function includeLodash() {
 
