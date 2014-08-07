@@ -13,6 +13,18 @@ $(document).ready(function() {
 
 });
 
+function includeLodash() {
+
+    $("head")
+        .append(
+            $("<script>")
+                .attr("type", "text/javascript")
+                .attr("src", "lodash.js")
+        )
+    ;
+
+}
+
 function setupTextareaResizing() {
 
     var hiddenDiv = $("<div id='invisible'>")
@@ -25,25 +37,18 @@ function setupTextareaResizing() {
 
     var resizeTextarea = function() {
         content = $(this).val();
-        hiddenDiv.html(content.replace(/\n/g, '&nbsp;&nbsp;<br>').replace(/ /g, '&nbsp;') + '&nbsp;&nbsp;<br>');
+        hiddenDiv.html(
+            content
+                .replace(/\n/g, '&nbsp;&nbsp;<br>')
+                .replace(/ /g, '&nbsp;')
+                + '&nbsp;&nbsp;<br>'
+        );
         $(this).css('width', Math.max(hiddenDiv.width(), 10));
         $(this).css('height', Math.max(hiddenDiv.height(), 16));
     };
 
     $(document)
         .on('change keyup keydown paste', 'textarea', resizeTextarea)
-    ;
-
-}
-
-function includeLodash() {
-
-    $("head")
-        .append(
-            $("<script>")
-                .attr("type", "text/javascript")
-                .attr("src", "lodash.js")
-        )
     ;
 
 }
@@ -61,16 +66,16 @@ function resetCoq() {
 
 }
 
-var commands = [
-    "Definition",
-    "Inductive",
-    "Example",
-    "Check",
-    "Eval",
-    "Notation",
-]
-
 function separateCode() {
+
+    var commands = [
+        "Definition",
+        "Inductive",
+        "Example",
+        "Check",
+        "Eval",
+        "Notation",
+    ];
 
     $(".code")
         .replaceWith(function() {
