@@ -1,9 +1,9 @@
 
 $(document).ready(function() {
 
-    setupTextareaResizing();
-
     includeLodash();
+
+    setupTextareaResizing();
 
     resetCoq();
 
