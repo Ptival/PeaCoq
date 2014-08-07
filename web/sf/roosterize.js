@@ -93,54 +93,8 @@ function separateCode() {
 
             return result;
 
-/*
-            return _.reduce(
-                $(this).contents(),
-                function(acc, elt){
-
-                    console.log("elt", $(elt).text());
-                    return acc.children(":last").append(elt);
-
-
-                    //console.log(acc);
-                    if (_(["Definition", "Inductive", "Example", "Check"]).contains($(elt).text())) {
-                        return acc.append($('<div class="code">').append(elt));
-                    } else {
-                        return acc.children(":last").append(elt);
-                    }
-
-
-                },
-                $("<div>").append($('<div class="code">START!</div>'))
-            ).html();
-*/
-
         })
     ;
-
-/*
-    var defFilter = "span.id:contains(Definition)";
-    $(".code")
-        .replaceWith(function() {
-            // can't use nextUntil because it ignores text nodes
-            var result = $("<div>");
-
-            var defsHTML = $(this).html().replace(/^\s*\<br\>/, "");
-
-            var splitPatterns = [
-                "<br>\\s*<br>",
-                //"42<br>\n&nbsp;&nbsp;&nbsp;.*\\(\\*.*\\*\\)",
-
-            ];
-
-            _(defsHTML.split(new RegExp(splitPatterns.join("|")))).each(function(e) {
-                result.append($('<div class="code">').css("clear", "left").html("<br>" + e + "<br>"));
-            });
-
-            return result;
-        })
-    ;
-*/
 
 }
 
