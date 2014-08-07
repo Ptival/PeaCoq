@@ -23,12 +23,12 @@ var smallestNodeWidth, bigNodeWidth, width, height, curNode, rootNode;
 var xFactor, yFactor;
 
 // These tactic sets each build on top of the previous one
-var tSet = ['simpl', 'reflexivity', 'intro', 'rewrite', 'destruct', 'induction'];
-var tReflexivity = tSet.slice(0, 2);
-var tIntro       = tSet.slice(0, 3);
-var tRewrite     = tSet.slice(0, 4);
-var tDestruct    = tSet.slice(0, 5);
-var tInduction   = tSet.slice(0, 6);
+var tSet = ['simpl', 'simpl in *', 'reflexivity', 'intro', 'rewrite', 'destruct', 'induction'];
+var tReflexivity = tSet.slice(0, 1 + tSet.indexOf('reflexivity'));
+var tIntro       = tSet.slice(0, 1 + tSet.indexOf('intro'));
+var tRewrite     = tSet.slice(0, 1 + tSet.indexOf('rewrite'));
+var tDestruct    = tSet.slice(0, 1 + tSet.indexOf('destruct'));
+var tInduction   = tSet.slice(0, 1 + tSet.indexOf('induction'));
 // These ones are more special
 var tCompute = tReflexivity.concat(['compute']);
 
