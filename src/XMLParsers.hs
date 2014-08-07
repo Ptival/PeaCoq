@@ -116,7 +116,13 @@ parseSearchResponse :: ParseXML (CoqtopResponse [Theorem])
 parseSearchResponse =
   force "search" $ parseGenericCoqtopResponse $ forceList parseTheorem
 
-type Status = ([String], Maybe String, [String], String, String)
+type Status =
+  ( [String]      -- a list of sections?
+  , Maybe String  -- name of the current definition/theorem
+  , [String]      -- list of the current definitions/theorems?
+  , String        -- current label (for backtracking)
+  , String        -- 1 if in proof, -1 otherwise?
+  )
 
 parseStatusResponse :: ParseXML (Maybe Status)
 parseStatusResponse =
