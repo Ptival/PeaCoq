@@ -53,17 +53,22 @@ function setupTextareaResizing() {
 
 }
 
-function resetCoq() {
-
-    var nbStepsToRewind;
+function currentLabel() {
+    var result;
     syncRequest("status", "", function(response) {
-        console.log("status", response);
+        printResponse(response);
         var msg = response.rResponse.contents[0];
-        nbStepsToRewind = msg.match("^.*,.*,.*,\"(.*)\",.*$")[1];
+        result = msg.match("^.*,.*,.*,\"(.*)\",.*$")[1];
     });
-    syncRequest("rewind", nbStepsToRewind - 1, printResponse);
-    syncQuery("Require Import Unicode.Utf8.", printResponse);
+    return result;
+}
 
+function resetCoq() {
+    var label = currentLabel();
+    if (label > 1) {
+        syncRequest("rewind", label - 1, printResponse);
+        syncQuery("Require Import Unicode.Utf8.", printResponse);
+    }
 }
 
 function separateCode() {
