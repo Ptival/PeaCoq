@@ -17,7 +17,7 @@ function setupTextareaResizing() {
 
     var hiddenDiv = $("<div id='invisible'>")
         .css("font-family", "monospace")
-        //.css("display", "none")
+        .css("display", "none")
         .css("float", "right")
     ;
 
