@@ -291,3 +291,9 @@ function textify(div) {
 function removeWarning(msg) {
     return msg.substring(msg.indexOf("\n"));
 }
+
+function scrollTo(element) {
+    $('html, body').animate({
+        scrollTop: element.offset().top,
+    }, 2000);
+}
