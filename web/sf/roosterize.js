@@ -139,13 +139,13 @@ function makeCodeInteractive() {
         })
     ;
 
-    var leftWidth = "30px";
+    var clickyWidth = "30px";
 
     /*** holy grailing it up ***/
     $(".doc").css("clear", "left");
 
     $(".code")
-        .css("padding-left", leftWidth)
+        .css("padding-left", clickyWidth)
         .css("position", "relative")
         .css("float", "left")
     ;
@@ -157,8 +157,8 @@ function makeCodeInteractive() {
     ;
 
     $(".left")
-        .css("width", leftWidth)
-        .css("right", leftWidth)
+        .css("width", clickyWidth)
+        .css("right", clickyWidth)
         .css("margin-left", "-100%")
         .css("position", "relative")
         .css("float", "left")
