@@ -126,16 +126,9 @@ function makeCodeInteractive() {
             ;
             $(this).append(clickyDiv);
 
-            var clicky =
-                $("<div>")
-                .html("▸")
-                .addClass("clicky")
-                .css("background-color", "orange")
-            ;
+            var clicky = $("<div>").addClass("clicky");
+            resetClicky.call(clicky);
             clickyDiv.append(clicky);
-
-            clicky.click(_.partial(onClick, clicky));
-
         })
     ;
 
@@ -179,15 +172,41 @@ function makeCodeInteractive() {
             .css("position", "relative")
             .css("float", "left")
     );
-    $('.code >> span.comment:contains("FILL")').empty();
-    $('.code >> span.comment:contains("==>")')
-        .addClass("response")
-        .empty()
-    ;
+    $('.code >> span.comment:contains("FILL")').remove();
+    $('.code >> span.comment:contains("==>")').remove();
+    $(".code").append(
+        $('<div class="response">')
+            .css("position", "relative")
+            .css("float", "left")
+    );
 
 }
 
+function backtrack(toLabel) {
+    var fromLabel = currentLabel();
+    syncRequest("rewind", fromLabel - toLabel, printResponse);
+    $(".clicky")
+        .filter(function() {
+            var label = $(this).data("label");
+            return label !== undefined && label >= toLabel;
+        })
+        .each(resetClicky)
+    ;
+}
+
+function resetClicky() {
+    $(this)
+        .html("▸")
+        .css("background-color", "orange")
+        .off("click")
+        .click(_.partial(onClick, $(this)))
+    ;
+    $(this).parent().parent().find(".response").empty();
+}
+
 function onClick(clicky) {
+
+    var label = currentLabel();
 
     var queriesDiv = $(this).parent().parent().children(".right");
 
@@ -198,6 +217,9 @@ function onClick(clicky) {
         .replace(/⇒/g, '=>')
     ;
 
+    var responseDiv = clicky.parent().parent().find(".response");
+    responseDiv.empty();
+
     var allGood = true;
 
     var handler = function(response) {
@@ -207,19 +229,13 @@ function onClick(clicky) {
         switch(response.rResponse.tag) {
 
         case "Good":
-            clicky
-                .css("background-color", "lightgreen")
-                .off("click")
-            ;
-            clicky.parent().parent().find(".error").empty();
             var msg = response.rResponse.contents[0];
             if (msg !== "") {
-                clicky.parent().parent().find(".response")
+                responseDiv
                     .css("background-color", "lightgreen")
                     .text(removeWarning(msg))
                 ;
             }
-            clicky.text("✓");
             break;
 
         case "Fail":
@@ -228,7 +244,7 @@ function onClick(clicky) {
                 .css("background-color", "red")
             ;
             var msg = response.rResponse.contents;
-            clicky.parent().parent().find(".error")
+            responseDiv
                 .css("background-color", "salmon")
                 .text(removeWarning(msg))
             ;
@@ -251,6 +267,16 @@ function onClick(clicky) {
             }
         })
     ;
+
+    if (allGood) {
+        clicky
+            .css("background-color", "lightgreen")
+            .data("label", label)
+            .text("✓")
+            .off("click")
+            .on("click", _.partial(backtrack, label))
+        ;
+    }
 
 }
 
