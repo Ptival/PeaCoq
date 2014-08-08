@@ -1,6 +1,4 @@
 
-/*** TODO ***/
-
 // CONFIGURATION
 var nodeMinSpacing = 5;
 var nodeStroke = 2;
