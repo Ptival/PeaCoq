@@ -300,7 +300,8 @@ function debugQuery(q) {
 }
 
 function printResponse(response) {
-    console.log("tag:", response.rResponse.tag, "contents:", response.rResponse.contents);
+    console.log("tag:", response.rResponse.tag,
+                "contents:", response.rResponse.contents);
 }
 
 function textify(div) {
