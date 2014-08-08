@@ -60,7 +60,7 @@ function currentLabel() {
         var msg = response.rResponse.contents[0];
         result = msg.match("^.*,.*,.*,\"(.*)\",.*$")[1];
     });
-    return result;
+    return + result;
 }
 
 function resetCoq() {
