@@ -92,7 +92,10 @@ function separateCode() {
                     $(this).contents(),
                     function(acc, elt){
                         if (_(commands).contains($(elt).text())) {
-                            acc.append($('<div class="code">').css("clear", "left").append(elt));
+                            acc.append(
+                                $('<div class="code">')
+                                    .css("clear", "left").append(elt)
+                            );
                         } else {
                             acc.children(":last").append(elt);
                         }
