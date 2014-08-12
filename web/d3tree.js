@@ -86,8 +86,6 @@ function ProofTree(anchor, width, height) {
     this.tree = d3.layout.tree()
         .children(function(d) {
             if (d.solved) { return []; }
-            if (self.isCurNode(d)) { return d.allChildren; }
-            if (self.isCurNodeParent(d) && isTactic(d)) { return d.allChildren; }
             return d.visibleChildren;
         })
         .separation(function(n1, n2) { return 1; })
@@ -218,8 +216,6 @@ function addTheorem(t, ndx) {
     $('#buttons').append(b);
 }
 
-var pt; // TODO: make this local, global for debugging purposes
-
 $(document).ready(function() {
 
     _(theorems).each(addTheorem);
@@ -228,7 +224,7 @@ $(document).ready(function() {
 
     var scrollbarWidth = 20; // arbitrary
 
-    pt = new ProofTree(
+    var pt = new ProofTree(
         d3.select("body"),
         $(window).width() - scrollbarWidth,
         $(window).height()
@@ -238,7 +234,18 @@ $(document).ready(function() {
         theorems[ndx][0],
         theorems[ndx][1]
     );
+/*
+    var pt2 = new ProofTree(
+        d3.select("body"),
+        $(window).width() - scrollbarWidth,
+        $(window).height()/2
+    );
 
+    pt2.newTheorem(
+        theorems[ndx+1][0],
+        theorems[ndx+1][1]
+    );
+*/
 });
 
 ProofTree.prototype.newTheorem = function(theorem, tactics) {
@@ -393,33 +400,32 @@ ProofTree.prototype.hInit = function(response) {
         "depth": 0, // need to set depth for isGoal() to work early
         "offset": 0,
         "hyps": [],
+        "visibleChildren": [],
     };
 
     this.curNode = this.rootNode;
 
     this.rootNode.allChildren = this.tryAllTactics();
 
-    this.click(this.rootNode);
-
     this.update(this.rootNode);
 
 }
 
 function hasParent(n) {
-    return (n.hasOwnProperty('parent'));
+    return n.hasOwnProperty('parent');
 }
 
 function hasGrandParent(n) {
-    return (n.hasOwnProperty('parent')
-            && n.parent.hasOwnProperty('parent'));
+    return n.hasOwnProperty('parent')
+        && n.parent.hasOwnProperty('parent');
 }
 
-ProofTree.prototype.isRootNode = function(n) { return (n.id === this.rootNode.id); }
+ProofTree.prototype.isRootNode = function(n) { return n.id === this.rootNode.id; }
 
-ProofTree.prototype.isCurNode = function(n) { return (n.id === this.curNode.id); }
+ProofTree.prototype.isCurNode = function(n) { return n.id === this.curNode.id; }
 
 ProofTree.prototype.isCurNodeParent = function(n) {
-    return (hasParent(this.curNode) && this.curNode.parent.id === n.id);
+    return hasParent(this.curNode) && this.curNode.parent.id === n.id;
 }
 
 ProofTree.prototype.isCurNodeChild = function(n) {
@@ -433,7 +439,7 @@ ProofTree.prototype.isCurNodeGrandChild = function(n) {
 }
 
 ProofTree.prototype.isCurNodeSibling = function(n) {
-    return (!this.isCurNode(n) && hasParent(n) && this.isCurNodeParent(n.parent));
+    return !this.isCurNode(n) && hasParent(n) && this.isCurNodeParent(n.parent);
 }
 
 function hypName(h) {
@@ -605,7 +611,9 @@ ProofTree.prototype.update = function(source) {
     // Compute the new visible nodes, determine the translation and zoom
 
     var visibleNodes = [];
-    visibleNodes = visibleNodes.concat(curNode.parent || []);
+    if (hasParent(curNode)) {
+        visibleNodes = visibleNodes.concat(curNode.parent);
+    }
     visibleNodes = visibleNodes.concat([curNode]);
     visibleNodes = visibleNodes.concat(curNode.visibleChildren || []);
 
