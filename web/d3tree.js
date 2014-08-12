@@ -1,24 +1,19 @@
 
+"use strict";
+
+// TODO: move this in client code
+var thmNdx = 0;
+
 // CONFIGURATION
 var nodeMinSpacing = 5;
 var nodeStroke = 2;
-var nodeHeight = 25;
 var rectMargin = {top: 2, right: 8, bottom: 2, left: 8};
-var scrollbarWidth = 20; // I could compute this if I cared enough
 var nbChildrenToShow = 2;
 var animationDuration = 420;
 
-// OTHER GLOBALS
+// COMPUTED GLOBALS
 var maxNodesOnLine = Math.pow(nbChildrenToShow, 2);
 var diagonal = d3.svg.diagonal();
-var rootId = _.uniqueId();
-var animationRunning = false;
-var thmNdx = 0;
-
-// GLOBALS TO BE INITIALIZED LATER
-var tree, svg, canvas, context, tactics;
-var smallestNodeWidth, bigNodeWidth, width, height, curNode, rootNode;
-var xFactor, yFactor;
 
 // These tactic sets each build on top of the previous one
 var tSet = ['simpl', 'simpl in *', 'reflexivity', 'intro', 'rewrite', 'destruct', 'induction'];
@@ -30,7 +25,7 @@ var tInduction   = tSet.slice(0, 1 + tSet.indexOf('induction'));
 // These ones are more special
 var tCompute = tReflexivity.concat(['compute']);
 
-var thms = [
+var theorems = [
 ['Theorem branching : ∀(a b : comparison), a = Eq → b = Eq → a = b.', tDestruct],
 ['Theorem plus_O_n : ∀n : nat, 0 + n = n.', tIntro],
 ['Theorem plus_1_l : ∀n : nat, 1 + n = S n.', tIntro],
@@ -60,6 +55,130 @@ var thms = [
 ['Theorem mult_assoc : ∀n m p : nat, n * (m * p) = (n * m) * p.', tInduction],
 ];
 
+// [width] and [height] are the wanted ones, it might end up slightly smaller
+function ProofTree(anchor, width, height) {
+
+    var self = this;
+
+    this.svgId = _.uniqueId();
+
+    this.animationRunning = false;
+
+    this.smallestNodeWidth = evenFloor(
+        (width
+         - ((maxNodesOnLine - 1) * nodeMinSpacing)
+        ) / maxNodesOnLine
+    );
+
+    this.bigNodeWidth = evenFloor (
+        (width
+         - (2 * nodeMinSpacing)
+        ) / 3
+    );
+
+    this.width =
+        maxNodesOnLine * this.smallestNodeWidth
+        + (maxNodesOnLine - 1) * nodeMinSpacing;
+    this.height = height;
+    this.xFactor = this.width;
+    this.yFactor = this.height;
+
+    this.tree = d3.layout.tree()
+        .children(function(d) {
+            if (d.solved) { return []; }
+            if (self.isCurNode(d)) { return d.allChildren; }
+            if (self.isCurNodeParent(d) && isTactic(d)) { return d.allChildren; }
+            return d.visibleChildren;
+        })
+        .separation(function(n1, n2) { return 1; })
+    ;
+
+    this.svg = anchor
+        .on("keydown", this.keydownHandler.bind(this))
+        .insert("svg", ":first-child")
+        .attr("id", "svg" + this.svgId)
+        .attr("width", this.width)
+        .attr("height", this.height)
+    ;
+
+    this.canvas =
+        this.svg
+        .append("g")
+        .attr("id", "viewport")
+        .attr("class", "canvas")
+    // an okay approximation of the canvas initial translation
+        .attr("transform",
+              "translate("
+              + this.width / maxNodesOnLine
+              + ", "
+              + 0
+              + ")"
+             )
+    ;
+
+    this.context =
+        this.svg
+        .append("g")
+        .attr("class", "context")
+    ;
+
+    var contextDivWidth = this.bigNodeWidth - rectMargin.left - rectMargin.right;
+    var contextHeight;
+
+    this.context
+        .append("foreignObject")
+        .attr('x', rectMargin.left)
+        .attr("width", contextDivWidth)
+        .append("xhtml:body")
+        .html('<div><p>Empty context</p></div>')
+    // now retrieve the computed height of the div
+        .attr("height", function() {
+            contextHeight = this.firstChild.getBoundingClientRect().height
+            return contextHeight;
+        })
+    ;
+
+    this.context
+        .insert("rect", ":first-child")
+        .attr("width", this.bigNodeWidth)
+        .attr("height", contextHeight)
+    ;
+
+    this.debug =
+        this.svg
+        .append("g")
+        .attr("class", "debug")
+    ;
+
+    var debugDivWidth = this.bigNodeWidth - rectMargin.left - rectMargin.right;
+    var debugHeight;
+
+    this.debug
+        .append("foreignObject")
+        .attr('x', this.width - this.bigNodeWidth + rectMargin.left)
+        .attr("width", debugDivWidth)
+        .append("xhtml:body")
+        .html('<div><p>No debug information</p></div>')
+        .attr("height", function() {
+            debugHeight = this.firstChild.getBoundingClientRect().height
+            return debugHeight;
+        })
+    ;
+
+    this.debug
+        .insert("rect", ":first-child")
+        .attr("x", this.width - this.bigNodeWidth)
+        .attr("width", this.bigNodeWidth)
+        .attr("height", debugHeight)
+    ;
+
+    this.svg
+        .insert("script", ":first-child")
+        .attr("xlink:href", "SVGPan.js")
+    ;
+
+}
+
 function parseSVGTransform(a) {
     var b = {};
     for (var i in a = a.match(/(\w+\((\-?\d+\.?\d*,?)+\))+/g)) {
@@ -74,11 +193,10 @@ function evenFloor(x) {
     return (r % 2 === 0) ? r : r - 1;
 }
 
-function nodeWidth(d) {
-    //return smallestNodeWidth;
-    return (isCurNode(d) || isCurNodeParent(d))
-        ? bigNodeWidth
-        : smallestNodeWidth
+ProofTree.prototype.nodeWidth = function(d) {
+    return (this.isCurNode(d) || this.isCurNodeParent(d))
+        ? this.bigNodeWidth
+        : this.smallestNodeWidth
     ;
 }
 
@@ -94,146 +212,57 @@ function addTheorem(t, ndx) {
         text: t[0],
         click: function() {
             thmNdx = ndx;
-            newTheorem(t);
+            newTheorem(t[0], t[1]);
         }
     });
     $('#buttons').append(b);
 }
 
+var pt; // TODO: make this local, global for debugging purposes
+
 $(document).ready(function() {
 
-    _(thms).each(addTheorem);
+    _(theorems).each(addTheorem);
 
-    smallestNodeWidth = evenFloor(
-        ($(window).width()
-         - scrollbarWidth
-         - ((maxNodesOnLine - 1) * nodeMinSpacing)
-        ) / maxNodesOnLine
+    var ndx = 0;
+
+    var scrollbarWidth = 20; // arbitrary
+
+    pt = new ProofTree(
+        d3.select("body"),
+        $(window).width() - scrollbarWidth,
+        $(window).height()
     );
 
-    bigNodeWidth = evenFloor (
-        ($(window).width()
-         - scrollbarWidth
-         - (2 * nodeMinSpacing)
-        ) / 3
+    pt.newTheorem(
+        theorems[ndx][0],
+        theorems[ndx][1]
     );
-
-    width =
-        maxNodesOnLine * smallestNodeWidth
-        + (maxNodesOnLine - 1) * nodeMinSpacing;
-    height = $(window).height();
-    xFactor = width;
-    yFactor = height;
-
-    newTheorem(thms[thmNdx]);
 
 });
 
-function newTheorem(thmTac) {
+ProofTree.prototype.newTheorem = function(theorem, tactics) {
 
-    var theorem = thmTac[0];
-    tactics = thmTac[1];
+    var self = this;
 
-    d3.select("svg").remove();
+    this.theorem = theorem;
+    this.tactics = tactics;
 
-    tree = d3.layout.tree()
-        .children(function(d) {
-            if (d.solved) { return []; }
-            if (isCurNode(d)) { return d.allChildren; }
-            if (isCurNodeParent(d) && isTactic(d)) { return d.allChildren; }
-            return d.visibleChildren;
-        })
-        .separation(function(n1, n2) {
-            //if (isCurNode(n1) || isCurNode(n2)) { return nbChildrenToShow; }
-            return 1;
-        })
-    ;
-
-    svg = d3.select("body")
-        .on("keydown", keydownHandler)
-        .insert("svg", ":first-child")
-        .attr("width", width)
-        .attr("height", height)
-    ;
-
-    canvas =
-        svg
-        .append("g")
-        .attr("id", "viewport")
+    // reinitialize the viewport to a satisfying location
+    this.canvas
         .attr("class", "canvas")
-    // an okay approximation of the canvas initial translation
         .attr("transform",
               "translate("
-              + width / maxNodesOnLine
+              + this.width / maxNodesOnLine
               + ", "
               + 0
               + ")"
              )
     ;
 
-    context =
-        svg
-        .append("g")
-        .attr("class", "context")
-    ;
+    this.syncQuery("Abort All.", hIgnore);
 
-    var contextDivWidth = bigNodeWidth - rectMargin.left - rectMargin.right;
-    var contextHeight;
-
-    context
-        .append("foreignObject")
-        .attr('x', rectMargin.left)
-        .attr("width", contextDivWidth)
-        .append("xhtml:body")
-        .html('<div><p>Empty context</p></div>')
-    // now retrieve the computed height of the div
-        .attr("height", function() {
-            contextHeight = this.firstChild.getBoundingClientRect().height
-            return contextHeight;
-        })
-    ;
-
-    context
-        .insert("rect", ":first-child")
-        .attr("width", bigNodeWidth)
-        .attr("height", contextHeight)
-    ;
-
-    debug =
-        svg
-        .append("g")
-        .attr("class", "debug")
-    ;
-
-    var debugWidth = bigNodeWidth - rectMargin.left - rectMargin.right;
-    var debugHeight;
-
-    debug
-        .append("foreignObject")
-        .attr('x', width - bigNodeWidth + rectMargin.left)
-        .attr("width", bigNodeWidth - rectMargin.left - rectMargin.right)
-        .append("xhtml:body")
-        .html('<div><p>No debug information</p></div>')
-        .attr("height", function() {
-            debugHeight = this.firstChild.getBoundingClientRect().height
-            return debugHeight;
-        })
-    ;
-
-    debug
-        .insert("rect", ":first-child")
-        .attr("x", width - bigNodeWidth)
-        .attr("width", debugWidth)
-        .attr("height", debugHeight)
-    ;
-
-    svg
-        .insert("script", ":first-child")
-        .attr("xlink:href", "SVGPan.js")
-    ;
-
-    syncQuery('Abort All.', hIgnore);
-    syncQuery(theorem, hInit);
+    this.syncQuery(theorem, this.hInit.bind(this));
 
 }
 
@@ -268,19 +297,20 @@ function mkTacticNode(tactic, goals) {
 
 }
 
-function tryAllTactics() {
+ProofTree.prototype.tryAllTactics = function() {
+
+    var self = this;
 
     var res = [];
     var unfocusedBefore;
 
-    syncQueryUndo('idtac.', function(response) {
+    this.syncQueryUndo('idtac.', function(response) {
         unfocusedBefore = response.rGoals.unfocused;
         res.push(mkTacticNode('idtac.', response.rGoals.focused));
     });
 
     var run = function(t) {
-        syncQueryUndo(t + '.', function(response) {
-
+        self.syncQueryUndo(t + '.', function(response) {
             if(response.rResponse.tag === "Good") {
                 if (_.isEqual(response.rGoals.unfocused, unfocusedBefore)) {
                     res.push(mkTacticNode(t + '.', response.rGoals.focused));
@@ -299,12 +329,10 @@ function tryAllTactics() {
     }
 
     var curHyps = [];
-    if (curNode !== undefined) {
-        var curGoal = (isGoal(curNode)) ? curNode : curNode.parent;
-        curHyps = curGoal.hyps;
-    }
+    var curGoal = (isGoal(this.curNode)) ? this.curNode : this.curNode.parent;
+    curHyps = curGoal.hyps;
 
-    _(tactics).each(function(t) {
+    _(this.tactics).each(function(t) {
         switch (t) {
         case "destruct":
             _(curHyps).each(function(n) {
@@ -352,26 +380,28 @@ function tryAllTactics() {
 
 }
 
-function hInit(response) {
+ProofTree.prototype.hInit = function(response) {
 
     // There should only be one goal at that point
-    rootNode = {
-        "id": rootId,
+    this.rootNode = {
+        "id": _.uniqueId(),
         "name": response.rGoals.focused[0].gGoal,
         "x0": 0.5,
         "y0": 0,
-        "allChildren": tryAllTactics(),
+        "allChildren": [], // will be filled once this.curNode is set
         "ndx": 1,
         "depth": 0, // need to set depth for isGoal() to work early
         "offset": 0,
         "hyps": [],
     };
 
-    curNode = rootNode;
+    this.curNode = this.rootNode;
 
-    click(rootNode);
+    this.rootNode.allChildren = this.tryAllTactics();
 
-    update(rootNode);
+    this.click(this.rootNode);
+
+    this.update(this.rootNode);
 
 }
 
@@ -384,38 +414,43 @@ function hasGrandParent(n) {
             && n.parent.hasOwnProperty('parent'));
 }
 
-function isCurNode(n) { return (n.id === curNode.id); }
+ProofTree.prototype.isRootNode = function(n) { return (n.id === this.rootNode.id); }
 
-function isCurNodeParent(n) {
-    return (hasParent(curNode) && curNode.parent.id === n.id);
+ProofTree.prototype.isCurNode = function(n) { return (n.id === this.curNode.id); }
+
+ProofTree.prototype.isCurNodeParent = function(n) {
+    return (hasParent(this.curNode) && this.curNode.parent.id === n.id);
 }
 
-function isCurNodeChild(n) {
-    if (hasParent(n) && isCurNode(n.parent)) { return true; }
+ProofTree.prototype.isCurNodeChild = function(n) {
+    if (hasParent(n) && this.isCurNode(n.parent)) { return true; }
     return false;
 }
 
-function isCurNodeGrandChild(n) {
-    if (hasParent(n) && isCurNodeChild(n.parent)) { return true; }
+ProofTree.prototype.isCurNodeGrandChild = function(n) {
+    if (hasParent(n) && this.isCurNodeChild(n.parent)) { return true; }
     return false;
 }
 
-function isCurNodeSibling(n) {
-    return (!isCurNode(n) && hasParent(n) && isCurNodeParent(n.parent));
+ProofTree.prototype.isCurNodeSibling = function(n) {
+    return (!this.isCurNode(n) && hasParent(n) && this.isCurNodeParent(n.parent));
 }
 
 function hypName(h) {
     return h.slice(0, h.indexOf(':') - 1);
 }
 
-function update(source) {
+ProofTree.prototype.update = function(source) {
+
+    var self = this;
+    var curNode = this.curNode; // expected to stay constant throughout
 
     // if the viewpoint has been zoomed, cancel the zoom so that the computed
     // sizes are correct
-    var m = parseSVGTransform(canvas.attr('transform'));
+    var m = parseSVGTransform(this.canvas.attr('transform'));
     if (m.hasOwnProperty('matrix')) {
         m = m.matrix;
-        canvas.attr('transform',
+        this.canvas.attr('transform',
                     'matrix(1'
                     + ',' + m[1]
                     + ',' + m[2]
@@ -426,11 +461,11 @@ function update(source) {
         ;
     }
 
-    var nodes = tree.nodes(rootNode);
-    var links = tree.links(nodes);
+    var nodes = this.tree.nodes(this.rootNode);
+    var links = this.tree.links(nodes);
 
     var node =
-        canvas
+        this.canvas
         .selectAll("g.node")
         .data(nodes, function(d) {
             return d.id || (d.id = _.uniqueId());
@@ -438,7 +473,7 @@ function update(source) {
     ;
 
     var link =
-        canvas
+        this.canvas
         .selectAll("path")
         .data(links, function(d) {
             return d.id = d.source.id + "," + d.target.id;
@@ -449,14 +484,14 @@ function update(source) {
     var gs = nodeEnter
         .append("g")
         .attr("class", "node")
-        .on("click", click)
+        .on("click", this.click.bind(this))
     ;
 
     var fo =
         gs
         .append("foreignObject")
         .attr("width", function(d) {
-            return nodeWidth(d) - rectMargin.left - rectMargin.right;
+            return self.nodeWidth(d) - rectMargin.left - rectMargin.right;
         })
     ;
 
@@ -559,13 +594,13 @@ function update(source) {
         })
         .attr("transform", function(d) {
             return 'translate(-'
-                + ((nodeWidth(d) / 2) - rectMargin.left)
+                + ((self.nodeWidth(d) / 2) - rectMargin.left)
                 + ', -'
                 + ((d.height / 2) - rectMargin.top)
                 + ')'
             ;
         })
-;
+    ;
 
     // Compute the new visible nodes, determine the translation and zoom
 
@@ -611,7 +646,6 @@ function update(source) {
     var maxX = curNode.x + halfdX;
     var dX = maxX - minX;
     var dY = maxY - minY;
-
     var allChildren = _(curNode.allChildren);
 
     var allGrandChildren = _(allChildren).map(function(c) {
@@ -664,9 +698,9 @@ function update(source) {
 
     var siblingMinDistance = _.min(siblingsDistances);
 
-    xFactor = (siblingMinDistance === Infinity)
-        ? xFactor
-        : ((smallestNodeWidth + nodeMinSpacing)
+    this.xFactor = (siblingMinDistance === Infinity)
+        ? this.xFactor
+        : ((this.smallestNodeWidth + nodeMinSpacing)
            / siblingMinDistance)
     ;
 
@@ -686,9 +720,9 @@ function update(source) {
     // ...or the current node
     if (bottommostNode === -Infinity) { bottommostNode = curNode; }
 
-    yFactor = (dY === 0)
-        ? yFactor
-        : ((height - (topmostNode.height / 2) - (bottommostNode.height / 2)) / dY)
+    this.yFactor = (dY === 0)
+        ? this.yFactor
+        : ((this.height - (topmostNode.height / 2) - (bottommostNode.height / 2)) / dY)
     ;
 
     gs
@@ -699,8 +733,8 @@ function update(source) {
                 d.cY0 = d.parent.cY0;
             } else {
                 // the root stores its own (x0, y0)
-                d.cX0 = d.x0 * xFactor;
-                d.cY0 = d.y0 * yFactor;
+                d.cX0 = d.x0 * self.xFactor;
+                d.cY0 = d.y0 * self.yFactor;
             }
             return "translate(" + d.cX0 + "," + d.cY0 + ")";
         })
@@ -708,7 +742,7 @@ function update(source) {
     gs
         .insert("rect", ":first-child")
         .attr("x", function(d) {
-            return this.nextSibling.getBBox().x - nodeWidth(d) / 2;
+            return this.nextSibling.getBBox().x - self.nodeWidth(d) / 2;
         })
         .attr("y", function(d) {
             return this.nextSibling.getBBox().y - d.height / 2;
@@ -742,7 +776,7 @@ function update(source) {
             return pb.y + pb.height + 26;
         })
         .on('click', function(n) {
-            shiftLeft(n);
+            self.shiftLeft(n);
             d3.event.stopPropagation();
         })
     ;
@@ -760,7 +794,7 @@ function update(source) {
             return pb.y + pb.height + 26;
         })
         .on('click', function(n) {
-            shiftRight(n);
+            self.shiftRight(n);
             d3.event.stopPropagation();
         })
     ;
@@ -772,7 +806,7 @@ function update(source) {
                 // visible when:
                 !d.solved
                     && d.offset > 0
-                    && (isCurNode(d) || isCurNodeChild(d))
+                    && (self.isCurNode(d) || self.isCurNodeChild(d))
                     && !_.isEmpty(d.visibleChildren)
             );
         })
@@ -785,7 +819,7 @@ function update(source) {
                 // visible when:
                 ! d.solved
                     && d.offset + nbChildrenToShow < _(d.allChildren).size()
-                    && (isCurNode(d) || isCurNodeChild(d))
+                    && (self.isCurNode(d) || self.isCurNodeChild(d))
                     && !_.isEmpty(d.visibleChildren)
             );
         })
@@ -804,31 +838,31 @@ function update(source) {
 
     _(nodes)
         .each(function(n) {
-            if (isCurNodeChild(n) || isCurNodeGrandChild(n)) {
-                n.cX = (n.x + descendantsXOffset) * xFactor;
-            } else if (isCurNodeSibling(n)) {
-                var smallBigDelta = bigNodeWidth - smallestNodeWidth;
+            if (self.isCurNodeChild(n) || self.isCurNodeGrandChild(n)) {
+                n.cX = (n.x + descendantsXOffset) * self.xFactor;
+            } else if (self.isCurNodeSibling(n)) {
+                var smallBigDelta = self.bigNodeWidth - self.smallestNodeWidth;
                 if (n.ndx < curNode.ndx) {
-                    n.cX = n.x * xFactor - smallBigDelta / 2;
+                    n.cX = n.x * self.xFactor - smallBigDelta / 2;
                 } else {
-                    n.cX = n.x * xFactor + smallBigDelta / 2;
+                    n.cX = n.x * self.xFactor + smallBigDelta / 2;
                 }
-            } else if (isCurNodeParent(n)) {
-                n.cX = curNode.x * xFactor;
+            } else if (self.isCurNodeParent(n)) {
+                n.cX = curNode.x * self.xFactor;
             } else {
-                n.cX = n.x * xFactor;
+                n.cX = n.x * self.xFactor;
             }
-            n.cY = n.y * yFactor;
+            n.cY = n.y * self.yFactor;
         })
     ;
 
-    canvas
+    this.canvas
         .transition()
         .duration(animationDuration)
         .attr("transform",
               "translate("
               + (
-                  width / 2 - curNode.cX
+                  this.width / 2 - curNode.cX
 /*
                   (dX === 0)
                       ? (width / 2 - minX * xFactor)
@@ -839,7 +873,7 @@ function update(source) {
               + (
                   (dY === 0)
                       ? topmostNode.height / 2
-                      : (topmostNode.height / 2 - minY * yFactor)
+                      : (topmostNode.height / 2 - minY * self.yFactor)
                 )
               + ")")
     ;
@@ -856,9 +890,9 @@ function update(source) {
         .selectAll('rect')
         .transition()
         .duration(animationDuration)
-        .attr("width", nodeWidth)
+        .attr("width", this.nodeWidth.bind(this))
         .attr("x", function(d) {
-            return this.nextSibling.getBBox().x - nodeWidth(d) / 2;
+            return this.nextSibling.getBBox().x - self.nodeWidth(d) / 2;
         })
     ;
 
@@ -870,11 +904,11 @@ function update(source) {
         .transition()
         .duration(animationDuration)
         .attr("width", function(d) {
-            return nodeWidth(d) - rectMargin.left - rectMargin.right;
+            return self.nodeWidth(d) - rectMargin.left - rectMargin.right;
         })
         .attr("transform", function(d) {
             return 'translate(-'
-                + ((nodeWidth(d) / 2) - rectMargin.left)
+                + ((self.nodeWidth(d) / 2) - rectMargin.left)
                 + ', -'
                 + ((d.height / 2) - rectMargin.top)
                 + ')'
@@ -882,12 +916,12 @@ function update(source) {
         })
     ;
 
-    canvas
+    this.canvas
         .selectAll("rect")
         .classed("tactic", function(d) { return isTactic(d) && !d.solved; })
         .classed("goal", function(d) { return isGoal(d) && !d.solved; })
         .classed("solved", function(d) { return (d.solved); })
-        .classed("current", isCurNode)
+        .classed("current", this.isCurNode.bind(this))
     ;
 
     var nodeExit = node.exit();
@@ -906,8 +940,15 @@ function update(source) {
         .transition()
         .duration(animationDuration)
         .attr("transform", function(d) {
+            // if the previous root node tries to exit, just leave it where it was
+            if (!hasParent(d)) {
+                return "translate(" + d.cX + "," + d.cY + ")";
+            }
             var parentAlsoExiting = nodeIsExiting(d.parent);
-            var nodeToReach = parentAlsoExiting ? d.parent.parent : d.parent;
+            var nodeToReach = (parentAlsoExiting && hasGrandParent(d))
+                ? d.parent.parent
+                : d.parent
+            ;
             return "translate(" + nodeToReach.cX + "," + nodeToReach.cY + ")";
         })
         .style("opacity", "0")
@@ -944,7 +985,10 @@ function update(source) {
         .duration(animationDuration)
         .attr("d", function(d) {
             var sourceAlsoExiting = nodeIsExiting(d.source);
-            var sourceNode = sourceAlsoExiting ? d.source.parent : d.source;
+            var sourceNode = (sourceAlsoExiting && hasParent(d.source))
+                ? d.source.parent
+                : d.source
+            ;
             var o = {"x": sourceNode.cX, "y": sourceNode.cY};
             return diagonal({"source": o, "target": o});
         })
@@ -967,104 +1011,111 @@ function update(source) {
         d.cY0 = d.cY;
     });
 
-    updateContext();
+    this.updateContext();
 
-    animationRunning = true;
-    window.setTimeout(function() { animationRunning = false; }, animationDuration);
+    this.animationRunning = true;
+    window.setTimeout(function() { self.animationRunning = false; }, animationDuration);
 
 }
 
-function updateVisibleChildren(n) {
+ProofTree.prototype.updateVisibleChildren = function(n) {
     n.visibleChildren = n.allChildren.slice(n.offset, n.offset + nbChildrenToShow);
-    update(n);
+    this.update(n);
 }
 
-function shiftLeft(n) {
+ProofTree.prototype.shiftLeft = function(n) {
     if (n.solved) { return; }
     if (n.offset > 0) {
         n.offset--;
-        updateVisibleChildren(n);
+        this.updateVisibleChildren(n);
     }
 }
 
-function shiftRight(n) {
+ProofTree.prototype.shiftRight = function(n) {
     if (n.solved) { return; }
     if (n.offset + nbChildrenToShow < n.allChildren.length) {
         n.offset++;
-        updateVisibleChildren(n);
+        this.updateVisibleChildren(n);
     }
 }
 
-function click(d) {
-    if (animationRunning) { return; }
+ProofTree.prototype.click = function(d) {
+
+    if (this.animationRunning) { return; }
 
     if (d.solved) {
         if (hasParent(d)) {
-            click(d.parent);
+            this.click(d.parent);
         }
         return;
     }
 
     // when the user clicks on a tactic node below
     // bring them to the first unsolved goal instead
-    if(isTactic(d) && d.depth > curNode.depth && d.allChildren.length > 0) {
+    if(isTactic(d) && d.depth > this.curNode.depth && d.allChildren.length > 0) {
         var firstUnsolved = _(d.allChildren)
             .find(function(e) { return !e.solved; });
         if (firstUnsolved !== undefined) {
-            click(firstUnsolved);
+            this.click(firstUnsolved);
             return;
         }
     }
 
-    navigateTo(d);
+    this.navigateTo(d);
 
     if (!d.hasOwnProperty('allChildren') || d.allChildren.length === 0) {
         if (isGoal(d)) {
-            d.allChildren = tryAllTactics();
+            d.allChildren = this.tryAllTactics();
         }
         // otherwise, this is a terminating tactic for this goal!
         else {
-            solved(d);
+            this.solved(d);
         }
     }
 
-    expand(d);
-    update(d);
+    this.expand(d);
+    this.update(d);
 
 }
 
 // called when n has been solved
-function solved(n) {
-    n.solved = true
+ProofTree.prototype.solved = function(n) {
+
+    var self = this;
+
+    n.solved = true;
     n.visibleChildren = [];
     n.allChildren = [];
     collapse(n);
     if (hasParent(n)) {
-        navigateTo(n.parent);
-        animationRunning = true;
+        this.navigateTo(n.parent);
+        this.animationRunning = true;
         window.setTimeout(function () {
-            childSolved(n.parent);
-            update(n.parent);
-            animationRunning = false;
+            self.childSolved(n.parent);
+            self.update(n.parent);
+            self.animationRunning = false;
         }, animationDuration);
     } else {
         // This goal is solved, let's try to solve the next one!
         thmNdx++;
-        window.setTimeout(function() { newTheorem(thms[thmNdx]); }, animationDuration);
+        window.setTimeout(function() {
+            var t = theorems[thmNdx];
+            self.newTheorem(t[0], t[1]);
+        }, animationDuration);
     }
 }
 
 // called when a child of n has become solved
-function childSolved(n) {
+ProofTree.prototype.childSolved = function(n) {
     if (isGoal(n)) {
-        solved(n);
+        this.solved(n);
     } else {
         // Bubble up if this was the last subgoal
         var lastSubgoal =
             _(n.allChildren)
             .every(function(n) { return n.solved === true; })
         ;
-        if (lastSubgoal) { solved(n); }
+        if (lastSubgoal) { this.solved(n); }
     }
 }
 
@@ -1096,25 +1147,27 @@ function collapseExcept(d, e) {
     }
 }
 
-function expand(d) {
+ProofTree.prototype.expand = function(d) {
     d.visibleChildren = d.allChildren.slice(d.offset, d.offset + nbChildrenToShow);
     if (isGoal(d)) {
         _(d.visibleChildren)
             .each(function(c) {
-                c.visibleChildren = c.allChildren.slice(c.offset, c.offset + nbChildrenToShow);
+                c.visibleChildren =
+                    c.allChildren.slice(c.offset,
+                                        c.offset + nbChildrenToShow);
             });
     }
 }
 
-function commonAncestor(n1, n2) {
-    if (n1.id === rootNode.id || n2.id === rootNode.id) { return rootNode; }
+ProofTree.prototype.commonAncestor = function(n1, n2) {
+    if (n1.id === this.rootNode.id || n2.id === this.rootNode.id) { return this.rootNode; }
     if (n1.id === n2.id) { return n1; }
     if (n1.depth < n2.depth) {
-        return commonAncestor(n1, n2.parent);
+        return this.commonAncestor(n1, n2.parent);
     } else if (n1.depth > n2.depth) {
-        return commonAncestor(n1.parent, n2);
+        return this.commonAncestor(n1.parent, n2);
     } else {
-        return commonAncestor(n1.parent, n2.parent);
+        return this.commonAncestor(n1.parent, n2.parent);
     }
 }
 
@@ -1163,11 +1216,13 @@ function depthSolved(tacNode) {
 
 }
 
-function navigateTo(dest) {
+ProofTree.prototype.navigateTo = function(dest) {
 
-    var a = commonAncestor(curNode, dest);
+    var self = this;
 
-    var p = path(curNode, dest);
+    var a = this.commonAncestor(this.curNode, dest);
+
+    var p = path(this.curNode, dest);
 
     // morally, q = [ [p0, p1], [p1, p2], ... ]
     var q = _.zip(p, _(p).rest().value());
@@ -1190,10 +1245,10 @@ function navigateTo(dest) {
                     // between before and after the terminating tactic + 1
                     if(src.terminating) {
                         _(_.range(depthSolved(src))).each(function() {
-                            syncQuery('Undo.', hIgnore);
+                            self.syncQuery('Undo.', hIgnore);
                         });
                     }
-                    syncQuery('Undo.', hIgnore);
+                    self.syncQuery('Undo.', hIgnore);
                 } else {
                     // 'Back.' does not work in -ideslave
                     // 'Back.' takes one step to undo 'Show.'
@@ -1202,7 +1257,7 @@ function navigateTo(dest) {
 
                     // Undo the 'Focus.' command.
                     // Do not use 'Unfocus.' as it is itself undone by 'Undo.'
-                    syncQuery('Undo.', hIgnore);
+                    self.syncQuery('Undo.', hIgnore);
                 }
             } else { // going down
 
@@ -1212,16 +1267,16 @@ function navigateTo(dest) {
                 }
 
                 if (isTactic(dst)) {
-                    syncQuery(dst.name, hIgnore);
+                    self.syncQuery(dst.name, hIgnore);
                 } else {
-                    syncQuery('Focus ' + dst.ndx + '.', hIgnore);
+                    self.syncQuery('Focus ' + dst.ndx + '.', hIgnore);
                 }
 
             }
         })
     ;
 
-    curNode = dest;
+    this.curNode = dest;
 
 }
 
@@ -1229,7 +1284,8 @@ function isTactic(n) { return (n.depth % 2 === 1); }
 
 function isGoal(n) { return (n.depth % 2 === 0); }
 
-function syncRequest(r, q, h) {
+ProofTree.prototype.syncRequest = function(r, q, h) {
+    var self = this;
     if (r === 'query') { console.log(q); }
     $.ajax({
         type: 'POST',
@@ -1237,15 +1293,15 @@ function syncRequest(r, q, h) {
         data: {query : q},
         async: false,
         success: function(response) {
-            //console.log('response', response);
-            if (r === 'query') { updateDebug(response); }
+            //console.log("response", response);
+            if (r === "query") { self.updateDebug(response); }
             h(response);
         }
     });
 }
 
-function syncQuery(q, h) { syncRequest('query', q, h); }
-function syncQueryUndo(q, h) { syncRequest('queryundo', q, h); }
+ProofTree.prototype.syncQuery = function(q, h) { this.syncRequest('query', q, h); }
+ProofTree.prototype.syncQueryUndo = function(q, h) { this.syncRequest('queryundo', q, h); }
 
 function hIgnore(response) { }
 
@@ -1269,10 +1325,10 @@ function updateNodeHeight(selector) {
 }
 
 // TODO: this should use d3 data binding rather than manual management...
-function updateContext() {
+ProofTree.prototype.updateContext = function() {
 
-    var contextDiv = context.select('div');
-    var curGoal = (isGoal(curNode)) ? curNode : curNode.parent;
+    var contextDiv = this.context.select('div');
+    var curGoal = (isGoal(this.curNode)) ? this.curNode : this.curNode.parent;
     var curHyps = curGoal.hyps;
 
     contextDiv.html("");
@@ -1297,26 +1353,28 @@ function updateContext() {
         contextDiv.append("p").text("Empty context");
     }
 
-    updateNodeHeight(context);
+    updateNodeHeight(this.context);
 
 }
 
-function updateDebug(response) {
+ProofTree.prototype.updateDebug = function(response) {
 
-    var debugDiv = debug.select('div');
+    var debugDiv = this.debug.select('div');
     if (response.rGoals.focused.length > 0) {
         debugDiv.html(response.rGoals.focused[0].gGoal);
     } else {
         debugDiv.html(response.rResponse.contents[0]);
     }
 
-    updateNodeHeight(debug);
+    updateNodeHeight(this.debug);
 
 }
 
-function keydownHandler() {
+ProofTree.prototype.keydownHandler = function() {
 
-    if (animationRunning) {
+    var curNode = this.curNode;
+
+    if (this.animationRunning) {
         // all keys are frozen during animation
         d3.event.preventDefault();
         return;
@@ -1325,16 +1383,16 @@ function keydownHandler() {
     switch (d3.event.keyCode) {
 
     case 37: case 65: // Left, a
-        shiftLeft(curNode);
+        this.shiftLeft(curNode);
         break;
 
     case 39: case 68: // Right, d
-        shiftRight(curNode);
+        this.shiftRight(curNode);
         break;
 
     case 38: case 87: // Up, w
         if(hasParent(curNode)) {
-            click(curNode.parent);
+            this.click(curNode.parent);
         }
         break;
 
@@ -1343,29 +1401,29 @@ function keydownHandler() {
             var dest = _(curNode.visibleChildren).find(function(n) {
                 return !(n.solved);
             });
-            if (dest) { click(dest); }
+            if (dest) { this.click(dest); }
         } else {
             if (curNode.visibleChildren[0]) {
-                click(curNode.visibleChildren[0]);
+                this.click(curNode.visibleChildren[0]);
             }
         }
         break;
 
     case 49: case 97: // 1, K1
         if (curNode.visibleChildren.length > 0) {
-            click(curNode.visibleChildren[0]);
+            this.click(curNode.visibleChildren[0]);
         }
         break;
 
     case 50: case 98: // 2, K2
         if (curNode.visibleChildren.length > 1) {
-            click(curNode.visibleChildren[1]);
+            this.click(curNode.visibleChildren[1]);
         }
         break;
 
     case 51: case 99: // 3, K3
         if (curNode.visibleChildren.length > 2) {
-            click(curNode.visibleChildren[2]);
+            this.click(curNode.visibleChildren[2]);
         }
         break;
 
