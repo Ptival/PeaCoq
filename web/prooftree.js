@@ -28,6 +28,7 @@ function ProofTree(anchor, width, height, qed) {
 
     var self = this;
 
+    this.anchor = anchor;
     this.qed = qed;
 
     this.svgId = _.uniqueId();
@@ -68,9 +69,15 @@ function ProofTree(anchor, width, height, qed) {
         })
     //.on("keydown", this.keydownHandler.bind(this))
         .insert("svg", ":first-child")
-        .attr("id", "svg" + this.svgId)
+        .attr("id", "svg-" + this.svgId)
         .attr("width", this.width)
         .attr("height", this.height)
+    ;
+
+    this.proof =
+        anchor
+        .append("div")
+        .attr("id", "proof-" + this.svgId)
     ;
 
     this.canvas =
@@ -185,6 +192,10 @@ ProofTree.prototype.newTheorem = function(theorem, tactics, callback) {
 
     this.theorem = theorem;
     this.tactics = tactics;
+
+    // hide previous proof result if any, show svg if hidden
+    this.proof.style("display", "none");
+    this.svg.style("display", "");
 
     // reinitialize the viewport to a satisfying location
     this.canvas

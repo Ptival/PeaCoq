@@ -66,21 +66,19 @@ function pprint(proof, indentation) {
 }
 
 function qed(prooftree) {
-console.log(proof(prooftree.rootNode));
-    prooftree.svg.each(function() {
-        $(this).replaceWith(
-            $("<div>")
-                .css("font-family", "monospace")
-                .css("margin", 10)
-                .html(
-                    "Require Import Unicode.Utf8.<br>"
-                        + prooftree.theorem
-                        + "<br>Proof.<br>"
-                        + pprint(proof(prooftree.rootNode), 1)
-                        + "Qed.<br>"
-                )
-        );
-    });
+    prooftree.svg
+        .style("display", "none")
+    ;
+    prooftree.proof
+        .style("display", "")
+        .html(
+            "Require Import Unicode.Utf8.<br><br>"
+                + prooftree.theorem
+                + "<br>Proof.<br>"
+                + pprint(proof(prooftree.rootNode), 1)
+                + "Qed.<br>"
+        )
+    ;
 }
 
 $(document).ready(function() {
