@@ -79,6 +79,7 @@ function ProofTree(anchor, width, height, qed) {
         .append("div")
         .attr("id", "proof-" + this.svgId)
         .style("font-family", "monospace")
+        .style("margin", "10px")
     ;
 
     this.canvas =

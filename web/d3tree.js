@@ -76,7 +76,7 @@ function qed(prooftree) {
                 + prooftree.theorem
                 + "<br>Proof.<br>"
                 + pprint(proof(prooftree.rootNode), 1)
-                + "Qed.<br>"
+                + "Qed."
         )
     ;
 }
