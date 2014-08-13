@@ -29,42 +29,6 @@ var theorems = [
 ['Theorem mult_assoc : ∀n m p : nat, n * (m * p) = (n * m) * p.', tInduction],
 ];
 
-function proof(t) {
-
-    if (isGoal(t)) {
-        return proof(_(t.allChildren).find("solved"));
-    }
-
-    if (isTactic(t)) {
-        return [
-            t.name,
-            _(t.allChildren).map(proof).value(),
-        ];
-    }
-
-    console.log("t is neither a goal nor a tactic", t);
-
-}
-
-function repeat(n, s) { return Array(n + 1).join(s); }
-
-function pprint(proof, indentation) {
-    if (_.isEmpty(proof)) { return ""; }
-    var fst = proof[0];
-    var snd = proof[1];
-    var indent = repeat(2 * indentation, "&nbsp;");
-    if (_.isEmpty(snd)) { return indent + "{ " + fst + " }<br>"; }
-    return indent + "{ " + fst + "<br>"
-        + _(snd).reduce(
-            function(acc, elt) {
-                return acc + pprint(elt, indentation + 1)
-            },
-            ""
-        )
-        + indent + "}<br>"
-    ;
-}
-
 function qed(prooftree) {
     prooftree.svg
         .style("display", "none")
