@@ -317,9 +317,11 @@ ProofTree.prototype.tryAllTactics = function() {
                     res.push(mkTacticNode(t + '.', []));
                 }
             }
+            /*
             else {
                 console.log('Bad response for tactic ' + t + ': ', response);
             }
+            */
         });
     }
 
