@@ -1,6 +1,16 @@
 
 "use strict";
 
+/*
+  Note: in strict mode, eval does not populate the global namespace with global
+  scope variables.
+  Therefore $.getScript will not see the global variables unless they are attached
+  to window manually.
+  Since I like strict mode, things to be exported have to be registered in the PT
+  namespace.
+*/
+window.PT = {};
+
 // CONFIGURATION
 var nodeMinSpacing = 5;
 var nodeStroke = 2;
@@ -14,22 +24,23 @@ var maxNodesOnLine = Math.pow(nbChildrenToShow, 2);
 var diagonal = d3.svg.diagonal();
 
 // These tactic sets each build on top of the previous one
-var tSet = ['simpl', 'simpl in *', 'reflexivity', 'intro', 'rewrite', 'destruct', 'induction'];
-var tReflexivity = tSet.slice(0, 1 + tSet.indexOf('reflexivity'));
-var tIntro       = tSet.slice(0, 1 + tSet.indexOf('intro'));
-var tRewrite     = tSet.slice(0, 1 + tSet.indexOf('rewrite'));
-var tDestruct    = tSet.slice(0, 1 + tSet.indexOf('destruct'));
-var tInduction   = tSet.slice(0, 1 + tSet.indexOf('induction'));
-// These ones are more special
-var tCompute = tReflexivity.concat(['compute']);
+PT.tSet = ['simpl', 'simpl in *', 'reflexivity', 'intro', 'rewrite', 'destruct', 'induction'];
+PT.tReflexivity = PT.tSet.slice(0, 1 + PT.tSet.indexOf('reflexivity'));
+PT.tIntro       = PT.tSet.slice(0, 1 + PT.tSet.indexOf('intro'));
+PT.tRewrite     = PT.tSet.slice(0, 1 + PT.tSet.indexOf('rewrite'));
+PT.tDestruct    = PT.tSet.slice(0, 1 + PT.tSet.indexOf('destruct'));
+PT.tInduction   = PT.tSet.slice(0, 1 + PT.tSet.indexOf('induction'));
+// These ones are more specific
+PT.tCompute = PT.tReflexivity.concat(['compute']);
 
 // [width] and [height] are the wanted ones, it might end up slightly smaller
-function ProofTree(anchor, width, height, qed) {
+function ProofTree(anchor, width, height, qed, roosterDir) {
 
     var self = this;
 
     this.anchor = anchor;
-    this.qed = qed;
+    this.qedCallback = qed;
+    this.roosterDir = (typeof roosterDir === "undefined") ? "./" : roosterDir + "/";
 
     this.svgId = _.uniqueId();
 
@@ -62,12 +73,16 @@ function ProofTree(anchor, width, height, qed) {
         .separation(function(n1, n2) { return 1; })
     ;
 
-    this.svg = anchor
+    this.div = anchor
+        .insert("div", ":first-child")
+        .attr("id", "pt-" + this.svgId)
         .on("click", function() {
             // TODO: suspend the activeProofTree
             makeActive(self);
         })
-    //.on("keydown", this.keydownHandler.bind(this))
+    ;
+
+    this.svg = this.div
         .insert("svg", ":first-child")
         .attr("id", "svg-" + this.svgId)
         .attr("width", this.width)
@@ -82,10 +97,20 @@ function ProofTree(anchor, width, height, qed) {
         .style("margin", "10px")
     ;
 
+    this.error =
+        anchor
+        .append("div")
+        .attr("id", "error-" + this.svgId)
+        .style("font-family", "monospace")
+        .style("margin", "10px")
+        .style("background-color", "red")
+        .style("display", "none")
+    ;
+
     this.canvas =
         this.svg
         .append("g")
-        .attr("id", "viewport")
+        //.attr("id", "viewport") // for SVGPan
         .attr("class", "canvas")
     // an okay approximation of the canvas initial translation
         .attr("transform",
@@ -111,10 +136,11 @@ function ProofTree(anchor, width, height, qed) {
         .attr('x', rectMargin.left)
         .attr("width", contextDivWidth)
         .append("xhtml:body")
+        .style("background-color", "rgba(0, 0, 0, 0)")
         .html('<div><p>Empty context</p></div>')
     // now retrieve the computed height of the div
         .attr("height", function() {
-            contextHeight = this.firstChild.getBoundingClientRect().height
+            contextHeight = this.firstChild.getBoundingClientRect().height;
             return contextHeight;
         })
     ;
@@ -139,6 +165,7 @@ function ProofTree(anchor, width, height, qed) {
         .attr('x', this.width - this.bigNodeWidth + rectMargin.left)
         .attr("width", debugDivWidth)
         .append("xhtml:body")
+        .style("background-color", "rgba(0, 0, 0, 0)")
         .html('<div><p>No debug information</p></div>')
         .attr("height", function() {
             debugHeight = this.firstChild.getBoundingClientRect().height
@@ -153,11 +180,26 @@ function ProofTree(anchor, width, height, qed) {
         .attr("height", debugHeight)
     ;
 
+/*
     this.svg
         .insert("script", ":first-child")
-        .attr("xlink:href", "SVGPan.js")
+        .attr("xlink:href", this.roosterDir + "SVGPan.js")
     ;
+*/
 
+}
+
+PT.ProofTree = ProofTree;
+
+PT.handleKeyboard = function() {
+    d3.select("body")
+        .on("click", function() {
+            if($(":focus").size() > 0) {
+                activeProofTree = undefined;
+            }
+        })
+        .on("keydown", keydownDispatcher)
+    ;
 }
 
 function parseSVGTransform(a) {
@@ -213,10 +255,13 @@ ProofTree.prototype.newTheorem = function(theorem, tactics, callback) {
 
     this.syncQuery("Abort All.", hIgnore);
 
+    var success = false;
+
     this.syncQuery(theorem, function(response) {
-        self.hInit(response);
-        window.setTimeout(callback, animationDuration);
+        success = self.hInit(response, callback);
     });
+
+    return success;
 
 }
 
@@ -265,20 +310,16 @@ ProofTree.prototype.tryAllTactics = function() {
 
     var run = function(t) {
         self.syncQueryUndo(t + '.', function(response) {
-            if(response.rResponse.tag === "Good") {
+            if(isGood(response)) {
                 if (_.isEqual(response.rGoals.unfocused, unfocusedBefore)) {
                     res.push(mkTacticNode(t + '.', response.rGoals.focused));
                 } else {
                     res.push(mkTacticNode(t + '.', []));
                 }
             }
-
-/*
             else {
                 console.log('Bad response for tactic ' + t + ': ', response);
             }
-*/
-
         });
     }
 
@@ -287,6 +328,7 @@ ProofTree.prototype.tryAllTactics = function() {
     curHyps = curGoal.hyps;
 
     _(this.tactics).each(function(t) {
+
         switch (t) {
         case "destruct":
             _(curHyps).each(function(n) {
@@ -334,7 +376,17 @@ ProofTree.prototype.tryAllTactics = function() {
 
 }
 
-ProofTree.prototype.hInit = function(response) {
+ProofTree.prototype.hInit = function(response, callback) {
+
+    if (isBad(response)) {
+        console.log(response.rResponse.contents);
+        this.error.text(response.rResponse.contents);
+        this.svg.style("display", "none");
+        this.proof.style("display", "none");
+        this.error.style("display", "");
+        return false;
+    }
+    this.error.style("display", "none");
 
     // There should only be one goal at that point
     this.rootNode = {
@@ -355,6 +407,10 @@ ProofTree.prototype.hInit = function(response) {
     this.rootNode.allChildren = this.tryAllTactics();
 
     this.update(this.rootNode);
+
+    window.setTimeout(callback, animationDuration);
+
+    return true;
 
 }
 
@@ -415,6 +471,7 @@ ProofTree.prototype.update = function(source) {
     }
 
     var nodes = this.tree.nodes(this.rootNode);
+
     var links = this.tree.links(nodes);
 
     var node =
@@ -450,6 +507,7 @@ ProofTree.prototype.update = function(source) {
 
     fo
         .append("xhtml:body")
+        .style("background-color", "rgba(0, 0, 0, 0)")
         .each(function(d) {
 
             var jqObject = $(d3.select(this).node());
@@ -1051,7 +1109,9 @@ ProofTree.prototype.solved = function(n) {
             self.animationRunning = false;
         }, animationDuration);
     } else {
-        this.qed(this);
+        window.setTimeout(function () {
+            self.qedCallback(self);
+        }, animationDuration);
     }
 }
 
@@ -1239,7 +1299,7 @@ ProofTree.prototype.syncRequest = function(r, q, h) {
     if (r === 'query') { console.log(q); }
     $.ajax({
         type: 'POST',
-        url: r,
+        url: this.roosterDir + r,
         data: {query : q},
         async: false,
         success: function(response) {
@@ -1320,6 +1380,12 @@ ProofTree.prototype.updateDebug = function(response) {
 
 }
 
+function keydownDispatcher() {
+    if (activeProofTree !== undefined) {
+        activeProofTree.keydownHandler.call(activeProofTree);
+    }
+}
+
 ProofTree.prototype.keydownHandler = function() {
 
     var curNode = this.curNode;
@@ -1386,20 +1452,19 @@ ProofTree.prototype.keydownHandler = function() {
 }
 
 function makeActive(prooftree) {
-    d3.select("body").on("keydown", prooftree.keydownHandler.bind(prooftree));
     activeProofTree = prooftree;
 }
 
-function proof(t) {
+PT.proof = function(t) {
 
     if (isGoal(t)) {
-        return proof(_(t.allChildren).find("solved"));
+        return PT.proof(_(t.allChildren).find("solved"));
     }
 
     if (isTactic(t)) {
         return [
             t.name,
-            _(t.allChildren).map(proof).value(),
+            _(t.allChildren).map(PT.proof).value(),
         ];
     }
 
@@ -1409,7 +1474,7 @@ function proof(t) {
 
 function repeat(n, s) { return Array(n + 1).join(s); }
 
-function pprint(proof, indentation) {
+PT.pprint = function(proof, indentation) {
     if (_.isEmpty(proof)) { return ""; }
     var fst = proof[0];
     var snd = proof[1];
@@ -1418,10 +1483,53 @@ function pprint(proof, indentation) {
     return indent + "{ " + fst + "<br>"
         + _(snd).reduce(
             function(acc, elt) {
-                return acc + pprint(elt, indentation + 1)
+                return acc + PT.pprint(elt, indentation + 1)
             },
             ""
         )
         + indent + "}<br>"
     ;
+}
+
+function isBad(response) {
+    return response.rResponse.tag === "Fail";
+}
+
+function isGood(response) {
+    return response.rResponse.tag === "Good";
+}
+
+function contents(response) {
+    return response.rResponse.contents;
+}
+
+ProofTree.prototype.replay = function() {
+
+    var self = this;
+
+    function replay(proof) {
+        if (!_.isEmpty(proof)) {
+            var fst = proof[0];
+            var snd = proof[1];
+            self.syncQuery(fst, function(response) {
+                if (isGood(response)) {
+                    _(snd).each(replay);
+                } else {
+                    console.log("Replay failed on applying " + fst);
+                    console.log("Error: " + contents(response));
+                }
+            });
+        }
+    }
+
+    replay(PT.proof(this.rootNode));
+
+}
+
+ProofTree.prototype.qed = function() {
+    this.syncQuery("Qed.", function(response) {
+        if (isBad(response)) {
+            console.log("Qed failed, error:" + contents(response));
+        }
+    });
 }

@@ -1,28 +1,35 @@
 
+var debug = false;
+
 $(document).ready(function() {
 
-    includeLodash();
+    $('head').append('<link rel="stylesheet" href="../d3tree.css" type="text/css" />');
+    includes([
+        'lodash.js',
+        '../d3/d3.js',
+        '../prooftree.js',
+    ],
+    function() {
 
-    setupTextareaResizing();
+        PT.handleKeyboard();
+        setupTextareaResizing();
+        resetCoq();
+        separateCode();
+        makeCodeInteractive();
 
-    resetCoq();
-
-    separateCode();
-
-    makeCodeInteractive();
+    });
 
 });
 
-function includeLodash() {
-
-    $("head")
-        .append(
-            $("<script>")
-                .attr("type", "text/javascript")
-                .attr("src", "lodash.js")
-        )
-    ;
-
+// note the <script> tag will not show up in the DOM even though it works
+function includes(paths, callback) {
+    if (paths.length < 1) { callback(); }
+    else {
+        var fst = paths.shift();
+        $.getScript(fst, function() {
+            includes(paths, callback);
+        });
+    }
 }
 
 function setupTextareaResizing() {
@@ -56,7 +63,7 @@ function setupTextareaResizing() {
 function currentLabel() {
     var result;
     syncRequest("status", "", function(response) {
-        printResponse(response);
+        debugResponse(response);
         var msg = response.rResponse.contents[0];
         result = msg.match("^.*,.*,.*,\"(.*)\",.*$")[1];
     });
@@ -66,8 +73,8 @@ function currentLabel() {
 function resetCoq() {
     var label = currentLabel();
     if (label > 1) {
-        syncRequest("rewind", label - 1, printResponse);
-        syncQuery("Require Import Unicode.Utf8.", printResponse);
+        syncRequest("rewind", label - 1, debugResponse);
+        syncQuery("Require Import Unicode.Utf8.", debugResponse);
     }
 }
 
@@ -80,6 +87,7 @@ function separateCode() {
         "Check",
         "Eval",
         "Notation",
+        "Proof",
     ];
 
     $(".code")
@@ -118,20 +126,81 @@ function makeCodeInteractive() {
         .filter(function() { var t = $(this).text(); return t.indexOf('.') > 0; })
         .each(function() {
 
-            var html = $(this).html();
-            $(this).empty();
+            var admittedSpan = $(this).find("span:contains(Admitted)");
 
-            $(this).append($("<div>").html(html).addClass("right"));
+            if (admittedSpan.size() > 0) {
 
-            var clickyDiv = $("<div>")
-                //.html("<br>")
-                .addClass("left")
-            ;
-            $(this).append(clickyDiv);
+                // replace the Admitted with a proof tree placeholder
 
-            var clicky = $("<div>").addClass("clicky");
-            resetClicky.call(clicky);
-            clickyDiv.append(clicky);
+                var ptDiv = $("<div>").addClass("anchor");
+
+                $(this).contents()
+                    .slice(
+                        $(this).contents().index($(this).find(".comment"))
+                    )
+                    .replaceWith(ptDiv)
+                ;
+
+                var theorem = textify(
+                    $(this).contents()
+                );
+
+                var pt = new PT.ProofTree(
+                    d3.selectAll(ptDiv.toArray()),
+                    1000, 400,
+                    function() {
+                        pt.replay();
+                        pt.qed();
+                        pt.svg.style("display", "none");
+                        pt.proof
+                            .style("display", "")
+                            .html(
+                                "Proof.<br>"
+                                    + PT.pprint(PT.proof(pt.rootNode), 1)
+                                    + "Qed."
+                            )
+                        ;
+                    },
+                    ".."
+                );
+
+                new Clicky(
+                    $(this),
+                    function(clicky) {
+                        return pt.newTheorem(
+                            theorem,
+                            PT.tSet,
+                            function() {
+                                clicky.label = currentLabel();
+                                pt.click(pt.rootNode);
+                            }
+                        );
+                    },
+                    function() {
+                        pt.svg.style("display", "none");
+                        pt.proof.style("display", "none");
+                        pt.error.style("display", "none");
+                    }
+                );
+
+            } else {
+
+                if ($(this).find("span:contains(admit)").size() > 0) {
+
+                    // replace the admit with a textarea
+                    $(this).children()
+                        .slice(
+                            $(this).find(".comment").index(),
+                            $(this).find("span:contains(admit)").index() + 1
+                        )
+                        .replaceWith($("<textarea>").text("(* FILL IN HERE *)"))
+                    ;
+
+                }
+
+                new Clicky($(this), onClickDefinition);
+
+            }
         })
     ;
 
@@ -166,16 +235,11 @@ function makeCodeInteractive() {
         .css("float", "left")
     ;
 
-    /*** roosterizing it up ***/
-    $(".code >> span.id:contains(admit)")
-        .replaceWith('<textarea>')
-    ;
     $("textarea").parent().parent().append(
         $('<div class="error"></div>')
             .css("position", "relative")
             .css("float", "left")
     );
-    $('.code >> span.comment:contains("FILL")').remove();
     $('.code >> span.comment:contains("==>")').remove();
     $(".code").append(
         $('<div class="response">')
@@ -185,33 +249,11 @@ function makeCodeInteractive() {
 
 }
 
-function backtrack(toLabel) {
-    var fromLabel = currentLabel();
-    syncRequest("rewind", fromLabel - toLabel, printResponse);
-    $(".clicky")
-        .filter(function() {
-            var label = $(this).data("label");
-            return label !== undefined && label >= toLabel;
-        })
-        .each(resetClicky)
-    ;
-}
+function onClickDefinition(clicky) {
 
-function resetClicky() {
-    $(this)
-        .html("▸")
-        .css("background-color", "orange")
-        .off("click")
-        .click(_.partial(onClick, $(this)))
-    ;
-    $(this).parent().parent().find(".response").empty();
-}
+    clicky.label = currentLabel();
 
-function onClick(clicky) {
-
-    var label = currentLabel();
-
-    var queriesDiv = $(this).parent().parent().children(".right");
+    var queriesDiv = clicky.div.parent().parent().children(".right");
 
     var queries = textify(queriesDiv)
         .replace(/^\s\s*/, '') // remove heading whitespaces
@@ -220,14 +262,14 @@ function onClick(clicky) {
         .replace(/⇒/g, '=>')
     ;
 
-    var responseDiv = clicky.parent().parent().find(".response");
+    var responseDiv = clicky.div.parent().parent().find(".response");
     responseDiv.empty();
 
     var allGood = true;
 
     var handler = function(response) {
 
-        printResponse(response);
+        debugResponse(response);
 
         switch(response.rResponse.tag) {
 
@@ -243,15 +285,13 @@ function onClick(clicky) {
 
         case "Fail":
             allGood = false;
-            clicky
-                .css("background-color", "red")
-            ;
+
             var msg = response.rResponse.contents;
             responseDiv
                 .css("background-color", "salmon")
                 .text(removeWarning(msg))
             ;
-            clicky.text("✗");
+            clicky.div.text("✗");
             break;
 
         default:
@@ -271,15 +311,7 @@ function onClick(clicky) {
         })
     ;
 
-    if (allGood) {
-        clicky
-            .css("background-color", "lightgreen")
-            .data("label", label)
-            .text("✓")
-            .off("click")
-            .on("click", _.partial(backtrack, label))
-        ;
-    }
+    return allGood;
 
 }
 
@@ -299,12 +331,14 @@ function syncQuery(q, h) { syncRequest('query', q, h); }
 function syncQueryUndo(q, h) { syncRequest('queryundo', q, h); }
 
 function debugQuery(q) {
-    syncQuery(q, printResponse);
+    syncQuery(q, debugResponse);
 }
 
-function printResponse(response) {
-    console.log("tag:", response.rResponse.tag,
-                "contents:", response.rResponse.contents);
+function debugResponse(response) {
+    if (debug) {
+        console.log("tag:", response.rResponse.tag,
+                    "contents:", response.rResponse.contents);
+    }
 }
 
 function textify(div) {
@@ -326,4 +360,86 @@ function scrollTo(element) {
     $('html, body').animate({
         scrollTop: element.offset().top,
     }, 2000);
+}
+
+/*
+Clickies are buttons with the following properties:
+- they insert themselves to the left of their anchor
+- upon being clicked, they run onClick and turn:
+  - green if onClick returns true, and become cancellable when clicked
+  - red if onClick returns false, but can be reclicked to retry onClick
+- cancelling a clicky cancels all the clicky having successed later than it
+- a cancelled clicky resets itself to a clickable clicky
+*/
+function Clicky(anchor, onClick, onReset) {
+
+    this.anchor = anchor;
+    this.onClick = onClick;
+    this.onReset = onReset;
+
+    var right = $("<div>").addClass("right");
+    anchor.contents().wrapAll(right);
+    var left = $("<div>").addClass("left");
+    anchor.append(left);
+
+    this.div = $("<div>")
+        .addClass("clicky")
+        .data("clicky", this)
+    ;
+    this.reset();
+    left.append(this.div);
+
+}
+
+Clicky.prototype.reset = function() {
+
+    var self = this;
+
+    if (this.onReset !== undefined) {
+        this.onReset(this);
+    }
+
+    this.div
+        .html("▸")
+        .css("background-color", "orange")
+        .off("click")
+        .click(function() {
+            if (self.onClick(self)) {
+                self.div
+                    .css("background-color", "lightgreen")
+                    .text("✓")
+                    .off("click")
+                    .on("click", self.backtrack.bind(self))
+                ;
+            } else {
+                self.div
+                    .css("background-color", "red")
+                ;
+            };
+        })
+    ;
+
+    this.div.parent().parent().find(".response").empty();
+
+}
+
+Clicky.prototype.backtrack = function() {
+
+    var fromLabel = currentLabel();
+
+    var toLabel = this.label;
+
+    syncRequest("rewind", fromLabel - toLabel, debugResponse);
+
+    $(".clicky")
+        .filter(function() {
+            var label = $(this).data("clicky").label;
+            return label !== undefined && label >= toLabel;
+        })
+        .each(function() {
+            var clicky = $(this).data("clicky");
+            clicky.reset.call(clicky);
+        })
+    ;
+
 }
