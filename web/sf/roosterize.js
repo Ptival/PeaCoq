@@ -81,13 +81,16 @@ function resetCoq() {
 function separateCode() {
 
     var commands = [
-        "Definition",
-        "Inductive",
-        "Example",
         "Check",
+        "Definition",
         "Eval",
+        "Example",
+        "Inductive",
+        "Lemma",
+        "Module",
         "Notation",
         "Proof",
+        "Theorem",
     ];
 
     $(".code")
