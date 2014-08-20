@@ -51,6 +51,8 @@ function qed(prooftree) {
 
 $(document).ready(function() {
 
+    PT.handleKeyboard();
+
     _(theorems).each(addTheorem);
 
     var ndx = 0;
