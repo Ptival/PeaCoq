@@ -53,21 +53,27 @@ $(document).ready(function() {
 
     PT.handleKeyboard();
 
-    _(theorems).each(addTheorem);
-
     var ndx = 0;
 
     var scrollbarWidth = 20; // arbitrary
 
-    $("body").prepend($("<div>").attr("id", "pt1"));
-    $("body").prepend($("<div>").attr("id", "pt2"));
+    _(theorems).each(_.partial(addTheorem, pt));
+
+    $("body").prepend($("<div>").attr("id", "pt"))
 
     var pt = new ProofTree(
-        d3.select("#pt1"),
+        d3.select("#pt"),
         $(window).width() - scrollbarWidth,
         $(window).height() - $("#tips").height() - $("#buttons").height(),
         qed
     );
+
+    $(".theorem")
+        .click(function() {
+            var t = $(this).data("theorem");
+            pt.newTheorem(t[0], t[1], clickRoot);
+        })
+    ;
 
     makeActive(pt);
 
@@ -77,32 +83,15 @@ $(document).ready(function() {
         clickRoot
     );
 
-/*
-    var pt2 = new ProofTree(
-        d3.select("#pt2"),
-        $(window).width() - scrollbarWidth,
-        $(window).height()/2,
-        qed
-    );
-
-    pt2.newTheorem(
-        theorems[ndx+1][0],
-        theorems[ndx+1][1]
-    );
-*/
-
 });
 
-function clickRoot() {
-    activeProofTree.click(activeProofTree.rootNode);
-}
+function clickRoot(pt) { pt.click(pt.rootNode); }
 
-function addTheorem(t, ndx) {
-    var b = $('<button>', {
-        text: t[0],
-        click: function() {
-            activeProofTree.newTheorem(t[0], t[1], clickRoot);
-        }
-    });
+function addTheorem(pt, t, ndx) {
+    var b = $('<button>')
+        .addClass("theorem")
+        .text(t[0])
+        .data("theorem", t)
+    ;
     $('#buttons').append(b);
 }

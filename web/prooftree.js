@@ -380,6 +380,8 @@ ProofTree.prototype.tryAllTactics = function() {
 
 ProofTree.prototype.hInit = function(response, callback) {
 
+    var self = this;
+
     if (isBad(response)) {
         console.log(response.rResponse.contents);
         this.error.text(response.rResponse.contents);
@@ -410,7 +412,7 @@ ProofTree.prototype.hInit = function(response, callback) {
 
     this.update(this.rootNode);
 
-    window.setTimeout(callback, animationDuration);
+    window.setTimeout(function() { callback(self); }, animationDuration);
 
     return true;
 
