@@ -85,11 +85,12 @@ function separateCode() {
         "Definition",
         "Eval",
         "Example",
+        "Fixpoint",
         "Inductive",
         "Lemma",
         "Module",
         "Notation",
-        "Proof",
+        //"Proof",
         "Theorem",
     ];
 
