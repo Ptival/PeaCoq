@@ -94,10 +94,15 @@ function separateCode() {
         "Theorem",
     ];
 
-    $(".code")
+    $("#main > .code")
         .replaceWith(function() {
 
-            var result = $("<div>").append($('<div class="code">').css("clear", "left"));
+            var result =
+                $("<div>")
+                .addClass("code-container")
+                .append($('<div class="code">')
+                .css("clear", "left"))
+            ;
 
             var reduceResult =
                 _.reduce(
@@ -125,7 +130,7 @@ function separateCode() {
 
 function makeCodeInteractive() {
 
-    $(".code")
+    $(".code-container > .code")
     // keep the ones that seem to contain code to run
         .filter(function() { var t = $(this).text(); return t.indexOf('.') > 0; })
         .each(function() {
@@ -213,7 +218,7 @@ function makeCodeInteractive() {
     /*** holy grailing it up ***/
     $(".doc").css("clear", "left");
 
-    $(".code")
+    $(".code-container > .code")
         .css("padding-left", clickyWidth)
         .css("position", "relative")
         .css("float", "left")
@@ -244,8 +249,8 @@ function makeCodeInteractive() {
             .css("position", "relative")
             .css("float", "left")
     );
-    $('.code >> span.comment:contains("==>")').remove();
-    $(".code").append(
+    $('.code-container > .code >> span.comment:contains("==>")').remove();
+    $(".code-container > .code").append(
         $('<div class="response">')
             .css("position", "relative")
             .css("float", "left")
