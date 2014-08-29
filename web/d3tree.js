@@ -95,7 +95,9 @@ $(document).ready(function() {
 
 });
 
-function clickRoot(pt) { pt.click(pt.rootNode); }
+function clickRoot(pt) {
+    pt.click(pt.rootNode);
+}
 
 function addTheorem(pt, t, ndx) {
     var b = $('<button>')
