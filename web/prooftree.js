@@ -266,10 +266,19 @@ ProofTree.prototype.newTheorem = function(theorem, tactics, callback) {
 }
 
 function mkGoalNode(g, ndx) {
+    var hyps = _(g.gHyps)
+        .map(function(h) {
+            var i = h.indexOf(" : ");
+            return {
+                "name" : h.substr(0, i),
+                "type" : h.substr(i + 3),
+            };
+        })
+    ;
     return {
         "id": _.uniqueId(),
         "name": g.gGoal,
-        "hyps": g.gHyps,
+        "hyps": hyps,
         "ndx": ndx + 1,
         "gid": g.gId,
         "offset": 0,
@@ -333,13 +342,13 @@ ProofTree.prototype.tryAllTactics = function() {
 
         switch (t) {
         case "destruct":
-            _(curHyps).each(function(n) {
-                run('destruct ' + hypName(n));
+            _(curHyps).each(function(h) {
+                run('destruct ' + h.name);
             });
             break;
         case "induction":
-            _(curHyps).each(function(n) {
-                run('induction ' + hypName(n));
+            _(curHyps).each(function(h) {
+                run('induction ' + h.name);
             });
             break;
         case "intro":
@@ -347,9 +356,9 @@ ProofTree.prototype.tryAllTactics = function() {
             run('intros');
             break;
         case "rewrite":
-            _(curHyps).each(function(n) {
-                run('rewrite -> ' + hypName(n));
-                run('rewrite <- ' + hypName(n));
+            _(curHyps).each(function(h) {
+                run('rewrite -> ' + h.name);
+                run('rewrite <- ' + h.name);
             });
             break;
         default:
@@ -449,10 +458,6 @@ ProofTree.prototype.isCurNodeSibling = function(n) {
     return !this.isCurNode(n) && hasParent(n) && this.isCurNodeParent(n.parent);
 }
 
-function hypName(h) {
-    return h.slice(0, h.indexOf(':') - 1);
-}
-
 ProofTree.prototype.update = function(source) {
 
     var self = this;
@@ -531,13 +536,13 @@ ProofTree.prototype.update = function(source) {
 
                         var previousH =
                             _(gpHyps).find(function(h0) {
-                                return hypName(h0) === hypName(h);
+                                return h0.name === h.name;
                             });
 
                         if (previousH === undefined) {
                             added.push(h);
                         } else {
-                            if (previousH !== h) {
+                            if (JSON.stringify(previousH) !== JSON.stringify(h)) {
                                 changed.push({"before": previousH, "after": h});
                             }
                             gpHyps.pull(previousH);
@@ -548,7 +553,11 @@ ProofTree.prototype.update = function(source) {
                     removed = gpHyps.value();
 
                     _(removed).each(function(h) {
-                        jQDiv.append($("<span>").addClass("removed").text('⊖ ' + h));
+                        jQDiv.append(
+                            $("<span>")
+                                .addClass("removed")
+                                .text('⊖ ' + h.name + " : " + h.type)
+                        );
                         jQDiv.append($("<br>"));
                     });
 
@@ -559,15 +568,19 @@ ProofTree.prototype.update = function(source) {
                         fo
                             .select("div")
                             .append("span")
-                            .text(hs.after)
+                            .text(hs.after.name + " : " + hs.after.type)
                             .attr("class", "changed")
                             .on("mouseover", function() {
                                 d3.select(this)
-                                    .attr("class", "removed").text(hs.before);
+                                    .attr("class", "removed").text(
+                                        hs.before.name + " : " + hs.before.type
+                                    );
                             })
                             .on("mouseout", function(d) {
                                 d3.select(this)
-                                    .attr("class", "changed").text(hs.after);
+                                    .attr("class", "changed").text(
+                                        hs.after.name + " : " + hs.after.type
+                                    );
                             })
                         ;
 
@@ -576,7 +589,11 @@ ProofTree.prototype.update = function(source) {
                     });
 
                     _(added).each(function(h) {
-                        jQDiv.append($("<span>").addClass("added").text('⊕ ' + h));
+                        jQDiv.append(
+                            $("<span>")
+                                .addClass("added")
+                                .text('⊕ ' + h.name + " : " + h.type)
+                        );
                         jQDiv.append($("<br>"));
                     });
 
@@ -585,7 +602,11 @@ ProofTree.prototype.update = function(source) {
                 } else {
 
                     _(d.hyps).each(function(h) {
-                        jQDiv.append($("<span>").addClass("added").text('⊕ ' + h));
+                        jQDiv.append(
+                            $("<span>")
+                                .addClass("added")
+                                .text('⊕ ' + h.name + " : " + h.type)
+                        );
                     });
 
                     if (!_(d.hyps).isEmpty()) { jQDiv.append($('<hr>')); }
@@ -1341,27 +1362,54 @@ function updateNodeHeight(selector) {
 // TODO: this should use d3 data binding rather than manual management...
 ProofTree.prototype.updateContext = function() {
 
-    var contextDiv = this.context.select('div');
+    var contextDiv = $(this.context.select('div')[0]);
     var curGoal = (isGoal(this.curNode)) ? this.curNode : this.curNode.parent;
-    var curHyps = curGoal.hyps;
+    var hypsLookup = {};
+    _(curGoal.hyps)
+        .each(function(h) {
+            hypsLookup[h.name] = h.type;
+        })
+    ;
 
     contextDiv.html("");
 
-    if (hasGrandParent(curGoal)) {
-        _(curHyps).each(function(h) {
-            contextDiv
-                .append('p')
-                .text(h);
-            ;
-        });
-    } else {
-        _(curHyps).each(function(h) {
-            contextDiv
-                .append('p')
-                .text(h);
-            ;
-        });
-    }
+    // matches identifiers in the first group, and the rest in the second group
+    var grouper = /([a-zA-Z\d_]+)|([^a-zA-Z\d_]+)/g;
+
+    /*
+      adding to the context only those variables that are not referred to in the
+      type of others. those referred to will have their type in tooltips
+      wherever they are mentioned.
+      we collect such references by processing the hypotheses from the back.
+     */
+    var seen = [];
+    console.log(_(curGoal.hyps).value());
+    _(curGoal.hyps).forEachRight(function(h) {
+        if (!_(seen).contains(h.name)) {
+            var p = $("<p>");
+            p.append($("<span>").text(h.name + " : "));
+            var group;
+            while ((group = grouper.exec(h.type)) !== null) {
+                if (group[1] !== undefined) { // matched an identifier
+                    var id = group[0];
+                    seen.push(id);
+                    if (hypsLookup[id] !== undefined) {
+                        p.append(
+                            $("<span>")
+                                .text(id)
+                                .attr("title", hypsLookup[id])
+                                .css("font-weight", "bold")
+                        );
+                    } else {
+                        p.append($("<span>").text(id));
+                    }
+                } else if (group[2] !== undefined) { // matched something else
+                    p.append($("<span>").text(group[0]));
+                }
+            }
+            contextDiv.prepend(p);
+        }
+    });
 
     if (contextDiv.html() === "") {
         contextDiv.append("p").text("Empty context");
