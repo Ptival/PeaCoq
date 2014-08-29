@@ -40,6 +40,8 @@ site hi ho =
   <|> route [ ("status", statusHandler hi ho) ]
   <|> route [ ("rewind", rewindHandler hi ho) ]
   <|> route [ ("qed", qedHandler hi ho) ]
+  <|> route [ ("setprintingall", togglePrintingAll True hi ho) ]
+  <|> route [ ("unsetprintingall", togglePrintingAll False hi ho) ]
   <|> serveDirectory "web/"
   <|> serveDirectory "web/jquery-ui-1.10.4.custom/css/south-street/"
 
@@ -174,3 +176,27 @@ queryUndoHandler hi ho = do
             liftIO $ hCall hi [("val", "rewind"), ("steps", "1")] ""
             liftIO $ hForceValueResponse ho
             return ()
+
+setPrintingAll :: Handle -> Handle -> Snap ()
+setPrintingAll hi ho = do
+  let query =
+        "<call id=\"0\" val=\"setoptions\">"
+        ++ "<pair><list><string>Printing</string><string>All</string></list>"
+        ++ "<option_value val=\"boolvalue\"><bool val=\"true\"></bool></option_value>"
+        ++ "</pair></call>"
+  liftIO $ hPutStrLn hi query
+  r <- liftIO $ hForceValueResponse ho
+  respond hi ho r
+
+togglePrintingAll :: Bool -> Handle -> Handle -> Snap ()
+togglePrintingAll b hi ho = do
+  let query =
+        "<call id=\"0\" val=\"setoptions\">"
+        ++ "<pair><list><string>Printing</string><string>All</string></list>"
+        ++ "<option_value val=\"boolvalue\"><bool val=\""
+        ++ (if b then "true" else "false")
+        ++ "\"></bool></option_value>"
+        ++ "</pair></call>"
+  liftIO $ hPutStrLn hi query
+  r <- liftIO $ hForceValueResponse ho
+  respond hi ho r

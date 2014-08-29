@@ -77,6 +77,16 @@ $(document).ready(function() {
 
     makeActive(pt);
 
+    var verbose =
+        true
+        //false
+    ;
+    if (verbose) {
+        pt.syncRequest("unsetprintingall", "", function() {});
+    } else {
+        pt.syncRequest("setprintingall", "", function() {});
+    }
+
     pt.newTheorem(
         theorems[ndx][0],
         theorems[ndx][1],

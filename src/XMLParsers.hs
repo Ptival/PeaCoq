@@ -27,6 +27,9 @@ parseCoqInt = tagNoAttr "int" (T.unpack <$> content)
 forceCoqInt :: ParseXML String
 forceCoqInt = force "int" parseCoqInt
 
+parseCoqUnit :: ParseXML (Maybe String)
+parseCoqUnit = tagNoAttr "unit" (T.unpack <$> content)
+
 parseOption :: ParseXML (Maybe a) -> ParseXML (Maybe (Maybe a))
 parseOption pJust =
   tagName "option" (requireAttr "val") $ \val ->
@@ -75,7 +78,7 @@ parseSuccessfulCoqtopResponse k =
 parseValueResponse :: ParseXML (Maybe (CoqtopResponse [String]))
 parseValueResponse =
   parseGenericCoqtopResponse
-  (many (parseCoqString `orE` parseCoqInt))
+  (many (parseCoqString `orE` parseCoqInt `orE` parseCoqUnit))
 
 forceValueResponse :: ParseXML (CoqtopResponse [String])
 forceValueResponse = force "value" parseValueResponse
