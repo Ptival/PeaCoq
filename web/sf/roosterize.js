@@ -8,6 +8,7 @@ $(document).ready(function() {
         'lodash.js',
         '../d3/d3.js',
         '../prooftree.js',
+        '../jquery.cookie.js',
     ],
     function() {
 
@@ -16,6 +17,8 @@ $(document).ready(function() {
         resetCoq();
         separateCode();
         makeCodeInteractive();
+        restoreTextareas();
+        setupTextareaSaving();
 
     });
 
@@ -56,6 +59,27 @@ function setupTextareaResizing() {
 
     $(document)
         .on('change keyup keydown paste', 'textarea', resizeTextarea)
+    ;
+
+}
+
+function restoreTextareas() {
+
+    $("textarea")
+        .val(function() {
+            var cookie = $.cookie("textarea" + $(this).attr("id"));
+            return cookie || "(* FILL IN HERE *)";
+        })
+    ;
+
+}
+
+function setupTextareaSaving() {
+
+    $(document)
+        .on('change keyup keydown paste', 'textarea', function() {
+            $.cookie("textarea" + $(this).attr("id"), $(this).val());
+        })
     ;
 
 }
@@ -130,6 +154,8 @@ function separateCode() {
 
 function makeCodeInteractive() {
 
+    var textareaId = 0;
+
     $(".code-container > .code")
     // keep the ones that seem to contain code to run
         .filter(function() { var t = $(this).text(); return t.indexOf('.') > 0; })
@@ -202,7 +228,10 @@ function makeCodeInteractive() {
                             $(this).find(".comment").index(),
                             $(this).find("span:contains(admit)").index() + 1
                         )
-                        .replaceWith($("<textarea>").text("(* FILL IN HERE *)"))
+                        .replaceWith(
+                            $("<textarea>")
+                                .attr("id", textareaId++)
+                        )
                     ;
 
                 }
