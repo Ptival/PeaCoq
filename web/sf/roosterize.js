@@ -1,6 +1,10 @@
 
 var debug = false;
 
+var textareaPrefix = "textarea";
+var clickyPrefix = "clicky";
+var proofPrefix = "proof";
+
 $(document).ready(function() {
 
     $('head').append('<link rel="stylesheet" href="../d3tree.css" type="text/css" />');
@@ -12,6 +16,7 @@ $(document).ready(function() {
     ],
     function() {
 
+        if ($.cookie(cookieKey) === undefined) { $.cookie(cookieKey, JSON.stringify([])); }
         PT.handleKeyboard();
         setupTextareaResizing();
         resetCoq();
@@ -19,6 +24,7 @@ $(document).ready(function() {
         makeCodeInteractive();
         restoreTextareas();
         setupTextareaSaving();
+        replay();
 
     });
 
@@ -64,24 +70,21 @@ function setupTextareaResizing() {
 }
 
 function restoreTextareas() {
-
     $("textarea")
         .val(function() {
-            var cookie = $.cookie("textarea" + $(this).attr("id"));
+            console.log($(this).attr("id"));
+            var cookie = $.cookie($(this).attr("id"));
             return cookie || "(* FILL IN HERE *)";
         })
     ;
-
 }
 
 function setupTextareaSaving() {
-
     $(document)
         .on('change keyup keydown paste', 'textarea', function() {
-            $.cookie("textarea" + $(this).attr("id"), $(this).val());
+            $.cookie($(this).attr("id"), $(this).val());
         })
     ;
-
 }
 
 function currentLabel() {
@@ -183,19 +186,7 @@ function makeCodeInteractive() {
                 var pt = new PT.ProofTree(
                     d3.selectAll(ptDiv.toArray()),
                     1000, 400,
-                    function() {
-                        pt.replay();
-                        pt.qed();
-                        pt.svg.style("display", "none");
-                        pt.proof
-                            .style("display", "")
-                            .html(
-                                "Proof.<br>"
-                                    + PT.pprint(PT.proof(pt.rootNode), 1)
-                                    + "Qed."
-                            )
-                        ;
-                    },
+                    onQed,
                     ".."
                 );
 
@@ -207,13 +198,26 @@ function makeCodeInteractive() {
                             PT.tSet,
                             function() {
                                 clicky.label = currentLabel();
-                                pt.click(pt.rootNode);
+                                var existingProof = $.cookie(proofPrefix + pt.svgId);
+                                if (existingProof !== undefined) {
+                                    pt.click(pt.rootNode);
+                                    existingProof = JSON.parse(existingProof);
+                                    pt.replayThisProof(existingProof);
+                                    pt.qed();
+                                    pt.displayThisProof(existingProof);
+                                }
+                            },
+                            function() {
+                                var existingProof = $.cookie(proofPrefix + pt.svgId);
+                                if (existingProof === undefined) {
+                                    pt.click(pt.rootNode);
+                                }
                             }
                         );
                     },
                     function() {
                         pt.svg.style("display", "none");
-                        pt.proof.style("display", "none");
+                        pt.proofDiv.style("display", "none");
                         pt.error.style("display", "none");
                     }
                 );
@@ -230,7 +234,7 @@ function makeCodeInteractive() {
                         )
                         .replaceWith(
                             $("<textarea>")
-                                .attr("id", textareaId++)
+                                .attr("id", textareaPrefix + textareaId++)
                         )
                     ;
 
@@ -409,6 +413,7 @@ Clickies are buttons with the following properties:
 - cancelling a clicky cancels all the clicky having successed later than it
 - a cancelled clicky resets itself to a clickable clicky
 */
+var clickyId = 0;
 function Clicky(anchor, onClick, onReset) {
 
     this.anchor = anchor;
@@ -421,17 +426,23 @@ function Clicky(anchor, onClick, onReset) {
     anchor.append(left);
 
     this.div = $("<div>")
+        .attr("id", clickyPrefix + clickyId++)
         .addClass("clicky")
         .data("clicky", this)
     ;
-    this.reset();
+    this.set();
     left.append(this.div);
 
 }
 
-Clicky.prototype.reset = function() {
+Clicky.prototype.set = function() { this.setReset(false); }
+Clicky.prototype.reset = function() { this.setReset(true); }
+
+Clicky.prototype.setReset = function(isReset) {
 
     var self = this;
+
+    if (isReset) { this.cookieRemove(); }
 
     if (this.onReset !== undefined) {
         this.onReset(this);
@@ -441,24 +452,46 @@ Clicky.prototype.reset = function() {
         .html("▸")
         .css("background-color", "orange")
         .off("click")
-        .click(function() {
-            if (self.onClick(self)) {
-                self.div
-                    .css("background-color", "lightgreen")
-                    .text("✓")
-                    .off("click")
-                    .on("click", self.backtrack.bind(self))
-                ;
-            } else {
-                self.div
-                    .css("background-color", "red")
-                ;
-            };
-        })
+        .click(_.partial(onDivClick, this))
     ;
 
     this.div.parent().parent().find(".response").empty();
 
+}
+
+var cookieKey = "clickies";
+
+function getCookieArray() {
+    return JSON.parse($.cookie(cookieKey));
+}
+
+function setCookieArray(value) {
+    $.cookie(cookieKey, JSON.stringify(value));
+}
+
+Clicky.prototype.cookiePush = function() {
+    var clickyId = this.div.attr("id");
+    var a = getCookieArray();
+    a.push(clickyId);
+    setCookieArray(a);
+}
+
+Clicky.prototype.cookieRemove = function() {
+    var clickyId = this.div.attr("id");
+    var cookieArray = getCookieArray();
+    _(cookieArray).remove(function(elt) {
+        return elt == clickyId;
+    });
+    setCookieArray(cookieArray);
+}
+
+function replay() {
+    var cookieArray = getCookieArray();
+    setCookieArray([]);
+    _(cookieArray).each(function(id) {
+        var clicky = $("#" + id).data("clicky");
+        onDivClick(clicky);
+    });
 }
 
 Clicky.prototype.backtrack = function() {
@@ -480,4 +513,27 @@ Clicky.prototype.backtrack = function() {
         })
     ;
 
+}
+
+function onQed(pt) {
+    pt.replay();
+    pt.qed();
+    pt.displayProof();
+    $.cookie(proofPrefix + pt.svgId, JSON.stringify(pt.proof()));
+}
+
+function onDivClick(self) {
+    if (self.onClick(self)) {
+        self.div
+            .css("background-color", "lightgreen")
+            .text("✓")
+            .off("click")
+            .on("click", self.backtrack.bind(self))
+        ;
+        self.cookiePush();
+    } else {
+        self.div
+            .css("background-color", "red")
+        ;
+    };
 }

@@ -71,7 +71,8 @@ $(document).ready(function() {
     $(".theorem")
         .click(function() {
             var t = $(this).data("theorem");
-            pt.newTheorem(t[0], t[1], clickRoot);
+            pt.syncQuery("Abort All.", hIgnore);
+            pt.newTheorem(t[0], t[1], function() { }, clickRoot);
         })
     ;
 
@@ -87,9 +88,11 @@ $(document).ready(function() {
         pt.syncRequest("setprintingall", "", function() {});
     }
 
+    pt.syncQuery("Abort All.", hIgnore);
     pt.newTheorem(
         theorems[ndx][0],
         theorems[ndx][1],
+        function() { },
         clickRoot
     );
 

@@ -89,7 +89,7 @@ function ProofTree(anchor, width, height, qed, roosterDir) {
         .attr("height", this.height)
     ;
 
-    this.proof =
+    this.proofDiv =
         anchor
         .append("div")
         .attr("id", "proof-" + this.svgId)
@@ -230,7 +230,12 @@ function treeDepth(root) {
     ;
 }
 
-ProofTree.prototype.newTheorem = function(theorem, tactics, callback) {
+ProofTree.prototype.newTheorem = function(
+    theorem,
+    tactics,           // set of tactics allowed (TODO: make this more dynamic)
+    preAnimCallback,   // to be called once the data is ready
+    postAnimCallback)  // to be called once the svg is ready
+{
 
     var self = this;
 
@@ -238,7 +243,7 @@ ProofTree.prototype.newTheorem = function(theorem, tactics, callback) {
     this.tactics = tactics;
 
     // hide previous proof result if any, show svg if hidden
-    this.proof.style("display", "none");
+    this.proofDiv.style("display", "none");
     this.svg.style("display", "");
 
     // reinitialize the viewport to a satisfying location
@@ -253,12 +258,10 @@ ProofTree.prototype.newTheorem = function(theorem, tactics, callback) {
              )
     ;
 
-    this.syncQuery("Abort All.", hIgnore);
-
     var success = false;
 
     this.syncQuery(theorem, function(response) {
-        success = self.hInit(response, callback);
+        success = self.hInit(response, preAnimCallback, postAnimCallback);
     });
 
     return success;
@@ -387,7 +390,7 @@ ProofTree.prototype.tryAllTactics = function() {
 
 }
 
-ProofTree.prototype.hInit = function(response, callback) {
+ProofTree.prototype.hInit = function(response, preAnimCallback, postAnimCallback) {
 
     var self = this;
 
@@ -395,7 +398,7 @@ ProofTree.prototype.hInit = function(response, callback) {
         console.log(response.rResponse.contents);
         this.error.text(response.rResponse.contents);
         this.svg.style("display", "none");
-        this.proof.style("display", "none");
+        this.proofDiv.style("display", "none");
         this.error.style("display", "");
         return false;
     }
@@ -421,7 +424,9 @@ ProofTree.prototype.hInit = function(response, callback) {
 
     this.update(this.rootNode);
 
-    window.setTimeout(function() { callback(self); }, animationDuration);
+    preAnimCallback(self);
+
+    window.setTimeout(function() { postAnimCallback(self); }, animationDuration);
 
     return true;
 
@@ -1383,7 +1388,6 @@ ProofTree.prototype.updateContext = function() {
       we collect such references by processing the hypotheses from the back.
      */
     var seen = [];
-    console.log(_(curGoal.hyps).value());
     _(curGoal.hyps).forEachRight(function(h) {
         if (!_(seen).contains(h.name)) {
             var p = $("<p>");
@@ -1507,16 +1511,16 @@ function makeActive(prooftree) {
     activeProofTree = prooftree;
 }
 
-PT.proof = function(t) {
+PT.proofFrom = function(t) {
 
     if (isGoal(t)) {
-        return PT.proof(_(t.allChildren).find("solved"));
+        return PT.proofFrom(_(t.allChildren).find("solved"));
     }
 
     if (isTactic(t)) {
         return [
             t.name,
-            _(t.allChildren).map(PT.proof).value(),
+            _(t.allChildren).map(PT.proofFrom).value(),
         ];
     }
 
@@ -1555,27 +1559,29 @@ function contents(response) {
     return response.rResponse.contents;
 }
 
-ProofTree.prototype.replay = function() {
+ProofTree.prototype.replayThisProof = function(proof) {
 
-    var self = this;
-
-    function replay(proof) {
-        if (!_.isEmpty(proof)) {
-            var fst = proof[0];
-            var snd = proof[1];
-            self.syncQuery(fst, function(response) {
-                if (isGood(response)) {
-                    _(snd).each(replay);
-                } else {
-                    console.log("Replay failed on applying " + fst);
-                    console.log("Error: " + contents(response));
-                }
-            });
-        }
+    if (!_.isEmpty(proof)) {
+        var fst = proof[0];
+        var snd = proof[1];
+        this.syncQuery(fst, function(response) {
+            if (isGood(response)) {
+                _(snd).each(replay);
+            } else {
+                console.log("Replay failed on applying " + fst);
+                console.log("Error: " + contents(response));
+            }
+        });
     }
 
-    replay(PT.proof(this.rootNode));
+}
 
+ProofTree.prototype.proof = function() {
+    return PT.proofFrom(this.rootNode);
+}
+
+ProofTree.prototype.replay = function() {
+    this.replayThisProof(PT.proofFrom(this.rootNode));
 }
 
 ProofTree.prototype.qed = function() {
@@ -1584,4 +1590,20 @@ ProofTree.prototype.qed = function() {
             console.log("Qed failed, error:" + contents(response));
         }
     });
+}
+
+ProofTree.prototype.displayThisProof = function(proof) {
+    this.svg.style("display", "none");
+    this.proofDiv
+        .style("display", "")
+        .html(
+            "Proof.<br>"
+                + PT.pprint(proof, 1)
+                + "Qed."
+        )
+    ;
+}
+
+ProofTree.prototype.displayProof = function() {
+    this.displayThisProof(PT.proofFrom(this.rootNode));
 }
