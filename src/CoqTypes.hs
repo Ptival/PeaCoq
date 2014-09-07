@@ -7,13 +7,15 @@ import Data.Default
 import Data.List (intersperse)
 import GHC.Generics
 
+import Parser
+
 type Query = String
 
 data Goal
   = MkGoal
     { gId   :: String
-    , gHyps :: [String]
-    , gGoal :: String
+    , gHyps :: [Hypothesis]
+    , gGoal :: Term
     }
   deriving (Generic)
 
@@ -23,9 +25,9 @@ instance Eq Goal where
 
 instance Show Goal where
   show (MkGoal _ hyps goal) =
-    concat (intersperse "\n" hyps)
+    concat (intersperse "\n" . map show $ hyps)
     ++ "\n" ++ replicate 40 '=' ++ "\n"
-    ++ goal
+    ++ show goal
 
 instance ToJSON Goal where
 

@@ -12,6 +12,7 @@ import           Data.XML.Types
 import           Text.XML.Stream.Parse
 
 import           CoqTypes
+import           Parser
 
 type ParseXML a = Consumer Event IO a
 
@@ -87,8 +88,8 @@ parseGoal :: ParseXML (Maybe Goal)
 parseGoal =
   tagNoAttr "goal" $ do
     goalId <- forceCoqString
-    hyps <- forceList parseCoqString
-    goal <- forceCoqString
+    hyps <- (parseHypothesis <$>) <$> forceList parseCoqString
+    goal <- parseTerm <$> forceCoqString
     return $ MkGoal goalId hyps goal
 
 forceGoalList :: ParseXML [Goal]

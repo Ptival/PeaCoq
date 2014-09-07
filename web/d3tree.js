@@ -37,13 +37,13 @@ function qed(prooftree) {
     prooftree.svg
         .style("display", "none")
     ;
-    prooftree.proof
+    prooftree.proofDiv
         .style("display", "")
         .html(
             "Require Import Unicode.Utf8.<br><br>"
                 + prooftree.theorem
                 + "<br>Proof.<br>"
-                + PT.pprint(PT.proof(prooftree.rootNode), 1)
+                + PT.pprint(prooftree.proof(), 1)
                 + "Qed."
         )
     ;

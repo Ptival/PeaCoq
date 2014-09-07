@@ -3,6 +3,7 @@
 
 module Parser where
 
+import Data.Aeson
 import Control.Monad
 import Data.Char (isSpace, isAlpha, isDigit)
 import Data.Typeable
@@ -11,99 +12,115 @@ import GHC.Generics
 import Lexer
 }
 
-%name parse
+%name unsafeParseTerm       Term
+%name unsafeParseHypothesis Hypothesis
 %tokentype { Token }
 %error { parseError }
 
 %token
 
 var { TokSym $$ }
+num { TokNum $$ }
 '(' { TokLParen }
 ')' { TokRParen }
 '→' { TokArrow }
+'∀' { TokForall }
 'λ' { TokLambda }
 ':' { TokColon }
-'@' { TokAnnot }
 '=' { TokEq }
 '_' { TokUnderscore }
-'?' { TokHole }
-"Type" { TokType }
-"let" { TokLet }
+',' { TokComma }
+'+' { TokPlus }
+'-' { TokMinus }
+'*' { TokStar }
+":=" { TokColonEq }
+"match" { TokMatch }
+"as" { TokAs }
 "in" { TokIn }
+"return" { TokReturn }
+"with" { TokWith }
+"let" { TokLet }
 
 -- low precedence
-%right '@'
-%nonassoc LAM
 %right '→'
+%nonassoc '='
+%left APP
+%left '+' '-'
+%left '*'
 %nonassoc '(' ')'
-%left var '?' "Type"
 -- high precedence
 
 %%
 
-Term :
-var                             { Var () $1 }
-| "Type"                        { Type () }
-| Term '@' Term                 { Annot () $1 $3 }
-| '(' var ':' Term ')' '→' Term { Pi () (Just $2) $4 $7 }
-| Term '→' Term                 { Pi () Nothing $1 $3 }
-| 'λ' var Term %prec LAM        { Lam () (Just $2) $3 }
-| 'λ' '_' Term %prec LAM        { Lam () Nothing $3 }
-| '(' Term ')'                  { $2 }
-| Term Term %prec var           { App () $1 $2 }
-| '?'                           { Hole () }
-| "let" var '=' Term "in" Term  { Let () (Just $2) $4 $6 }
-| "let" '_' '=' Term "in" Term  { Let () Nothing $4 $6 }
+Term :: { Term }
+: var                  { Var $1 }
+| num                  { Var $1 }
+| '∀' Binders ',' Term { Forall $2 $4 }
+| 'λ' Binders ',' Term { Lambda $2 $4 }
+| Term '→' Term        { Arrow $1 $3 }
+| Term '=' Term        { App (App (Var "eq") $1) $3 }
+| Term '+' Term        { App (App (Var "plus") $1) $3 }
+| Term '-' Term        { App (App (Var "minus") $1) $3 }
+| Term '*' Term        { App (App (Var "mult") $1) $3 }
+| Term Term %prec APP  { App $1 $2 }
+| '(' Term ')'         { $2 }
+
+Binders :: { Binders }
+: Names ':' Term  { [MkBinder $1 (Just $3)] }
+| MultipleBinders { $1 }
+
+MultipleBinders :: { Binders }
+: {- empty -}                            { [] }
+| Names MultipleBinders                  { MkBinder $1 Nothing : $2 }
+| '(' Names ':' Term ')' MultipleBinders { MkBinder $2 (Just $4) : $6 }
+
+Names :: { [Maybe String] }
+: Name       { [$1] }
+| Name Names { $1 : $2 }
+
+Name :: { Maybe String }
+: var { Just $1 }
+| '_' { Nothing }
+
+Hypothesis :: { Hypothesis }
+: var ':' Term { MkHyp $1 $3 }
 
 {
+
+instance ToJSON Binder where
+instance ToJSON Term where
 
 parseError :: [Token] -> a
 parseError l = error $ "Parse error on: " ++ show l
 
-type Name = String
+data Term
+  = Var String
+  | Forall Binders Term
+  | Lambda Binders Term
+  | Arrow Term Term
+  | App Term Term
+  deriving (Eq, Generic, Show)
 
-data Term a
-  = Type a
-  | Pi a (Maybe Name) (Type a) (Term a)
-  | Var a Name
-  | Lam a (Maybe Name) (Term a)
-  | App a (Term a) (Term a)
-  | Let a (Maybe Name) (Term a) (Term a)
-  | Annot a (Term a) (Type ())
-  | Hole a
-  deriving (Eq, Generic, Typeable, Show)
 type Type = Term
 
-pprintPar t = "(" ++ pprint t ++ ")"
+type Binders = [Binder]
 
-pprintParIf p t | p t = pprintPar t
-pprintParIf p t | otherwise = pprint t
+data Binder = MkBinder [Maybe String] (Maybe Type)
+  deriving (Eq, Generic, Show)
 
-isApp (App _ _ _) = True
-isApp _ = False
+data Hypothesis
+  = MkHyp
+  { hName :: String
+  , hType :: Term
+  }
+  deriving (Eq, Generic, Show)
 
-isPi (Pi _ _ _ _) = True
-isPi _ = False
+instance ToJSON Hypothesis where
 
-pprint :: Term a -> String
-pprint (Type _) = "Type"
-pprint (Pi _ (Just n) τ t) = "(" ++ n ++ " : " ++ pprint τ ++ ") → " ++ pprint t
-pprint (Pi _ Nothing τ@(Pi _ _ _ _) t) =
-  "(" ++ pprint τ ++ ") → " ++ pprint t
-pprint (Pi _ Nothing τ t) =
-  pprint τ ++ " → " ++ pprint t
-pprint (Var _ n) = n
-pprint (Lam _ (Just n) t) = "(λ" ++ n ++ " " ++ pprint t ++ ")"
-pprint (Lam _ Nothing t) = "(λ_ " ++ pprint t ++ ")"
-pprint (App _ t1 t2) =
-  pprintParIf isPi t1 ++ " " ++ pprintParIf (liftM2 (||) isApp isPi) t2
-pprint (Let _ (Just n) t1 t2) =
-  "let " ++ n ++ " = " ++ pprint t1 ++ " in " ++ pprint t2
-pprint (Let _ Nothing t1 t2) = "let _ = " ++ pprint t1 ++ " in " ++ pprint t2
-pprint (Annot _ t τ) = "(" ++ pprint t ++ " @ " ++ pprint τ ++ ")"
-pprint (Hole _) = "?"
+parseTerm :: String -> Term
+parseTerm = unsafeParseTerm . scanTokens
 
-parseTerm :: String -> Term ()
-parseTerm = parse . scanTokens
+parseHypothesis :: String -> Hypothesis
+parseHypothesis = unsafeParseHypothesis . scanTokens
 
 }

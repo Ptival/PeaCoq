@@ -15,18 +15,19 @@ tokens :-
   "return"                      { \s -> TokReturn }
   "with"                        { \s -> TokWith }
   "let"                         { \s -> TokLet }
-  $digit+                       { \s -> TokInt (read s) }
+  $digit+                       { \s -> TokNum s }
   \(                            { \s -> TokLParen }
   \)                            { \s -> TokRParen }
   (\∀|"forall")                 { \s -> TokForall }
   (\→|\-\>)                     { \s -> TokArrow }
   (\λ|\\)                       { \s -> TokLambda }
   \:                            { \s -> TokColon }
-  \@                            { \s -> TokAnnot }
   \=                            { \s -> TokEq }
   \_                            { \s -> TokUnderscore }
-  \?                            { \s -> TokHole }
-  "Type"                        { \s -> TokType }
+  \,                            { \s -> TokComma }
+  \+                            { \s -> TokPlus }
+  \-                            { \s -> TokMinus }
+  \*                            { \s -> TokStar }
   $alpha [$alpha $digit \_ \']* { \s -> TokSym s }
 
 {
@@ -39,17 +40,20 @@ data Token
   | TokForall
   | TokLambda
   | TokColon
-  | TokAnnot
+  | TokColonEq
   | TokMatch
   | TokAs
   | TokIn
+  | TokReturn
   | TokWith
   | TokLet
   | TokEq
   | TokUnderscore
-  | TokHole
-  | TokType
-  | TokInt Int
+  | TokComma
+  | TokPlus
+  | TokMinus
+  | TokStar
+  | TokNum String
   deriving (Eq,Show)
 
 scanTokens = alexScanTokens

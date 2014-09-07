@@ -13,6 +13,7 @@ import           Text.HTML.TagSoup.Entity (escapeXML)
 import           Text.XML.Stream.Parse
 
 import           CoqTypes
+import           Parser
 import           XMLParsers
 
 xmlConduit :: (MonadThrow m) => Conduit BS.ByteString m Event
@@ -61,7 +62,7 @@ hQueryGoal hi ho = do
 
 gCurHypsNames :: Goals -> [String]
 gCurHypsNames (MkGoals []      _) = []
-gCurHypsNames (MkGoals (g : _) _) = map (takeWhile (/= ' ')) $ gHyps g
+gCurHypsNames (MkGoals (g : _) _) = map hName $ gHyps g
 
 hQuery :: Handle -> Handle -> Query -> IO (Maybe (Query, Goals))
 hQuery hi ho q = do

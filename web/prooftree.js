@@ -269,19 +269,10 @@ ProofTree.prototype.newTheorem = function(
 }
 
 function mkGoalNode(g, ndx) {
-    var hyps = _(g.gHyps)
-        .map(function(h) {
-            var i = h.indexOf(" : ");
-            return {
-                "name" : h.substr(0, i),
-                "type" : h.substr(i + 3),
-            };
-        })
-    ;
     return {
         "id": _.uniqueId(),
         "name": g.gGoal,
-        "hyps": hyps,
+        "hyps": g.gHyps,
         "ndx": ndx + 1,
         "gid": g.gId,
         "offset": 0,
@@ -329,11 +320,15 @@ ProofTree.prototype.tryAllTactics = function() {
                     res.push(mkTacticNode(t + '.', []));
                 }
             }
-            /*
+/*
             else {
-                console.log('Bad response for tactic ' + t + ': ', response);
+                console.log(
+                    'Bad response for tactic ' + t + ': ',
+                    response.rResponse.contents,
+                    response
+                );
             }
-            */
+*/
         });
     }
 
@@ -346,12 +341,12 @@ ProofTree.prototype.tryAllTactics = function() {
         switch (t) {
         case "destruct":
             _(curHyps).each(function(h) {
-                run('destruct ' + h.name);
+                run('destruct ' + h.hName);
             });
             break;
         case "induction":
             _(curHyps).each(function(h) {
-                run('induction ' + h.name);
+                run('induction ' + h.hName);
             });
             break;
         case "intro":
@@ -360,8 +355,8 @@ ProofTree.prototype.tryAllTactics = function() {
             break;
         case "rewrite":
             _(curHyps).each(function(h) {
-                run('rewrite -> ' + h.name);
-                run('rewrite <- ' + h.name);
+                run('rewrite -> ' + h.hName);
+                run('rewrite <- ' + h.hName);
             });
             break;
         default:
@@ -541,7 +536,7 @@ ProofTree.prototype.update = function(source) {
 
                         var previousH =
                             _(gpHyps).find(function(h0) {
-                                return h0.name === h.name;
+                                return h0.hName === h.hName;
                             });
 
                         if (previousH === undefined) {
@@ -561,7 +556,7 @@ ProofTree.prototype.update = function(source) {
                         jQDiv.append(
                             $("<span>")
                                 .addClass("removed")
-                                .text('⊖ ' + h.name + " : " + h.type)
+                                .text('⊖ ' + showHypothesis(h))
                         );
                         jQDiv.append($("<br>"));
                     });
@@ -573,19 +568,19 @@ ProofTree.prototype.update = function(source) {
                         fo
                             .select("div")
                             .append("span")
-                            .text(hs.after.name + " : " + hs.after.type)
+                            .text(showHypothesis(hs.after))
                             .attr("class", "changed")
                             .on("mouseover", function() {
                                 d3.select(this)
-                                    .attr("class", "removed").text(
-                                        hs.before.name + " : " + hs.before.type
-                                    );
+                                    .attr("class", "removed")
+                                    .text(showHypothesis(hs.before))
+                                ;
                             })
                             .on("mouseout", function(d) {
                                 d3.select(this)
-                                    .attr("class", "changed").text(
-                                        hs.after.name + " : " + hs.after.type
-                                    );
+                                    .attr("class", "changed")
+                                    .text(showHypothesis(hs.after))
+                                ;
                             })
                         ;
 
@@ -597,7 +592,7 @@ ProofTree.prototype.update = function(source) {
                         jQDiv.append(
                             $("<span>")
                                 .addClass("added")
-                                .text('⊕ ' + h.name + " : " + h.type)
+                                .text('⊕ ' + showHypothesis(h))
                         );
                         jQDiv.append($("<br>"));
                     });
@@ -610,7 +605,7 @@ ProofTree.prototype.update = function(source) {
                         jQDiv.append(
                             $("<span>")
                                 .addClass("added")
-                                .text('⊕ ' + h.name + " : " + h.type)
+                                .text('⊕ ' + showHypothesis(h))
                         );
                     });
 
@@ -618,11 +613,14 @@ ProofTree.prototype.update = function(source) {
 
                 }
 
-            }
 
-            jQDiv
-                .append($("<span>").text(d.name))
-            ;
+                jQDiv.append($("<span>").text(showTerm(d.name)));
+
+            } else { // not a goal, but a tactic
+
+                jQDiv.append($("<span>").text(d.name));
+
+            }
 
         })
     ;
@@ -1372,7 +1370,7 @@ ProofTree.prototype.updateContext = function() {
     var hypsLookup = {};
     _(curGoal.hyps)
         .each(function(h) {
-            hypsLookup[h.name] = h.type;
+            hypsLookup[h.hName] = showTerm(h.hType);
         })
     ;
 
@@ -1389,11 +1387,12 @@ ProofTree.prototype.updateContext = function() {
      */
     var seen = [];
     _(curGoal.hyps).forEachRight(function(h) {
-        if (!_(seen).contains(h.name)) {
+        if (!_(seen).contains(h.hName)) {
             var p = $("<p>");
-            p.append($("<span>").text(h.name + " : "));
+            p.append($("<span>").text(h.hName + " : "));
             var group;
-            while ((group = grouper.exec(h.type)) !== null) {
+            var type = showTerm(h.hType);
+            while ((group = grouper.exec(type)) !== null) {
                 if (group[1] !== undefined) { // matched an identifier
                     var id = group[0];
                     seen.push(id);
@@ -1606,4 +1605,74 @@ ProofTree.prototype.displayThisProof = function(proof) {
 
 ProofTree.prototype.displayProof = function() {
     this.displayThisProof(PT.proofFrom(this.rootNode));
+}
+
+function showBinders(t) {
+    if (_.isEmpty(t)) { return ""; }
+    return " (" + showBinder(t[0]) + ")" + showBinders(_(t).rest().value());
+}
+
+function showBinder(t) {
+    return showNames(t[0]) + ": " + showTerm(t[1]);
+}
+
+function showNames(t) {
+    if (_.isEmpty(t)) { return ""; }
+    return t[0] + " " + showNames(_(t).rest().value());
+}
+
+function showTerm(t) {
+    var c = t.contents;
+    switch (t.tag) {
+
+    case "Var":
+        return c;
+
+    case "Forall":
+        return "∀" + showBinders(c[0]) + ", " + showTerm(c[1]);
+
+    case "Arrow":
+        return showTerm(c[0]) + " → " + showTerm(c[1])
+
+    case "App":
+        if (c[0].tag == "App") {
+            switch (c[0].contents[0].contents) {
+
+            case "eq":
+                return showTerm(c[0].contents[1]) + " = " + showTerm(c[1])
+
+            case "plus":
+                return showTermPar(c[0].contents[1]) + " + " + showTermPar(c[1])
+
+            case "minus":
+                return showTermPar(c[0].contents[1]) + " - " + showTermPar(c[1])
+
+            case "mult":
+                return showTermPar(c[0].contents[1]) + " * " + showTermPar(c[1])
+
+            default:
+                return showTerm(c[0]) + " " + showTermPar(c[1]);
+            };
+        } else {
+            return showTerm(c[0]) + " " + showTermPar(c[1]);
+        }
+
+    default:
+        return "Unknown tag " + t.tag;
+
+    };
+}
+
+function showTermPar(t) {
+    var c = t.contents;
+    switch (t.tag) {
+    case "Var":
+        return showTerm(t);
+    default:
+        return "(" + showTerm(t) + ")";
+    };
+}
+
+function showHypothesis(h) {
+    return h.hName + " : " + showTerm(h.hType);
 }
