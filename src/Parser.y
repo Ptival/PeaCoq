@@ -47,6 +47,7 @@ num { TokNum $$ }
 -- low precedence
 %right '→'
 %nonassoc '='
+%left "&&" "||"
 %left APP
 %left '+' '-'
 %left '*'
@@ -61,12 +62,13 @@ Term :: { Term }
 | '∀' Binders ',' Term { Forall $2 $4 }
 | 'λ' Binders ',' Term { Lambda $2 $4 }
 | Term '→' Term        { Arrow $1 $3 }
-| Term '=' Term        { App (App (Var "eq") $1) $3 }
-| Term '+' Term        { App (App (Var "plus") $1) $3 }
+| Term '=' Term        { App (App (Var "eq")    $1) $3 }
+| Term '+' Term        { App (App (Var "plus")  $1) $3 }
 | Term '-' Term        { App (App (Var "minus") $1) $3 }
-| Term '*' Term        { App (App (Var "mult") $1) $3 }
-| '(' Term "&&" Term ')' '%' var { App (App (Var "andb")  $2) $4 }
-| '(' Term "||" Term ')' '%' var { App (App (Var "orb") $2) $4 }
+| Term '*' Term        { App (App (Var "mult")  $1) $3 }
+| Term "&&" Term       { App (App (Var "andb")  $1) $3 }
+| Term "||" Term       { App (App (Var "orb")   $1) $3 }
+| Term '%' var         { $1 }
 | Term Term %prec APP  { App $1 $2 }
 | '(' Term ')'         { $2 }
 

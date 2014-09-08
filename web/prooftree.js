@@ -556,7 +556,7 @@ ProofTree.prototype.update = function(source) {
                         jQDiv.append(
                             $("<span>")
                                 .addClass("removed")
-                                .text('⊖ ' + showHypothesis(h))
+                                .html('⊖ ' + showHypothesis(h))
                         );
                         jQDiv.append($("<br>"));
                     });
@@ -568,18 +568,18 @@ ProofTree.prototype.update = function(source) {
                         fo
                             .select("div")
                             .append("span")
-                            .text(showHypothesis(hs.after))
+                            .html("&nbsp;&nbsp;" + showHypothesis(hs.after))
                             .attr("class", "changed")
                             .on("mouseover", function() {
                                 d3.select(this)
                                     .attr("class", "removed")
-                                    .text(showHypothesis(hs.before))
+                                    .html("&nbsp;&nbsp;" + showHypothesis(hs.before))
                                 ;
                             })
                             .on("mouseout", function(d) {
                                 d3.select(this)
                                     .attr("class", "changed")
-                                    .text(showHypothesis(hs.after))
+                                    .html("&nbsp;&nbsp;" + showHypothesis(hs.after))
                                 ;
                             })
                         ;
@@ -592,7 +592,7 @@ ProofTree.prototype.update = function(source) {
                         jQDiv.append(
                             $("<span>")
                                 .addClass("added")
-                                .text('⊕ ' + showHypothesis(h))
+                                .html('⊕ ' + showHypothesis(h))
                         );
                         jQDiv.append($("<br>"));
                     });
@@ -605,7 +605,7 @@ ProofTree.prototype.update = function(source) {
                         jQDiv.append(
                             $("<span>")
                                 .addClass("added")
-                                .text('⊕ ' + showHypothesis(h))
+                                .html('⊕ ' + showHypothesis(h))
                         );
                     });
 
@@ -614,11 +614,16 @@ ProofTree.prototype.update = function(source) {
                 }
 
 
-                jQDiv.append($("<span>").text(showTerm(d.name)));
+                jQDiv.append($("<span>").html(showTerm(d.name)));
 
             } else { // not a goal, but a tactic
 
-                jQDiv.append($("<span>").text(d.name));
+                jQDiv
+                    .css("text-align", "center")
+                    .append(
+                        $("<span>").text(d.name)
+                    )
+                ;
 
             }
 
@@ -1370,7 +1375,7 @@ ProofTree.prototype.updateContext = function() {
     var hypsLookup = {};
     _(curGoal.hyps)
         .each(function(h) {
-            hypsLookup[h.hName] = showTerm(h.hType);
+            hypsLookup[h.hName] = showTermInline(h.hType);
         })
     ;
 
@@ -1391,7 +1396,7 @@ ProofTree.prototype.updateContext = function() {
             var p = $("<p>");
             p.append($("<span>").text(h.hName + " : "));
             var group;
-            var type = showTerm(h.hType);
+            var type = showTermInline(h.hType);
             while ((group = grouper.exec(type)) !== null) {
                 if (group[1] !== undefined) { // matched an identifier
                     var id = group[0];
@@ -1402,6 +1407,7 @@ ProofTree.prototype.updateContext = function() {
                                 .text(id)
                                 .attr("title", hypsLookup[id])
                                 .css("font-weight", "bold")
+                                .css("color", "green")
                         );
                     } else {
                         p.append($("<span>").text(id));
@@ -1607,13 +1613,19 @@ ProofTree.prototype.displayProof = function() {
     this.displayThisProof(PT.proofFrom(this.rootNode));
 }
 
+function showBindersPar(t) {
+    if (_.isEmpty(t)) { return ""; }
+    return " (" + showBinder(t[0]) + ")" + showBindersPar(_(t).rest().value());
+}
+
 function showBinders(t) {
     if (_.isEmpty(t)) { return ""; }
-    return " (" + showBinder(t[0]) + ")" + showBinders(_(t).rest().value());
+    if (t.length === 1) { return showBinder(t[0]);  }
+    return " (" + showBinder(t[0]) + ")" + showBindersPar(_(t).rest().value());
 }
 
 function showBinder(t) {
-    return showNames(t[0]) + ": " + showTerm(t[1]);
+    return showNames(t[0]) + ": " + showTermAux(t[1], 0, false, false);
 }
 
 function showNames(t) {
@@ -1622,45 +1634,68 @@ function showNames(t) {
 }
 
 function showTerm(t) {
+    return showTermAux(t, 0, false, true);
+}
+
+function getIndent(depth) {
+    return repeat(2 * depth, "&nbsp;");
+}
+
+function showTermAux(t, indentation, paren, newline) {
     var c = t.contents;
+
+    var indent = getIndent(indentation);
+
+    var par = function(text) {
+        var res = "";
+        if (paren) { res += "(" }
+        res += text;
+        if (paren) { res += ")" }
+        return res;
+    };
+
+    var showOp = function(op, c, prec) {
+        return par(showTermAux(c[0].contents[1], 0, prec, false) + " " + op + " " + showTermAux(c[1], 0, prec, false));
+    };
+
     switch (t.tag) {
 
     case "Var":
         return c;
 
     case "Forall":
-        return "∀" + showBinders(c[0]) + ", " + showTerm(c[1]);
+        return par("∀ " + showBinders(c[0]) + "," + (newline ? "<br/>" + getIndent(indentation + 1) : " ") + showTermAux(c[1], indentation + 1, false, newline));
 
     case "Arrow":
-        return showTermPar(c[0]) + " → " + showTerm(c[1])
+        return showTermAux(c[0], indentation, true, false) + " →" + (newline ? "<br/>" + indent : " ") + showTermAux(c[1], indentation, false, newline);
 
     case "App":
         if (c[0].tag == "App") {
             switch (c[0].contents[0].contents) {
 
             case "eq":
-                return showTerm(c[0].contents[1]) + " = " + showTerm(c[1])
+                return showOp("=", c, false);
 
             case "plus":
-                return showTermPar(c[0].contents[1]) + " + " + showTermPar(c[1])
+                return showOp("+", c, true);
 
             case "minus":
-                return showTermPar(c[0].contents[1]) + " - " + showTermPar(c[1])
+                return showOp("-", c, true);
 
             case "mult":
-                return showTermPar(c[0].contents[1]) + " * " + showTermPar(c[1])
-
+                return showOp("*", c, true);
+// TODO: less aggressive parenthesing based on precedence levels
             case "andb":
-                return showTermPar(c[0].contents[1]) + " && " + showTermPar(c[1])
+                return showOp("&&", c, true);
 
             case "orb":
-                return showTermPar(c[0].contents[1]) + " || " + showTermPar(c[1])
+                return showOp("||", c, true);
 
             default:
-                return showTerm(c[0]) + " " + showTermPar(c[1]);
+                return par(showTermAux(c[0], 0, false, false) + " " + showTermAux(c[1], 0, false, false));
             };
         } else {
-            return showTerm(c[0]) + " " + showTermPar(c[1]);
+            return par(showTerm(c[0]) + " " + showTermAux(c[1], indentation, true, newline));
         }
 
     default:
@@ -1669,16 +1704,10 @@ function showTerm(t) {
     };
 }
 
-function showTermPar(t) {
-    var c = t.contents;
-    switch (t.tag) {
-    case "Var":
-        return showTerm(t);
-    default:
-        return "(" + showTerm(t) + ")";
-    };
+function showHypothesis(h) {
+    return h.hName + " : " + showTermAux(h.hType, 0, false, false);
 }
 
-function showHypothesis(h) {
-    return h.hName + " : " + showTerm(h.hType);
+function showTermInline(t) {
+    return showTermAux(t, 0, false, false);
 }
