@@ -1650,6 +1650,12 @@ function showTerm(t) {
             case "mult":
                 return showTermPar(c[0].contents[1]) + " * " + showTermPar(c[1])
 
+            case "andb":
+                return showTermPar(c[0].contents[1]) + " && " + showTermPar(c[1])
+
+            case "orb":
+                return showTermPar(c[0].contents[1]) + " || " + showTermPar(c[1])
+
             default:
                 return showTerm(c[0]) + " " + showTermPar(c[1]);
             };

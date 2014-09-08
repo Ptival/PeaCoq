@@ -33,6 +33,9 @@ num { TokNum $$ }
 '+' { TokPlus }
 '-' { TokMinus }
 '*' { TokStar }
+'%' { TokPercent }
+"&&" { TokAndB }
+"||" { TokOrB }
 ":=" { TokColonEq }
 "match" { TokMatch }
 "as" { TokAs }
@@ -62,6 +65,8 @@ Term :: { Term }
 | Term '+' Term        { App (App (Var "plus") $1) $3 }
 | Term '-' Term        { App (App (Var "minus") $1) $3 }
 | Term '*' Term        { App (App (Var "mult") $1) $3 }
+| '(' Term "&&" Term ')' '%' var { App (App (Var "andb")  $2) $4 }
+| '(' Term "||" Term ')' '%' var { App (App (Var "orb") $2) $4 }
 | Term Term %prec APP  { App $1 $2 }
 | '(' Term ')'         { $2 }
 
