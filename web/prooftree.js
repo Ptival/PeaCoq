@@ -1632,7 +1632,7 @@ function showTerm(t) {
         return "∀" + showBinders(c[0]) + ", " + showTerm(c[1]);
 
     case "Arrow":
-        return showTerm(c[0]) + " → " + showTerm(c[1])
+        return showTermPar(c[0]) + " → " + showTerm(c[1])
 
     case "App":
         if (c[0].tag == "App") {
