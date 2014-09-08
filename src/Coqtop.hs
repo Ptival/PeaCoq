@@ -13,7 +13,7 @@ import           Text.HTML.TagSoup.Entity (escapeXML)
 import           Text.XML.Stream.Parse
 
 import           CoqTypes
-import           Parser
+import           Parser (hName)
 import           XMLParsers
 
 xmlConduit :: (MonadThrow m) => Conduit BS.ByteString m Event
