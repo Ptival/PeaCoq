@@ -100,6 +100,7 @@ $(document).ready(function() {
 
 function clickRoot(pt) {
     pt.click(pt.rootNode);
+    makeActive(pt);
 }
 
 function addTheorem(pt, t, ndx) {
