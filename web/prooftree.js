@@ -1647,9 +1647,9 @@ var precForall = precedence++;
 var precArrow  = precedence++;
 var precEqual  = precedence++;
 var precAnd    = precedence++; var precOr = precAnd;
-var precApp    = precedence++;
 var precPlus   = precedence++; var precMinus = precPlus;
 var precMult   = precedence++;
+var precApp    = precedence++;
 
 function showTermAux(t, indentation, precParent, newline) {
     var c = t.contents;

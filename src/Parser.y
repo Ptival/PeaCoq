@@ -48,9 +48,9 @@ num { TokNum $$ }
 %right '→'
 %nonassoc '='
 %left "&&" "||"
-%left APP
 %left '+' '-'
 %left '*'
+%left APP
 %nonassoc '(' ')'
 -- high precedence
 
