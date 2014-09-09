@@ -1625,7 +1625,7 @@ function showBinders(t) {
 }
 
 function showBinder(t) {
-    return showNames(t[0]) + ": " + showTermAux(t[1], 0, false, false);
+    return showNames(t[0]) + ": " + showTermAux(t[1], 0, 0, false);
 }
 
 function showNames(t) {
@@ -1634,28 +1634,43 @@ function showNames(t) {
 }
 
 function showTerm(t) {
-    return showTermAux(t, 0, false, true);
+    return showTermAux(t, 0, 0, true);
 }
 
 function getIndent(depth) {
     return repeat(2 * depth, "&nbsp;");
 }
 
-function showTermAux(t, indentation, paren, newline) {
+var precedence = 0;
+var precMin    = precedence++;
+var precForall = precedence++;
+var precArrow  = precedence++;
+var precEqual  = precedence++;
+var precAnd    = precedence++; var precOr = precAnd;
+var precApp    = precedence++;
+var precPlus   = precedence++; var precMinus = precPlus;
+var precMult   = precedence++;
+
+function showTermAux(t, indentation, precParent, newline) {
     var c = t.contents;
 
     var indent = getIndent(indentation);
 
-    var par = function(text) {
-        var res = "";
-        if (paren) { res += "(" }
-        res += text;
-        if (paren) { res += ")" }
-        return res;
+    var par = function(precOp, text) {
+        if (precOp <= precParent) {
+            return "(" + text + ")";
+        } else {
+            return text;
+        }
     };
 
-    var showOp = function(op, c, prec) {
-        return par(showTermAux(c[0].contents[1], 0, prec, false) + " " + op + " " + showTermAux(c[1], 0, prec, false));
+    var showOp = function(c, op, precOp) {
+        return par(
+            precOp,
+            showTermAux(c[0].contents[1], 0, precOp, false)
+                + " " + op + " "
+                + showTermAux(c[1], 0, precOp, false)
+        );
     };
 
     switch (t.tag) {
@@ -1664,39 +1679,54 @@ function showTermAux(t, indentation, paren, newline) {
         return c;
 
     case "Forall":
-        return par("∀ " + showBinders(c[0]) + "," + (newline ? "<br/>" + getIndent(indentation + 1) : " ") + showTermAux(c[1], indentation + 1, false, newline));
+console.log("precForall", precForall, "precParent", precParent);
+        return par(
+            precForall,
+            "∀ " + showBinders(c[0]) + ","
+                + (newline ? "<br/>" + getIndent(indentation + 1) : " ")
+                + showTermAux(c[1], indentation + 1, precParent, newline)
+        );
 
     case "Arrow":
-        return showTermAux(c[0], indentation, true, false) + " →" + (newline ? "<br/>" + indent : " ") + showTermAux(c[1], indentation, false, newline);
+        return showTermAux(c[0], indentation, precArrow, false)
+            + " →" + (newline ? "<br/>" + indent : " ")
+            + showTermAux(c[1], indentation, precParent, newline);
 
     case "App":
+
+        // handling special case of infix operators I want to pretty print
         if (c[0].tag == "App") {
             switch (c[0].contents[0].contents) {
 
             case "eq":
-                return showOp("=", c, false);
+                return showOp(c, "=", precEqual);
 
             case "plus":
-                return showOp("+", c, true);
+                return showOp(c, "+", precPlus);
 
             case "minus":
-                return showOp("-", c, true);
+                return showOp(c, "-", precMinus);
 
             case "mult":
-                return showOp("*", c, true);
-// TODO: less aggressive parenthesing based on precedence levels
+                return showOp(c, "*", precMult);
+
             case "andb":
-                return showOp("&&", c, true);
+                return showOp(c, "&&", precAnd);
 
             case "orb":
-                return showOp("||", c, true);
+                return showOp(c, "||", precOr);
 
             default:
-                return par(showTermAux(c[0], 0, false, false) + " " + showTermAux(c[1], 0, false, false));
+                // nothing, fall through
+
             };
-        } else {
-            return par(showTerm(c[0]) + " " + showTermAux(c[1], indentation, true, newline));
         }
+
+        return par(
+            precApp,
+            showTermAux(c[0], 0, precApp, false) + " "
+                + showTermAux(c[1], 0, precApp, false)
+        );
 
     default:
         return "Unknown tag " + t.tag;
@@ -1705,9 +1735,9 @@ function showTermAux(t, indentation, paren, newline) {
 }
 
 function showHypothesis(h) {
-    return h.hName + " : " + showTermAux(h.hType, 0, false, false);
+    return h.hName + " : " + showTermAux(h.hType, 0, 0, false);
 }
 
 function showTermInline(t) {
-    return showTermAux(t, 0, false, false);
+    return showTermAux(t, 0, 0, false);
 }
