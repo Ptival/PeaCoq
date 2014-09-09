@@ -72,7 +72,6 @@ function setupTextareaResizing() {
 function restoreTextareas() {
     $("textarea")
         .val(function() {
-            console.log($(this).attr("id"));
             var cookie = $.cookie($(this).attr("id"));
             return cookie || "(* FILL IN HERE *)";
         })
