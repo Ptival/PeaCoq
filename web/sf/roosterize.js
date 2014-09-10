@@ -140,25 +140,27 @@ function separateCode() {
             var result =
                 $("<div>")
                 .addClass("code-container")
-                .append($('<div class="code">')
-                .css("clear", "left"))
             ;
 
-            var reduceResult =
-                _.reduce(
-                    $(this).contents(),
-                    function(acc, elt){
-                        if (_(commands).contains($(elt).text())) {
-                            acc.append(
-                                $('<div class="code">')
-                                    .css("clear", "left").append(elt)
-                            );
-                        } else {
+            _.reduce(
+                $(this).contents(),
+                function(acc, elt){
+                    if (_(commands).contains($(elt).text())) {
+                        acc.append(
+                            $('<div class="code">')
+                                .css("clear", "left")
+                                .append(elt)
+                        );
+                    } else {
+                        if ($(elt).prop("tagName") !== "BR"
+                            || acc.children(":last").children(":last").prop("tagName") !== "BR")
+                        {
                             acc.children(":last").append(elt);
                         }
-                        return acc;
-                    },
-                    result
+                    }
+                    return acc;
+                },
+                result
             );
 
             return result;
@@ -266,6 +268,8 @@ function makeCodeInteractive() {
 
     $(".code-container > .code")
         .css("padding-left", clickyWidth)
+        .css("margin-top", 20)
+        .css("margin-bottom", 20)
         .css("position", "relative")
         .css("float", "left")
     ;
