@@ -17,6 +17,7 @@ $(document).ready(function() {
     function() {
 
         if ($.cookie(cookieKey) === undefined) { $.cookie(cookieKey, JSON.stringify([])); }
+        addCookieButton();
         PT.handleKeyboard();
         setupTextareaResizing();
         resetCoq();
@@ -29,6 +30,19 @@ $(document).ready(function() {
     });
 
 });
+
+function addCookieButton() {
+    var b = $('<button>')
+        .text("Reset Cookies")
+        .click(function() {
+            var cookies = $.cookie();
+            for(var cookie in cookies) {
+                $.removeCookie(cookie);
+            }
+        })
+    ;
+    $('body').prepend(b);
+}
 
 // note the <script> tag will not show up in the DOM even though it works
 function includes(paths, callback) {
