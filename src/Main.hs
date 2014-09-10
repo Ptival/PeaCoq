@@ -4,13 +4,15 @@ module Main where
 
 import Control.Applicative ((<$>), (<|>))
 import Control.Monad.IO.Class (liftIO)
+import Data.ByteString (append)
 import Data.ByteString.UTF8 (toString)
 import Data.List (nubBy, (\\))
+import qualified Data.HashMap.Strict as HM (map)
 import Data.Maybe (catMaybes)
 import Snap.Core
 import Snap.Extras.JSON
 import Snap.Http.Server (quickHttpServe)
-import Snap.Util.FileServe (serveFile, serveDirectory)
+import Snap.Util.FileServe
 import System.IO
 import System.Process (runInteractiveCommand)
 
@@ -31,6 +33,10 @@ main = do
   (hi, ho) <- startCoqtop
   quickHttpServe (site hi ho)
 
+myDirConfig = defaultDirectoryConfig {
+  mimeTypes = HM.map (\m -> append m "; charset=utf-8") defaultMimeTypes
+  }
+
 site :: Handle -> Handle -> Snap ()
 site hi ho =
   ifTop (serveFile "web/rooster.html")
@@ -42,7 +48,7 @@ site hi ho =
   <|> route [ ("qed", qedHandler hi ho) ]
   <|> route [ ("setprintingall", togglePrintingAll True hi ho) ]
   <|> route [ ("unsetprintingall", togglePrintingAll False hi ho) ]
-  <|> serveDirectory "web/"
+  <|> serveDirectoryWith myDirConfig "web/"
   <|> serveDirectory "web/jquery-ui-1.10.4.custom/css/south-street/"
 
 pprintResponse :: CoqtopResponse [String] -> String
