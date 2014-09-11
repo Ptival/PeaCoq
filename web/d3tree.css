@@ -22,7 +22,7 @@ svg {
 }
 
 .goal {
-    fill: lightsteelblue;
+    fill: lightblue;
     margin: 0;
 }
 
@@ -36,7 +36,7 @@ svg {
 
 .context, .debug {
     word-wrap: break-word;
-    fill: lightgray;
+    fill: lightblue;
 }
 
 .current {
