@@ -1367,6 +1367,15 @@ function updateNodeHeight(selector) {
     ;
 }
 
+function getBinder(t) {
+    return t[0];
+}
+
+function getBinders(t) {
+    if (_.isEmpty(t)) { return []; }
+    return _.union(getBinder(t[0]), getBinders(_(t).rest().value()));
+}
+
 // TODO: this should use d3 data binding rather than manual management...
 ProofTree.prototype.updateContext = function() {
 
@@ -1381,9 +1390,6 @@ ProofTree.prototype.updateContext = function() {
 
     contextDiv.html("");
 
-    // matches identifiers in the first group, and the rest in the second group
-    var grouper = /([a-zA-Z\d_]+)|([^a-zA-Z\d_]+)/g;
-
     /*
       adding to the context only those variables that are not referred to in the
       type of others. those referred to will have their type in tooltips
@@ -1395,27 +1401,46 @@ ProofTree.prototype.updateContext = function() {
         if (!_(seen).contains(h.hName)) {
             var p = $("<p>");
             p.append($("<span>").text(h.hName + " : "));
-            var group;
-            var type = showTermInline(h.hType);
-            while ((group = grouper.exec(type)) !== null) {
-                if (group[1] !== undefined) { // matched an identifier
-                    var id = group[0];
-                    seen.push(id);
-                    if (hypsLookup[id] !== undefined) {
-                        p.append(
-                            $("<span>")
-                                .text(id)
-                                .attr("title", hypsLookup[id])
-                                .css("font-weight", "bold")
-                                .css("color", "green")
-                        );
-                    } else {
-                        p.append($("<span>").text(id));
+
+            var annotateTerm = function(t, boundVars) {
+                var c = t.contents;
+                switch (t.tag) {
+
+                case "Var":
+                    if (boundVars[c] === undefined && hypsLookup[c] !== undefined) {
+                        t.type = hypsLookup[c];
+                        seen.push(c);
                     }
-                } else if (group[2] !== undefined) { // matched something else
-                    p.append($("<span>").text(group[0]));
-                }
+                    break;
+
+                case "Forall":
+                    var newBound = getBinders(c[0]);
+                    annotateTerm(c[1], _.union(newBound, boundVars));
+                    break;
+
+                case "Arrow":
+                    annotateTerm(c[0], boundVars);
+                    annotateTerm(c[1], boundVars);
+                    break;
+
+                case "App":
+                    annotateTerm(c[0], boundVars);
+                    annotateTerm(c[1], boundVars);
+                    break;
+
+                default:
+                    alert("UNKNOWN TAG");
+                    break;
+
+                };
             }
+
+            annotateTerm(h.hType, []);
+            p.append(
+                $("<span>")
+                    .html(showTermInline(h.hType))
+            );
+
             contextDiv.prepend(p);
         }
     });
@@ -1676,10 +1701,16 @@ function showTermAux(t, indentation, precParent, newline) {
     switch (t.tag) {
 
     case "Var":
-        return c;
+        if (t.type !== undefined) {
+            return '<span style="font-weight: bold; color: blue;"'
+                + ' title="' + t.type + '">'
+                + c + '</span>'
+            ;
+        } else {
+            return c;
+        }
 
     case "Forall":
-console.log("precForall", precForall, "precParent", precParent);
         return par(
             precForall,
             "∀ " + showBinders(c[0]) + ","
