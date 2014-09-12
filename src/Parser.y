@@ -72,14 +72,23 @@ Term :: { Term }
 | Term Term %prec APP  { App $1 $2 }
 | '(' Term ')'         { $2 }
 
-Binders :: { Binders }
+Binders :: { [Binder] }
 : Names ':' Term  { [MkBinder $1 (Just $3)] }
-| MultipleBinders { $1 }
+| BindersPlus     { $1 }
 
-MultipleBinders :: { Binders }
-: {- empty -}                            { [] }
-| Names MultipleBinders                  { MkBinder $1 Nothing : $2 }
-| '(' Names ':' Term ')' MultipleBinders { MkBinder $2 (Just $4) : $6 }
+TypedNames :: { Binder }
+: '(' Names ':' Term ')' { MkBinder $2 (Just $4) }
+
+Binder :: { Binder }
+: Names      { MkBinder $1 Nothing }
+| TypedNames { $1 }
+
+BindersPlus :: { [Binder] }
+: Binder BindersStar { $1 : $2 }
+
+BindersStar :: { [Binder] }
+: {- empty -}  { [] }
+| BindersPlus  { $1 }
 
 Names :: { [Maybe String] }
 : Name       { [$1] }
