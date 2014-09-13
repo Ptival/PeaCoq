@@ -1560,21 +1560,50 @@ PT.proofFrom = function(t) {
 
 function repeat(n, s) { return Array(n + 1).join(s); }
 
-PT.pprint = function(proof, indentation) {
+function hasBranching(proof) {
+    if (_.isEmpty(proof)) { return false; }
+    if (_(proof[1]).size() > 1) { return true }
+    return hasBranching(proof[1][0]);
+}
+
+PT.pprintAux = function(proof, indentation) {
+
     if (_.isEmpty(proof)) { return ""; }
+
     var fst = proof[0];
     var snd = proof[1];
     var indent = repeat(2 * indentation, "&nbsp;");
-    if (_.isEmpty(snd)) { return indent + "{ " + fst + " }<br>"; }
-    return indent + "{ " + fst + "<br>"
+
+    if (_.isEmpty(snd)) { return fst; }
+
+    if (_(snd).size() === 1) {
+        return fst + " "
+            + _(snd).reduce(
+                function(acc, elt) {
+                    return acc + PT.pprintAux(elt, indentation);
+                },
+                ""
+            )
+        ;
+    }
+
+    return fst
         + _(snd).reduce(
             function(acc, elt) {
-                return acc + PT.pprint(elt, indentation + 1)
+                return acc
+                    + "<br>" + indent
+                    + "{ " + PT.pprintAux(elt, indentation + 1)
+                    + (hasBranching(elt) ? "<br>" + indent + "}" : " }")
+                ;
             },
             ""
         )
-        + indent + "}<br>"
     ;
+
+}
+
+PT.pprint = function(proof, indentation) {
+    return repeat(2, "&nbsp;") + PT.pprintAux(proof, indentation);
 }
 
 function isBad(response) {
@@ -1629,7 +1658,7 @@ ProofTree.prototype.displayThisProof = function(proof) {
         .html(
             "Proof.<br>"
                 + PT.pprint(proof, 1)
-                + "Qed."
+                + "<br>Qed."
         )
     ;
 }

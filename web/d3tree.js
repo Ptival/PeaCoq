@@ -44,7 +44,7 @@ function qed(prooftree) {
                 + prooftree.theorem
                 + "<br>Proof.<br>"
                 + PT.pprint(prooftree.proof(), 1)
-                + "Qed."
+                + "<br>Qed."
         )
     ;
 }
