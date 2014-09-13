@@ -22,25 +22,25 @@ svg {
 }
 
 .goal {
-    fill: lightblue;
+    fill: #AEC6CF;
     margin: 0;
 }
 
 .tactic {
-    fill: orange;
+    fill: #FFB347;
 }
 
 .solved {
-    fill: lightgreen;
+    fill: #77DD77;
 }
 
 .context, .debug {
     word-wrap: break-word;
-    fill: lightblue;
+    fill: #CFCFC4;
 }
 
 .current {
-    stroke: lightgreen;
+    stroke: #03C03C;
     stroke-width: 5px;
 }
 
