@@ -1435,10 +1435,11 @@ ProofTree.prototype.updateContext = function() {
                 };
             }
 
-            annotateTerm(h.hType, []);
+            var hTypeCopy = $.extend(true, {}, h.hType);
+            annotateTerm(hTypeCopy, []);
             p.append(
                 $("<span>")
-                    .html(showTermInline(h.hType))
+                    .html(showTermInline(hTypeCopy))
             );
 
             contextDiv.prepend(p);
