@@ -76,12 +76,9 @@ Binders :: { [Binder] }
 : Names ':' Term  { [MkBinder $1 (Just $3)] }
 | BindersPlus     { $1 }
 
-TypedNames :: { Binder }
-: '(' Names ':' Term ')' { MkBinder $2 (Just $4) }
-
 Binder :: { Binder }
-: Names      { MkBinder $1 Nothing }
-| TypedNames { $1 }
+: Names                  { MkBinder $1 Nothing   }
+| '(' Names ':' Term ')' { MkBinder $2 (Just $4) }
 
 BindersPlus :: { [Binder] }
 : Binder BindersStar { $1 : $2 }
