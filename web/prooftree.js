@@ -258,6 +258,8 @@ ProofTree.prototype.newTheorem = function(
              )
     ;
 
+    this.rootNode = undefined; // will be reset in hInit callback, prevents stale uses
+
     var success = false;
 
     this.syncQuery(theorem, function(response) {
@@ -268,34 +270,54 @@ ProofTree.prototype.newTheorem = function(
 
 }
 
-function mkGoalNode(g, ndx) {
-    return {
-        "id": _.uniqueId(),
-        "name": g.gGoal,
-        "hyps": g.gHyps,
-        "ndx": ndx + 1,
-        "gid": g.gId,
-        "offset": 0,
-        "solved": false,
-    };
+function mkNode(parent, name, pName, moreFields) {
+    return $.extend(
+        {
+            "id": _.uniqueId(),
+            "name": name,
+            "pName": pName, // for debugging purposes
+            // we preemptively fill the parent and depth fields because d3 will only fill
+            // them for the visible nodes of the tree, while some algorithms require it
+            // before a node has ever been visible
+            "parent": parent,
+            "depth": parent.depth + 1,
+            "offset": 0,
+            "solved": false,
+        },
+        moreFields
+    );
 }
 
-function mkTacticNode(tactic, goals) {
+function mkGoalNode(parent, g, ndx) {
+    return mkNode(
+        parent,
+        g.gGoal,
+        showTermInline(g.gGoal),
+        {
+            "hyps": g.gHyps,
+            "ndx": ndx + 1,
+            "gid": g.gId,
+        }
+    );
+}
+
+function mkTacticNode(depth, tactic, goals) {
+
+    var n = mkNode(parent, tactic, tactic);
 
     var children = _(goals)
-        .map(mkGoalNode)
+        .map(_.partial(mkGoalNode, n))
         .value()
     ;
 
-    return {
-        "id": _.uniqueId(),
-        "name": tactic,
-        "allChildren": children,
-        "visibleChildren": children.slice(0, nbChildrenToShow),
-        "offset": 0,
-        "terminating": _(children).isEmpty(),
-        "solved": false,
-    };
+    return $.extend(
+        n,
+        {
+            "allChildren": children,
+            "visibleChildren": children.slice(0, nbChildrenToShow),
+            "terminating": _(children).isEmpty(),
+        }
+    );
 
 }
 
@@ -308,16 +330,16 @@ ProofTree.prototype.tryAllTactics = function() {
 
     this.syncQueryUndo('idtac.', function(response) {
         unfocusedBefore = response.rGoals.unfocused;
-        res.push(mkTacticNode('idtac.', response.rGoals.focused));
+        res.push(mkTacticNode(self.curNode, 'idtac.', response.rGoals.focused));
     });
 
     var run = function(t) {
         self.syncQueryUndo(t + '.', function(response) {
             if(isGood(response)) {
                 if (_.isEqual(response.rGoals.unfocused, unfocusedBefore)) {
-                    res.push(mkTacticNode(t + '.', response.rGoals.focused));
+                    res.push(mkTacticNode(self.curNode, t + '.', response.rGoals.focused));
                 } else {
-                    res.push(mkTacticNode(t + '.', []));
+                    res.push(mkTacticNode(self.curNode, t + '.', []));
                 }
             }
 /*
@@ -403,6 +425,7 @@ ProofTree.prototype.hInit = function(response, preAnimCallback, postAnimCallback
     this.rootNode = {
         "id": _.uniqueId(),
         "name": response.rGoals.focused[0].gGoal,
+        "pName": showTermInline(response.rGoals.focused[0].gGoal),
         "x0": 0.5,
         "y0": 0,
         "allChildren": [], // will be filled once this.curNode is set
@@ -456,6 +479,11 @@ ProofTree.prototype.isCurNodeGrandChild = function(n) {
 
 ProofTree.prototype.isCurNodeSibling = function(n) {
     return !this.isCurNode(n) && hasParent(n) && this.isCurNodeParent(n.parent);
+}
+
+ProofTree.prototype.isCurNodeAncestor = function(n) {
+    var common = this.commonAncestor(this.curNode, n);
+    return common.id === n.id;
 }
 
 ProofTree.prototype.update = function(source) {
@@ -1059,6 +1087,8 @@ ProofTree.prototype.update = function(source) {
 
     this.updateContext();
 
+    this.updateDebug();
+
     this.animationRunning = true;
     window.setTimeout(function() { self.animationRunning = false; }, animationDuration);
 
@@ -1337,7 +1367,6 @@ ProofTree.prototype.syncRequest = function(r, q, h) {
         async: false,
         success: function(response) {
             //console.log("response", response);
-            if (r === "query") { self.updateDebug(response); }
             h(response);
         }
     });
@@ -1454,14 +1483,20 @@ ProofTree.prototype.updateContext = function() {
 
 }
 
-ProofTree.prototype.updateDebug = function(response) {
+ProofTree.prototype.updateDebug = function() {
 
     var debugDiv = this.debug.select('div');
+
+    var partialProof = this.partialProofFrom(this.rootNode);
+    debugDiv.html(PT.pprint(partialProof, 0));
+
+/*
     if (response.rGoals.focused.length > 0) {
-        debugDiv.html(response.rGoals.focused[0].gGoal);
+        debugDiv.html(showTerm(response.rGoals.focused[0].gGoal));
     } else {
         debugDiv.html(response.rResponse.contents[0]);
     }
+*/
 
     updateNodeHeight(this.debug);
 
@@ -1542,6 +1577,35 @@ function makeActive(prooftree) {
     activeProofTree = prooftree;
 }
 
+ProofTree.prototype.partialProofFrom = function(t) {
+
+    var self = this;
+
+    if (isGoal(t)) {
+        var solution = _(t.allChildren).find("solved");
+        if (solution !== undefined) {
+            return this.partialProofFrom(solution);
+        }
+        var curTac = _(t.allChildren).find(function(n) {
+            return self.isCurNodeAncestor(n);
+        });
+        if (curTac !== undefined) {
+            return this.partialProofFrom(curTac);
+        }
+        return ["admit.", []];
+    }
+
+    if (isTactic(t)) {
+        return [
+            t.name,
+            _(t.allChildren).map(self.partialProofFrom.bind(self)).value(),
+        ];
+    }
+
+    console.log("t is neither a goal nor a tactic", t);
+
+}
+
 PT.proofFrom = function(t) {
 
     if (isGoal(t)) {
@@ -1604,7 +1668,7 @@ PT.pprintAux = function(proof, indentation) {
 }
 
 PT.pprint = function(proof, indentation) {
-    return repeat(2, "&nbsp;") + PT.pprintAux(proof, indentation);
+    return repeat(2 * indentation, "&nbsp;") + PT.pprintAux(proof, indentation);
 }
 
 function isBad(response) {
