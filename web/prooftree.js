@@ -1488,7 +1488,11 @@ ProofTree.prototype.updateDebug = function() {
     var debugDiv = this.debug.select('div');
 
     var partialProof = this.partialProofFrom(this.rootNode);
-    debugDiv.html(PT.pprint(partialProof, 0));
+    debugDiv.html(
+        this.theorem + "<br>Proof.<br>"
+            + PT.pprint(partialProof, 1)
+            + "<br>Qed."
+    );
 
 /*
     if (response.rGoals.focused.length > 0) {
