@@ -1592,7 +1592,7 @@ ProofTree.prototype.partialProofFrom = function(t) {
         if (curTac !== undefined) {
             return this.partialProofFrom(curTac);
         }
-        return ["admit.", []];
+        return [ this.isCurNode(t) ? "todo." : "admit.", []];
     }
 
     if (isTactic(t)) {
@@ -1638,6 +1638,8 @@ PT.pprintAux = function(proof, indentation) {
     var fst = proof[0];
     var snd = proof[1];
     var indent = repeat(2 * indentation, "&nbsp;");
+
+    if (fst === "todo.") { fst = '<span style="color: green;">admit.</span>'; }
 
     if (_.isEmpty(snd)) { return fst; }
 
