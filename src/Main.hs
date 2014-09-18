@@ -2,22 +2,33 @@
 
 module Main where
 
-import Control.Applicative ((<$>), (<|>))
-import Control.Monad.IO.Class (liftIO)
-import Data.ByteString (append)
-import Data.ByteString.UTF8 (toString)
-import Data.List (nubBy, (\\))
+import           Control.Applicative ((<$>))
+import           Control.Monad.IO.Class (liftIO)
+import           Data.ByteString (append)
+import           Data.ByteString.UTF8 (toString)
 import qualified Data.HashMap.Strict as HM (map)
-import Data.Maybe (catMaybes)
-import Snap.Core
-import Snap.Extras.JSON
-import Snap.Http.Server (quickHttpServe)
-import Snap.Util.FileServe
-import System.IO
-import System.Process (runInteractiveCommand)
+import           Data.IORef
+import qualified Data.IntMap as IM
+import qualified Data.Text as T
+import           Snap.Core
+import           Snap.Extras.JSON
+import           Snap.Http.Server.Config (defaultConfig)
+import           Snap.Snaplet
+import           Snap.Snaplet.Session
+import           Snap.Snaplet.Session.Backends.CookieSession (initCookieSessionManager)
+import           Snap.Snaplet.Session.SessionManager ()
+import           Snap.Util.FileServe
+import           System.IO
+import           System.Process (runInteractiveCommand)
+import           System.Random
 
-import CoqTypes
-import Coqtop
+import           CoqTypes
+import           Coqtop
+import           Rooster
+
+main :: IO ()
+main = do
+  serveSnaplet defaultConfig roosterSnaplet
 
 startCoqtop :: IO (Handle, Handle)
 startCoqtop = do
@@ -29,94 +40,69 @@ startCoqtop = do
   hForceValueResponse ho
   return (hi, ho)
 
-main :: IO ()
-main = do
-  (hi, ho) <- startCoqtop
-  quickHttpServe (site hi ho)
+sessionKey :: T.Text
+sessionKey = "key"
 
-myDirConfig = defaultDirectoryConfig {
-  mimeTypes = HM.map (\m -> append m "; charset=utf-8") defaultMimeTypes
-  }
+withSessionHandles ::
+  IORef RoosterState
+  -> (Handle -> Handle -> Handler Rooster Rooster ())
+  -> Handler Rooster Rooster ()
+withSessionHandles r h = do
+  -- retrieve or create a key for this session
+  mapKey <- with lSession $ do
+    mkey <- getFromSession sessionKey
+    case mkey of
+      Nothing -> do
+        key <- liftIO randomIO
+        setInSession sessionKey (T.pack . show $ key)
+        commitSession
+        return key
+      Just key -> do
+        return . read . T.unpack $ key
+  -- retrieve or create two handles for this session
+  (hi, ho) <- liftIO $ do
+    m <- readIORef r
+    case IM.lookup mapKey m of
+      Nothing -> do
+        (hi, ho) <- startCoqtop
+        atomicModifyIORef' r $ \ _m -> (IM.insert mapKey (hi, ho) _m, ())
+        return (hi, ho)
+      Just hiho -> do
+        return hiho
+  -- run the handler
+  h hi ho
 
-site :: Handle -> Handle -> Snap ()
-site hi ho =
-  ifTop (serveFile "web/rooster.html")
-  <|> route [ ("query", queryHandler hi ho) ]
-  <|> route [ ("undo", undoHandler hi ho) ]
-  <|> route [ ("queryundo", queryUndoHandler hi ho) ]
-  <|> route [ ("status", statusHandler hi ho) ]
-  <|> route [ ("rewind", rewindHandler hi ho) ]
-  <|> route [ ("qed", qedHandler hi ho) ]
-  <|> route [ ("setprintingall", togglePrintingAll True hi ho) ]
-  <|> route [ ("unsetprintingall", togglePrintingAll False hi ho) ]
-  <|> serveDirectoryWith myDirConfig "web/"
-  <|> serveDirectory "web/jquery-ui-1.10.4.custom/css/south-street/"
+roosterSnaplet :: SnapletInit Rooster Rooster
+roosterSnaplet = makeSnaplet "rooster" "rooster" Nothing $ do
+  ref <- liftIO $ newIORef IM.empty
+  s <- nestSnaplet "session" lSession cookieSessionManager
+  addRoutes $
+    map (\(r, handler) -> (r, withSessionHandles ref handler))
+    [ ("query",            queryHandler)
+    , ("queryundo",        queryUndoHandler)
+    , ("undo",             undoHandler)
+    , ("status",           statusHandler)
+    , ("rewind",           rewindHandler)
+    , ("qed",              qedHandler)
+    , ("setprintingall",   togglePrintingAll True)
+    , ("unsetprintingall", togglePrintingAll False)
+    ] ++
+    [ ("/",                serveDirectoryWith myDirConfig "web/")
+    ]
+  return $ Rooster s
+  where
+    cookieSessionManager = initCookieSessionManager "encription_key" "rooster_session" Nothing
+    myDirConfig =
+      defaultDirectoryConfig {
+        mimeTypes = HM.map (\m -> append m "; charset=utf-8") defaultMimeTypes
+        }
 
-pprintResponse :: CoqtopResponse [String] -> String
-pprintResponse (Fail s) = s
-pprintResponse (Good l) = concatMap (++ "\n") l
+respond :: Handle -> Handle -> CoqtopResponse [String] -> Handler Rooster Rooster ()
+respond hi ho response = do
+  goals <- liftIO $ hQueryGoal hi ho
+  writeJSON $ MkRoosterResponse goals response
 
-goalsOfGoals :: Goals -> [Goal]
-goalsOfGoals (MkGoals foc unfoc) = foc ++ concatMap (uncurry (++)) unfoc
-
-newGoals :: Goals -> Goals -> [Goal]
-newGoals old new = goalsOfGoals new \\ goalsOfGoals old
-
-proofContextWithNext :: Handle -> Handle -> IO (Goals, [(Query, [Goal])])
-proofContextWithNext hi ho = do
-  goals <- hQueryGoal hi ho
-
-{-
-  -- maybe not do that every time? :)
-  hCall hi [("val", "search")] ""
-  rthms <- hParseSearchResponse ho
-
-  let thms = case rthms of
-        Good ts -> ts
-        Fail _  -> []
--}
-
-  let hyps = gCurHypsNames goals
-
-  let destructs = map (\h -> "destruct " ++ h ++ ".") hyps
-  let inductions = map (\h -> "induction " ++ h ++ ".") hyps
-  let l2r = map (\h -> "rewrite -> " ++ h ++ ".") hyps
-  let r2l = map (\h -> "rewrite <- " ++ h ++ ".") hyps
-  -- let applies = map (\t -> "apply " ++ thName t ++ ".") thms
-  let applyhyps = map (\h -> "apply " ++ h ++ ".") hyps
-  let reverts = map (\h -> "revert " ++ h ++ ".") hyps
-
-  simpleQueries <- catMaybes <$> hQueries hi ho queries
-  destructQueries <- catMaybes <$> hQueries hi ho destructs
-  inductionQueries <- catMaybes <$> hQueries hi ho inductions
-  constructorQueries <- hQueriesUntilFail hi ho constructors
-  l2rQueries <- catMaybes <$> hQueries hi ho l2r
-  r2lQueries <- catMaybes <$> hQueries hi ho r2l
-  -- applyQueries <- catMaybes <$> hQueries hi ho applies
-  applyHypsQueries <- catMaybes <$> hQueries hi ho applyhyps
-  revertQueries <- catMaybes <$> hQueries hi ho reverts
-
-  let queryResults =
-        -- remove duplicates when multiple queries have equivalent effect
-        nubBy (\q1 q2 -> snd q1 == snd q2)
-        -- remove queries that don't affect the state
-        . filter (\qr -> snd qr /= goals)
-        $ simpleQueries
-        ++ destructQueries
-        ++ inductionQueries
-        ++ constructorQueries
-        ++ l2rQueries
-        ++ r2lQueries
-        -- ++ applyQueries
-        ++ applyHypsQueries
-        ++ revertQueries
-
-  let queryResults' =
-        map (\(q, goals') -> (q, newGoals goals goals')) queryResults
-
-  return (goals, queryResults')
-
-queryHandler :: Handle -> Handle -> Snap ()
+queryHandler :: Handle -> Handle -> Handler Rooster Rooster ()
 queryHandler hi ho = do
   param <- getParam "query"
   case param of
@@ -130,40 +116,7 @@ queryHandler hi ho = do
         hForceValueResponse ho
       respond hi ho response
 
-respond :: Handle -> Handle -> CoqtopResponse [String] -> Snap ()
-respond hi ho response = do
-  goals <- liftIO $ hQueryGoal hi ho
-  writeJSON $ MkRoosterResponse goals response
-
-undoHandler :: Handle -> Handle -> Snap ()
-undoHandler hi ho = do
-  liftIO $ hCall hi [("val", "rewind"), ("steps", "1")] ""
-  r <- liftIO $ hForceValueResponse ho
-  respond hi ho r
-
-statusHandler :: Handle -> Handle -> Snap ()
-statusHandler hi ho = do
-  liftIO $ hCall hi [("val", "status")] ""
-  r <- liftIO $ hForceStatusResponse ho
-  respond hi ho (return . show <$> r)
-
-rewindHandler :: Handle -> Handle -> Snap ()
-rewindHandler hi ho = do
-  param <- getParam "query"
-  case param of
-    Nothing -> return ()
-    Just stepsBS -> do
-      liftIO $ hCall hi [("val", "rewind"), ("steps", toString stepsBS)] ""
-      r <- liftIO $ hForceValueResponse ho
-      respond hi ho (return . show <$> r)
-
-qedHandler :: Handle -> Handle -> Snap ()
-qedHandler hi ho = do
-  liftIO $ hInterp hi "Qed."
-  r <- liftIO $ hForceValueResponse ho
-  respond hi ho r
-
-queryUndoHandler :: Handle -> Handle -> Snap ()
+queryUndoHandler :: Handle -> Handle -> Handler Rooster Rooster ()
 queryUndoHandler hi ho = do
   param <- getParam "query"
   case param of
@@ -184,18 +137,35 @@ queryUndoHandler hi ho = do
             liftIO $ hForceValueResponse ho
             return ()
 
-setPrintingAll :: Handle -> Handle -> Snap ()
-setPrintingAll hi ho = do
-  let query =
-        "<call id=\"0\" val=\"setoptions\">"
-        ++ "<pair><list><string>Printing</string><string>All</string></list>"
-        ++ "<option_value val=\"boolvalue\"><bool val=\"true\"></bool></option_value>"
-        ++ "</pair></call>"
-  liftIO $ hPutStrLn hi query
+undoHandler :: Handle -> Handle -> Handler Rooster Rooster ()
+undoHandler hi ho = do
+  liftIO $ hCall hi [("val", "rewind"), ("steps", "1")] ""
   r <- liftIO $ hForceValueResponse ho
   respond hi ho r
 
-togglePrintingAll :: Bool -> Handle -> Handle -> Snap ()
+statusHandler :: Handle -> Handle -> Handler Rooster Rooster ()
+statusHandler hi ho = do
+  liftIO $ hCall hi [("val", "status")] ""
+  r <- liftIO $ hForceStatusResponse ho
+  respond hi ho (return . show <$> r)
+
+rewindHandler :: Handle -> Handle -> Handler Rooster Rooster ()
+rewindHandler hi ho = do
+  param <- getParam "query"
+  case param of
+    Nothing -> return ()
+    Just stepsBS -> do
+      liftIO $ hCall hi [("val", "rewind"), ("steps", toString stepsBS)] ""
+      r <- liftIO $ hForceValueResponse ho
+      respond hi ho (return . show <$> r)
+
+qedHandler :: Handle -> Handle -> Handler Rooster Rooster ()
+qedHandler hi ho = do
+  liftIO $ hInterp hi "Qed."
+  r <- liftIO $ hForceValueResponse ho
+  respond hi ho r
+
+togglePrintingAll :: Bool -> Handle -> Handle -> Handler Rooster Rooster ()
 togglePrintingAll b hi ho = do
   let query =
         "<call id=\"0\" val=\"setoptions\">"
