@@ -26,6 +26,7 @@ startCoqtop = do
   hSetBuffering stdin LineBuffering
   hSetBuffering hi NoBuffering
   hInterp hi "Require Import Unicode.Utf8."
+  hForceValueResponse ho
   return (hi, ho)
 
 main :: IO ()
