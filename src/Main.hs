@@ -26,6 +26,9 @@ import           CoqTypes
 import           Coqtop
 import           Rooster
 
+type RoosterHandler = Handler Rooster Rooster ()
+type RoosterHandlerWithHandles = Handle -> Handle -> RoosterHandler
+
 main :: IO ()
 main = do
   serveSnaplet defaultConfig roosterSnaplet
@@ -45,8 +48,8 @@ sessionKey = "key"
 
 withSessionHandles ::
   IORef RoosterState
-  -> (Handle -> Handle -> Handler Rooster Rooster ())
-  -> Handler Rooster Rooster ()
+  -> RoosterHandlerWithHandles
+  -> RoosterHandler
 withSessionHandles r h = do
   -- retrieve or create a key for this session
   mapKey <- with lSession $ do
@@ -97,12 +100,12 @@ roosterSnaplet = makeSnaplet "rooster" "rooster" Nothing $ do
         mimeTypes = HM.map (\m -> append m "; charset=utf-8") defaultMimeTypes
         }
 
-respond :: Handle -> Handle -> CoqtopResponse [String] -> Handler Rooster Rooster ()
-respond hi ho response = do
+respond :: CoqtopResponse [String] -> RoosterHandlerWithHandles
+respond response hi ho = do
   goals <- liftIO $ hQueryGoal hi ho
   writeJSON $ MkRoosterResponse goals response
 
-queryHandler :: Handle -> Handle -> Handler Rooster Rooster ()
+queryHandler :: RoosterHandlerWithHandles
 queryHandler hi ho = do
   param <- getParam "query"
   case param of
@@ -114,9 +117,9 @@ queryHandler hi ho = do
         putStrLn $ query
         hInterp hi query
         hForceValueResponse ho
-      respond hi ho response
+      respond response hi ho
 
-queryUndoHandler :: Handle -> Handle -> Handler Rooster Rooster ()
+queryUndoHandler :: RoosterHandlerWithHandles
 queryUndoHandler hi ho = do
   param <- getParam "query"
   case param of
@@ -127,7 +130,7 @@ queryUndoHandler hi ho = do
         let query = toString queryBS
         hInterp hi query
         hForceValueResponse ho
-      respond hi ho response
+      respond response hi ho
       case response of
         Fail _ ->
           return ()
@@ -137,19 +140,19 @@ queryUndoHandler hi ho = do
             liftIO $ hForceValueResponse ho
             return ()
 
-undoHandler :: Handle -> Handle -> Handler Rooster Rooster ()
+undoHandler :: RoosterHandlerWithHandles
 undoHandler hi ho = do
   liftIO $ hCall hi [("val", "rewind"), ("steps", "1")] ""
   r <- liftIO $ hForceValueResponse ho
-  respond hi ho r
+  respond r hi ho
 
-statusHandler :: Handle -> Handle -> Handler Rooster Rooster ()
+statusHandler :: RoosterHandlerWithHandles
 statusHandler hi ho = do
   liftIO $ hCall hi [("val", "status")] ""
   r <- liftIO $ hForceStatusResponse ho
-  respond hi ho (return . show <$> r)
+  respond (return . show <$> r) hi ho
 
-rewindHandler :: Handle -> Handle -> Handler Rooster Rooster ()
+rewindHandler :: RoosterHandlerWithHandles
 rewindHandler hi ho = do
   param <- getParam "query"
   case param of
@@ -157,15 +160,15 @@ rewindHandler hi ho = do
     Just stepsBS -> do
       liftIO $ hCall hi [("val", "rewind"), ("steps", toString stepsBS)] ""
       r <- liftIO $ hForceValueResponse ho
-      respond hi ho (return . show <$> r)
+      respond (return . show <$> r) hi ho
 
-qedHandler :: Handle -> Handle -> Handler Rooster Rooster ()
+qedHandler :: RoosterHandlerWithHandles
 qedHandler hi ho = do
   liftIO $ hInterp hi "Qed."
   r <- liftIO $ hForceValueResponse ho
-  respond hi ho r
+  respond r hi ho
 
-togglePrintingAll :: Bool -> Handle -> Handle -> Handler Rooster Rooster ()
+togglePrintingAll :: Bool -> RoosterHandlerWithHandles
 togglePrintingAll b hi ho = do
   let query =
         "<call id=\"0\" val=\"setoptions\">"
@@ -176,4 +179,4 @@ togglePrintingAll b hi ho = do
         ++ "</pair></call>"
   liftIO $ hPutStrLn hi query
   r <- liftIO $ hForceValueResponse ho
-  respond hi ho r
+  respond r hi ho
