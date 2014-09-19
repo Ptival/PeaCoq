@@ -3,6 +3,8 @@
 module Main where
 
 import           Control.Applicative ((<$>))
+import           Control.Concurrent (forkIO, threadDelay)
+import           Control.Monad (forever, forM)
 import           Control.Monad.IO.Class (liftIO)
 import           Data.ByteString (append)
 import           Data.ByteString.UTF8 (toString)
@@ -10,16 +12,18 @@ import qualified Data.HashMap.Strict as HM (map)
 import           Data.IORef
 import qualified Data.IntMap as IM
 import qualified Data.Text as T
+import           Data.Time.LocalTime (getZonedTime)
+import           Prelude hiding (log)
 import           Snap.Core
 import           Snap.Extras.JSON
 import           Snap.Http.Server.Config (defaultConfig)
 import           Snap.Snaplet
-import           Snap.Snaplet.Session
+import           Snap.Snaplet.Session (getFromSession, setInSession)
 import           Snap.Snaplet.Session.Backends.CookieSession (initCookieSessionManager)
 import           Snap.Snaplet.Session.SessionManager ()
 import           Snap.Util.FileServe
 import           System.IO
-import           System.Process (runInteractiveCommand)
+import           System.Process
 import           System.Random
 
 import           CoqTypes
@@ -27,27 +31,79 @@ import           Coqtop
 import           Rooster
 
 type RoosterHandler = Handler Rooster Rooster ()
+
 type RoosterHandlerWithHandles = Handle -> Handle -> RoosterHandler
+
+data GlobalState
+  = GlobalState
+    Int                      -- next session number
+    (IM.IntMap SessionState) -- active sessions
+
+data SessionState
+  = SessionState
+    Int              -- an identifier for the session
+    Bool             -- True while the session is alive
+    (Handle, Handle) -- I/O handles
+    ProcessHandle    -- useful to kill the process
+
+sessionTimeoutSeconds :: Int
+sessionTimeoutSeconds = 3600
+
+sessionTimeoutMicroseconds :: Int
+sessionTimeoutMicroseconds = sessionTimeoutSeconds * 1000 * 1000
 
 main :: IO ()
 main = do
-  serveSnaplet defaultConfig roosterSnaplet
+  globRef <- newIORef $ GlobalState 0 IM.empty
+  forkIO $ cleanStaleSessions globRef
+  serveSnaplet defaultConfig $ roosterSnaplet globRef
 
-startCoqtop :: IO (Handle, Handle)
+log :: String -> IO ()
+log m = do
+  t <- getZonedTime
+  putStrLn $ show t ++ ": " ++ m
+
+isAlive :: SessionState -> Bool
+isAlive (SessionState _ alive _ _) = alive
+
+markStale :: SessionState -> SessionState
+markStale (SessionState n _ h ph) = SessionState n False h ph
+
+touchSession :: SessionState -> SessionState
+touchSession (SessionState n _ h ph) = SessionState n True h ph
+
+cleanStaleSessions :: IORef GlobalState -> IO ()
+cleanStaleSessions globRef = forever $ do
+  sessionsToClose <- atomicModifyIORef' globRef markAndSweep
+  forM sessionsToClose $ \(SessionState n _ (hi, ho) ph) -> do
+    log $ "Terminating coqtop session " ++ show n
+    hClose hi
+    hClose ho
+    terminateProcess ph -- not stricly necessary
+    waitForProcess ph
+  threadDelay sessionTimeoutMicroseconds
+  where
+    markAndSweep :: GlobalState -> (GlobalState, [SessionState])
+    markAndSweep (GlobalState c m) =
+      let (alive, stale) = IM.partition isAlive m in
+      (GlobalState c (IM.map markStale alive), IM.elems stale)
+
+startCoqtop :: IO (Handle, Handle, ProcessHandle)
 startCoqtop = do
-  (hi, ho, _, _) <- runInteractiveCommand "coqtop -ideslave"
+  (hi, ho, he, ph) <- runInteractiveCommand "coqtop -ideslave"
+  hClose he
   hSetBinaryMode hi False
   hSetBuffering stdin LineBuffering
   hSetBuffering hi NoBuffering
   hInterp hi "Require Import Unicode.Utf8."
   hForceValueResponse ho
-  return (hi, ho)
+  return (hi, ho, ph)
 
 sessionKey :: T.Text
 sessionKey = "key"
 
 withSessionHandles ::
-  IORef RoosterState
+  IORef GlobalState
   -> RoosterHandlerWithHandles
   -> RoosterHandler
 withSessionHandles r h = do
@@ -58,29 +114,38 @@ withSessionHandles r h = do
       Nothing -> do
         key <- liftIO randomIO
         setInSession sessionKey (T.pack . show $ key)
-        commitSession
         return key
       Just key -> do
         return . read . T.unpack $ key
   -- retrieve or create two handles for this session
   (hi, ho) <- liftIO $ do
-    m <- readIORef r
+    GlobalState _ m <- readIORef r
     case IM.lookup mapKey m of
       Nothing -> do
-        (hi, ho) <- startCoqtop
-        atomicModifyIORef' r $ \ _m -> (IM.insert mapKey (hi, ho) _m, ())
+        (hi, ho, ph) <- startCoqtop
+        n <- atomicModifyIORef' r $ updateNewSession mapKey (hi, ho) ph
+        log $ "Starting coqtop session " ++ show n
         return (hi, ho)
-      Just hiho -> do
+      Just (SessionState _ _ hiho _) -> do
+        -- update the timestamp
+        atomicModifyIORef' r $ updateTouchSession mapKey
         return hiho
   -- run the handler
   h hi ho
+  where
+    updateNewSession
+      :: Int -> (Handle, Handle) -> ProcessHandle -> GlobalState -> (GlobalState, Int)
+    updateNewSession mapKey hs ph (GlobalState c m) =
+      (GlobalState (c + 1) (IM.insert mapKey (SessionState c True hs ph) m), c)
+    updateTouchSession :: Int -> GlobalState -> (GlobalState, Int)
+    updateTouchSession mapKey (GlobalState c m) =
+      (GlobalState c (IM.adjust touchSession mapKey m), c)
 
-roosterSnaplet :: SnapletInit Rooster Rooster
-roosterSnaplet = makeSnaplet "rooster" "rooster" Nothing $ do
-  ref <- liftIO $ newIORef IM.empty
+roosterSnaplet :: IORef GlobalState -> SnapletInit Rooster Rooster
+roosterSnaplet globRef = makeSnaplet "Rooster" "Rooster" Nothing $ do
   s <- nestSnaplet "session" lSession cookieSessionManager
   addRoutes $
-    map (\(r, handler) -> (r, withSessionHandles ref handler))
+    map (\(r, handler) -> (r, withSessionHandles globRef handler))
     [ ("query",            queryHandler)
     , ("queryundo",        queryUndoHandler)
     , ("undo",             undoHandler)

@@ -40,6 +40,7 @@ Executable rooster
     snap-server               >= 0.9   && < 0.10,
     tagsoup                   >= 0.13  && < 0.14,
     text                      >= 1.1   && < 1.2,
+    time                      >= 1.4   && < 1.5,
     transformers              >= 0.3   && < 0.4,
     unordered-containers      >= 0.2   && < 0.3,
     utf8-string               >= 0.3   && < 0.4,
