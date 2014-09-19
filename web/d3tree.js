@@ -64,7 +64,7 @@ $(document).ready(function() {
     var pt = new ProofTree(
         d3.select("#pt"),
         $(window).width() - scrollbarWidth,
-        $(window).height() - $("#tips").height() - $("#buttons").height(),
+        $(window).height(),// - $("#tips").height() - $("#buttons").height(),
         qed
     );
 
