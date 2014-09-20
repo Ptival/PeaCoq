@@ -6,7 +6,7 @@ import           Control.Applicative ((<$>))
 import           Control.Concurrent (forkIO, threadDelay)
 import           Control.Monad (forever, forM)
 import           Control.Monad.IO.Class (liftIO)
-import           Data.ByteString (append)
+import           Data.ByteString (ByteString, append)
 import           Data.ByteString.UTF8 (toString)
 import qualified Data.HashMap.Strict as HM (map)
 import           Data.IORef
@@ -18,7 +18,7 @@ import           Snap.Core
 import           Snap.Extras.JSON
 import           Snap.Http.Server.Config (defaultConfig)
 import           Snap.Snaplet
-import           Snap.Snaplet.Session (getFromSession, setInSession)
+import           Snap.Snaplet.Session hiding (touchSession)
 import           Snap.Snaplet.Session.Backends.CookieSession (initCookieSessionManager)
 import           Snap.Snaplet.Session.SessionManager ()
 import           Snap.Util.FileServe
@@ -29,10 +29,6 @@ import           System.Random
 import           CoqTypes
 import           Coqtop
 import           Rooster
-
-type RoosterHandler = Handler Rooster Rooster ()
-
-type RoosterHandlerWithHandles = Handle -> Handle -> RoosterHandler
 
 data GlobalState
   = GlobalState
@@ -45,6 +41,10 @@ data SessionState
     Bool             -- True while the session is alive
     (Handle, Handle) -- I/O handles
     ProcessHandle    -- useful to kill the process
+
+type RoosterHandler = Handler Rooster Rooster ()
+
+type HandledRoosterHandler = Handle -> Handle -> RoosterHandler
 
 sessionTimeoutSeconds :: Int
 sessionTimeoutSeconds = 3600
@@ -104,9 +104,9 @@ sessionKey = "key"
 
 withSessionHandles ::
   IORef GlobalState
-  -> RoosterHandlerWithHandles
+  -> HandledRoosterHandler
   -> RoosterHandler
-withSessionHandles r h = do
+withSessionHandles r h = withSession lSession $ do
   -- retrieve or create a key for this session
   mapKey <- with lSession $ do
     mkey <- getFromSession sessionKey
@@ -144,33 +144,37 @@ withSessionHandles r h = do
 roosterSnaplet :: IORef GlobalState -> SnapletInit Rooster Rooster
 roosterSnaplet globRef = makeSnaplet "Rooster" "Rooster" Nothing $ do
   s <- nestSnaplet "session" lSession cookieSessionManager
-  addRoutes $
-    map (\(r, handler) -> (r, withSessionHandles globRef handler))
-    [ ("query",            queryHandler)
-    , ("queryundo",        queryUndoHandler)
-    , ("undo",             undoHandler)
-    , ("status",           statusHandler)
-    , ("rewind",           rewindHandler)
-    , ("qed",              qedHandler)
-    , ("setprintingall",   togglePrintingAll True)
-    , ("unsetprintingall", togglePrintingAll False)
-    ] ++
-    [ ("/",                serveDirectoryWith myDirConfig "web/")
-    ]
+  addRoutes roosterRoutes
   return $ Rooster s
   where
+    cookieSessionManager :: SnapletInit Rooster SessionManager
     cookieSessionManager = initCookieSessionManager "encription_key" "rooster_session" Nothing
+    myDirConfig :: DirectoryConfig (Handler Rooster Rooster)
     myDirConfig =
       defaultDirectoryConfig {
         mimeTypes = HM.map (\m -> append m "; charset=utf-8") defaultMimeTypes
         }
+    roosterRoutes :: [(ByteString, RoosterHandler)]
+    roosterRoutes =
+      map (\(r, handler) -> (r, withSessionHandles globRef handler))
+      [ ("query",            queryHandler)
+      , ("queryundo",        queryUndoHandler)
+      , ("undo",             undoHandler)
+      , ("status",           statusHandler)
+      , ("rewind",           rewindHandler)
+      , ("qed",              qedHandler)
+      , ("setprintingall",   togglePrintingAll True)
+      , ("unsetprintingall", togglePrintingAll False)
+      ] ++
+      [ ("/",                serveDirectoryWith myDirConfig "web/")
+      ]
 
-respond :: CoqtopResponse [String] -> RoosterHandlerWithHandles
+respond :: CoqtopResponse [String] -> HandledRoosterHandler
 respond response hi ho = do
   goals <- liftIO $ hQueryGoal hi ho
   writeJSON $ MkRoosterResponse goals response
 
-queryHandler :: RoosterHandlerWithHandles
+queryHandler :: HandledRoosterHandler
 queryHandler hi ho = do
   param <- getParam "query"
   case param of
@@ -184,7 +188,7 @@ queryHandler hi ho = do
         hForceValueResponse ho
       respond response hi ho
 
-queryUndoHandler :: RoosterHandlerWithHandles
+queryUndoHandler :: HandledRoosterHandler
 queryUndoHandler hi ho = do
   param <- getParam "query"
   case param of
@@ -205,19 +209,19 @@ queryUndoHandler hi ho = do
             liftIO $ hForceValueResponse ho
             return ()
 
-undoHandler :: RoosterHandlerWithHandles
+undoHandler :: HandledRoosterHandler
 undoHandler hi ho = do
   liftIO $ hCall hi [("val", "rewind"), ("steps", "1")] ""
   r <- liftIO $ hForceValueResponse ho
   respond r hi ho
 
-statusHandler :: RoosterHandlerWithHandles
+statusHandler :: HandledRoosterHandler
 statusHandler hi ho = do
   liftIO $ hCall hi [("val", "status")] ""
   r <- liftIO $ hForceStatusResponse ho
   respond (return . show <$> r) hi ho
 
-rewindHandler :: RoosterHandlerWithHandles
+rewindHandler :: HandledRoosterHandler
 rewindHandler hi ho = do
   param <- getParam "query"
   case param of
@@ -227,13 +231,13 @@ rewindHandler hi ho = do
       r <- liftIO $ hForceValueResponse ho
       respond (return . show <$> r) hi ho
 
-qedHandler :: RoosterHandlerWithHandles
+qedHandler :: HandledRoosterHandler
 qedHandler hi ho = do
   liftIO $ hInterp hi "Qed."
   r <- liftIO $ hForceValueResponse ho
   respond r hi ho
 
-togglePrintingAll :: Bool -> RoosterHandlerWithHandles
+togglePrintingAll :: Bool -> HandledRoosterHandler
 togglePrintingAll b hi ho = do
   let query =
         "<call id=\"0\" val=\"setoptions\">"
