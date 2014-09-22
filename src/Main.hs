@@ -148,7 +148,7 @@ roosterSnaplet globRef = makeSnaplet "Rooster" "Rooster" Nothing $ do
   return $ Rooster s
   where
     cookieSessionManager :: SnapletInit Rooster SessionManager
-    cookieSessionManager = initCookieSessionManager "encription_key" "rooster_session" Nothing
+    cookieSessionManager = initCookieSessionManager "encryption_key" "rooster_session" Nothing
     myDirConfig :: DirectoryConfig (Handler Rooster Rooster)
     myDirConfig =
       defaultDirectoryConfig {
