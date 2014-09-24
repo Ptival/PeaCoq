@@ -16,6 +16,8 @@ tokens :-
   (\∀|"forall") { \s -> TokForall }
   (\→|\-\>)     { \s -> TokArrow }
   (\λ|\\)       { \s -> TokLambda }
+  \.            { \s -> TokPeriod }
+  \:\=          { \s -> TokColonEq }
   \:            { \s -> TokColon }
   \=            { \s -> TokEq }
   \_            { \s -> TokUnderscore }
@@ -24,8 +26,12 @@ tokens :-
   \-            { \s -> TokMinus }
   \*            { \s -> TokStar }
   \&\&          { \s -> TokAndB }
+  \|            { \s -> TokPipe }
   \|\|          { \s -> TokOrB }
   \%            { \s -> TokPercent }
+  "Inductive"   { \s -> TokInductive }
+  "Proof"       { \s -> TokProof }
+  "Qed"         { \s -> TokQed }
   $alpha [$alpha $digit \_ \']* { \s -> TokSym s }
 
 {
@@ -37,6 +43,7 @@ data Token
   | TokArrow
   | TokForall
   | TokLambda
+  | TokPeriod
   | TokColon
   | TokColonEq
   | TokEq
@@ -45,10 +52,14 @@ data Token
   | TokPlus
   | TokMinus
   | TokStar
+  | TokPipe
   | TokAndB
   | TokOrB
   | TokPercent
   | TokNum String
+  | TokInductive
+  | TokProof
+  | TokQed
   deriving (Eq,Show)
 
 scanTokens = alexScanTokens

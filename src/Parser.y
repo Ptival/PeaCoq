@@ -7,11 +7,12 @@ import Data.Aeson
 import Control.Monad
 import Data.Char (isSpace, isAlpha, isDigit)
 import Data.Typeable
-import GHC.Generics
+import GHC.Generics hiding (Constructor)
 
 import Lexer
 }
 
+%name unsafeParseVernac     Vernac
 %name unsafeParseTerm       Term
 %name unsafeParseHypothesis Hypothesis
 %tokentype { Token }
@@ -27,6 +28,7 @@ num { TokNum $$ }
 '∀' { TokForall }
 'λ' { TokLambda }
 ':' { TokColon }
+'.' { TokPeriod }
 '=' { TokEq }
 '_' { TokUnderscore }
 ',' { TokComma }
@@ -34,9 +36,13 @@ num { TokNum $$ }
 '-' { TokMinus }
 '*' { TokStar }
 '%' { TokPercent }
+'|' { TokPipe }
 "&&" { TokAndB }
 "||" { TokOrB }
 ":=" { TokColonEq }
+"Inductive" { TokInductive }
+"Proof" { TokProof }
+"Qed" { TokQed }
 
 -- low precedence
 %right '→'
@@ -49,6 +55,18 @@ num { TokNum $$ }
 -- high precedence
 
 %%
+
+Vernac :: { Vernac }
+: "Inductive" var ':' Term ":=" Constructors '.' { Inductive $2 $4 $6 }
+| "Proof" '.' { Proof }
+| "Qed" '.' { Qed }
+
+Constructors :: { [Constructor] }
+: {- empty -}              { [] }
+| Constructor Constructors { $1 : $2 }
+
+Constructor :: { Constructor }
+: '|' var ':' Term { Constructor $2 $4 }
 
 Term :: { Term }
 : var                  { Var $1 }
@@ -94,11 +112,18 @@ Hypothesis :: { Hypothesis }
 
 {
 
-instance ToJSON Binder where
-instance ToJSON Term where
-
 parseError :: [Token] -> a
 parseError l = error $ "Parse error on: " ++ show l
+
+data Vernac
+  = Inductive String Type [Constructor]
+  | Proof
+  | Qed
+  deriving (Generic, Show)
+
+data Constructor
+  = Constructor String Type
+  deriving (Generic, Show)
 
 data Term
   = Var String
@@ -122,12 +147,19 @@ data Hypothesis
   }
   deriving (Eq, Generic, Show)
 
-instance ToJSON Hypothesis where
+parseVernac :: String -> Vernac
+parseVernac = unsafeParseVernac . scanTokens
 
 parseTerm :: String -> Term
 parseTerm = unsafeParseTerm . scanTokens
 
 parseHypothesis :: String -> Hypothesis
 parseHypothesis = unsafeParseHypothesis . scanTokens
+
+instance ToJSON Vernac where
+instance ToJSON Constructor where
+instance ToJSON Binder where
+instance ToJSON Term where
+instance ToJSON Hypothesis where
 
 }
