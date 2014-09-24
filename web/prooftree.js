@@ -1776,6 +1776,54 @@ var precPlus   = precedence++; var precMinus = precPlus;
 var precMult   = precedence++;
 var precApp    = precedence++;
 
+var nbsp = "&nbsp;";
+function keyword(s) { return '<span class="keyword">' + s + '</span>'; }
+function syntax(s) { return '<span class="syntax">' + s + '</span>'; }
+function ident(s) { return '<span class="identifier">' + s + '</span>'; }
+
+function showConstructor(t) {
+    var name = t[0];
+    var type = showTermInline(t[1]);
+
+    return syntax("|")
+        + nbsp
+        + ident(name)
+        + nbsp
+        + syntax(":")
+        + nbsp
+        + type
+    ;
+}
+
+function showVernac(t) {
+    var c = t.contents;
+
+    switch (t.tag) {
+
+    case "Inductive":
+        var name = c[0];
+        var type = showTermInline(c[1]);
+        var constructors = _(c[2]).map(showConstructor);
+        return keyword("Inductive")
+            + nbsp
+            + ident(name)
+            + nbsp
+            + syntax(":")
+            + nbsp
+            + type
+            + nbsp
+            + syntax(":=")
+            + "<br>"
+            + _(constructors).reduce(function(acc, elt) { return acc + elt + "<br>"; }, "")
+            + syntax(".")
+        ;
+
+    default:
+        return "Unknown Vernacular tag: " + t.tag;
+
+    };
+}
+
 function showTermAux(t, indentation, precParent, newline) {
     var c = t.contents;
 
@@ -1820,7 +1868,7 @@ function showTermAux(t, indentation, precParent, newline) {
 
     case "Arrow":
         return showTermAux(c[0], indentation, precArrow, false)
-            + " →" + (newline ? "<br/>" + indent : " ")
+            + nbsp + syntax("→") + (newline ? "<br/>" + indent : " ")
             + showTermAux(c[1], indentation, precParent, newline);
 
     case "App":

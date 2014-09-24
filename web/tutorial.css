@@ -1,0 +1,45 @@
+
+.form-control {
+    font-family: monospace;
+    padding: 0px 12px;
+}
+
+#main {
+    float: left;
+}
+
+#accordion {
+    float: left;
+}
+
+.accordion-body {
+    margin-left: 10px;
+}
+
+a .panel-title:after {
+    font-family: 'Glyphicons Halflings';
+    content: "\e114";
+    float: right;
+}
+
+a.collapsed .panel-title:after {
+    content: "\e080";
+}
+
+.panel-heading, .panel-footer {
+    padding: 4px 6px;
+}
+
+#main .panel {
+    background-color: lightgray;
+}
+
+.alert {
+    margin: 0;
+}
+
+@import url("//netdna.bootstrapcdn.com/bootstrap/3.0.0-rc2/css/bootstrap-glyphicons.css");
+
+.keyword { color: red; }
+.syntax { color: black; }
+.identifier { color: blue; }
