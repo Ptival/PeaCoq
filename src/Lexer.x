@@ -10,12 +10,6 @@ $alpha = [a-zA-Z]
 
 tokens :-
   ($white|\160)+ ;
-  "match"       { \s -> TokMatch }
-  "as"          { \s -> TokAs }
-  "in"          { \s -> TokIn }
-  "return"      { \s -> TokReturn }
-  "with"        { \s -> TokWith }
-  "let"         { \s -> TokLet }
   $digit+       { \s -> TokNum s }
   \(            { \s -> TokLParen }
   \)            { \s -> TokRParen }
@@ -45,12 +39,6 @@ data Token
   | TokLambda
   | TokColon
   | TokColonEq
-  | TokMatch
-  | TokAs
-  | TokIn
-  | TokReturn
-  | TokWith
-  | TokLet
   | TokEq
   | TokUnderscore
   | TokComma

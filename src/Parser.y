@@ -37,12 +37,6 @@ num { TokNum $$ }
 "&&" { TokAndB }
 "||" { TokOrB }
 ":=" { TokColonEq }
-"match" { TokMatch }
-"as" { TokAs }
-"in" { TokIn }
-"return" { TokReturn }
-"with" { TokWith }
-"let" { TokLet }
 
 -- low precedence
 %right '→'
