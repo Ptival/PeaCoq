@@ -28,6 +28,7 @@ import           System.Random
 
 import           CoqTypes
 import           Coqtop
+import           Parser
 import           Rooster
 
 data GlobalState
@@ -165,6 +166,7 @@ roosterSnaplet globRef = makeSnaplet "Rooster" "Rooster" Nothing $ do
       , ("qed",              qedHandler)
       , ("setprintingall",   togglePrintingAll True)
       , ("unsetprintingall", togglePrintingAll False)
+      , ("parse",            parseHandler)
       ] ++
       [ ("/",                serveDirectoryWith myDirConfig "web/")
       ]
@@ -173,6 +175,15 @@ respond :: CoqtopResponse [String] -> HandledRoosterHandler
 respond response hi ho = do
   goals <- liftIO $ hQueryGoal hi ho
   writeJSON $ MkRoosterResponse goals response
+
+parseHandler :: HandledRoosterHandler
+parseHandler _ _ = do
+  param <- getParam "query"
+  case param of
+    Nothing -> return ()
+    Just queryBS -> do
+      let response = parseVernac $ toString queryBS
+      writeJSON response
 
 queryHandler :: HandledRoosterHandler
 queryHandler hi ho = do
