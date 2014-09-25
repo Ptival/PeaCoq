@@ -186,6 +186,7 @@ function mkClickableTextarea(initialText) {
                 var li = $(this).parents("li").first();
                 var text = li.find("textarea").val();
                 syncParse(text, function(response) {
+                    li.find("div.alert").remove();
                     li.append(
                         $("<div>")
                             .addClass("alert")
