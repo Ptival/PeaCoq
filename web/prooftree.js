@@ -24,22 +24,37 @@ var maxNodesOnLine = Math.pow(nbChildrenToShow, 2);
 var diagonal = d3.svg.diagonal();
 
 // These tactic sets each build on top of the previous one
-PT.tSet = ['simpl', 'simpl in *', 'reflexivity', 'intro', 'rewrite', 'destruct', 'induction'];
-PT.tReflexivity = PT.tSet.slice(0, 1 + PT.tSet.indexOf('reflexivity'));
-PT.tIntro       = PT.tSet.slice(0, 1 + PT.tSet.indexOf('intro'));
-PT.tRewrite     = PT.tSet.slice(0, 1 + PT.tSet.indexOf('rewrite'));
-PT.tDestruct    = PT.tSet.slice(0, 1 + PT.tSet.indexOf('destruct'));
-PT.tInduction   = PT.tSet.slice(0, 1 + PT.tSet.indexOf('induction'));
+PT.tSet = [
+    'simpl',
+    'simpl in *',
+    'reflexivity',
+    'intro',
+    'rewrite',
+    'destruct',
+    'induction',
+    'inversion',
+    'left',
+    'right',
+    'discriminate',
+];
+PT.tReflexivity  = PT.tSet.slice(0, 1 + PT.tSet.indexOf('reflexivity'));
+PT.tIntro        = PT.tSet.slice(0, 1 + PT.tSet.indexOf('intro'));
+PT.tRewrite      = PT.tSet.slice(0, 1 + PT.tSet.indexOf('rewrite'));
+PT.tDestruct     = PT.tSet.slice(0, 1 + PT.tSet.indexOf('destruct'));
+PT.tInduction    = PT.tSet.slice(0, 1 + PT.tSet.indexOf('induction'));
+PT.tInversion    = PT.tSet.slice(0, 1 + PT.tSet.indexOf('inversion'));
+PT.tDiscriminate = PT.tSet.slice(0, 1 + PT.tSet.indexOf('discriminate'));
 // These ones are more specific
 PT.tCompute = PT.tReflexivity.concat(['compute']);
 
 // [width] and [height] are the wanted ones, it might end up slightly smaller
-function ProofTree(anchor, width, height, qed, roosterDir) {
+function ProofTree(anchor, width, height, qed, roosterDir, onError) {
 
     var self = this;
 
     this.anchor = anchor;
     this.qedCallback = qed;
+    this.onError = onError;
     this.roosterDir = (typeof roosterDir === "undefined") ? "./" : roosterDir + "/";
 
     this.svgId = _.uniqueId();
@@ -137,7 +152,7 @@ function ProofTree(anchor, width, height, qed, roosterDir) {
         .attr("width", contextDivWidth)
         .append("xhtml:body")
         .style("background-color", "rgba(0, 0, 0, 0)")
-        .html('<div><p>Empty context</p></div>')
+        .html('<div class="node"><p>Empty context</p></div>')
     // now retrieve the computed height of the div
         .attr("height", function() {
             contextHeight = this.firstChild.getBoundingClientRect().height;
@@ -166,7 +181,7 @@ function ProofTree(anchor, width, height, qed, roosterDir) {
         .attr("width", debugDivWidth)
         .append("xhtml:body")
         .style("background-color", "rgba(0, 0, 0, 0)")
-        .html('<div><p>No debug information</p></div>')
+        .html('<div class="node"><p>No debug information</p></div>')
         .attr("height", function() {
             debugHeight = this.firstChild.getBoundingClientRect().height
             return debugHeight;
@@ -371,6 +386,11 @@ ProofTree.prototype.tryAllTactics = function() {
                 run('induction ' + h.hName);
             });
             break;
+        case "inversion":
+            _(curHyps).each(function(h) {
+                run('inversion ' + h.hName);
+            });
+            break;
         case "intro":
             run('intro');
             run('intros');
@@ -413,10 +433,16 @@ ProofTree.prototype.hInit = function(response, preAnimCallback, postAnimCallback
 
     if (isBad(response)) {
         console.log(response.rResponse.contents);
+
+        this.onError(this, response.rResponse.contents);
+
+/*
         this.error.text(response.rResponse.contents);
         this.svg.style("display", "none");
         this.proofDiv.style("display", "none");
         this.error.style("display", "");
+*/
+
         return false;
     }
     this.error.style("display", "none");
@@ -1691,12 +1717,16 @@ function contents(response) {
 
 ProofTree.prototype.replayThisProof = function(proof) {
 
+    var self = this;
+
     if (!_.isEmpty(proof)) {
         var fst = proof[0];
         var snd = proof[1];
         this.syncQuery(fst, function(response) {
             if (isGood(response)) {
-                _(snd).each(replay);
+                _(snd).each(function(n) {
+                    self.replayThisProof(self.proofFrom(n));
+                });
             } else {
                 console.log("Replay failed on applying " + fst);
                 console.log("Error: " + contents(response));
@@ -1750,7 +1780,7 @@ function showBinders(t) {
 }
 
 function showBinder(t) {
-    return showNames(t[0]) + ": " + showTermAux(t[1], 0, 0, false);
+    return showNames(t[0]) + syntax(":") + nbsp + showTermAux(t[1], 0, 0, false);
 }
 
 function showNames(t) {
@@ -1770,29 +1800,36 @@ var precedence = 0;
 var precMin    = precedence++;
 var precForall = precedence++;
 var precArrow  = precedence++;
-var precEqual  = precedence++;
 var precAnd    = precedence++; var precOr = precAnd;
+var precEqual  = precedence++; var precNotEqual = precEqual;
+var precAndB   = precedence++; var precOrB = precAndB;
 var precPlus   = precedence++; var precMinus = precPlus;
 var precMult   = precedence++;
 var precApp    = precedence++;
 
 var nbsp = "&nbsp;";
-function keyword(s) { return '<span class="keyword">' + s + '</span>'; }
+function vernac(s) { return '<span class="vernac">' + s + '</span>'; }
 function syntax(s) { return '<span class="syntax">' + s + '</span>'; }
 function ident(s) { return '<span class="identifier">' + s + '</span>'; }
 
 function showConstructor(t) {
     var name = t[0];
-    var type = showTermInline(t[1]);
-
-    return syntax("|")
-        + nbsp
-        + ident(name)
-        + nbsp
-        + syntax(":")
-        + nbsp
-        + type
-    ;
+    if (t[1] === null) {
+        return syntax("|")
+            + nbsp
+            + ident(name)
+        ;
+    } else {
+        var type = showTermInline(t[1]);
+        return syntax("|")
+            + nbsp
+            + ident(name)
+            + nbsp
+            + syntax(":")
+            + nbsp
+            + type
+        ;
+    }
 }
 
 function showVernac(t) {
@@ -1804,7 +1841,7 @@ function showVernac(t) {
         var name = c[0];
         var type = showTermInline(c[1]);
         var constructors = _(c[2]).map(showConstructor);
-        return keyword("Inductive")
+        return vernac("Inductive")
             + nbsp
             + ident(name)
             + nbsp
@@ -1815,6 +1852,19 @@ function showVernac(t) {
             + syntax(":=")
             + "<br>"
             + _(constructors).reduce(function(acc, elt) { return acc + elt + "<br>"; }, "")
+            + syntax(".")
+        ;
+
+    case "Theorem":
+        var name = c[0];
+        var type = showTermInline(c[1]);
+        return vernac("Theorem")
+            + nbsp
+            + ident(name)
+            + nbsp
+            + syntax(":")
+            + nbsp
+            + type
             + syntax(".")
         ;
 
@@ -1861,7 +1911,7 @@ function showTermAux(t, indentation, precParent, newline) {
     case "Forall":
         return par(
             precForall,
-            "∀ " + showBinders(c[0]) + ","
+            syntax("∀") + nbsp + showBinders(c[0]) + syntax(",")
                 + (newline ? "<br/>" + getIndent(indentation + 1) : " ")
                 + showTermAux(c[1], indentation + 1, precParent, newline)
         );
@@ -1874,7 +1924,18 @@ function showTermAux(t, indentation, precParent, newline) {
     case "App":
 
         // handling special case of infix operators I want to pretty print
-        if (c[0].tag == "App") {
+        if (c[0].contents === "not"
+            && c[1].contents[0].contents[0].contents === "eq"
+           ) {
+            return par(
+                precNotEqual,
+                showTermAux(c[1].contents[0].contents[1], 0, precNotEqual, false)
+                    + " ≠ "
+                    + showTermAux(c[1].contents[1], 0, precNotEqual, false)
+            )
+        }
+
+        if (c[0].tag === "App") {
             switch (c[0].contents[0].contents) {
 
             case "eq":
@@ -1889,13 +1950,20 @@ function showTermAux(t, indentation, precParent, newline) {
             case "mult":
                 return showOp(c, "*", precMult);
 
+            case "and":
+                return showOp(c, "∧", precAnd);
+
+            case "or":
+                return showOp(c, "∨", precOr);
+
             case "andb":
-                return showOp(c, "&&", precAnd);
+                return showOp(c, "&&", precAndB);
 
             case "orb":
-                return showOp(c, "||", precOr);
+                return showOp(c, "||", precOrB);
 
             default:
+                console.log("Falling through", c[0].contents[0].contents);
                 // nothing, fall through
 
             };
@@ -1914,7 +1982,12 @@ function showTermAux(t, indentation, precParent, newline) {
 }
 
 function showHypothesis(h) {
-    return h.hName + " : " + showTermAux(h.hType, 0, 0, false);
+    var res = h.hName;
+    if (h.hValue !== null) {
+        res = res + nbsp + syntax(":=") + nbsp + showTermInline(h.hValue);
+    }
+    res = res + nbsp + syntax(":") + nbsp + showTermInline(h.hType);
+    return res;
 }
 
 function showTermInline(t) {
