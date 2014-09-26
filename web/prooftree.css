@@ -1,0 +1,75 @@
+
+svg {
+    font-size: 14px;
+}
+
+.debug {
+    /*display: none;*/
+}
+
+.link {
+    fill: none;
+    stroke: black;
+    stroke-width: 2px;
+}
+
+.goal, .tactic, .context, .debug {
+    stroke: black;
+}
+
+.goal {
+    fill: #AEC6CF;
+    margin: 0;
+}
+
+.tactic {
+    fill: #FFB347;
+}
+
+.solved {
+    fill: #77DD77;
+}
+
+.context, .debug {
+    word-wrap: break-word;
+    fill: #CFCFC4;
+}
+
+.current {
+    stroke: #03C03C;
+    stroke-width: 5px;
+}
+
+.node {
+    font-family: DejaVu Sans Mono, monospace;
+    word-wrap: break-word;
+}
+
+.leftarrow, .rightarrow {
+    font-size: 42px;
+}
+
+.invisible {
+    display: none;
+}
+
+hr {
+    border-color: black;
+    margin: 0;
+}
+
+p {
+    margin: 0;
+}
+
+div, p, span, textarea, .form-control {
+    line-height: normal;
+}
+
+.removed { color: red; }
+.changed { color: blue; }
+.added { color: green; }
+
+.vernac { color: red; }
+.syntax { color: black; }
+.identifier { color: blue; }
