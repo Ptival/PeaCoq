@@ -30,6 +30,7 @@ num { TokNum $$ }
 ':' { TokColon }
 '.' { TokPeriod }
 '=' { TokEq }
+'≠' { TokNeq }
 '_' { TokUnderscore }
 ',' { TokComma }
 '+' { TokPlus }
@@ -37,36 +38,41 @@ num { TokNum $$ }
 '*' { TokStar }
 '%' { TokPercent }
 '|' { TokPipe }
+'∧' { TokAnd }
+'∨' { TokOr }
 "&&" { TokAndB }
 "||" { TokOrB }
 ":=" { TokColonEq }
 "Inductive" { TokInductive }
+"Theorem" { TokTheorem }
 "Proof" { TokProof }
 "Qed" { TokQed }
 
 -- low precedence
 %right '→'
-%nonassoc '='
+%left '∧' '∨'
+%nonassoc '=' '≠'
 %left "&&" "||"
 %left '+' '-'
 %left '*'
 %left APP
 %nonassoc '(' ')'
+%nonassoc '{' '}'
 -- high precedence
 
 %%
 
 Vernac :: { Vernac }
 : "Inductive" var ':' Term ":=" Constructors '.' { Inductive $2 $4 $6 }
-| "Proof" '.' { Proof }
-| "Qed" '.' { Qed }
+| "Theorem" var ':' Term '.' { Theorem $2 $4 }
 
 Constructors :: { [Constructor] }
 : {- empty -}              { [] }
 | Constructor Constructors { $1 : $2 }
 
 Constructor :: { Constructor }
-: '|' var ':' Term { Constructor $2 $4 }
+: '|' var ':' Term { Constructor $2 (Just $4) }
+| '|' var          { Constructor $2 Nothing }
 
 Term :: { Term }
 : var                  { Var $1 }
@@ -74,10 +80,13 @@ Term :: { Term }
 | '∀' Binders ',' Term { Forall $2 $4 }
 | 'λ' Binders ',' Term { Lambda $2 $4 }
 | Term '→' Term        { Arrow $1 $3 }
-| Term '=' Term        { App (App (Var "eq")    $1) $3 }
+| Term '=' Term        { App (App (Var "eq") $1) $3 }
+| Term '≠' Term        { App (Var "not") (App (App (Var "eq") $1) $3) }
 | Term '+' Term        { App (App (Var "plus")  $1) $3 }
 | Term '-' Term        { App (App (Var "minus") $1) $3 }
 | Term '*' Term        { App (App (Var "mult")  $1) $3 }
+| Term '∧' Term        { App (App (Var "and")   $1) $3 }
+| Term '∨' Term        { App (App (Var "or")    $1) $3 }
 | Term "&&" Term       { App (App (Var "andb")  $1) $3 }
 | Term "||" Term       { App (App (Var "orb")   $1) $3 }
 | Term '%' var         { $1 }
@@ -108,7 +117,8 @@ Name :: { Maybe String }
 | '_' { Nothing }
 
 Hypothesis :: { Hypothesis }
-: var ':' Term { MkHyp $1 $3 }
+: var ':' Term           { MkHyp $1 Nothing $3 }
+| var ":=" Term ':' Term { MkHyp $1 (Just $3) $5 }
 
 {
 
@@ -117,12 +127,11 @@ parseError l = error $ "Parse error on: " ++ show l
 
 data Vernac
   = Inductive String Type [Constructor]
-  | Proof
-  | Qed
+  | Theorem String Type
   deriving (Generic, Show)
 
 data Constructor
-  = Constructor String Type
+  = Constructor String (Maybe Type)
   deriving (Generic, Show)
 
 data Term
@@ -143,6 +152,7 @@ data Binder = MkBinder [Maybe String] (Maybe Type)
 data Hypothesis
   = MkHyp
   { hName :: String
+  , hValue :: Maybe Term
   , hType :: Term
   }
   deriving (Eq, Generic, Show)
