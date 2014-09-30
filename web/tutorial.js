@@ -177,6 +177,11 @@ function firstStepsBooleans(addItem) {
 
     addItem(mkClickableTextarea(inductiveBool, function() { }));
 
+    addItem(
+        $("<div>")
+            .text("Here is a provable thingy:")
+    );
+
     addItem(mkClickableTextarea(
         "Theorem trivial : forall b : bool, b = false \\/ b = true."
         , function() { }));
@@ -187,13 +192,6 @@ function firstStepsBooleans(addItem) {
     );
 
     addItem(mkClickableTextarea(inductiveNat, function() { }));
-
-    addItem(mkClickableTextarea(
-        'Inductive binop : Set :=\n'
-            + '| Plus\n'
-            + '| Times\n'
-            +'.', function() { }
-    ));
 
 }
 
