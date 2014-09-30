@@ -1785,7 +1785,7 @@ function showBinder(t) {
 
 function showNames(t) {
     if (_.isEmpty(t)) { return ""; }
-    return t[0] + " " + showNames(_(t).rest().value());
+    return ident(t[0]) + " " + showNames(_(t).rest().value());
 }
 
 function showTerm(t) {
@@ -1900,7 +1900,7 @@ function showTermAux(t, indentation, precParent, newline) {
 
     case "Var":
         if (t.type !== undefined) {
-            return '<span style="font-weight: bold; color: blue;"'
+            return '<span style="font-weight: bold;"'
                 + ' title="' + t.type + '">'
                 + c + '</span>'
             ;
