@@ -1346,7 +1346,7 @@ ProofTree.prototype.updateContext = function() {
     var hypsLookup = {};
     _(curGoal.hyps)
         .each(function(h) {
-            hypsLookup[h.hName] = showTermInline(h.hType);
+            hypsLookup[h.hName] = showTermText(h.hType);
         })
     ;
 
@@ -1718,6 +1718,7 @@ var nbsp = "&nbsp;";
 function vernac(s) { return '<span class="vernac">' + s + '</span>'; }
 function syntax(s) { return '<span class="syntax">' + s + '</span>'; }
 function ident(s) { return '<span class="identifier">' + s + '</span>'; }
+function term(s) { return '<span class="term">' + s + '</span>'; }
 
 function showConstructor(t) {
     var name = t[0];
@@ -1781,6 +1782,10 @@ function showVernac(t) {
     };
 }
 
+function showTermText(t) {
+    return $(showTermInline(t)).text();
+}
+
 function showTermAux(t, indentation, precParent, newline) {
     var c = t.contents;
 
@@ -1788,9 +1793,9 @@ function showTermAux(t, indentation, precParent, newline) {
 
     var par = function(precOp, text) {
         if (precOp <= precParent) {
-            return "(" + text + ")";
+            return term("(" + text + ")");
         } else {
-            return text;
+            return term(text);
         }
     };
 
@@ -1798,7 +1803,7 @@ function showTermAux(t, indentation, precParent, newline) {
         return par(
             precOp,
             showTermAux(c[0].contents[1], 0, precOp, false)
-                + " " + op + " "
+                + " " + syntax(op) + " "
                 + showTermAux(c[1], 0, precOp, false)
         );
     };
@@ -1812,7 +1817,7 @@ function showTermAux(t, indentation, precParent, newline) {
                 + c + '</span>'
             ;
         } else {
-            return c;
+            return term(c);
         }
 
     case "Forall":
@@ -1824,9 +1829,11 @@ function showTermAux(t, indentation, precParent, newline) {
         );
 
     case "Arrow":
-        return showTermAux(c[0], indentation, precArrow, false)
-            + nbsp + syntax("→") + (newline ? "<br/>" + indent : " ")
-            + showTermAux(c[1], indentation, precParent, newline);
+        return term(
+            showTermAux(c[0], indentation, precArrow, false)
+                + nbsp + syntax("→") + (newline ? "<br/>" + indent : " ")
+                + showTermAux(c[1], indentation, precParent, newline)
+        );
 
     case "App":
 
@@ -1889,7 +1896,7 @@ function showTermAux(t, indentation, precParent, newline) {
 }
 
 function showHypothesis(h) {
-    var res = h.hName;
+    var res = term(h.hName);
     if (h.hValue !== null) {
         res = res + nbsp + syntax(":=") + nbsp + showTermInline(h.hValue);
     }
