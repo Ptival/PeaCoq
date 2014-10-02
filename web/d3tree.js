@@ -1,6 +1,6 @@
 
 var theorems = [
-['Theorem branching : ∀(a b : comparison), a = Eq → b = Eq → a = b.', PT.tDestruct],
+['Theorem branching : ∀(a b : comparison), a = Eq → b = Eq → a = b.', PT.tInversion],
 ['Theorem plus_O_n : ∀n : nat, 0 + n = n.', PT.tIntro],
 ['Theorem plus_1_l : ∀n : nat, 1 + n = S n.', PT.tIntro],
 ['Theorem mult_0_l : ∀n : nat, 0 * n = 0.', PT.tIntro],
