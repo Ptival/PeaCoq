@@ -576,110 +576,11 @@ ProofTree.prototype.update = function(source) {
             var jqObject = $(d3.select(this).node());
             var jQDiv = $("<div>").addClass("node");
             jqObject.append(jQDiv);
+            var fo = d3.select(this);
 
-            if (isGoal(d)) {
+            // TODO: this jquery/d3 business is ugly, fix it somehow
 
-                if (hasGrandParent(d)) {
-
-                    // clone since I'm going to pull() from it
-                    var gpHyps = _(_(d.parent.parent.hyps).clone());
-
-                    var removed = [], changed = [], added = [];
-
-                    _(d.hyps).each(function(h) {
-
-                        var previousH =
-                            _(gpHyps).find(function(h0) {
-                                return h0.hName === h.hName;
-                            });
-
-                        if (previousH === undefined) {
-                            added.push(h);
-                        } else {
-                            if (JSON.stringify(previousH) !== JSON.stringify(h)) {
-                                changed.push({"before": previousH, "after": h});
-                            }
-                            gpHyps.pull(previousH);
-                        }
-
-                    });
-
-                    removed = gpHyps.value();
-
-                    _(removed).each(function(h) {
-                        jQDiv.append(
-                            $("<span>")
-                                .addClass("removed")
-                                .html('⊖ ' + showHypothesis(h))
-                        );
-                        jQDiv.append($("<br>"));
-                    });
-
-                    var fo = d3.select(this);
-
-                    _(changed).each(function(hs) {
-
-                        fo
-                            .select("div")
-                            .append("span")
-                            .html("&nbsp;&nbsp;" + showHypothesis(hs.after))
-                            .attr("class", "changed")
-                            .on("mouseover", function() {
-                                d3.select(this)
-                                    .attr("class", "removed")
-                                    .html("&nbsp;&nbsp;" + showHypothesis(hs.before))
-                                ;
-                            })
-                            .on("mouseout", function(d) {
-                                d3.select(this)
-                                    .attr("class", "changed")
-                                    .html("&nbsp;&nbsp;" + showHypothesis(hs.after))
-                                ;
-                            })
-                        ;
-
-                        fo.select("div").append("br");
-
-                    });
-
-                    _(added).each(function(h) {
-                        jQDiv.append(
-                            $("<span>")
-                                .addClass("added")
-                                .html('⊕ ' + showHypothesis(h))
-                        );
-                        jQDiv.append($("<br>"));
-                    });
-
-                    jQDiv.append($('<hr>'));
-
-                } else {
-
-                    _(d.hyps).each(function(h) {
-                        jQDiv.append(
-                            $("<span>")
-                                .addClass("added")
-                                .html('⊕ ' + showHypothesis(h))
-                        );
-                    });
-
-                    if (!_(d.hyps).isEmpty()) { jQDiv.append($('<hr>')); }
-
-                }
-
-
-                jQDiv.append($("<span>").html(showTerm(d.name)));
-
-            } else { // not a goal, but a tactic
-
-                jQDiv
-                    .css("text-align", "center")
-                    .append(
-                        $("<span>").text(d.name)
-                    )
-                ;
-
-            }
+            computeDiff(fo, jQDiv, d);
 
         })
     ;
@@ -1992,4 +1893,252 @@ function showHypothesis(h) {
 
 function showTermInline(t) {
     return showTermAux(t, 0, 0, false);
+}
+
+function computeDiffOldWay(fo, jQDiv, d) {
+
+    if (isGoal(d)) {
+
+        if (hasGrandParent(d)) {
+
+            // clone since I'm going to pull() from it
+            var gpHyps = _(_(d.parent.parent.hyps).clone());
+
+            var removed = [], changed = [], added = [];
+
+            _(d.hyps).each(function(h) {
+
+                var previousH =
+                    _(gpHyps).find(function(h0) {
+                        return h0.hName === h.hName;
+                    });
+
+                if (previousH === undefined) {
+                    added.push(h);
+                } else {
+                    if (JSON.stringify(previousH) !== JSON.stringify(h)) {
+                        changed.push({"before": previousH, "after": h});
+                    }
+                    gpHyps.pull(previousH);
+                }
+
+            });
+
+            removed = gpHyps.value();
+
+            _(removed).each(function(h) {
+                jQDiv.append(
+                    $("<span>")
+                        .addClass("removed")
+                        .html('⊖ ' + showHypothesis(h))
+                );
+                jQDiv.append($("<br>"));
+            });
+
+            var fo = d3.select(this);
+
+            _(changed).each(function(hs) {
+
+                fo
+                    .select("div")
+                    .append("span")
+                    .html("&nbsp;&nbsp;" + showHypothesis(hs.after))
+                    .attr("class", "changed")
+                    .on("mouseover", function() {
+                        d3.select(this)
+                            .attr("class", "removed")
+                            .html("&nbsp;&nbsp;" + showHypothesis(hs.before))
+                        ;
+                    })
+                    .on("mouseout", function(d) {
+                        d3.select(this)
+                            .attr("class", "changed")
+                            .html("&nbsp;&nbsp;" + showHypothesis(hs.after))
+                        ;
+                    })
+                ;
+
+                fo.select("div").append("br");
+
+            });
+
+            _(added).each(function(h) {
+                jQDiv.append(
+                    $("<span>")
+                        .addClass("added")
+                        .html('⊕ ' + showHypothesis(h))
+                );
+                jQDiv.append($("<br>"));
+            });
+
+            jQDiv.append($('<hr>'));
+
+        } else {
+
+            _(d.hyps).each(function(h) {
+                jQDiv.append(
+                    $("<span>")
+                        .addClass("added")
+                        .html('⊕ ' + showHypothesis(h))
+                );
+            });
+
+            if (!_(d.hyps).isEmpty()) { jQDiv.append($('<hr>')); }
+
+        }
+
+
+        jQDiv.append($("<span>").html(showTerm(d.name)));
+
+    } else { // not a goal, but a tactic
+
+        jQDiv
+            .css("text-align", "center")
+            .append(
+                $("<span>").text(d.name)
+            )
+        ;
+
+    }
+
+}
+
+function mkDiff(oldArray, newArray) {
+    var removed = [], changed = [], added = [];
+
+    var oldHyps = {};
+    _(oldArray).each(function(h) { oldHyps[h.hName] = h; });
+
+    var newHyps = {};
+    _(newArray).each(function(h) { newHyps[h.hName] = h; });
+
+    for (var o in oldHyps) {
+        if (newHyps.hasOwnProperty(o)) {
+            changed.push({
+                "before": oldHyps[o],
+                "after": newHyps[o],
+            });
+        } else {
+            removed.push(oldHyps[o]);
+        }
+    }
+
+    for (var n in newHyps) {
+        if (oldHyps.hasOwnProperty(n)) {
+            // nothing, already done
+        } else {
+            added.push(newHyps[n]);
+        }
+    }
+
+    return {
+        "removed": removed,
+        "changed": changed,
+        "added": added,
+    };
+}
+
+function spotTheDifferences(before, after) {
+
+    var nbBefore = before.children().length;
+    var nbAfter  =  after.children().length;
+    if (nbBefore !== nbAfter) {
+        before.addClass("removed");
+        after.addClass("added");
+        return;
+    }
+
+    var nbChildren = nbBefore;
+    if (nbChildren === 0) { // both leaves
+        if (before.html() !== after.html()) {
+            before.addClass("removed");
+            after.addClass("added");
+        }
+        return;
+    }
+
+    for (var i in _.range(nbChildren)) {
+        spotTheDifferences(
+            $(before.children()[i]),
+            $(after.children()[i])
+        );
+    }
+
+}
+
+function computeDiff(fo, jQDiv, d) {
+
+    if (isGoal(d)) {
+
+        var diffDiv = $("<div>").addClass("diff");
+        //var contextDiv = $("<div>").addClass("ctxt").text("Here be context");
+
+        jQDiv.append(diffDiv);
+        //jQDiv.append(contextDiv);
+
+        if (hasGrandParent(d)) {
+
+            var diff = mkDiff(d.parent.parent.hyps, d.hyps);
+
+            var removed = diff.removed, changed = diff.changed, added = diff.added;
+
+            var minusPane = $("<div>").addClass("diff-pane");
+            diffDiv.append(minusPane);
+            diffDiv.append(
+                $("<div>").addClass("diff-pane-sep").text("⇒")
+            );
+            var plusPane = $("<div>").addClass("diff-pane");
+            diffDiv.append(plusPane);
+
+            _(changed).each(function(hs) {
+                if (JSON.stringify(hs.before) !== JSON.stringify(hs.after)) {
+                    var before = $("<span>").html(showHypothesis(hs.before));
+                    minusPane.append(before);
+                    minusPane.append($("<br>"));
+                    var after = $("<span>").html(showHypothesis(hs.after));
+                    plusPane.append(after);
+                    plusPane.append($("<br>"));
+                    spotTheDifferences(before, after);
+                }
+            });
+
+            _(removed).each(function(h) {
+                minusPane.append($("<span>").addClass("removed").html(showHypothesis(h)));
+                minusPane.append($("<br>"));
+            });
+
+            _(added).each(function(h) {
+                plusPane.append($("<span>").addClass("added").html(showHypothesis(h)));
+                plusPane.append($("<br>"));
+            });
+
+            jQDiv.append($('<hr>'));
+
+        } else {
+
+            _(d.hyps).each(function(h) {
+                diffDiv.append(
+                    $("<span>")
+                        .addClass("added")
+                        .html('⊕ ' + showHypothesis(h))
+                );
+            });
+
+            if (!_(d.hyps).isEmpty()) { diffDiv.append($('<hr>')); }
+
+        }
+
+        jQDiv.append($("<span>").html(showTerm(d.name)));
+
+    } else { // not a goal, but a tactic
+
+        jQDiv
+            .css("text-align", "center")
+            .append(
+                $("<span>").text(d.name)
+            )
+        ;
+
+    }
+
 }

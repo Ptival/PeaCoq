@@ -66,10 +66,21 @@ div, p, span, textarea, .form-control {
     line-height: normal;
 }
 
-.removed { color: red; }
-.changed { color: blue; }
-.added { color: green; }
+.removed { background-color: #FF6961; }
+.added { background-color: #77DD77; }
 
 .vernac { color: red; }
 .syntax { color: black; }
 .identifier { color: blue; }
+
+.diff-pane {
+    width: 45%;
+    display: inline-block;
+    vertical-align: top;
+}
+
+.diff-pane-sep {
+    width: 10%;
+    display: inline-block;
+    text-align: center;
+}
