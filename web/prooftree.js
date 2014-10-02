@@ -1064,6 +1064,12 @@ ProofTree.prototype.click = function(d) {
         }
     }
 
+    // when the user clicks on the parent tactic, bring them back to its parent
+    if(isTactic(d) && d.depth < this.curNode.depth) {
+        this.click(d.parent);
+        return;
+    }
+
     this.navigateTo(d);
 
     if (!d.hasOwnProperty('allChildren') || d.allChildren.length === 0) {
