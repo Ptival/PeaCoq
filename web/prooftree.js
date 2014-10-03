@@ -86,9 +86,11 @@ function ProofTree(anchor, width, height, qed, roosterDir, onError) {
 
     this.rootNodeWidth = width / 2;
 
-    this.width =
+    this.width = width;
+        /*
         maxVisibleNodesOnLine * this.bottomNodeWidth
         + (maxVisibleNodesOnLine - 1) * nodeMinSpacing;
+        */
     this.height = height;
     this.xFactor = this.width;
     this.yFactor = this.height;
