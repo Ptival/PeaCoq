@@ -617,13 +617,32 @@ console.log("update");
             var fo = d3.select(this);
 
             // TODO: this jquery/d3 business is ugly, fix it somehow
-
-            computeDiff(fo, jQDiv, d);
+            self.computeDiff(fo, jQDiv, d);
 
         })
     ;
 
-    fo
+    node
+        .select(".ctxt")
+        .style("display", function(d) {
+            console.log(d.id, self.curNode.id, self.curNode.pName);
+            return self.isCurNode(d) ? "" : "none";
+        })
+    ;
+
+    node
+        .select(".diff")
+        .style("display", function(d) {
+            return self.isCurNode(d) ? "none" : "";
+        })
+    ;
+
+    // now we need to update the foreignObject height (it changes depending on whether the
+    // context or the diff is displayed)
+    node
+        .selectAll(function() {
+            return this.getElementsByTagName("foreignObject");
+        })
         .attr("height", function(d) {
             var h = this.firstChild.getBoundingClientRect().height;
             d.height = h + 2 * nodeStroke;
@@ -795,51 +814,38 @@ console.log("update");
 
     gs
         .insert("rect", ":first-child")
-/*
-        .attr("x", function(d) {
-            return this.nextSibling.getBBox().x - self.nodeWidth(d) / 2;
-        })
-*/
-        .attr("y", function(d) {
-            return this.nextSibling.getBBox().y - d.height / 2;
-        })
+    // x and y coordinates, as well as width and height will be set later
         .attr("rx", function(d) {
             return isTactic(d) ? tacticNodeRounding : goalNodeRounding;
         })
         .attr("ry", function(d) {
             return isTactic(d) ? tacticNodeRounding : goalNodeRounding;
         })
-/*
-    // TODO: remove this if it is indeed overridden, fix the arrows positioning
-        .attr("width", function(n) {
-            var w = rectMargin.left
-                + this.nextSibling.getBBox().width
-                + rectMargin.right
-            ;
-            return w - nodeStroke;
+        .attr("stroke-width", nodeStroke)
+    ;
+
+    // these two need to be updated for all rects, as they change height when displaying
+    // context or diff
+    node
+        .selectAll("rect")
+        .attr("y", function(d) {
+            return this.nextSibling.getBBox().y - d.height / 2;
         })
-*/
         .attr("height", function(n) {
             var h = rectMargin.top
                 + this.nextSibling.getBBox().height
                 + rectMargin.bottom;
             return h - nodeStroke;
         })
-        .attr("stroke-width", nodeStroke)
     ;
 
-/*
     gs
         .append("text")
         .attr('class', 'leftarrow')
         .text('←')
         .attr("x", function() {
-            var pb = this.parentElement.firstChild.getBBox();
-            return pb.x;
-        })
-        .attr("y", function() {
-            var pb = this.parentElement.firstChild.getBBox();
-            return pb.y + pb.height + 26;
+            var pb = this.parentElement.getBBox();
+            return pb.x + pb.width / 2 - 40;
         })
         .on('click', function(n) {
             self.shiftLeft(n);
@@ -852,22 +858,22 @@ console.log("update");
         .attr('class', 'rightarrow')
         .text('→')
         .attr("x", function() {
-            var pb = this.parentElement.firstChild.getBBox();
-            return pb.x + pb.width - 26;
-        })
-        .attr("y", function() {
-            var pb = this.parentElement.firstChild.getBBox();
-            return pb.y + pb.height + 26;
+            var pb = this.parentElement.getBBox();
+            return pb.x + pb.width / 2 + 14;
         })
         .on('click', function(n) {
             self.shiftRight(n);
             d3.event.stopPropagation();
         })
     ;
-*/
 
     node
         .selectAll('text.leftarrow')
+    // update y coordinates for all since it changes for current node
+        .attr("y", function() {
+            var pb = this.parentElement.firstChild.getBBox();
+            return pb.y + pb.height + 26;
+        })
         .classed('invisible', function(d) {
             return !(
                 // visible when:
@@ -881,6 +887,11 @@ console.log("update");
 
     node
         .selectAll('text.rightarrow')
+    // update y coordinates for all since it changes for current node
+        .attr("y", function() {
+            var pb = this.parentElement.firstChild.getBBox();
+            return pb.y + pb.height + 26;
+        })
         .classed('invisible', function(d) {
             return !(
                 // visible when:
@@ -1418,23 +1429,16 @@ function getBinders(t) {
     return _.union(getBinder(t[0]), getBinders(_(t).rest().value()));
 }
 
-// TODO: this should use d3 data binding rather than manual management...
-ProofTree.prototype.updateContext = function() {
+ProofTree.prototype.makeContextDiv = function(goal) {
 
-    var contextDiv = this.context.select('div');
-    var jContextDiv = $(contextDiv[0]);
+    var jContextDiv = $("<div>");
 
-    contextDiv.style("display", this.isCurNode(this.rootNode) ? "none" : "");
-
-    var curGoal = (isGoal(this.curNode)) ? this.curNode : this.curNode.parent;
     var hypsLookup = {};
-    _(curGoal.hyps)
+    _(goal.hyps)
         .each(function(h) {
             hypsLookup[h.hName] = showTermText(h.hType);
         })
     ;
-
-    jContextDiv.html("");
 
     /*
       adding to the context only those variables that are not referred to in the
@@ -1443,7 +1447,7 @@ ProofTree.prototype.updateContext = function() {
       we collect such references by processing the hypotheses from the back.
      */
     var seen = [];
-    _(curGoal.hyps).forEachRight(function(h) {
+    _(goal.hyps).forEachRight(function(h) {
         if (!_(seen).contains(h.hName)) {
             var p = $("<p>");
             p.append($("<span>").text(h.hName + " : "));
@@ -1491,6 +1495,30 @@ ProofTree.prototype.updateContext = function() {
             jContextDiv.prepend(p);
         }
     });
+
+    return jContextDiv;
+
+}
+
+// TODO: this should use d3 data binding rather than manual management...
+ProofTree.prototype.updateContext = function(d3ContextDiv) {
+
+    var contextDiv = this.context.select('div');
+    var jContextDiv = $(contextDiv[0]);
+
+    contextDiv.style("display", this.isCurNode(this.rootNode) ? "none" : "");
+
+    var curGoal = (isGoal(this.curNode)) ? this.curNode : this.curNode.parent;
+    var hypsLookup = {};
+    _(curGoal.hyps)
+        .each(function(h) {
+            hypsLookup[h.hName] = showTermText(h.hType);
+        })
+    ;
+
+    jContextDiv.empty();
+    var curGoal = (isGoal(this.curNode)) ? this.curNode : this.curNode.parent;
+    jContextDiv.append(this.makeContextDiv(curGoal));
 
     if (jContextDiv.html() === "") {
         jContextDiv.append("p").text("Empty context");
@@ -2167,15 +2195,16 @@ function spotTheDifferences(before, after) {
 
 }
 
-function computeDiff(fo, jQDiv, d) {
+ProofTree.prototype.computeDiff = function(fo, jQDiv, d) {
 
     if (isGoal(d)) {
 
         var diffDiv = $("<div>").addClass("diff");
-        //var contextDiv = $("<div>").addClass("ctxt").text("Here be context");
+        var contextDiv = $("<div>").addClass("ctxt");
+        contextDiv.append(this.makeContextDiv(d));
 
         jQDiv.append(diffDiv);
-        //jQDiv.append(contextDiv);
+        jQDiv.append(contextDiv);
 
         if (hasGrandParent(d)) {
 
@@ -2212,6 +2241,10 @@ function computeDiff(fo, jQDiv, d) {
                 plusPane.append($("<span>").addClass("added").html(showHypothesis(h)));
                 plusPane.append($("<br>"));
             });
+
+            if (minusPane.is(':empty') && plusPane.is(':empty')) {
+                diffDiv.empty();
+            }
 
             jQDiv.append($('<hr>'));
 

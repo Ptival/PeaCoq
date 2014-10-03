@@ -83,4 +83,5 @@ div, p, span, textarea, .form-control {
     width: 10%;
     display: inline-block;
     text-align: center;
+    font-size: 26px;
 }
