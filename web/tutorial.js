@@ -53,6 +53,8 @@ $(document).ready(function() {
 
     resetCoq();
 
+    PT.handleKeyboard();
+
     // for faster debugging
     $("li > a").first().click();
 
@@ -285,13 +287,14 @@ function mkClickableTextarea(initialText) {
 
                 } else if (query.startsWith("Theorem")) {
 
-                    var anchor = $("<div>");
+                    var anchor = $("<div>")
+                        .css("border", "1px solid black");
 
                     li.append(anchor);
 
                     var pt = new ProofTree(
                         d3.select(anchor.get(0)),
-                        1330,
+                        anchor.width(),
                         400,
                         function(prooftree) {
 
@@ -328,6 +331,10 @@ function mkClickableTextarea(initialText) {
                             );
                         }
                     );
+
+                    anchor.click(function() {
+                        makeActive(pt);
+                    });
 
                     pt.newTheorem(query, PT.tDiscriminate, function() { }, function() { });
 
