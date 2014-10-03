@@ -555,7 +555,6 @@ function getVisibleGrandChildren(n) {
 }
 
 ProofTree.prototype.update = function(source) {
-console.log("update");
     var self = this;
     var curNode = this.curNode; // expected to stay constant throughout
 
@@ -629,7 +628,6 @@ console.log("update");
     node
         .select(".ctxt")
         .style("display", function(d) {
-            console.log(d.id, self.curNode.id, self.curNode.pName);
             return self.isCurNode(d) ? "" : "none";
         })
     ;
