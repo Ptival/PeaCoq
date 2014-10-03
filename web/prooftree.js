@@ -158,6 +158,8 @@ function ProofTree(anchor, width, height, qed, roosterDir, onError) {
         this.svg
         .append("g")
         .attr("class", "context")
+    // disabled for now
+        .style("display", "none")
     ;
 
     var contextWidth = (this.width - tacticNodeWidth) / 2 - nodeMinSpacing;
@@ -1101,7 +1103,8 @@ console.log("update");
         d.cY0 = d.cY;
     });
 
-    this.updateContext();
+    // disabled for now
+    //this.updateContext();
 
     this.updateDebug();
 
