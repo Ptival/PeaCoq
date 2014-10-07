@@ -561,7 +561,6 @@ function getVisibleGrandChildren(n) {
 }
 
 ProofTree.prototype.update = function(source, callback) {
-console.log(callback);
     var self = this;
     var curNode = this.curNode; // expected to stay constant throughout
 
