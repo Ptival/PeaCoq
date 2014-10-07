@@ -605,7 +605,7 @@ ProofTree.prototype.update = function(source, callback) {
         .append("g")
         .attr("class", "node")
         .on("click", function(d) {
-            self.click(d, undefined)
+            self.click(d)
         })
     ;
 
@@ -1160,13 +1160,13 @@ ProofTree.prototype.shiftRight = function(n) {
     this.update(n);
 }
 
-ProofTree.prototype.click = function(d, callback) {
+ProofTree.prototype.click = function(d, remember, callback) {
 
     if (this.animationRunning) { return; }
 
     if (d.solved) {
         if (hasParent(d)) {
-            this.click(d.parent, undefined);
+            this.click(d.parent);
         }
         return;
     }
@@ -1177,18 +1177,18 @@ ProofTree.prototype.click = function(d, callback) {
         var firstUnsolved = _(d.allChildren)
             .find(function(e) { return !e.solved; });
         if (firstUnsolved !== undefined) {
-            this.click(firstUnsolved, undefined);
+            this.click(firstUnsolved);
             return;
         }
     }
 
     // when the user clicks on the parent tactic, bring them back to its parent
     if(isTactic(d) && d.depth < this.curNode.depth) {
-        this.click(d.parent, undefined);
+        this.click(d.parent);
         return;
     }
 
-    this.navigateTo(d);
+    this.navigateTo(d, remember);
 
     if (_.isEmpty(d.allChildren)) {
         if (isGoal(d)) {
@@ -1328,7 +1328,7 @@ function depthSolved(tacNode) {
 
 }
 
-ProofTree.prototype.navigateTo = function(dest) {
+ProofTree.prototype.navigateTo = function(dest, remember) {
 
     var self = this;
 
@@ -1349,6 +1349,12 @@ ProofTree.prototype.navigateTo = function(dest) {
 
             if (goingUp) {
 
+                if (remember) {
+                    src.partial = dst;
+                } else {
+                    delete src["partial"];
+                }
+
                 collapseChildren(src);
                 if (isGoal(src)) { collapse(src); }
 
@@ -1366,15 +1372,16 @@ ProofTree.prototype.navigateTo = function(dest) {
                     // 'Back.' takes one step to undo 'Show.'
                     // 'Undo.' works in -ideslave
                     // 'Undo.' does not care about 'Show.' commands
-
                     // Undo the 'Focus.' command.
                     // Do not use 'Unfocus.' as it is itself undone by 'Undo.'
                     self.syncQuery('Undo.', hIgnore);
                 }
+
             } else { // going down
 
                 // hide sibling tactic nodes
                 if (isGoal(src)) {
+                    self.expand(src);
                     collapseExcept(src, dst);
                 }
 
@@ -1608,7 +1615,7 @@ ProofTree.prototype.keydownHandler = function() {
     case 38: // Up
     case 87: // w
         if(hasParent(curNode)) {
-            this.click(curNode.parent, undefined);
+            this.click(curNode.parent);
         }
         break;
 
@@ -1618,29 +1625,29 @@ ProofTree.prototype.keydownHandler = function() {
             var dest = _(visibleChildren).find(function(n) {
                 return !n.solved;
             });
-            if (dest !== undefined) { this.click(dest, undefined); }
+            if (dest !== undefined) { this.click(dest); }
         } else {
             if (visibleChildren.length > 0) {
-                this.click(visibleChildren[0], undefined);
+                this.click(visibleChildren[0]);
             }
         }
         break;
 
     case 49: case 97: // 1, K1
         if (visibleChildren.length > 0) {
-            this.click(visibleChildren[0], undefined);
+            this.click(visibleChildren[0]);
         }
         break;
 
     case 50: case 98: // 2, K2
         if (visibleChildren.length > 1) {
-            this.click(visibleChildren[1], undefined);
+            this.click(visibleChildren[1]);
         }
         break;
 
     case 51: case 99: // 3, K3
         if (visibleChildren.length > 2) {
-            this.click(visibleChildren[2], undefined);
+            this.click(visibleChildren[2]);
         }
         break;
 
@@ -1675,6 +1682,13 @@ ProofTree.prototype.partialProofFrom = function(t, indentation) {
         if (solution !== undefined) {
             return this.partialProofFrom(solution, indentation);
         }
+        // try to see if a partial path was recorded
+        var partial = _(t.allChildren).find(function(n) {
+            return n.hasOwnProperty("partial");
+        });
+        if (partial !== undefined) {
+            return this.partialProofFrom(partial, indentation);
+        }
         // otherwise, try to find a node in the ancestor tree of the current
         var curTac = _(t.allChildren).find(function(n) {
             return self.isCurNodeAncestor(n);
@@ -1699,10 +1713,14 @@ ProofTree.prototype.partialProofFrom = function(t, indentation) {
                 .val("admit.")
                 .css("resize", "none")
                 .focus(function() {
-                    self.click(t, function() {
-                        var ta = $(".activeTextarea");
-                        $(".activeTextarea").focus();
-                    });
+                    self.click(
+                        t,
+                        true,
+                        function() {
+                            var ta = $(".activeTextarea");
+                            $(".activeTextarea").focus();
+                        }
+                    );
                 })
             ;
             PT.resizeTextarea.call(ta);
