@@ -371,6 +371,35 @@ function mkTacticNode(depth, tactic, goals) {
 
 }
 
+ProofTree.prototype.runTactic = function(t) {
+
+    var self = this;
+
+    var unfocusedBefore;
+
+    this.syncQueryUndo('idtac.', function(response) {
+        unfocusedBefore = response.rGoals.unfocused;
+    });
+
+    var newChild;
+
+    self.syncQueryUndo(t, function(response) {
+        if(isGood(response)) {
+            // if it did not solve the goal
+            if (_.isEqual(response.rGoals.unfocused, unfocusedBefore)) {
+                newChild = mkTacticNode(self.curNode, t, response.rGoals.focused);
+            } else {
+                newChild = mkTacticNode(self.curNode, t, []);
+            }
+        }
+    });
+
+    self.curNode.allChildren.unshift(newChild);
+
+    return newChild;
+
+}
+
 ProofTree.prototype.tryAllTactics = function() {
 
     var self = this;
@@ -380,15 +409,18 @@ ProofTree.prototype.tryAllTactics = function() {
 
     this.syncQueryUndo('idtac.', function(response) {
         unfocusedBefore = response.rGoals.unfocused;
+        // preemptively put idtac so that it cancels tactics that do nothing by
+        // duplication. eventually it will be removed since it does nothing.
         res.push(mkTacticNode(self.curNode, 'idtac.', response.rGoals.focused));
     });
 
     var run = function(t) {
         self.syncQueryUndo(t + '.', function(response) {
             if(isGood(response)) {
+                // if the tactic did not finish the goal
                 if (_.isEqual(response.rGoals.unfocused, unfocusedBefore)) {
                     res.push(mkTacticNode(self.curNode, t + '.', response.rGoals.focused));
-                } else {
+                } else { // this tactic proved that goal
                     res.push(mkTacticNode(self.curNode, t + '.', []));
                 }
             }
@@ -1697,6 +1729,7 @@ ProofTree.prototype.partialProofFrom = function(t, indentation) {
             return this.partialProofFrom(curTac, indentation);
         }
         if (this.isCurNode(t)) {
+            var result = $("<span>");
             var ta = $("<textarea>")
                 .addClass("resizeWidth")
                 .addClass("resizeHeight")
@@ -1705,7 +1738,40 @@ ProofTree.prototype.partialProofFrom = function(t, indentation) {
                 .css("resize", "none")
             ;
             PT.resizeTextarea.call(ta);
-            return ta;
+            result.append(ta);
+            result.append(
+                $("<button>")
+                    .css("margin", 0)
+                    .css("padding", "0px 2px")
+                    .css("border", 0)
+                    .css("background-color", "#FFB347")
+                    .css("vertical-align", "top")
+                    .text("OK")
+                    .click(function() {
+
+                        var tactic = ta.val();
+                        // if the tactic is already here, just click it
+                        var existingTactic = _(self.curNode.allChildren).find(function(elt) {
+                            return elt.name === tactic;
+                        });
+
+                        if (existingTactic !== undefined) {
+                            console.log(existingTactic);
+                            self.click(existingTactic);
+                            return;
+                        }
+
+                        // this adds the node but does not update the display
+                        var newNode = self.runTactic(tactic);
+
+                        // now we can update and click on the node once it has appeared
+                        self.update(self.curNode, function() {
+                            self.click(newNode);
+                        });
+
+                    })
+            );
+            return result;
         } else {
             var ta = $("<textarea>")
                 .addClass("resizeWidth")
