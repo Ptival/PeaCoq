@@ -240,10 +240,13 @@ function handleMouseMove(evt) {
  * Handle click event.
  */
 function handleMouseDown(evt) {
+
+        /*
     if(evt.preventDefault)
         evt.preventDefault();
 
     evt.returnValue = false;
+        */
 
     var svgDoc = evt.target.ownerDocument;
 
@@ -275,6 +278,7 @@ function handleMouseDown(evt) {
  * Handle mouse button release event.
  */
 function handleMouseUp(evt) {
+
     if(evt.preventDefault)
         evt.preventDefault();
 

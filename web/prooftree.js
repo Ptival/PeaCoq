@@ -11,13 +11,6 @@
 */
 window.PT = {};
 
-function assert(condition, message) {
-    if (!condition) {
-        alert(message);
-        throw message || "Assertion failed";
-    }
-}
-
 // CONFIGURATION
 var nodeMinSpacing = 5;
 var nodeStroke = 2;
@@ -30,8 +23,17 @@ var animationDuration = 420;
 var tacticNodeRounding = 10;
 var goalNodeRounding = 0;
 var tacticNodeWidth = 250;
+$(document).ready(function() {
+    setupTextareaResizing();
+});
 
 // CHECKS
+function assert(condition, message) {
+    if (!condition) {
+        alert(message);
+        throw message || "Assertion failed";
+    }
+}
 assert(nbDisplayedTactics >= nbVisibleTactics, "Make sure: nbDisplayedTactics >= nbVisibleTactics");
 assert(nbDisplayedGoals >= nbVisibleGoals, "Make sure: nbDisplayedGoals >= nbVisibleGoals");
 
@@ -110,10 +112,12 @@ function ProofTree(anchor, width, height, qed, roosterDir, onError) {
     this.div = anchor
         .insert("div", ":first-child")
         .attr("id", "pt-" + this.svgId)
+/*
         .on("click", function() {
             // TODO: suspend the activeProofTree
             makeActive(self);
         })
+*/
     ;
 
     this.svg = this.div
@@ -227,11 +231,13 @@ PT.ProofTree = ProofTree;
 
 PT.handleKeyboard = function() {
     d3.select("body")
+/*
         .on("click", function() {
             if($(":focus").size() > 0) {
                 activeProofTree = undefined;
             }
         })
+*/
         .on("keydown", keydownDispatcher)
     ;
 }
@@ -554,7 +560,8 @@ function getVisibleGrandChildren(n) {
     ;
 }
 
-ProofTree.prototype.update = function(source) {
+ProofTree.prototype.update = function(source, callback) {
+console.log(callback);
     var self = this;
     var curNode = this.curNode; // expected to stay constant throughout
 
@@ -598,7 +605,9 @@ ProofTree.prototype.update = function(source) {
     var gs = nodeEnter
         .append("g")
         .attr("class", "node")
-        .on("click", this.click.bind(this))
+        .on("click", function(d) {
+            self.click(d, undefined)
+        })
     ;
 
     var fo =
@@ -776,7 +785,7 @@ ProofTree.prototype.update = function(source) {
     this.xFactor = (siblingMinDistance === Infinity)
         ? this.xFactor
         : (
-            ((this.width + nodeMinSpacing) / nbVisibleGoals)
+            ((this.width + nodeMinSpacing) / maxVisibleNodesOnLine)
                 / siblingMinDistance
         )
     ;
@@ -1109,7 +1118,12 @@ ProofTree.prototype.update = function(source) {
     this.updateDebug();
 
     this.animationRunning = true;
-    window.setTimeout(function() { self.animationRunning = false; }, animationDuration);
+    window.setTimeout(function() {
+        self.animationRunning = false;
+        if (callback !== undefined) {
+            callback();
+        }
+    }, animationDuration);
 
 }
 
@@ -1147,13 +1161,13 @@ ProofTree.prototype.shiftRight = function(n) {
     this.update(n);
 }
 
-ProofTree.prototype.click = function(d) {
+ProofTree.prototype.click = function(d, callback) {
 
     if (this.animationRunning) { return; }
 
     if (d.solved) {
         if (hasParent(d)) {
-            this.click(d.parent);
+            this.click(d.parent, undefined);
         }
         return;
     }
@@ -1164,14 +1178,14 @@ ProofTree.prototype.click = function(d) {
         var firstUnsolved = _(d.allChildren)
             .find(function(e) { return !e.solved; });
         if (firstUnsolved !== undefined) {
-            this.click(firstUnsolved);
+            this.click(firstUnsolved, undefined);
             return;
         }
     }
 
     // when the user clicks on the parent tactic, bring them back to its parent
     if(isTactic(d) && d.depth < this.curNode.depth) {
-        this.click(d.parent);
+        this.click(d.parent, undefined);
         return;
     }
 
@@ -1189,7 +1203,7 @@ ProofTree.prototype.click = function(d) {
     }
 
     this.expand(d);
-    this.update(d);
+    this.update(d, callback);
 
 }
 
@@ -1197,7 +1211,6 @@ ProofTree.prototype.click = function(d) {
 ProofTree.prototype.solved = function(n) {
 
     var self = this;
-
     n.solved = true;
     n.displayedChildren = [];
     collapse(n);
@@ -1534,15 +1547,19 @@ ProofTree.prototype.updateContext = function(d3ContextDiv) {
 ProofTree.prototype.updateDebug = function() {
 
     var debugDiv = this.debug.select('div');
+    var jDebugDiv = $(debugDiv[0]);
 
     debugDiv.style("display", ((this.isCurNode(this.rootNode)) ? "none" : ""));
 
-    var partialProof = this.partialProofFrom(this.rootNode);
-    debugDiv.html(
-        this.theorem + "<br>Proof.<br>"
-            + PT.pprint(partialProof, 1)
-            + "<br>Qed."
-    );
+    var partialProof = this.partialProofFrom(this.rootNode, 1);
+
+    jDebugDiv.empty();
+    jDebugDiv.append($("<div>").text(this.theorem));
+    jDebugDiv.append($("<div>").text("Proof."));
+    partialProof.prepend(span("&nbsp;&nbsp;")); // initial indentation
+    jDebugDiv.append(partialProof);
+    //$(".resizeWidth, .resizeHeight").change();
+    jDebugDiv.append($("<div>").text("Qed."));
 
 /*
     if (response.rGoals.focused.length > 0) {
@@ -1564,6 +1581,9 @@ function keydownDispatcher() {
 
 ProofTree.prototype.keydownHandler = function() {
 
+    // don't interact while typing
+    if (d3.event.target.type === "textarea") { return; }
+
     var curNode = this.curNode;
 
     var visibleChildren = getVisibleChildren(curNode);
@@ -1576,48 +1596,52 @@ ProofTree.prototype.keydownHandler = function() {
 
     switch (d3.event.keyCode) {
 
-    case 37: case 65: // Left, a
+    case 37: // Left
+    case 65: // a
         this.shiftLeft(curNode);
         break;
 
-    case 39: case 68: // Right, d
+    case 39: // Right
+    case 68: // d
         this.shiftRight(curNode);
         break;
 
-    case 38: case 87: // Up, w
+    case 38: // Up
+    case 87: // w
         if(hasParent(curNode)) {
-            this.click(curNode.parent);
+            this.click(curNode.parent, undefined);
         }
         break;
 
-    case 40: case 83: // Down, s
+    case 40: // Down
+    case 83: // s
         if (isTactic(curNode)) {
             var dest = _(visibleChildren).find(function(n) {
                 return !n.solved;
             });
-            if (dest !== undefined) { this.click(dest); }
+            if (dest !== undefined) { this.click(dest, undefined); }
         } else {
             if (visibleChildren.length > 0) {
-                this.click(visibleChildren[0]);
+                this.click(visibleChildren[0], undefined);
             }
         }
         break;
 
     case 49: case 97: // 1, K1
         if (visibleChildren.length > 0) {
-            this.click(visibleChildren[0]);
+            this.click(visibleChildren[0], undefined);
         }
         break;
 
     case 50: case 98: // 2, K2
         if (visibleChildren.length > 1) {
-            this.click(visibleChildren[1]);
+            this.click(visibleChildren[1], undefined);
         }
         break;
 
     case 51: case 99: // 3, K3
         if (visibleChildren.length > 2) {
-            this.click(visibleChildren[2]);
+            this.click(visibleChildren[2], undefined);
         }
         break;
 
@@ -1633,35 +1657,82 @@ function makeActive(prooftree) {
     activeProofTree = prooftree;
 }
 
-ProofTree.prototype.partialProofFrom = function(t) {
+function span(t) {
+    return $("<span>")
+        .css("vertical-align", "top")
+        .html(t)
+    ;
+}
+
+// returns a jQuery HTML partial proof
+ProofTree.prototype.partialProofFrom = function(t, indentation) {
 
     var self = this;
+    var indent = repeat(2 * indentation, "&nbsp;");
 
     if (isGoal(t)) {
+        // if one of the subgoals is solved, find it and return its proof
         var solution = _(t.allChildren).find("solved");
         if (solution !== undefined) {
-            return this.partialProofFrom(solution);
+            return this.partialProofFrom(solution, indentation);
         }
+        // otherwise, try to find a node in the ancestor tree of the current
         var curTac = _(t.allChildren).find(function(n) {
             return self.isCurNodeAncestor(n);
         });
         if (curTac !== undefined) {
-            return this.partialProofFrom(curTac);
+            return this.partialProofFrom(curTac, indentation);
         }
-        return [ this.isCurNode(t) ? "todo." : "admit.", []];
+        if (this.isCurNode(t)) {
+            var ta = $("<textarea>")
+                .addClass("resizeWidth")
+                .addClass("resizeHeight")
+                .addClass("activeTextarea")
+                .css("background-color", "#77DD77")
+            ;
+            PT.resizeTextarea.call(ta);
+            return ta;
+        } else {
+            var ta = $("<textarea>")
+                .addClass("resizeWidth")
+                .addClass("resizeHeight")
+                .val("admit.")
+                .click(function() {
+                    self.click(t, function() {
+                        var ta = $(".activeTextarea");
+                        $(".activeTextarea").focus();
+                    });
+                })
+            ;
+            PT.resizeTextarea.call(ta);
+            return ta;
+        }
     }
-
-    if (isTactic(t)) {
-        return [
-            t.name,
-            _(t.allChildren).map(self.partialProofFrom.bind(self)).value(),
-        ];
+    else {
+        var result = span(t.name);
+        if (t.allChildren.length == 1) {
+            _(t.allChildren).each(function(e) {
+                result.append(document.createTextNode(" "));
+                result.append(self.partialProofFrom(e, indentation));
+            });
+        } else {
+            _(t.allChildren).each(function(e) {
+                var subproof = $("<div>");
+                subproof.append(span(indent + "{&nbsp;"));
+                subproof.append(
+                    $("<span>").append(self.partialProofFrom(e, indentation + 1))
+                );
+                // should be div if the proof has branching
+                subproof.append(span(" }"));
+                result.append(subproof);
+            });
+        }
+        return result;
     }
-
-    console.log("t is neither a goal nor a tactic", t);
 
 }
 
+// returns a text proof
 PT.proofFrom = function(t) {
 
     if (isGoal(t)) {
@@ -1695,7 +1766,7 @@ PT.pprintAux = function(proof, indentation) {
     var snd = proof[1];
     var indent = repeat(2 * indentation, "&nbsp;");
 
-    if (fst === "todo.") { fst = '<span style="color: green;">admit.</span>'; }
+    //if (fst === "todo.") { fst = '<span style="color: green;">admit.</span>'; }
 
     if (_.isEmpty(snd)) { return fst; }
 
@@ -2277,5 +2348,46 @@ ProofTree.prototype.computeDiff = function(fo, jQDiv, d) {
         ;
 
     }
+
+}
+
+function setupTextareaResizing() {
+    var minimalWidth = 16;
+    var minimalHeight = 16;
+    var duration = 0;
+
+    var hiddenDiv = $("<div>")
+        .css("font-family", "monospace")
+        //.css("display", "none")
+        .css("float", "right") // doesn't disrupt the flow when displayed
+    ;
+
+    $("body").append(hiddenDiv);
+
+    PT.resizeTextarea = function() {
+        var content = $(this).val();
+        hiddenDiv.html(
+            content
+                .replace(/\n/g, '&nbsp;&nbsp;<br>')
+                .replace(/ /g, '&nbsp;')
+                + '&nbsp;' // in case the last line is blank
+        );
+        if ($(this).hasClass("resizeWidth")) {
+            $(this).animate(
+                {'width': Math.max(hiddenDiv.width() + 2, minimalWidth)},
+                duration
+            );
+        }
+        if ($(this).hasClass("resizeHeight")) {
+            $(this).animate(
+                {'height': Math.max(hiddenDiv.height() + 2, minimalHeight)},
+                duration
+            );
+        }
+    };
+
+    $(document)
+        .on('change keyup keydown paste', 'textarea', PT.resizeTextarea)
+    ;
 
 }

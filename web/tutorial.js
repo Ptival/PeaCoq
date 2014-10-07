@@ -49,7 +49,7 @@ $(document).ready(function() {
 
     populateMenu();
 
-    setupTextareaResizing();
+    PT.setupTextareaResizing();
 
     resetCoq();
 
@@ -194,37 +194,6 @@ function firstStepsBooleans(addItem) {
     );
 
     addItem(mkClickableTextarea(inductiveNat, function() { }));
-
-}
-
-function setupTextareaResizing() {
-
-    var minimalWidth = 10;
-    var minimalHeight = 16;
-
-    var hiddenDiv = $("<div id='invisible'>")
-        .css("font-family", "monospace")
-        .css("display", "none")
-        .css("float", "right")
-    ;
-
-    $("body").append(hiddenDiv);
-
-    var resizeTextarea = function() {
-        content = $(this).val();
-        hiddenDiv.html(
-            content
-                .replace(/\n/g, '&nbsp;&nbsp;<br>')
-                .replace(/ /g, '&nbsp;')
-                + '&nbsp;&nbsp;<br>'
-                + '&nbsp;' // one more line to reduce jitter on newline
-        );
-        $(this).css('height', Math.max(hiddenDiv.height() + 2, minimalHeight));
-    };
-
-    $(document)
-        .on('change keyup keydown paste', 'textarea', resizeTextarea)
-    ;
 
 }
 
