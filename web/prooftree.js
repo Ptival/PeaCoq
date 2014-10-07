@@ -1698,8 +1698,8 @@ ProofTree.prototype.partialProofFrom = function(t, indentation) {
                 .addClass("resizeWidth")
                 .addClass("resizeHeight")
                 .val("admit.")
-                .click(function() {
                 .css("resize", "none")
+                .focus(function() {
                     self.click(t, function() {
                         var ta = $(".activeTextarea");
                         $(".activeTextarea").focus();
