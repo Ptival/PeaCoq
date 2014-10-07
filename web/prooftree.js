@@ -1689,6 +1689,7 @@ ProofTree.prototype.partialProofFrom = function(t, indentation) {
                 .addClass("resizeHeight")
                 .addClass("activeTextarea")
                 .css("background-color", "#77DD77")
+                .css("resize", "none")
             ;
             PT.resizeTextarea.call(ta);
             return ta;
@@ -1698,6 +1699,7 @@ ProofTree.prototype.partialProofFrom = function(t, indentation) {
                 .addClass("resizeHeight")
                 .val("admit.")
                 .click(function() {
+                .css("resize", "none")
                     self.click(t, function() {
                         var ta = $(".activeTextarea");
                         $(".activeTextarea").focus();
