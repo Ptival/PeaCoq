@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Diff prototype</title>
+    <meta charset="utf-8" />
+    <link href="prooftree.css" rel="stylesheet" type="text/css" media="all">
+    <link href="d3tree.css" rel="stylesheet" type="text/css" media="all">
+    <script src="jquery.js"></script>
+    <script src="lodash.js"></script>
+    <script src="d3/d3.js"></script>
+    <script src="diffproto.js"></script>
+  </head>
+  <body style="">
+
+<svg width="1500px" height="800px">
+
+<g id="g0">
+<g class="node" transform="translate(0, 200)">
+<rect stroke-width="2" x="0" y="0" width="500" height="50" class="goal current"></rect>
+<foreignObject width="490" height="50" transform="translate(5, 0)">
+<body style="background-color: rgba(0, 0, 0, 0);">
+<div class="node">
+<div id="d0">H0 : a = Eq</div>
+<div id="d1">H1 : b = Eq</div>
+<hr>
+<span>a = b</span>
+</div>
+</body>
+</foreignObject>
+</g>
+</g>
+
+<g id="g1">
+<g class="node" transform="translate(1000, 0)">
+<rect stroke-width="2" x="0" y="0" width="500" height="50" class="goal current"></rect>
+<foreignObject width="490" height="50" transform="translate(5, 0)">
+<body style="background-color: rgba(0, 0, 0, 0);">
+<div class="node">
+<div id="d2">H1 : b = Eq</div>
+<div id="d3">H2 : 0 = 0</div>
+<hr>
+<span>Eq = b</span>
+</div>
+</body>
+</foreignObject>
+</g>
+</g>
+
+<g id="g2">
+<g class="node" transform="translate(1000, 400)">
+<rect stroke-width="2" x="0" y="0" width="500" height="50" class="goal current"></rect>
+<foreignObject width="490" height="50" transform="translate(5, 0)">
+<body style="background-color: rgba(0, 0, 0, 0);">
+<div class="node">
+<div id="d4">H0 : a = Eq</div>
+<div id="d5">H1 : Eq = Eq</div>
+<hr>
+<span>a = Eq</span>
+</div>
+</body>
+</foreignObject>
+</g>
+</g>
+
+</svg>
+
+  </body>
+</html>
