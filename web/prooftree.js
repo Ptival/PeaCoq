@@ -2443,7 +2443,7 @@ function setupTextareaResizing() {
 
     var hiddenDiv = $("<div>")
         .css("font-family", "monospace")
-        //.css("display", "none")
+        .css("display", "none")
         .css("float", "right") // doesn't disrupt the flow when displayed
     ;
 
