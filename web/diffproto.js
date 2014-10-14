@@ -37,6 +37,10 @@ function connectRects(r1, r2) {
 
 }
 
+var opacity = 1;
+var green = "#C1FFC1";
+var blue = "#CCDDEE";
+
 $(document).ready(function() {
 
     var d = [];
@@ -49,30 +53,22 @@ $(document).ready(function() {
     d[6] = $("#d6")[0].getBoundingClientRect();
     d[7] = $("#d7")[0].getBoundingClientRect();
 
+    var delta = 2;
+
     var g1TopRightStart =
-        {"top": d[2].top - 1, "right": d[2].right, "bottom": d[2].top, "left": d[2].left};
+        {"top": d[2].top, "right": d[2].right, "bottom": d[2].top + delta, "left": d[2].left};
     var leftEnd =
-        {"top": d[1].bottom, "right": d[1].right, "bottom": d[1].bottom + 1, "left": d[1].left};
+        {"top": d[1].bottom - delta, "right": d[1].right, "bottom": d[1].bottom, "left": d[1].left};
     var g3TopRightStart =
-        {"top": d[6].top - 1, "right": d[6].right, "bottom": d[6].top, "left": d[6].left};
+        {"top": d[6].top, "right": d[6].right, "bottom": d[6].top + delta, "left": d[6].left};
 
-    var n1diff = d3.select("#g1").append("g")
-        .style("opacity", 0)
-    ;
-
-    var n2diff = d3.select("#g2").append("g")
-        .style("opacity", 0)
-    ;
-
-    var n3diff = d3.select("#g3").append("g")
-        .style("opacity", 0)
-    ;
-
-    var opacity = 0.25;
+    var n1diff = d3.select("#diff-layer").append("g").style("opacity", 0);
+    var n2diff = d3.select("#diff-layer").append("g").style("opacity", 0);
+    var n3diff = d3.select("#diff-layer").append("g").style("opacity", 0);
 
     n1diff
         .append("path")
-        .attr("fill", "red")
+        .attr("fill", green)
         .attr("opacity", opacity)
         .attr("d", connectRects(d[0], g1TopRightStart))
     ;
@@ -86,7 +82,7 @@ $(document).ready(function() {
 
     n1diff
         .append("path")
-        .attr("fill", "green")
+        .attr("fill", green)
         .attr("opacity", opacity)
         .attr("d", connectRects(leftEnd, d[3]))
     ;
@@ -100,21 +96,21 @@ $(document).ready(function() {
 
     n2diff
         .append("path")
-        .attr("fill", "blue")
+        .attr("fill", blue)
         .attr("opacity", opacity)
         .attr("d", connectRects(d[1], d[5]))
     ;
 
     n3diff
         .append("path")
-        .attr("fill", "red")
+        .attr("fill", green)
         .attr("opacity", opacity)
         .attr("d", connectRects(d[0], g3TopRightStart))
     ;
 
     n3diff
         .append("path")
-        .attr("fill", "green")
+        .attr("fill", green)
         .attr("opacity", opacity)
         .attr("d", connectRects(leftEnd, d[7]))
     ;
