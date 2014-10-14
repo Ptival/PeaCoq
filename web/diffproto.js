@@ -46,11 +46,15 @@ $(document).ready(function() {
     d[3] = $("#d3")[0].getBoundingClientRect();
     d[4] = $("#d4")[0].getBoundingClientRect();
     d[5] = $("#d5")[0].getBoundingClientRect();
+    d[6] = $("#d6")[0].getBoundingClientRect();
+    d[7] = $("#d7")[0].getBoundingClientRect();
 
-    var topRightStart =
-        {"top": d[2].top, "right": d[2].right, "bottom": d[2].top, "left": d[2].left};
+    var g1TopRightStart =
+        {"top": d[2].top - 1, "right": d[2].right, "bottom": d[2].top, "left": d[2].left};
     var leftEnd =
-        {"top": d[1].bottom, "right": d[1].right, "bottom": d[1].bottom, "left": d[1].left};
+        {"top": d[1].bottom, "right": d[1].right, "bottom": d[1].bottom + 1, "left": d[1].left};
+    var g3TopRightStart =
+        {"top": d[6].top - 1, "right": d[6].right, "bottom": d[6].top, "left": d[6].left};
 
     var n1diff = d3.select("#g1").append("g")
         .style("opacity", 0)
@@ -60,20 +64,17 @@ $(document).ready(function() {
         .style("opacity", 0)
     ;
 
+    var n3diff = d3.select("#g2").append("g")
+        .style("opacity", 0)
+    ;
+
     var opacity = 0.25;
 
     n1diff
         .append("path")
         .attr("fill", "red")
         .attr("opacity", opacity)
-        .attr("d", connectRects(d[0], topRightStart))
-    ;
-
-    n1diff
-        .append("path")
-        .attr("fill", "blue")
-        .attr("opacity", opacity)
-        .attr("d", connectRects(d[1], d[2]))
+        .attr("d", connectRects(d[0], g1TopRightStart))
     ;
 
     n1diff
@@ -87,19 +88,25 @@ $(document).ready(function() {
         .append("path")
         .attr("fill", "blue")
         .attr("opacity", opacity)
-        .attr("d", connectRects(d[0], d[4]))
+        .attr("d", connectRects(d[1], d[5]))
     ;
 
-    n2diff
+    n3diff
         .append("path")
-        .attr("fill", "blue")
+        .attr("fill", "red")
         .attr("opacity", opacity)
-        .attr("d", connectRects(d[1], d[5]))
+        .attr("d", connectRects(d[0], g3TopRightStart))
+    ;
+
+    n3diff
+        .append("path")
+        .attr("fill", "green")
+        .attr("opacity", opacity)
+        .attr("d", connectRects(leftEnd, d[7]))
     ;
 
     d3.select("#g1")
         .on("mouseover", function() {
-            console.log(this);
             n1diff.style("opacity", 1);
         })
         .on("mouseout", function() {
@@ -114,6 +121,16 @@ $(document).ready(function() {
         })
         .on("mouseout", function() {
             n2diff.style("opacity", 0);
+        })
+    ;
+
+    d3.select("#g3")
+        .on("mouseover", function() {
+            console.log(this);
+            n3diff.style("opacity", 1);
+        })
+        .on("mouseout", function() {
+            n3diff.style("opacity", 0);
         })
     ;
 
