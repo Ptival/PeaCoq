@@ -79,9 +79,23 @@ $(document).ready(function() {
 
     n1diff
         .append("path")
+        .attr("fill", "transparent")
+        .attr("opacity", opacity)
+        .attr("d", connectRects(d[1], d[2]))
+    ;
+
+    n1diff
+        .append("path")
         .attr("fill", "green")
         .attr("opacity", opacity)
         .attr("d", connectRects(leftEnd, d[3]))
+    ;
+
+    n2diff
+        .append("path")
+        .attr("fill", "transparent")
+        .attr("opacity", opacity)
+        .attr("d", connectRects(d[0], d[4]))
     ;
 
     n2diff
@@ -116,7 +130,6 @@ $(document).ready(function() {
 
     d3.select("#g2")
         .on("mouseover", function() {
-            console.log(this);
             n2diff.style("opacity", 1);
         })
         .on("mouseout", function() {
@@ -126,7 +139,6 @@ $(document).ready(function() {
 
     d3.select("#g3")
         .on("mouseover", function() {
-            console.log(this);
             n3diff.style("opacity", 1);
         })
         .on("mouseout", function() {
