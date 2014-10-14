@@ -64,7 +64,7 @@ $(document).ready(function() {
         .style("opacity", 0)
     ;
 
-    var n3diff = d3.select("#g2").append("g")
+    var n3diff = d3.select("#g3").append("g")
         .style("opacity", 0)
     ;
 
