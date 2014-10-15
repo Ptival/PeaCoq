@@ -10,13 +10,14 @@ function midDot(d1, d2) { return mkDot(avg(d1.x, d2.x), avg(d1.y, d2.y)); }
 function shiftLeft(d, n) { return mkDot(d.x - n, d.y); }
 function shiftRight(d, n) { return mkDot(d.x + n, d.y); }
 
-function connectRects(r1, r2) {
+function connectRects(r1, r2, rightsLeft) {
+    if (rightsLeft === undefined) { rightsLeft = r2.left; }
     var a = mkDot(r1.left, r1.top);
     var b = mkDot(r1.right, r1.top);
-    var c = mkDot(r2.left, r2.top);
+    var c = mkDot(rightsLeft, r2.top);
     var d = mkDot(r2.right, r2.top);
     var e = mkDot(r2.right, r2.bottom);
-    var f = mkDot(r2.left, r2.bottom);
+    var f = mkDot(rightsLeft, r2.bottom);
     var g = mkDot(r1.right, r1.bottom);
     var h = mkDot(r1.left, r1.bottom);
 
@@ -154,20 +155,21 @@ $(document).ready(function() {
         .style("background-color", "rgba(0, 0, 0, 0)")
         .each(function(d) {
             var jqObject = $(d3.select(this).node());
-            var jQDiv;
+            var jQContents;
             if (isTactic(d)) {
-                jQDiv = $("<span>").addClass("tacticNode").css("padding", "4px").text(d.pName);
+                d.span = $("<span>").addClass("tacticNode").css("padding", "4px").text(d.pName);
+                jQContents = d.span;
             } else {
-                jQDiv = $("<div>").addClass("goalNode");
+                jQContents = $("<div>").addClass("goalNode");
                 _(d.hyps).each(function(h) {
                     h.div = $("<div>").html(PT.showHypothesis(h))[0];
-                    jQDiv.append(h.div);
+                    jQContents.append(h.div);
                 });
-                jQDiv.append($("<hr>"));
+                jQContents.append($("<hr>"));
                 d.goalSpan = $("<span>").html(showTerm(d.name));
-                jQDiv.append(d.goalSpan);
+                jQContents.append(d.goalSpan);
             }
-            jqObject.append(jQDiv);
+            jqObject.append(jQContents);
         })
         .on("mouseover", function(d1) {
             diffLayer.selectAll("g")
@@ -247,6 +249,7 @@ $(document).ready(function() {
                 }
 
                 function hypRect(h) { return h.div.getBoundingClientRect(); }
+                function tacLeft(n) { return n.span[0].getBoundingClientRect().left; }
 
                 var removed = [];
                 var added = [];
@@ -275,7 +278,6 @@ $(document).ready(function() {
                     });
                     if (oldChanged && newChanged) {
                         var oldHyp = oldHyps.shift(), newHyp = newHyps.shift();
-
                         if (JSON.stringify(oldHyp.hType) !== JSON.stringify(newHyp.hType)) {
                             d3this
                                 .append("path")
@@ -283,7 +285,9 @@ $(document).ready(function() {
                                 .attr("stroke", blueStroke)
                                 .attr("stroke-width", strokeWidth)
                                 .attr("opacity", opacity)
-                                .attr("d", connectRects(hypRect(oldHyp), hypRect(newHyp)))
+                                .attr("d", connectRects(hypRect(oldHyp),
+                                                        hypRect(newHyp),
+                                                        tacLeft(d.parent)))
                             ;
 
                             var diff = spotTheDifferences(oldHyp.div, newHyp.div);
@@ -324,7 +328,9 @@ $(document).ready(function() {
                             .attr("stroke", greenStroke)
                             .attr("stroke-width", strokeWidth)
                             .attr("opacity", opacity)
-                            .attr("d", connectRects(emptyRectLeft(), hypRect(newHyp)))
+                            .attr("d", connectRects(emptyRectLeft(),
+                                                    hypRect(newHyp),
+                                                    tacLeft(d.parent)))
                         ;
                         rightY = hypRect(newHyp).bottom;
                     } else if (newChanged) {
@@ -335,7 +341,9 @@ $(document).ready(function() {
                             .attr("stroke", redStroke)
                             .attr("stroke-width", strokeWidth)
                             .attr("opacity", opacity)
-                            .attr("d", connectRects(hypRect(oldHyp), emptyRectRight()))
+                            .attr("d", connectRects(hypRect(oldHyp),
+                                                    emptyRectRight(),
+                                                    tacLeft(d.parent)))
                         ;
                         leftY = hypRect(oldHyp).bottom;
                     } else {
@@ -347,7 +355,9 @@ $(document).ready(function() {
                             .attr("stroke", redStroke)
                             .attr("stroke-width", strokeWidth)
                             .attr("opacity", opacity)
-                            .attr("d", connectRects(hypRect(oldHyp), emptyRectRight()))
+                            .attr("d", connectRects(hypRect(oldHyp),
+                                                    emptyRectRight(),
+                                                    tacLeft(d.parent)))
                         ;
 
                         leftY = hypRect(oldHyp).bottom;
@@ -361,7 +371,9 @@ $(document).ready(function() {
                         .attr("stroke", redStroke)
                         .attr("stroke-width", strokeWidth)
                         .attr("opacity", opacity)
-                        .attr("d", connectRects(hypRect(oldHyp), emptyRectRight()))
+                        .attr("d", connectRects(hypRect(oldHyp),
+                                                emptyRectRight(),
+                                                tacLeft(d.parent)))
                     ;
                 });
 
@@ -372,7 +384,9 @@ $(document).ready(function() {
                         .attr("stroke", greenStroke)
                         .attr("stroke-width", strokeWidth)
                         .attr("opacity", opacity)
-                        .attr("d", connectRects(emptyRectLeft(), hypRect(newHyp)))
+                        .attr("d", connectRects(emptyRectLeft(),
+                                                hypRect(newHyp),
+                                                tacLeft(d.parent)))
                     ;
                 });
 
