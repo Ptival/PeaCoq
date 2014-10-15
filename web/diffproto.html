@@ -8,6 +8,7 @@
     <script src="jquery.js"></script>
     <script src="lodash.js"></script>
     <script src="d3/d3.js"></script>
+    <script src="prooftree.js"></script>
     <script src="diffproto.js"></script>
     <style>
 .goal {
@@ -17,92 +18,7 @@
   </head>
   <body style="">
 
-<svg width="1500px" height="800px">
 
-<g id="rect-layer">
-  <g class="node" transform="translate(0, 200)">
-    <rect stroke-width="2" x="0" y="0" width="500" height="50" class="goal"></rect>
-  </g>
-  <g class="node" transform="translate(700, 300)">
-    <rect stroke-width="2" x="0" y="0" width="500" height="50" class="goal"></rect>
-  </g>
-  <g class="node" transform="translate(700, 200)">
-    <rect stroke-width="2" x="0" y="0" width="500" height="50" class="goal"></rect>
-  </g>
-  <g class="node" transform="translate(700, 100)">
-    <rect stroke-width="2" x="0" y="0" width="500" height="50" class="goal"></rect>
-  </g>
-</g>
-
-<g id="diff-layer"></g>
-
-<g id="foreign-layer">
-<g id="g0">
-<g class="node" transform="translate(0, 200)">
-<foreignObject width="490" height="50" transform="translate(5, 1)">
-<body style="background-color: rgba(0, 0, 0, 0);">
-<div class="node">
-<div id="d0">H0 : a = Eq</div>
-<div id="d1">H1 : b = Eq</div>
-<hr>
-<span>a = b</span>
-</div>
-</body>
-</foreignObject>
-</g>
-</g>
-
-<g id="g2">
-<g class="node" transform="translate(700, 300)">
-
-<foreignObject width="490" height="50" transform="translate(5, 1)">
-<body style="background-color: rgba(0, 0, 0, 0);">
-<div class="node">
-<div id="d4">H0 : a = Eq</div>
-<div id="d5">H1 : Eq = Eq</div>
-<hr>
-<span>a = Eq</span>
-</div>
-</body>
-</foreignObject>
-</g>
-</g>
-
-<g id="g1">
-<g class="node" transform="translate(700, 200)">
-
-<foreignObject width="490" height="50" transform="translate(5, 1)">
-<body style="background-color: rgba(0, 0, 0, 0);">
-<div class="node">
-<div id="d2">H1 : b = Eq</div>
-<div id="d3">H2 : 0 = 0</div>
-<hr>
-<span>Eq = b</span>
-</div>
-</body>
-</foreignObject>
-</g>
-</g>
-
-<g id="g3">
-<g class="node" transform="translate(700, 100)">
-
-<foreignObject width="490" height="50" transform="translate(5, 1)">
-<body style="background-color: rgba(0, 0, 0, 0);">
-<div class="node">
-<div id="d6">H1 : b = Eq</div>
-<div id="d7">H2 : 0 = 0</div>
-<hr>
-<span>Eq = b</span>
-</div>
-</body>
-</foreignObject>
-</g>
-</g>
-
-</g>
-
-</svg>
 
   </body>
 </html>

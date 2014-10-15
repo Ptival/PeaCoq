@@ -34,112 +34,240 @@ function connectRects(r1, r2) {
             + "L" + showDot(h)
             + "Z"
     );
-
 }
 
+function rectCenter(r) {
+    return {"x": r.left + r.width / 2, "y": r.top + r.height / 2};
+}
+
+function rectCenterLeft(r) {
+    return {"x": r.left, "y": r.top + r.height / 2};
+}
+
+function rectCenterRight(r) {
+    return {"x": r.right, "y": r.top + r.height / 2};
+}
+
+var width = 1580;
+var height = 820;
+var nodeWidth = 600;
+
+var red   = "#DD9999";
+var green = "#99DD99";
+var blue  = "#9999DD";
+var redStroke   = red;
+var greenStroke = green;
+var blueStroke  = blue;
+var strokeWidth = 2;
 var opacity = 1;
-var green = "#C1FFC1";
-var blue = "#CCDDEE";
+
+function nodeX(d) {
+    if (isGoal(d)) {
+        return d.y * (width - nodeWidth);
+    } else {
+        return d.y * (width - nodeWidth) + (nodeWidth - d.rect.width) / 2;
+    }
+}
+
+function nodeY(d) {
+    return d.x * height - d.rect.height / 2;
+}
+
+function isGoal(n) { return (n.depth % 2 === 0); }
+
+function isTactic(n) { return (n.depth % 2 === 1); }
 
 $(document).ready(function() {
 
-    var d = [];
-    d[0] = $("#d0")[0].getBoundingClientRect();
-    d[1] = $("#d1")[0].getBoundingClientRect();
-    d[2] = $("#d2")[0].getBoundingClientRect();
-    d[3] = $("#d3")[0].getBoundingClientRect();
-    d[4] = $("#d4")[0].getBoundingClientRect();
-    d[5] = $("#d5")[0].getBoundingClientRect();
-    d[6] = $("#d6")[0].getBoundingClientRect();
-    d[7] = $("#d7")[0].getBoundingClientRect();
-
-    var delta = 2;
-
-    var g1TopRightStart =
-        {"top": d[2].top, "right": d[2].right, "bottom": d[2].top + delta, "left": d[2].left};
-    var leftEnd =
-        {"top": d[1].bottom - delta, "right": d[1].right, "bottom": d[1].bottom, "left": d[1].left};
-    var g3TopRightStart =
-        {"top": d[6].top, "right": d[6].right, "bottom": d[6].top + delta, "left": d[6].left};
-
-    var n1diff = d3.select("#diff-layer").append("g").style("opacity", 0);
-    var n2diff = d3.select("#diff-layer").append("g").style("opacity", 0);
-    var n3diff = d3.select("#diff-layer").append("g").style("opacity", 0);
-
-    n1diff
-        .append("path")
-        .attr("fill", green)
-        .attr("opacity", opacity)
-        .attr("d", connectRects(d[0], g1TopRightStart))
+    var svg = d3.select("body").append("svg")
+        .attr("width", width)
+        .attr("height", height)
     ;
 
-    n1diff
-        .append("path")
-        .attr("fill", "transparent")
-        .attr("opacity", opacity)
-        .attr("d", connectRects(d[1], d[2]))
-    ;
+    var linkLayer = svg.append("g");
+    var rectLayer = svg.append("g");
+    var diffLayer = svg.append("g");
+    var textLayer = svg.append("g");
 
-    n1diff
-        .append("path")
-        .attr("fill", green)
-        .attr("opacity", opacity)
-        .attr("d", connectRects(leftEnd, d[3]))
-    ;
-
-    n2diff
-        .append("path")
-        .attr("fill", "transparent")
-        .attr("opacity", opacity)
-        .attr("d", connectRects(d[0], d[4]))
-    ;
-
-    n2diff
-        .append("path")
-        .attr("fill", blue)
-        .attr("opacity", opacity)
-        .attr("d", connectRects(d[1], d[5]))
-    ;
-
-    n3diff
-        .append("path")
-        .attr("fill", green)
-        .attr("opacity", opacity)
-        .attr("d", connectRects(d[0], g3TopRightStart))
-    ;
-
-    n3diff
-        .append("path")
-        .attr("fill", green)
-        .attr("opacity", opacity)
-        .attr("d", connectRects(leftEnd, d[7]))
-    ;
-
-    d3.select("#g1")
-        .on("mouseover", function() {
-            n1diff.style("opacity", 1);
-        })
-        .on("mouseout", function() {
-            n1diff.style("opacity", 0);
+    var tree = d3.layout.tree()
+        .children(function(d) {
+            return d.allChildren;
         })
     ;
 
-    d3.select("#g2")
-        .on("mouseover", function() {
-            n2diff.style("opacity", 1);
+    var nodes = tree.nodes(rootNode);
+    var links = tree.links(nodes);
+    var diagonal = d3.svg
+        .diagonal()
+        .projection(function(d) { return [d.y, d.x]; })
+    ;
+
+// first do the foreignObject, as the other things will position themselves accordingly
+
+    var textSelection = textLayer
+        .selectAll(function() {
+            return this.getElementsByTagName("foreignObject");
         })
-        .on("mouseout", function() {
-            n2diff.style("opacity", 0);
+        .data(nodes)
+    ;
+
+    textSelection.enter()
+        .append("foreignObject")
+        .attr("width", nodeWidth)
+        .append("xhtml:body")
+        .style("padding", "4px")
+        .style("background-color", "rgba(0, 0, 0, 0)")
+        .each(function(d) {
+            var jqObject = $(d3.select(this).node());
+            var jQDiv;
+            if (isTactic(d)) {
+                jQDiv = $("<span>").addClass("node").css("padding", "4px").text(d.pName);
+            } else {
+                jQDiv = $("<div>").addClass("node");
+                _(d.hyps).each(function(h) {
+                    h.div = $("<div>").html(PT.showHypothesis(h))[0];
+                    jQDiv.append(h.div);
+                });
+                jQDiv.append($("<hr>"));
+                jQDiv.append($("<span>").text(d.pName));
+            }
+            jqObject.append(jQDiv);
+        })
+        .on("mouseover", function(d1) {
+            diffLayer.selectAll("g")
+                .filter(function(d2) { return d1.id === d2.id; })
+                .style("opacity", 1);
+        })
+        .on("mouseout", function(d1) {
+            diffLayer.selectAll("g")
+                .filter(function(d2) { return d1.id === d2.id; })
+                .style("opacity", 0);
         })
     ;
 
-    d3.select("#g3")
-        .on("mouseover", function() {
-            n3diff.style("opacity", 1);
+    textSelection
+        .attr("height", function(d) {
+            return this.firstChild.getBoundingClientRect().height;
         })
-        .on("mouseout", function() {
-            n3diff.style("opacity", 0);
+        .each(function(d) {
+            var jQElementToMeasure =
+                isTactic(d)
+                ? $(d3.select(this).node()).children(0).children(0) // get the span
+                : $(d3.select(this).node()) // get the foreignObject itself
+            ;
+            d.rect = jQElementToMeasure[0].getBoundingClientRect();
+        })
+        .attr("x", nodeX)
+        .attr("y", nodeY)
+        .each(function(d) {
+            var jQElementToMeasure =
+                isTactic(d)
+                ? $(d3.select(this).node()).children(0).children(0) // get the span
+                : $(d3.select(this).node()) // get the foreignObject itself
+            ;
+            d.rect = jQElementToMeasure[0].getBoundingClientRect();
+        })
+    ;
+
+    var rectSelection = rectLayer.selectAll("rect").data(nodes);
+
+    rectSelection.enter()
+        .append("rect")
+        .classed("goal", isGoal)
+        .classed("tactic", isTactic)
+        .attr("width", function(d) { return d.rect.width; })
+        .attr("height", function(d) { return d.rect.height; })
+        .attr("x", function(d) { return d.rect.left; })
+        .attr("y", function(d) { return d.rect.top; })
+        .attr("rx", function(d) { return isTactic(d) ? 10 : 0; })
+    ;
+
+    var diffSelection = diffLayer.selectAll("g").data(nodes);
+
+    diffSelection.enter()
+        .append("g")
+        .each(function(d) {
+            if (hasGrandParent(d)) {
+                var gp = d.parent.parent;
+                var oldHyps = gp.hyps.slice();
+                var newHyps = d.hyps.slice();
+                var rightY = d.rect.top;
+                var leftY = gp.rect.top;
+
+                var delta = 1;
+                function emptyRectLeft() {
+                    return $.extend(
+                        {},
+                        gp.rect,
+                        {"top": leftY - delta, "bottom": leftY + delta, "height": 2 * delta}
+                    );
+                }
+                function emptyRectRight() {
+                    return $.extend(
+                        {},
+                        d.rect,
+                        {"top": rightY - delta, "bottom": rightY + delta, "height": 2 * delta}
+                    );
+                }
+
+                while (oldHyps.length !== 0) {
+                    var oldHyp = oldHyps.shift();
+                    if (newHyps.length === 0 || newHyps[0].hName !== oldHyp.hName) {
+                        d3.select(this)
+                            .append("path")
+                            .attr("fill", red)
+                            .attr("stroke", redStroke)
+                            .attr("stroke-width", strokeWidth)
+                            .attr("opacity", opacity)
+                            .attr("d", connectRects(oldHyp.div.getBoundingClientRect(), emptyRectRight()))
+                        ;
+                    } else {
+                        var newHyp = newHyps.shift();
+                        if (JSON.stringify(oldHyp.hType) !== JSON.stringify(newHyp.hType)) {
+                            d3.select(this)
+                                .append("path")
+                                .attr("fill", blue)
+                                .attr("stroke", blueStroke)
+                                .attr("stroke-width", strokeWidth)
+                                .attr("opacity", opacity)
+                                .attr("d", connectRects(oldHyp.div.getBoundingClientRect(), newHyp.div.getBoundingClientRect()))
+                            ;
+                        }
+                        rightY = newHyp.div.getBoundingClientRect().bottom;
+                    }
+                    leftY = oldHyp.div.getBoundingClientRect().bottom;
+                }
+                while (newHyps.length !== 0) {
+                    var newHyp = newHyps.shift();
+                    d3.select(this)
+                        .append("path")
+                        .attr("fill", green)
+                        .attr("stroke", greenStroke)
+                        .attr("stroke-width", strokeWidth)
+                        .attr("opacity", opacity)
+                        .attr("d", connectRects(emptyRectLeft(), newHyp.div.getBoundingClientRect()))
+                    ;
+                }
+
+            }
+        })
+        .style("opacity", 0)
+    ;
+
+    var linkSelection = linkLayer.selectAll("path").data(links);
+
+    linkSelection.enter()
+        .append("path")
+        .classed("link", true)
+        .attr("d", function(d) {
+            function flip(r) { return {"x": r.y, "y": r.x}; }
+            var src = flip(rectCenterRight(d.source.rect));
+            var tgt = flip(rectCenterLeft(d.target.rect));
+            return diagonal({"source": src, "target": tgt});
         })
     ;
 
 });
+
+var rootNode =
+{"id":"133","name":{"tag":"App","contents":[{"tag":"App","contents":[{"tag":"Var","contents":"eq"},{"tag":"Var","contents":"Eq"}]},{"tag":"Var","contents":"b"}]},"pName":"Eq = b","depth":4,"hyps":[{"hName":"b","hType":{"tag":"Var","contents":"comparison"},"hValue":null},{"hName":"H","hType":{"tag":"App","contents":[{"tag":"App","contents":[{"tag":"Var","contents":"eq"},{"tag":"Var","contents":"Eq"}]},{"tag":"Var","contents":"Eq"}]},"hValue":null},{"hName":"H0","hType":{"tag":"App","contents":[{"tag":"App","contents":[{"tag":"Var","contents":"eq"},{"tag":"Var","contents":"b"}]},{"tag":"Var","contents":"Eq"}]},"hValue":null}],"allChildren":[{"id":"176","name":"rewrite -> H0.","pName":"rewrite -> H0.","depth":5,"allChildren":[{"id":"177","name":{"tag":"App","contents":[{"tag":"App","contents":[{"tag":"Var","contents":"eq"},{"tag":"Var","contents":"Eq"}]},{"tag":"Var","contents":"Eq"}]},"pName":"Eq = Eq","depth":6,"hyps":[{"hName":"b","hType":{"tag":"Var","contents":"comparison"},"hValue":null},{"hName":"H","hType":{"tag":"App","contents":[{"tag":"App","contents":[{"tag":"Var","contents":"eq"},{"tag":"Var","contents":"Eq"}]},{"tag":"Var","contents":"Eq"}]},"hValue":null},{"hName":"H0","hType":{"tag":"App","contents":[{"tag":"App","contents":[{"tag":"Var","contents":"eq"},{"tag":"Var","contents":"b"}]},{"tag":"Var","contents":"Eq"}]},"hValue":null}],"allChildren":[]}],"terminating":false},{"id":"178","name":"rewrite <- H0.","pName":"rewrite <- H0.","depth":5,"allChildren":[{"id":"179","name":{"tag":"App","contents":[{"tag":"App","contents":[{"tag":"Var","contents":"eq"},{"tag":"Var","contents":"b"}]},{"tag":"Var","contents":"b"}]},"pName":"b = b","depth":6,"hyps":[{"hName":"b","hType":{"tag":"Var","contents":"comparison"},"hValue":null},{"hName":"H","hType":{"tag":"App","contents":[{"tag":"App","contents":[{"tag":"Var","contents":"eq"},{"tag":"Var","contents":"Eq"}]},{"tag":"Var","contents":"Eq"}]},"hValue":null},{"hName":"H0","hType":{"tag":"App","contents":[{"tag":"App","contents":[{"tag":"Var","contents":"eq"},{"tag":"Var","contents":"b"}]},{"tag":"Var","contents":"Eq"}]},"hValue":null}],"allChildren":[]}],"terminating":false},{"id":"184","name":"destruct H.","pName":"destruct H.","depth":5,"allChildren":[{"id":"185","name":{"tag":"App","contents":[{"tag":"App","contents":[{"tag":"Var","contents":"eq"},{"tag":"Var","contents":"c"}]},{"tag":"Var","contents":"b"}]},"pName":"c = b","depth":6,"hyps":[{"hName":"b","hType":{"tag":"Var","contents":"comparison"},"hValue":null},{"hName":"c","hType":{"tag":"Var","contents":"comparison"},"hValue":{"tag":"Var","contents":"Eq"}},{"hName":"H0","hType":{"tag":"App","contents":[{"tag":"App","contents":[{"tag":"Var","contents":"eq"},{"tag":"Var","contents":"b"}]},{"tag":"Var","contents":"c"}]},"hValue":null}],"allChildren":[]}],"terminating":false},{"id":"186","name":"destruct H0.","pName":"destruct H0.","depth":5,"allChildren":[{"id":"187","name":{"tag":"App","contents":[{"tag":"App","contents":[{"tag":"Var","contents":"eq"},{"tag":"Var","contents":"b"}]},{"tag":"Var","contents":"b"}]},"pName":"b = b","depth":6,"hyps":[{"hName":"b","hType":{"tag":"Var","contents":"comparison"},"hValue":null},{"hName":"H","hType":{"tag":"App","contents":[{"tag":"App","contents":[{"tag":"Var","contents":"eq"},{"tag":"Var","contents":"b"}]},{"tag":"Var","contents":"b"}]},"hValue":null}],"allChildren":[]}],"terminating":false},{"id":"202","name":"inversion H0.","pName":"inversion H0.","depth":5,"allChildren":[{"id":"203","name":{"tag":"App","contents":[{"tag":"App","contents":[{"tag":"Var","contents":"eq"},{"tag":"Var","contents":"Eq"}]},{"tag":"Var","contents":"Eq"}]},"pName":"Eq = Eq","depth":6,"hyps":[{"hName":"b","hType":{"tag":"Var","contents":"comparison"},"hValue":null},{"hName":"H","hType":{"tag":"App","contents":[{"tag":"App","contents":[{"tag":"Var","contents":"eq"},{"tag":"Var","contents":"Eq"}]},{"tag":"Var","contents":"Eq"}]},"hValue":null},{"hName":"H0","hType":{"tag":"App","contents":[{"tag":"App","contents":[{"tag":"Var","contents":"eq"},{"tag":"Var","contents":"b"}]},{"tag":"Var","contents":"Eq"}]},"hValue":null},{"hName":"H1","hType":{"tag":"App","contents":[{"tag":"App","contents":[{"tag":"Var","contents":"eq"},{"tag":"Var","contents":"b"}]},{"tag":"Var","contents":"Eq"}]},"hValue":null}],"allChildren":[]}],"terminating":false},{"id":"180","name":"destruct b.","pName":"destruct b.","depth":5,"allChildren":[{"id":"181","name":{"tag":"App","contents":[{"tag":"App","contents":[{"tag":"Var","contents":"eq"},{"tag":"Var","contents":"Eq"}]},{"tag":"Var","contents":"Eq"}]},"pName":"Eq = Eq","depth":6,"hyps":[{"hName":"H","hType":{"tag":"App","contents":[{"tag":"App","contents":[{"tag":"Var","contents":"eq"},{"tag":"Var","contents":"Eq"}]},{"tag":"Var","contents":"Eq"}]},"hValue":null},{"hName":"H0","hType":{"tag":"App","contents":[{"tag":"App","contents":[{"tag":"Var","contents":"eq"},{"tag":"Var","contents":"Eq"}]},{"tag":"Var","contents":"Eq"}]},"hValue":null}],"allChildren":[]},{"id":"182","name":{"tag":"App","contents":[{"tag":"App","contents":[{"tag":"Var","contents":"eq"},{"tag":"Var","contents":"Eq"}]},{"tag":"Var","contents":"Lt"}]},"pName":"Eq = Lt","depth":6,"hyps":[{"hName":"H","hType":{"tag":"App","contents":[{"tag":"App","contents":[{"tag":"Var","contents":"eq"},{"tag":"Var","contents":"Eq"}]},{"tag":"Var","contents":"Eq"}]},"hValue":null},{"hName":"H0","hType":{"tag":"App","contents":[{"tag":"App","contents":[{"tag":"Var","contents":"eq"},{"tag":"Var","contents":"Lt"}]},{"tag":"Var","contents":"Eq"}]},"hValue":null}],"allChildren":[]},{"id":"183","name":{"tag":"App","contents":[{"tag":"App","contents":[{"tag":"Var","contents":"eq"},{"tag":"Var","contents":"Eq"}]},{"tag":"Var","contents":"Gt"}]},"pName":"Eq = Gt","depth":6,"hyps":[{"hName":"H","hType":{"tag":"App","contents":[{"tag":"App","contents":[{"tag":"Var","contents":"eq"},{"tag":"Var","contents":"Eq"}]},{"tag":"Var","contents":"Eq"}]},"hValue":null},{"hName":"H0","hType":{"tag":"App","contents":[{"tag":"App","contents":[{"tag":"Var","contents":"eq"},{"tag":"Var","contents":"Gt"}]},{"tag":"Var","contents":"Eq"}]},"hValue":null}],"allChildren":[]}],"terminating":false}]};
