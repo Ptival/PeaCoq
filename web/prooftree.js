@@ -547,11 +547,13 @@ ProofTree.prototype.hInit = function(response, preAnimCallback, postAnimCallback
 function hasParent(n) {
     return n.hasOwnProperty('parent');
 }
+PT.hasParent = hasParent;
 
 function hasGrandParent(n) {
     return n.hasOwnProperty('parent')
         && n.parent.hasOwnProperty('parent');
 }
+PT.hasGrandParent = hasGrandParent;
 
 ProofTree.prototype.isRootNode = function(n) { return n.id === this.rootNode.id; }
 
@@ -2178,6 +2180,7 @@ function showHypothesis(h) {
     res = res + nbsp + syntax(":") + nbsp + showTermInline(h.hType);
     return res;
 }
+PT.showHypothesis = showHypothesis;
 
 function showTermInline(t) {
     return showTermAux(t, 0, 0, false);
@@ -2475,4 +2478,38 @@ function setupTextareaResizing() {
         .on('change keyup keydown paste', 'textarea', PT.resizeTextarea)
     ;
 
+}
+
+function extractNodeUpToGrandChildren(n) {
+    function cleanup(n) {
+        delete n["cX0"];
+        delete n["cY0"];
+        delete n["cX"];
+        delete n["cY"];
+        delete n["x0"];
+        delete n["y0"];
+        delete n["x"];
+        delete n["y"];
+        delete n["gid"];
+        delete n["ndx"];
+        delete n["children"];
+        delete n["displayedChildren"];
+        delete n["parent"];
+        delete n["solved"];
+        delete n["offset"];
+        delete n["height"];
+    };
+    var root = $.extend({}, n);
+    var rootChildren = root.allChildren;
+    var rootGrandchildren =
+        _(root.children)
+        .map(function(d) { return d.allChildren; })
+        .flatten()
+        .value()
+    ;
+    cleanup(root);
+    _(rootChildren).each(cleanup);
+    _(rootGrandchildren).each(cleanup);
+    _(rootGrandchildren).each(function(e) { e.allChildren = []; })
+    return JSON.stringify(root);
 }
