@@ -48,6 +48,41 @@ function rectCenterRight(r) {
     return {"x": r.right, "y": r.top + r.height / 2};
 }
 
+function spotTheDifferences(before, after) {
+
+    var removed = [];
+    var added = [];
+
+    function rec(before, after) {
+
+        var nbBefore = before.children().length;
+        var nbAfter  =  after.children().length;
+        if (nbBefore !== nbAfter) {
+            removed.push(before);
+            added.push(after);
+            return;
+        }
+
+        var nbChildren = nbBefore;
+        if (nbChildren === 0) { // both leaves
+            if (before.html() !== after.html()) {
+                removed.push(before);
+                added.push(after);
+            }
+            return;
+        }
+
+        for (var i in _.range(nbChildren)) {
+            rec($(before.children()[i]), $(after.children()[i]));
+        }
+
+    }
+
+    rec($(before), $(after));
+
+    return {"removed": removed, "added": added};
+}
+
 var width = 1580;
 var height = 820;
 var nodeWidth = 600;
@@ -121,15 +156,16 @@ $(document).ready(function() {
             var jqObject = $(d3.select(this).node());
             var jQDiv;
             if (isTactic(d)) {
-                jQDiv = $("<span>").addClass("node").css("padding", "4px").text(d.pName);
+                jQDiv = $("<span>").addClass("tacticNode").css("padding", "4px").text(d.pName);
             } else {
-                jQDiv = $("<div>").addClass("node");
+                jQDiv = $("<div>").addClass("goalNode");
                 _(d.hyps).each(function(h) {
                     h.div = $("<div>").html(PT.showHypothesis(h))[0];
                     jQDiv.append(h.div);
                 });
                 jQDiv.append($("<hr>"));
-                jQDiv.append($("<span>").text(d.pName));
+                d.goalSpan = $("<span>").html(showTerm(d.name));
+                jQDiv.append(d.goalSpan);
             }
             jqObject.append(jQDiv);
         })
@@ -210,6 +246,8 @@ $(document).ready(function() {
                     );
                 }
 
+                function hypRect(h) { return h.div.getBoundingClientRect(); }
+
                 while (oldHyps.length !== 0) {
                     var oldHyp = oldHyps.shift();
                     if (newHyps.length === 0 || newHyps[0].hName !== oldHyp.hName) {
@@ -219,7 +257,7 @@ $(document).ready(function() {
                             .attr("stroke", redStroke)
                             .attr("stroke-width", strokeWidth)
                             .attr("opacity", opacity)
-                            .attr("d", connectRects(oldHyp.div.getBoundingClientRect(), emptyRectRight()))
+                            .attr("d", connectRects(hypRect(oldHyp), emptyRectRight()))
                         ;
                     } else {
                         var newHyp = newHyps.shift();
@@ -230,12 +268,41 @@ $(document).ready(function() {
                                 .attr("stroke", blueStroke)
                                 .attr("stroke-width", strokeWidth)
                                 .attr("opacity", opacity)
-                                .attr("d", connectRects(oldHyp.div.getBoundingClientRect(), newHyp.div.getBoundingClientRect()))
+                                .attr("d", connectRects(hypRect(oldHyp), hypRect(newHyp)))
                             ;
+
+                            var diff = spotTheDifferences(oldHyp.div, newHyp.div);
+
+                            var d3this = d3.select(this);
+
+                            _(diff.removed).each(function(d) {
+                                var rect = d[0].getBoundingClientRect();
+                                d3this
+                                    .append("rect")
+                                    .attr("fill", red)
+                                    .attr("x", rect.left)
+                                    .attr("width", rect.width)
+                                    .attr("y", rect.top)
+                                    .attr("height", rect.height)
+                                ;
+                            });
+
+                            _(diff.added).each(function(d) {
+                                var rect = d[0].getBoundingClientRect();
+                                d3this
+                                    .append("rect")
+                                    .attr("fill", green)
+                                    .attr("x", rect.left)
+                                    .attr("width", rect.width)
+                                    .attr("y", rect.top)
+                                    .attr("height", rect.height)
+                                ;
+                            });
+
                         }
-                        rightY = newHyp.div.getBoundingClientRect().bottom;
+                        rightY = hypRect(newHyp).bottom;
                     }
-                    leftY = oldHyp.div.getBoundingClientRect().bottom;
+                    leftY = hypRect(oldHyp).bottom;
                 }
                 while (newHyps.length !== 0) {
                     var newHyp = newHyps.shift();
@@ -245,11 +312,40 @@ $(document).ready(function() {
                         .attr("stroke", greenStroke)
                         .attr("stroke-width", strokeWidth)
                         .attr("opacity", opacity)
-                        .attr("d", connectRects(emptyRectLeft(), newHyp.div.getBoundingClientRect()))
+                        .attr("d", connectRects(emptyRectLeft(), hypRect(newHyp)))
                     ;
                 }
 
+                var diff = spotTheDifferences(gp.goalSpan, d.goalSpan);
+
+                var d3this = d3.select(this);
+
+                _(diff.removed).each(function(d) {
+                    var rect = d[0].getBoundingClientRect();
+                    d3this
+                        .append("rect")
+                        .attr("fill", red)
+                        .attr("x", rect.left)
+                        .attr("width", rect.width)
+                        .attr("y", rect.top)
+                        .attr("height", rect.height)
+                    ;
+                });
+
+                _(diff.added).each(function(d) {
+                    var rect = d[0].getBoundingClientRect();
+                    d3this
+                        .append("rect")
+                        .attr("fill", green)
+                        .attr("x", rect.left)
+                        .attr("width", rect.width)
+                        .attr("y", rect.top)
+                        .attr("height", rect.height)
+                    ;
+                });
+
             }
+
         })
         .style("opacity", 0)
     ;
