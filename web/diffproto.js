@@ -248,21 +248,36 @@ $(document).ready(function() {
 
                 function hypRect(h) { return h.div.getBoundingClientRect(); }
 
-                while (oldHyps.length !== 0) {
-                    var oldHyp = oldHyps.shift();
-                    if (newHyps.length === 0 || newHyps[0].hName !== oldHyp.hName) {
-                        d3.select(this)
-                            .append("path")
-                            .attr("fill", red)
-                            .attr("stroke", redStroke)
-                            .attr("stroke-width", strokeWidth)
-                            .attr("opacity", opacity)
-                            .attr("d", connectRects(hypRect(oldHyp), emptyRectRight()))
-                        ;
+                var removed = [];
+                var added = [];
+                var changed = [];
+
+                _(oldHyps).each(function(h) {
+                    var match = _(newHyps).find(function(g) { return g.hName === h.hName; });
+                    if (match !== undefined) {
+                        changed.push({"before": h, "after": match});
                     } else {
-                        var newHyp = newHyps.shift();
+                        removed.push(h);
+                    }
+                });
+                _(newHyps).each(function(h) {
+                    var match = _(oldHyps).find(function(g) { return g.hName === h.hName; });
+                    if (match === undefined) { added.push(h); }
+                });
+
+                var d3this = d3.select(this);
+                while (oldHyps.length !== 0 && newHyps.length !== 0) {
+                    var oldChanged = _(changed).some(function(c) {
+                        return c.before.hName === oldHyps[0].hName;
+                    });
+                    var newChanged = _(changed).some(function(c) {
+                        return c.after.hName === newHyps[0].hName;
+                    });
+                    if (oldChanged && newChanged) {
+                        var oldHyp = oldHyps.shift(), newHyp = newHyps.shift();
+
                         if (JSON.stringify(oldHyp.hType) !== JSON.stringify(newHyp.hType)) {
-                            d3.select(this)
+                            d3this
                                 .append("path")
                                 .attr("fill", blue)
                                 .attr("stroke", blueStroke)
@@ -272,8 +287,6 @@ $(document).ready(function() {
                             ;
 
                             var diff = spotTheDifferences(oldHyp.div, newHyp.div);
-
-                            var d3this = d3.select(this);
 
                             _(diff.removed).each(function(d) {
                                 var rect = d[0].getBoundingClientRect();
@@ -300,13 +313,60 @@ $(document).ready(function() {
                             });
 
                         }
+
+                        leftY = hypRect(oldHyp).bottom;
                         rightY = hypRect(newHyp).bottom;
+                    } else if (oldChanged) {
+                        var newHyp = newHyps.shift();
+                        d3this
+                            .append("path")
+                            .attr("fill", green)
+                            .attr("stroke", greenStroke)
+                            .attr("stroke-width", strokeWidth)
+                            .attr("opacity", opacity)
+                            .attr("d", connectRects(emptyRectLeft(), hypRect(newHyp)))
+                        ;
+                        rightY = hypRect(newHyp).bottom;
+                    } else if (newChanged) {
+                        var oldHyp = oldHyps.shift();
+                        d3this
+                            .append("path")
+                            .attr("fill", red)
+                            .attr("stroke", redStroke)
+                            .attr("stroke-width", strokeWidth)
+                            .attr("opacity", opacity)
+                            .attr("d", connectRects(hypRect(oldHyp), emptyRectRight()))
+                        ;
+                        leftY = hypRect(oldHyp).bottom;
+                    } else {
+                        var oldHyp = oldHyps.shift();
+
+                        d3this
+                            .append("path")
+                            .attr("fill", red)
+                            .attr("stroke", redStroke)
+                            .attr("stroke-width", strokeWidth)
+                            .attr("opacity", opacity)
+                            .attr("d", connectRects(hypRect(oldHyp), emptyRectRight()))
+                        ;
+
+                        leftY = hypRect(oldHyp).bottom;
                     }
-                    leftY = hypRect(oldHyp).bottom;
                 }
-                while (newHyps.length !== 0) {
-                    var newHyp = newHyps.shift();
-                    d3.select(this)
+
+                _(oldHyps).each(function(oldHyp) {
+                    d3this
+                        .append("path")
+                        .attr("fill", red)
+                        .attr("stroke", redStroke)
+                        .attr("stroke-width", strokeWidth)
+                        .attr("opacity", opacity)
+                        .attr("d", connectRects(hypRect(oldHyp), emptyRectRight()))
+                    ;
+                });
+
+                _(newHyps).each(function(newHyp) {
+                    d3this
                         .append("path")
                         .attr("fill", green)
                         .attr("stroke", greenStroke)
@@ -314,11 +374,9 @@ $(document).ready(function() {
                         .attr("opacity", opacity)
                         .attr("d", connectRects(emptyRectLeft(), hypRect(newHyp)))
                     ;
-                }
+                });
 
                 var diff = spotTheDifferences(gp.goalSpan, d.goalSpan);
-
-                var d3this = d3.select(this);
 
                 _(diff.removed).each(function(d) {
                     var rect = d[0].getBoundingClientRect();
