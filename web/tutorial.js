@@ -6,35 +6,115 @@ var accordionWidth = 200;
 var menu =
     [
         {
-            "title": "First steps",
+            "title": "CPDT rip-off",
             "items":
             [
+                {
+                    "name": "Stack Machine",
+                    "setup": stackMachine,
+                },
                 {
                     "name": "Booleans",
                     "setup": firstStepsBooleans,
-                },
-                {
-                    "name": "Natural numbers",
-                    "setup": function() { console.log("naturals"); },
-                },
-            ]
-        },
-        {
-            "title": "Case analysis",
-            "items":
-            [
-                {
-                    "name": "Booleans",
-                    "setup": function() { console.log("booleans2"); },
-                },
-                {
-                    "name": "Lists",
-                    "setup": function() { console.log("lists"); },
                 },
             ]
         },
     ]
 ;
+
+function mkText(t) { return $("<div>").text(t); }
+
+function mkCoq(t) { return mkClickableTextarea(t, function() { }) }
+
+function stackMachine(add) {
+
+    add(mkText("'sup?"));
+
+    add(mkCoq("Inductive binop : Type := Plus | Times."));
+
+    add(mkCoq(
+        'Inductive exp : Set :='
+            + '\n| Const : nat -> exp'
+            + '\n| Binop : binop -> exp -> exp -> exp'
+            + '\n.'
+    ));
+
+    add(mkCoq(
+        'Definition binopDenote (b : binop) : nat -> nat -> nat :='
+            + '\n  match b with'
+            + '\n  | Plus => plus'
+            + '\n  | Times => mult'
+            + '\nend.'
+    ));
+
+    add(mkCoq(
+        'Fixpoint expDenote (e : exp) : nat :='
+        + '\n  match e with'
+            + '\n  | Const n => n'
+            + '\n  | Binop b e1 e2 => (binopDenote b) (expDenote e1) (expDenote e2)'
+        + '\n  end.'
+    ));
+
+    add(mkCoq(
+        "Eval simpl in expDenote (Const 42)."
+    ));
+
+    add(mkCoq(
+        "Eval simpl in expDenote (Binop Plus (Const 2) (Const 2))."
+    ));
+
+    add(mkCoq(
+        "Eval simpl in expDenote (Binop Times (Binop Plus (Const 2) (Const 2)) (Const 7))."
+    ));
+
+    add(mkCoq(
+        "Inductive instr : Set :="
+            + "\n| iConst : nat -> instr"
+            + "\n| iBinop : binop -> instr"
+            + "\n."
+    ));
+
+    add(mkCoq(
+        "Definition prog := list instr."
+    ));
+
+    add(mkCoq(
+        "Definition stack := list nat."
+    ));
+
+    add(mkCoq(
+        "Definition instrDenote (i : instr) (s : stack) : option stack :="
+            + "\n  match i with"
+            + "\n  | iConst n => Some (n :: s)"
+            + "\n  | iBinop b =>"
+            + "\n    match s with"
+            + "\n    | arg1 :: arg2 :: s' => Some ((binopDenote b) arg1 arg2 :: s')"
+            + "\n    | _ => None"
+            + "\n    end"
+            + "\n  end."
+    ));
+
+    add(mkCoq(
+        ""
+    ));
+
+    add(mkCoq(
+        ""
+    ));
+
+    add(mkCoq(
+        ""
+    ));
+
+    add(mkCoq(
+        ""
+    ));
+
+    add(mkCoq(
+        ""
+    ));
+
+}
 
 $(document).ready(function() {
 
@@ -48,8 +128,6 @@ $(document).ready(function() {
     ;
 
     populateMenu();
-
-    PT.setupTextareaResizing();
 
     resetCoq();
 
@@ -202,6 +280,7 @@ function mkClickableTextarea(initialText) {
     res.append(
         $("<textarea>")
             .addClass("form-control")
+            .addClass("resizeHeight")
             .val(initialText)
     );
     res.append(
@@ -256,8 +335,7 @@ function mkClickableTextarea(initialText) {
 
                 } else if (query.startsWith("Theorem")) {
 
-                    var anchor = $("<div>")
-                        .css("border", "1px solid black");
+                    var anchor = $("<div>");
 
                     li.append(anchor);
 
@@ -306,6 +384,128 @@ function mkClickableTextarea(initialText) {
                     });
 
                     pt.newTheorem(query, PT.tDiscriminate, function() { }, function() { });
+
+                } else if (query.startsWith("Definition")) {
+
+                    syncQuery(query, function(response) {
+
+                        switch (response.rResponse.tag) {
+
+                        case "Good":
+                            syncParse(query, function(response) {
+                                var answer =
+                                    $("<div>")
+                                    .addClass("alert")
+                                    .addClass("alert-success")
+                                    .css("font-family", "monospace")
+                                    .html(showVernac(response))
+                                ;
+                                li.append(answer);
+                                $("body").animate({
+                                        "scrollTop": li.offset().top,
+                                }, 1000);
+                            });
+                            break;
+
+                        case "Fail":
+                            li.append(
+                                $("<div>")
+                                    .addClass("alert")
+                                    .addClass("alert-danger")
+                                    .css("font-family", "monospace")
+                                    .html(response.rResponse.contents)
+                            );
+                            break;
+
+                        default:
+                            alert("TODO");
+                            break;
+
+                        };
+
+                    });
+
+                } else if (query.startsWith("Fixpoint")) {
+
+                    syncQuery(query, function(response) {
+
+                        switch (response.rResponse.tag) {
+
+                        case "Good":
+                            syncParse(query, function(response) {
+                                var answer =
+                                    $("<div>")
+                                    .addClass("alert")
+                                    .addClass("alert-success")
+                                    .css("font-family", "monospace")
+                                    .html(showVernac(response))
+                                ;
+                                li.append(answer);
+                                $("body").animate({
+                                        "scrollTop": li.offset().top,
+                                }, 1000);
+                            });
+                            break;
+
+                        case "Fail":
+                            li.append(
+                                $("<div>")
+                                    .addClass("alert")
+                                    .addClass("alert-danger")
+                                    .css("font-family", "monospace")
+                                    .html(response.rResponse.contents)
+                            );
+                            break;
+
+                        default:
+                            alert("TODO");
+                            break;
+
+                        };
+
+                    });
+
+                } else if (query.startsWith("Eval")) {
+
+                    syncQuery(query, function(response) {
+
+                        switch (response.rResponse.tag) {
+
+                        case "Good":
+                            var response = stripWarning(response.rResponse.contents[0]);
+                            syncParseEval(response, function(response) {
+                                var value = response[0];
+                                var type = response[1];
+                                li.append(
+                                    $("<div>")
+                                        .addClass("alert")
+                                        .addClass("alert-success")
+                                        .css("font-family", "monospace")
+                                        .html(
+                                            syntax("=") + nbsp + showTerm(value)
+                                                + "<br>" + syntax(":") + nbsp + showTerm(type)
+                                        )
+                                );
+                            });
+                            break;
+
+                        case "Fail":
+                            li.append(
+                                $("<div>")
+                                    .addClass("alert")
+                                    .addClass("alert-danger")
+                                    .css("font-family", "monospace")
+                                    .html(response.rResponse.contents)
+                            );
+                            break;
+
+                        default:
+                            alert("TODO");
+                            break;
+
+                        };
+
+                    });
 
                 } else {
                     alert("This type of query is not supported yet.");
@@ -376,6 +576,8 @@ function syncQueryUndo(q, h) { syncRequest('queryundo', q, h); }
 
 function syncParse(q, h) { syncRequest('parse', q, h); }
 
+function syncParseEval(q, h) { syncRequest('parseEval', q, h); }
+
 function currentLabel() {
     var result;
     syncRequest("status", "", function(response) {
@@ -389,7 +591,8 @@ function resetCoq() {
     var label = currentLabel();
     if (label > 1) {
         syncRequest("rewind", label - 1, function() { });
-        syncQuery("Require Import Unicode.Utf8.", function() { });
+        syncQuery("Require Import Unicode.Utf8 Bool Arith List.", function() { });
+        syncQuery("Open ListNotations.", function() { });
     }
 }
 
@@ -403,4 +606,10 @@ if (!String.prototype.startsWith) {
       return this.lastIndexOf(searchString, position) === position;
     }
   });
+}
+
+function stripWarning(s) { return s.substring(s.indexOf('\n') + 1); }
+
+function nl2br (str) {
+    return (str + '').replace(/([^>\r\n]?)(\r\n|\n\r|\r|\n)/g, '$1<br>$2');
 }

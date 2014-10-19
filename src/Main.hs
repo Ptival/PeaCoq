@@ -167,6 +167,7 @@ roosterSnaplet globRef = makeSnaplet "Rooster" "Rooster" Nothing $ do
       , ("setprintingall",   togglePrintingAll True)
       , ("unsetprintingall", togglePrintingAll False)
       , ("parse",            parseHandler)
+      , ("parseEval",        parseEvalHandler)
       ] ++
       [ ("/",                serveDirectoryWith myDirConfig "web/")
       ]
@@ -183,6 +184,15 @@ parseHandler _ _ = do
     Nothing -> return ()
     Just queryBS -> do
       let response = parseVernac $ toString queryBS
+      writeJSON response
+
+parseEvalHandler :: HandledRoosterHandler
+parseEvalHandler _ _ = do
+  param <- getParam "query"
+  case param of
+    Nothing -> return ()
+    Just queryBS -> do
+      let response = parseEval $ toString queryBS
       writeJSON response
 
 queryHandler :: HandledRoosterHandler

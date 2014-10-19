@@ -1909,7 +1909,7 @@ ProofTree.prototype.replayThisProof = function(proof) {
         this.syncQuery(fst, function(response) {
             if (isGood(response)) {
                 _(snd).each(function(n) {
-                    self.replayThisProof(self.proofFrom(n));
+                    self.replayThisProof(n);
                 });
             } else {
                 console.log("Replay failed on applying " + fst);
@@ -1967,6 +1967,46 @@ function showBinder(t) {
     return showNames(t[0]) + syntax(":") + nbsp + showTermAux(t[1], 0, 0, false);
 }
 
+function showPatternAux(p, withParens) {
+    switch (p.tag) {
+        case "Wildcard":
+        return "_";
+        break;
+
+        case "Pattern":
+        var c = p.contents;
+        if (c[1].length === 0) { // constructor with no parameters, never parenthesized
+            return c[0];
+        } else { // constructor with parameters, parenthesized if subpattern
+            if(c[0] === "cons" && c[1].length === 2) {
+                return (withParens ? syntax("(") : "")
+                    + showPatternAux(c[1][0], true)
+                    + nbsp + syntax("::") + nbsp
+                    + showPattern(c[1][1], false)
+                    + (withParens ? syntax(")") : "")
+                ;
+            } else {
+                return (withParens ? syntax("(") : "")
+                    + _(c[1]).reduce(function(acc, elt) {
+                        return acc + " " + showPatternAux(elt, true);
+                    }, c[0])
+                    + (withParens ? syntax(")") : "")
+                ;
+            }
+        }
+    };
+}
+
+function showPattern(p) { return showPatternAux(p, false); }
+
+function showPatterns(ps) {
+    if (ps.length === 1) {
+        return showPattern(ps[0]);
+    } else {
+        alert("TODO");
+    }
+}
+
 function showNames(t) {
     if (_.isEmpty(t)) { return ""; }
     return ident(t[0]) + " " + showNames(_(t).rest().value());
@@ -1974,6 +2014,10 @@ function showNames(t) {
 
 function showTerm(t) {
     return showTermAux(t, 0, 0, true);
+}
+
+function showTermIndent(t, indent) {
+    return showTermAux(t, indent, 0, true);
 }
 
 function getIndent(depth) {
@@ -1986,6 +2030,7 @@ var precForall = precedence++;
 var precArrow  = precedence++;
 var precAnd    = precedence++; var precOr = precAnd;
 var precEqual  = precedence++; var precNotEqual = precEqual;
+var precCons   = precedence++;
 var precAndB   = precedence++; var precOrB = precAndB;
 var precPlus   = precedence++; var precMinus = precPlus;
 var precMult   = precedence++;
@@ -2053,6 +2098,53 @@ function showVernac(t) {
             + syntax(".")
         ;
 
+    case "Definition":
+        var name = c[0];
+        var args = _(c[1]).map(showBinder);
+        var type = (c[2] !== null)
+            ? syntax(":") + nbsp + showTermInline(c[2]) + nbsp
+            : "";
+        var term = showTermIndent(c[3], 1);
+        return vernac("Definition")
+            + nbsp
+            + ident(name)
+            + nbsp
+            + _(args).reduce(function(acc, elt) {
+                return acc + syntax("(") + elt + syntax(")") + nbsp; }, "")
+            + type
+            + syntax(":=")
+            + "<br>"
+            + term
+            + syntax(".")
+        ;
+
+    case "Fixpoint":
+        var name = c[0];
+        var args = _(c[1]).map(showBinder);
+        var decreasing = c[2];
+        var type = (c[3] !== null)
+            ? syntax(":") + nbsp + showTermInline(c[3]) + nbsp
+            : "";
+        var term = showTermIndent(c[4], 1);
+        return vernac("Fixpoint")
+            + nbsp
+            + ident(name)
+            + nbsp
+            + _(args).reduce(function(acc, elt) {
+                return acc + syntax("(") + elt + syntax(")") + nbsp; }, "")
+            + (
+                (decreasing !== null)
+                    ? syntax("{") + nbsp + syntax("struct")
+                    + nbsp + decreasing + nbsp + syntax("}") + nbsp
+                    : ""
+            )
+            + type
+            + syntax(":=")
+            + "<br>"
+            + term
+            + syntax(".")
+        ;
+
     default:
         return "Unknown Vernacular tag: " + t.tag;
 
@@ -2063,6 +2155,12 @@ function showTermText(t) {
     return $(showTermInline(t)).text();
 }
 
+/*
+  [t]           the term to show
+  [indentation] the indentation to use if you make a newline
+  [precParent]  the precedence of the parent operator (for parenthesizing)
+  [newline]     true if the term should feel free to use multiple lines
+*/
 function showTermAux(t, indentation, precParent, newline) {
     var c = t.contents;
 
@@ -2070,7 +2168,7 @@ function showTermAux(t, indentation, precParent, newline) {
 
     var par = function(precOp, text) {
         if (precOp <= precParent) {
-            return term("(" + text + ")");
+            return term(syntax("(") + text + syntax(")"));
         } else {
             return term(text);
         }
@@ -2110,6 +2208,32 @@ function showTermAux(t, indentation, precParent, newline) {
             showTermAux(c[0], indentation, precArrow, false)
                 + nbsp + syntax("→") + (newline ? "<br/>" + indent : " ")
                 + showTermAux(c[1], indentation, precParent, newline)
+        );
+
+    case "Match":
+        var discriminee = c[0];
+        var cases = c[1];
+        return term(
+            syntax("match") + nbsp
+                + showTermInline(discriminee) + nbsp
+                + syntax("with") + "<br>"
+                + _(cases).reduce(function(acc, elt) {
+                    var patterns = showPatterns(elt[0]);
+                    var body = showTermAux(elt[1], indentation + 1, precParent, newline);
+                    return acc
+                        + getIndent(indentation) + syntax("|") + nbsp
+                        + patterns
+                        + nbsp
+                        + syntax("=>")
+                        + (
+                            (body.indexOf("<br>") === -1)
+                                ? nbsp + body
+                                : "<br>" + getIndent(indentation + 1) + body
+                        )
+                        + "<br>";
+                }, "")
+            //showTermAux(c[0], indentation, precArrow, false)
+            + getIndent(indentation) + syntax("end")
         );
 
     case "App":
@@ -2153,8 +2277,10 @@ function showTermAux(t, indentation, precParent, newline) {
             case "orb":
                 return showOp(c, "||", precOrB);
 
+            case "cons":
+                return showOp(c, "::", precCons);
+
             default:
-                console.log("Falling through", c[0].contents[0].contents);
                 // nothing, fall through
 
             };
@@ -2162,7 +2288,7 @@ function showTermAux(t, indentation, precParent, newline) {
 
         return par(
             precApp,
-            showTermAux(c[0], 0, precApp, false) + " "
+            showTermAux(c[0], 0, precApp - 1, false) + " "
                 + showTermAux(c[1], 0, precApp, false)
         );
 
@@ -2480,6 +2606,7 @@ function setupTextareaResizing() {
 
 }
 
+// TODO: make this non-destructive :'(
 function extractNodeUpToGrandChildren(n) {
     function cleanup(n) {
         delete n["cX0"];
