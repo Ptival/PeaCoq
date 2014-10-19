@@ -13,12 +13,17 @@ tokens :-
   $digit+       { \s -> TokNum s }
   \(            { \s -> TokLParen }
   \)            { \s -> TokRParen }
+  \{            { \s -> TokLBrace }
+  \}            { \s -> TokRBrace }
   (\∀|"forall") { \s -> TokForall }
   (\→|\-\>)     { \s -> TokArrow }
+  (\=\>)        { \s -> TokDoubleArrow }
   (\λ|\\)       { \s -> TokLambda }
   \.            { \s -> TokPeriod }
   \:\=          { \s -> TokColonEq }
   \:            { \s -> TokColon }
+  \:\:          { \s -> TokCons }
+  \[\]          { \s -> TokNil }
   \=            { \s -> TokEq }
   \≠            { \s -> TokNeq }
   \_            { \s -> TokUnderscore }
@@ -34,8 +39,14 @@ tokens :-
   \|            { \s -> TokPipe }
   \|\|          { \s -> TokOrB }
   \%            { \s -> TokPercent }
+  "match"       { \s -> TokMatch }
+  "with"        { \s -> TokWith }
+  "end"         { \s -> TokEnd }
   "Inductive"   { \s -> TokInductive }
   "Theorem"     { \s -> TokTheorem }
+  "Definition"  { \s -> TokDefinition }
+  "Fixpoint"    { \s -> TokFixpoint }
+  "struct"      { \s -> TokStruct }
   "Proof"       { \s -> TokProof }
   "Qed"         { \s -> TokQed }
   $alpha [$alpha $digit \_ \']* { \s -> TokSym s }
@@ -46,12 +57,17 @@ data Token
   = TokSym String
   | TokLParen
   | TokRParen
+  | TokLBrace
+  | TokRBrace
   | TokArrow
+  | TokDoubleArrow
   | TokForall
   | TokLambda
   | TokPeriod
   | TokColon
   | TokColonEq
+  | TokCons
+  | TokNil
   | TokEq
   | TokNeq
   | TokUnderscore
@@ -66,8 +82,14 @@ data Token
   | TokOrB
   | TokPercent
   | TokNum String
+  | TokMatch
+  | TokWith
+  | TokEnd
   | TokInductive
   | TokTheorem
+  | TokDefinition
+  | TokFixpoint
+  | TokStruct
   | TokProof
   | TokQed
   deriving (Eq,Show)
