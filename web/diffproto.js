@@ -1,4 +1,17 @@
 
+var width = 1580;
+var height = 800;
+var nodeWidth = 600;
+
+var red   = "#DD9999";
+var green = "#99DD99";
+var blue  = "#9999DD";
+var redStroke   = red;
+var greenStroke = green;
+var blueStroke  = blue;
+var strokeWidth = 2;
+var opacity = 1;
+
 function avg(n1, n2) { return (n1 + n2) / 2; }
 
 function mkDot(x, y) { return {"x": x, "y": y}; }
@@ -84,19 +97,6 @@ function spotTheDifferences(before, after) {
     return {"removed": removed, "added": added};
 }
 
-var width = 1580;
-var height = 820;
-var nodeWidth = 600;
-
-var red   = "#DD9999";
-var green = "#99DD99";
-var blue  = "#9999DD";
-var redStroke   = red;
-var greenStroke = green;
-var blueStroke  = blue;
-var strokeWidth = 2;
-var opacity = 1;
-
 function nodeX(d) {
     if (isGoal(d)) {
         return d.y * (width - nodeWidth);
@@ -131,7 +131,7 @@ $(document).ready(function() {
         })
     ;
 
-    var nodes = tree.nodes(rootNode);
+    var nodes = tree.nodes(rootNode3);
     var links = tree.links(nodes);
     var diagonal = d3.svg
         .diagonal()
