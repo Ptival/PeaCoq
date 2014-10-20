@@ -1,7 +1,16 @@
-rooster
-=======
+PeaCoq
+======
 
-Current dependencies:
+TODO
+----
+- rename rooster into peacoq everywhere!
+- build a parser/printer for .v files
+- figure out logging
+- implement the new diff
+- build a way to have a proofgeneral-y mode
+
+Current dependencies
+--------------------
 - d3
 - jquery
 - jquery-ui
