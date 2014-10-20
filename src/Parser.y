@@ -49,6 +49,7 @@ num { TokNum $$ }
 ":=" { TokColonEq }
 "::" { TokCons }
 "[]" { TokNil }
+"++" { TokAppend }
 "match" { TokMatch }
 "with" { TokWith }
 "end" { TokEnd }
@@ -64,6 +65,7 @@ num { TokNum $$ }
 %right '→'
 %left '∧' '∨'
 %nonassoc '=' '≠'
+%right "++"
 %right "::"
 %left "&&" "||"
 %left '+' '-'
@@ -102,6 +104,7 @@ Term :: { Term }
 | Term "&&" Term                                   { App (App (Var "andb")  $1) $3 }
 | Term "||" Term                                   { App (App (Var "orb")   $1) $3 }
 | Term "::" Term                                   { App (App (Var "cons")  $1) $3 }
+| Term "++" Term                                   { App (App (Var "app")   $1) $3 }
 | "[]"                                             { Var "nil" }
 | Term '%' var                                     { $1 }
 | Term Term %prec var                              { App $1 $2 }

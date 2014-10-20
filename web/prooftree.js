@@ -2030,6 +2030,7 @@ var precForall = precedence++;
 var precArrow  = precedence++;
 var precAnd    = precedence++; var precOr = precAnd;
 var precEqual  = precedence++; var precNotEqual = precEqual;
+var precAppend = precedence++;
 var precCons   = precedence++;
 var precAndB   = precedence++; var precOrB = precAndB;
 var precPlus   = precedence++; var precMinus = precPlus;
@@ -2113,7 +2114,7 @@ function showVernac(t) {
                 return acc + syntax("(") + elt + syntax(")") + nbsp; }, "")
             + type
             + syntax(":=")
-            + "<br>"
+            + "<br>" + getIndent(1)
             + term
             + syntax(".")
         ;
@@ -2140,7 +2141,7 @@ function showVernac(t) {
             )
             + type
             + syntax(":=")
-            + "<br>"
+            + "<br>" + getIndent(1)
             + term
             + syntax(".")
         ;
@@ -2279,6 +2280,9 @@ function showTermAux(t, indentation, precParent, newline) {
 
             case "cons":
                 return showOp(c, "::", precCons);
+
+            case "app":
+                return showOp(c, "++", precAppend);
 
             default:
                 // nothing, fall through

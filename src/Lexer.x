@@ -39,6 +39,7 @@ tokens :-
   \|            { \s -> TokPipe }
   \|\|          { \s -> TokOrB }
   \%            { \s -> TokPercent }
+  \+\+          { \s -> TokAppend }
   "match"       { \s -> TokMatch }
   "with"        { \s -> TokWith }
   "end"         { \s -> TokEnd }
@@ -81,6 +82,7 @@ data Token
   | TokAndB
   | TokOrB
   | TokPercent
+  | TokAppend
   | TokNum String
   | TokMatch
   | TokWith

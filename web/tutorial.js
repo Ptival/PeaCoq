@@ -95,6 +95,50 @@ function stackMachine(add) {
     ));
 
     add(mkCoq(
+        "Fixpoint progDenote (p : prog) (s : stack) : option stack :="
+            + "\n  match p with"
+            + "\n    | nil => Some s"
+            + "\n    | i :: p' =>"
+            + "\n      match instrDenote i s with"
+            + "\n        | None => None"
+            + "\n        | Some s' => progDenote p' s'"
+            + "\n      end"
+            + "\n  end."
+    ));
+
+    add(mkCoq(
+        "Fixpoint compile (e : exp) : prog :="
+            + "\n  match e with"
+            + "\n    | Const n => iConst n :: nil"
+            + "\n    | Binop b e1 e2 => compile e2 ++ compile e1 ++ iBinop b :: nil"
+            + "\n  end."
+    ));
+
+    add(mkCoq(
+        "Eval simpl in compile (Const 42)."
+    ));
+
+    add(mkCoq(
+        "Eval simpl in compile (Binop Plus (Const 2) (Const 2))."
+    ));
+
+    add(mkCoq(
+        "Eval simpl in compile (Binop Times (Binop Plus (Const 2) (Const 2)) (Const 7))."
+    ));
+
+    add(mkCoq(
+        "Eval simpl in progDenote (compile (Const 42)) nil."
+    ));
+
+    add(mkCoq(
+        "Eval simpl in progDenote (compile (Binop Plus (Const 2) (Const 2))) nil."
+    ));
+
+    add(mkCoq(
+        "Eval simpl in progDenote (compile (Binop Times (Binop Plus (Const 2) (Const 2)) (Const 7))) nil."
+    ));
+
+    add(mkCoq(
         ""
     ));
 
