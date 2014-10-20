@@ -50,14 +50,14 @@ instance ToJSON r => ToJSON (CoqtopResponse r) where
 instance Default r => Default (CoqtopResponse r) where
   def = Fail def
 
-data RoosterResponse
-  = MkRoosterResponse
+data PeaCoqResponse
+  = MkPeaCoqResponse
     { rGoals :: Goals
     , rResponse :: CoqtopResponse [String]
     }
   deriving (Generic)
 
-instance ToJSON RoosterResponse where
+instance ToJSON PeaCoqResponse where
 
 data Theorem
   = MkTheorem
