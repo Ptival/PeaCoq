@@ -3,7 +3,6 @@ PeaCoq
 
 TODO
 ----
-- rename rooster into peacoq everywhere!
 - build a parser/printer for .v files
 - figure out logging
 - implement the new diff

@@ -67,14 +67,14 @@ PT.tDiscriminate = PT.tSet.slice(0, 1 + PT.tSet.indexOf('discriminate'));
 PT.tCompute = PT.tReflexivity.concat(['compute']);
 
 // [width] and [height] are the wanted ones, it might end up slightly smaller
-function ProofTree(anchor, width, height, qed, roosterDir, onError) {
+function ProofTree(anchor, width, height, qed, peacoqDir, onError) {
 
     var self = this;
 
     this.anchor = anchor;
     this.qedCallback = qed;
     this.onError = onError;
-    this.roosterDir = (typeof roosterDir === "undefined") ? "./" : roosterDir + "/";
+    this.peacoqDir = (typeof peacoqDir === "undefined") ? "./" : peacoqDir + "/";
 
     this.svgId = _.uniqueId();
 
@@ -222,7 +222,7 @@ function ProofTree(anchor, width, height, qed, roosterDir, onError) {
 
     this.svg
         .insert("script", ":first-child")
-        .attr("xlink:href", this.roosterDir + "SVGPan.js")
+        .attr("xlink:href", this.peacoqDir + "SVGPan.js")
     ;
 
 }
@@ -1442,7 +1442,7 @@ ProofTree.prototype.syncRequest = function(r, q, h) {
     if (r === 'query') { console.log(q); }
     $.ajax({
         type: 'POST',
-        url: this.roosterDir + r,
+        url: this.peacoqDir + r,
         data: {query : q},
         async: false,
         success: function(response) {

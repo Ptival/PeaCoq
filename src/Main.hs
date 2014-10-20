@@ -29,7 +29,7 @@ import           System.Random
 import           CoqTypes
 import           Coqtop
 import           Parser
-import           Rooster
+import           PeaCoq
 
 data GlobalState
   = GlobalState
@@ -43,9 +43,9 @@ data SessionState
     (Handle, Handle) -- I/O handles
     ProcessHandle    -- useful to kill the process
 
-type RoosterHandler = Handler Rooster Rooster ()
+type PeaCoqHandler = Handler PeaCoq PeaCoq ()
 
-type HandledRoosterHandler = Handle -> Handle -> RoosterHandler
+type HandledPeaCoqHandler = Handle -> Handle -> PeaCoqHandler
 
 sessionTimeoutSeconds :: Int
 sessionTimeoutSeconds = 3600
@@ -57,7 +57,7 @@ main :: IO ()
 main = do
   globRef <- newIORef $ GlobalState 0 IM.empty
   forkIO $ cleanStaleSessions globRef
-  serveSnaplet defaultConfig $ roosterSnaplet globRef
+  serveSnaplet defaultConfig $ peacoqSnaplet globRef
 
 log :: String -> IO ()
 log m = do
@@ -105,8 +105,8 @@ sessionKey = "key"
 
 withSessionHandles ::
   IORef GlobalState
-  -> HandledRoosterHandler
-  -> RoosterHandler
+  -> HandledPeaCoqHandler
+  -> PeaCoqHandler
 withSessionHandles r h = withSession lSession $ do
   -- retrieve or create a key for this session
   mapKey <- with lSession $ do
@@ -142,21 +142,21 @@ withSessionHandles r h = withSession lSession $ do
     updateTouchSession mapKey (GlobalState c m) =
       (GlobalState c (IM.adjust touchSession mapKey m), c)
 
-roosterSnaplet :: IORef GlobalState -> SnapletInit Rooster Rooster
-roosterSnaplet globRef = makeSnaplet "Rooster" "Rooster" Nothing $ do
+peacoqSnaplet :: IORef GlobalState -> SnapletInit PeaCoq PeaCoq
+peacoqSnaplet globRef = makeSnaplet "PeaCoq" "PeaCoq" Nothing $ do
   s <- nestSnaplet "session" lSession cookieSessionManager
-  addRoutes roosterRoutes
-  return $ Rooster s
+  addRoutes peacoqRoutes
+  return $ PeaCoq s
   where
-    cookieSessionManager :: SnapletInit Rooster SessionManager
-    cookieSessionManager = initCookieSessionManager "encryption_key" "rooster_session" Nothing
-    myDirConfig :: DirectoryConfig (Handler Rooster Rooster)
+    cookieSessionManager :: SnapletInit PeaCoq SessionManager
+    cookieSessionManager = initCookieSessionManager "encryption_key" "peacoq_session" Nothing
+    myDirConfig :: DirectoryConfig (Handler PeaCoq PeaCoq)
     myDirConfig =
       defaultDirectoryConfig {
         mimeTypes = HM.map (\m -> append m "; charset=utf-8") defaultMimeTypes
         }
-    roosterRoutes :: [(ByteString, RoosterHandler)]
-    roosterRoutes =
+    peacoqRoutes :: [(ByteString, PeaCoqHandler)]
+    peacoqRoutes =
       map (\(r, handler) -> (r, withSessionHandles globRef handler))
       [ ("query",            queryHandler)
       , ("queryundo",        queryUndoHandler)
@@ -172,12 +172,12 @@ roosterSnaplet globRef = makeSnaplet "Rooster" "Rooster" Nothing $ do
       [ ("/",                serveDirectoryWith myDirConfig "web/")
       ]
 
-respond :: CoqtopResponse [String] -> HandledRoosterHandler
+respond :: CoqtopResponse [String] -> HandledPeaCoqHandler
 respond response hi ho = do
   goals <- liftIO $ hQueryGoal hi ho
-  writeJSON $ MkRoosterResponse goals response
+  writeJSON $ MkPeaCoqResponse goals response
 
-parseHandler :: HandledRoosterHandler
+parseHandler :: HandledPeaCoqHandler
 parseHandler _ _ = do
   param <- getParam "query"
   case param of
@@ -186,7 +186,7 @@ parseHandler _ _ = do
       let response = parseVernac $ toString queryBS
       writeJSON response
 
-parseEvalHandler :: HandledRoosterHandler
+parseEvalHandler :: HandledPeaCoqHandler
 parseEvalHandler _ _ = do
   param <- getParam "query"
   case param of
@@ -195,7 +195,7 @@ parseEvalHandler _ _ = do
       let response = parseEval $ toString queryBS
       writeJSON response
 
-queryHandler :: HandledRoosterHandler
+queryHandler :: HandledPeaCoqHandler
 queryHandler hi ho = do
   param <- getParam "query"
   case param of
@@ -209,7 +209,7 @@ queryHandler hi ho = do
         hForceValueResponse ho
       respond response hi ho
 
-queryUndoHandler :: HandledRoosterHandler
+queryUndoHandler :: HandledPeaCoqHandler
 queryUndoHandler hi ho = do
   param <- getParam "query"
   case param of
@@ -230,19 +230,19 @@ queryUndoHandler hi ho = do
             liftIO $ hForceValueResponse ho
             return ()
 
-undoHandler :: HandledRoosterHandler
+undoHandler :: HandledPeaCoqHandler
 undoHandler hi ho = do
   liftIO $ hCall hi [("val", "rewind"), ("steps", "1")] ""
   r <- liftIO $ hForceValueResponse ho
   respond r hi ho
 
-statusHandler :: HandledRoosterHandler
+statusHandler :: HandledPeaCoqHandler
 statusHandler hi ho = do
   liftIO $ hCall hi [("val", "status")] ""
   r <- liftIO $ hForceStatusResponse ho
   respond (return . show <$> r) hi ho
 
-rewindHandler :: HandledRoosterHandler
+rewindHandler :: HandledPeaCoqHandler
 rewindHandler hi ho = do
   param <- getParam "query"
   case param of
@@ -252,13 +252,13 @@ rewindHandler hi ho = do
       r <- liftIO $ hForceValueResponse ho
       respond (return . show <$> r) hi ho
 
-qedHandler :: HandledRoosterHandler
+qedHandler :: HandledPeaCoqHandler
 qedHandler hi ho = do
   liftIO $ hInterp hi "Qed."
   r <- liftIO $ hForceValueResponse ho
   respond r hi ho
 
-togglePrintingAll :: Bool -> HandledRoosterHandler
+togglePrintingAll :: Bool -> HandledPeaCoqHandler
 togglePrintingAll b hi ho = do
   let query =
         "<call id=\"0\" val=\"setoptions\">"
