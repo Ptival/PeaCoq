@@ -18,11 +18,6 @@ function mkDot(x, y) { return {"x": x, "y": y}; }
 
 function showDot(d) { return d.x + " " + d.y; }
 
-function midDot(d1, d2) { return mkDot(avg(d1.x, d2.x), avg(d1.y, d2.y)); }
-
-function shiftLeft(d, n) { return mkDot(d.x - n, d.y); }
-function shiftRight(d, n) { return mkDot(d.x + n, d.y); }
-
 function connectRects(r1, r2, rightsLeft) {
     if (rightsLeft === undefined) { rightsLeft = r2.left; }
     var a = mkDot(r1.left, r1.top);

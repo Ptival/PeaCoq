@@ -12,20 +12,28 @@
 window.PT = {};
 
 // CONFIGURATION
-var nodeMinSpacing = 5;
+var nodeVSpacing = 10;
 var nodeStroke = 2;
 var rectMargin = {top: 2, right: 8, bottom: 2, left: 8};
 var nbDisplayedTactics = +Infinity;
 var nbDisplayedGoals   = +Infinity; // per displayed tactic
-var nbVisibleTactics = 1;
-var nbVisibleGoals   = 2; // per focused tactic
-var animationDuration = 420;
+var nbVisibleTactics = +Infinity;
+var nbVisibleGoals   = +Infinity; // per focused tactic
+var animationDuration = 500;
 var tacticNodeRounding = 10;
 var goalNodeRounding = 0;
-var tacticNodeWidth = 250;
+var goalNodeWidth = 540;
+var tacticNodeMaxWidth = 140;
 $(document).ready(function() {
     setupTextareaResizing();
 });
+var diffRed   = "#EE8888";
+var diffGreen = "#88EE88";
+var diffBlue  = "#8888EE";
+var diffOpacity = 1;
+var redStroke   = diffRed;
+var greenStroke = diffGreen;
+var blueStroke  = diffBlue;
 
 // CHECKS
 function assert(condition, message) {
@@ -40,7 +48,6 @@ assert(nbDisplayedGoals >= nbVisibleGoals, "Make sure: nbDisplayedGoals >= nbVis
 // COMPUTED GLOBALS
 var activeProofTree = undefined;
 var maxVisibleNodesOnLine = nbVisibleTactics * nbVisibleGoals;
-var diagonal = d3.svg.diagonal();
 
 // These tactic sets each build on top of the previous one
 PT.tSet = [
@@ -54,6 +61,7 @@ PT.tSet = [
     'inversion',
     'left',
     'right',
+    'split',
     'discriminate',
 ];
 PT.tReflexivity  = PT.tSet.slice(0, 1 + PT.tSet.indexOf('reflexivity'));
@@ -66,58 +74,66 @@ PT.tDiscriminate = PT.tSet.slice(0, 1 + PT.tSet.indexOf('discriminate'));
 // These ones are more specific
 PT.tCompute = PT.tReflexivity.concat(['compute']);
 
-// [width] and [height] are the wanted ones, it might end up slightly smaller
-function ProofTree(anchor, width, height, qed, peacoqDir, onError) {
+/*
+  The following DOM is constructed from the given anchor:
+
+anchor
+`- div id="pt-n"
+|  `- svg id="svg-n"
+|     `- script xhref="SVGPan.js"
+|     `- g id="viewport"            pannable and zoomable (SVGPan.js)
+|     |  `- g id="link-layer"
+|     |  `- g id="rect-layer"
+|     |  `- g id="diff-layer"
+|     |  `- g id="text-layer"
+|     `- context
+|     `- debug
+`- div id="proof-n"
+`- div id="error-n"
+
+*/
+function ProofTree(anchor, width, height, qedCallback, peacoqDir, onError) {
 
     var self = this;
 
     this.anchor = anchor;
-    this.qedCallback = qed;
-    this.onError = onError;
+    this.width = width;
+    this.height = height;
+    this.qedCallback = qedCallback;
     this.peacoqDir = (typeof peacoqDir === "undefined") ? "./" : peacoqDir + "/";
-
-    this.svgId = _.uniqueId();
+    this.onError = onError;
 
     this.animationRunning = false;
-
-    this.bottomNodeWidth = evenFloor(
-        (width
-         - ((maxVisibleNodesOnLine - 1) * nodeMinSpacing)
-        ) / maxVisibleNodesOnLine
-    );
-
-    this.rootNodeWidth = width / 2;
-
-    this.width = width;
-        /*
-        maxVisibleNodesOnLine * this.bottomNodeWidth
-        + (maxVisibleNodesOnLine - 1) * nodeMinSpacing;
-        */
-    this.height = height;
+    this.svgId = _.uniqueId();
     this.xFactor = this.width;
     this.yFactor = this.height;
 
     this.tree = d3.layout.tree()
         .children(function(d) {
             if (d.solved) { return []; }
-            return d.displayedChildren;
+            if (d.collapsed) {
+                // if d is collapsed, we only return an ancestor of the current node
+                return _(d.allChildren)
+                    .filter(self.isCurNodeAncestor.bind(self))
+                    .value()
+                ;
+            }
+            return d.allChildren;
+
         })
-        .separation(function(n1, n2) {
-            if (self.isCurNodeChild(n1) && self.isCurNodeChild(n2)) { return 1; }
-            if (self.isCurNodeGrandChild(n1) && self.isCurNodeGrandChild(n2)) { return 1; }
-            return 1;
+        .separation(function(d) {
+            return 1 / (d.depth + 1);
         })
+    ;
+
+    this.diagonal = d3.svg
+        .diagonal()
+        .projection(function(d) { return [d.y, d.x]; })
     ;
 
     this.div = anchor
         .insert("div", ":first-child")
         .attr("id", "pt-" + this.svgId)
-/*
-        .on("click", function() {
-            // TODO: suspend the activeProofTree
-            makeActive(self);
-        })
-*/
     ;
 
     this.svg = this.div
@@ -127,98 +143,21 @@ function ProofTree(anchor, width, height, qed, peacoqDir, onError) {
         .attr("height", this.height)
     ;
 
-    this.proofDiv =
-        anchor
-        .append("div")
-        .attr("id", "proof-" + this.svgId)
-        .style("font-family", "monospace")
-        .style("margin", "10px")
-    ;
-
-    this.error =
-        anchor
-        .append("div")
-        .attr("id", "error-" + this.svgId)
-        .style("font-family", "monospace")
-        .style("margin", "10px")
-        .style("background-color", "red")
-        .style("display", "none")
-    ;
-
-    this.canvas =
+    this.viewport =
         this.svg
         .append("g")
-        .attr("id", "viewport") // for SVGPan
-        .attr("class", "canvas")
-    // an okay approximation of the canvas initial translation
+        .attr("id", "viewport") // for SVGPan.js
+        .attr("class", "viewport")
         .attr("transform",
-              "translate("
-              + this.width / maxVisibleNodesOnLine
-              + ", "
-              + 0
-              + ")"
+              "translate(" + goalNodeWidth + ", " + 0 + ")"
              )
     ;
 
-    this.context =
-        this.svg
-        .append("g")
-        .attr("class", "context")
-    // disabled for now
-        .style("display", "none")
-    ;
-
-    var contextWidth = (this.width - tacticNodeWidth) / 2 - nodeMinSpacing;
-    var contextHeight;
-
-    this.context
-        .append("foreignObject")
-        .attr('x', rectMargin.left)
-        .attr("width", contextWidth - rectMargin.left - rectMargin.right)
-        .append("xhtml:body")
-        .style("background-color", "rgba(0, 0, 0, 0)")
-        .html('<div class="node"><p>Empty context</p></div>')
-    // now retrieve the computed height of the div
-        .attr("height", function() {
-            contextHeight = this.firstChild.getBoundingClientRect().height;
-            return contextHeight;
-        })
-    ;
-
-    this.context
-        .insert("rect", ":first-child")
-        .attr("width", contextWidth)
-        .attr("height", contextHeight)
-    ;
-
-    this.debug =
-        this.svg
-        .append("g")
-        .attr("class", "debug")
-    ;
-
-    var debugWidth = (this.width - tacticNodeWidth) / 2 - nodeMinSpacing;
-    var debugHeight;
-
-    this.debug
-        .append("foreignObject")
-        .attr('x', this.width - debugWidth + rectMargin.left)
-        .attr("width", debugWidth - rectMargin.left - rectMargin.right)
-        .append("xhtml:body")
-        .style("background-color", "rgba(0, 0, 0, 0)")
-        .html('<div class="node"><p>No debug information</p></div>')
-        .attr("height", function() {
-            debugHeight = this.firstChild.getBoundingClientRect().height
-            return debugHeight;
-        })
-    ;
-
-    this.debug
-        .insert("rect", ":first-child")
-        .attr("x", this.width - debugWidth)
-        .attr("width", debugWidth)
-        .attr("height", debugHeight)
-    ;
+    // Note : the order of these influence the display: first = bottom, last = top
+    this.linkLayer = this.viewport.append("g").attr("id", "link-layer");
+    this.rectLayer = this.viewport.append("g").attr("id", "rect-layer");
+    this.diffLayer = this.viewport.append("g").attr("id", "diff-layer");
+    this.textLayer = this.viewport.append("g").attr("id", "text-layer");
 
     this.svg
         .insert("script", ":first-child")
@@ -242,6 +181,138 @@ PT.handleKeyboard = function() {
     ;
 }
 
+function avg(n1, n2) { return (n1 + n2) / 2; }
+
+function mkDot(x, y) { return {"x": x, "y": y}; }
+
+function showDot(d) { return d.x + " " + d.y; }
+
+function connectRects(r1, r2, rightsLeft) {
+//console.log("rect1", r1, "rect2", r2);
+    if (rightsLeft === undefined) { rightsLeft = r2.left; }
+    var a = mkDot(r1.left, r1.top);
+    var b = mkDot(r1.right, r1.top);
+    var c = mkDot(rightsLeft, r2.top);
+    var d = mkDot(r2.right, r2.top);
+    var e = mkDot(r2.right, r2.bottom);
+    var f = mkDot(rightsLeft, r2.bottom);
+    var g = mkDot(r1.right, r1.bottom);
+    var h = mkDot(r1.left, r1.bottom);
+
+    var cp1 = mkDot(avg(b.x, c.x), b.y);
+    var cp2 = mkDot(avg(f.x, g.x), c.y);
+    var cp3 = mkDot(avg(f.x, g.x), f.y);
+    var cp4 = mkDot(avg(f.x, g.x), g.y);
+/*
+console.log("M", a,
+    (
+        "M" + showDot(a)
+            + "L" + showDot(b)
+            + "C" + showDot(cp1) + "," + showDot(cp2) + "," + showDot(c)
+            + "L" + showDot(d) + "," + showDot(e) + "," + showDot(f)
+            + "C" + showDot(cp3) + "," + showDot(cp4) + "," + showDot(g)
+            + "L" + showDot(h)
+            + "Z"
+    )
+);
+*/
+    return (
+        "M" + showDot(a)
+            + "L" + showDot(b)
+            + "C" + showDot(cp1) + "," + showDot(cp2) + "," + showDot(c)
+            + "L" + showDot(d) + "," + showDot(e) + "," + showDot(f)
+            + "C" + showDot(cp3) + "," + showDot(cp4) + "," + showDot(g)
+            + "L" + showDot(h)
+            + "Z"
+    );
+}
+
+function deltaX(rect1, rect2) { return rect2.left - rect1.left; }
+function deltaY(rect1, rect2) { return rect2.top - rect1.top; }
+
+function spotTheDifferences(before, after) {
+
+    var removed = [];
+    var added = [];
+
+    function rec(before, after) {
+
+        var nbBefore = before.children().length;
+        var nbAfter  =  after.children().length;
+        if (nbBefore !== nbAfter) {
+            removed.push(before);
+            added.push(after);
+            return;
+        }
+
+        var nbChildren = nbBefore;
+        if (nbChildren === 0) { // both leaves
+            if (before.html() !== after.html()) {
+                removed.push(before);
+                added.push(after);
+            }
+            return;
+        }
+
+        for (var i in _.range(nbChildren)) {
+            rec($(before.children()[i]), $(after.children()[i]));
+        }
+
+    }
+
+    rec($(before), $(after));
+
+    return {"removed": removed, "added": added};
+}
+
+// creates an empty rectangle in the same column as [node], at vertical position [currentY]
+function emptyRect(node, currentY) {
+    var delta = 1; // how big to make the empty rectangle
+    return $.extend(
+        {"left": node.cX, "right": node.cX + node.width, "width": node.width},
+        {"top": currentY - delta, "bottom": currentY + delta, "height": 2 * delta}
+    );
+}
+
+function byNodeId(d) { return d.id; }
+
+function byLinkId(d) { return d.source.id + "," + d.target.id; }
+
+function nodeX(d) { return d.y; }
+
+function nodeY(d) { return d.x; }
+
+ProofTree.prototype.xOffset = function(d) {
+    return - d.width / 2; // position the center
+}
+
+ProofTree.prototype.yOffset = function(d) {
+    var offset = - d.height / 2;
+    if (this.isCurNodeChild(d) || this.isCurNodeGrandChild(d)) {
+        return offset + this.descendantsOffset;
+    } else {
+        return offset;
+    }
+}
+
+var centerLeftOffset  = +10;
+
+var centerRightOffset = -10;
+
+function centerLeft0(d) { return {"x": d.cX0 + centerLeftOffset, "y": d.cY0 + d.height / 2}; }
+
+function centerRight0(d) {
+    return {"x": d.cX0 + d.width + centerRightOffset, "y": d.cY0 + d.height / 2};
+}
+
+function centerLeft(d) { return {"x": d.cX + centerLeftOffset, "y": d.cY + d.height / 2}; }
+
+function centerRight(d) {
+    return {"x": d.cX + d.width + centerRightOffset, "y": d.cY + d.height / 2};
+}
+
+function swapXY(r) { return {"x": r.y, "y": r.x}; }
+
 function nbDisplayedChildren(d) {
     return isGoal(d) ? nbVisibleTactics : nbVisibleGoals;
 }
@@ -252,31 +323,40 @@ function nbVisibleChildren(d) {
 
 function parseSVGTransform(a) {
     var b = {};
-    for (var i in a = a.match(/(\w+\((\-?\d+\.?\d*,?)+\))+/g)) {
+    for (var i in a = a.match(/(\w+\((\-?\d+\.?\d*,? ?)+\))+/g)) {
         var c = a[i].match(/[\w\.\-]+/g);
         b[c.shift()] = c;
     }
     return b;
 }
 
+function SVGTransformX(elt) {
+    var t = parseSVGTransform(elt.attr("transform"));
+console.log("X after parse", t.translate);
+    if (t.hasOwnProperty("matrix")) {
+        return + t.matrix[4];
+    } else if (t.hasOwnProperty("translate")) {
+        return + t.translate[0];
+    } else {
+        console.log("Could not parse SVG transform", elt, t);
+    }
+}
+
+function SVGTransformY(elt) {
+    var t = parseSVGTransform(elt.attr("transform"));
+console.log("Y after parse", t.translate);
+    if (t.hasOwnProperty("matrix")) {
+        return + t.matrix[5];
+    } else if (t.hasOwnProperty("translate")) {
+        return + t.translate[1];
+    } else {
+        console.log("Could not parse SVG transform", elt, t);
+    }
+}
+
 function evenFloor(x) {
     var r = Math.floor(x);
     return (r % 2 === 0) ? r : r - 1;
-}
-
-ProofTree.prototype.nodeWidth = function(d) {
-    if (isTactic(d)) { return tacticNodeWidth; }
-    return (this.isRootNode(d))
-        ? this.rootNodeWidth
-        : this.bottomNodeWidth
-    ;
-}
-
-function treeDepth(root) {
-    return (root.displayedChildren.length > 0)
-        ? 1 + _(root.displayedChildren).map(treeDepth).max()
-        : 0
-    ;
 }
 
 ProofTree.prototype.newTheorem = function(
@@ -292,20 +372,7 @@ ProofTree.prototype.newTheorem = function(
     this.tactics = tactics;
 
     // hide previous proof result if any, show svg if hidden
-    this.proofDiv.style("display", "none");
     this.svg.style("display", "");
-
-    // reinitialize the viewport to a satisfying location
-    this.canvas
-        .attr("class", "canvas")
-        .attr("transform",
-              "translate("
-              + this.width / maxVisibleNodesOnLine
-              + ", "
-              + 0
-              + ")"
-             )
-    ;
 
     this.rootNode = undefined; // will be reset in hInit callback, prevents stale uses
 
@@ -323,6 +390,7 @@ function mkNode(parent, name, pName, moreFields) {
     return $.extend(
         {
             "id": _.uniqueId(),
+            "allChildren": [],
             "name": name,
             "pName": pName, // for debugging purposes
             // we preemptively fill the parent and depth fields because d3 will only fill
@@ -330,8 +398,9 @@ function mkNode(parent, name, pName, moreFields) {
             // before a node has ever been visible
             "parent": parent,
             "depth": parent.depth + 1,
-            "offset": 0,
+            "focusIndex": 0,
             "solved": false,
+            "collapsed": false, // nodes need to be created uncollapsed so that D3 registers them
         },
         moreFields
     );
@@ -346,7 +415,6 @@ function mkGoalNode(parent, g, ndx) {
             "hyps": g.gHyps,
             "ndx": ndx + 1,
             "gid": g.gId,
-            "displayedChildren": [], // will be filled later
         }
     );
 }
@@ -364,7 +432,6 @@ function mkTacticNode(depth, tactic, goals) {
         n,
         {
             "allChildren": children,
-            "displayedChildren": children.slice(0, nbDisplayedGoals),
             "terminating": _(children).isEmpty(),
         }
     );
@@ -503,38 +570,29 @@ ProofTree.prototype.hInit = function(response, preAnimCallback, postAnimCallback
 
         this.onError(this, response.rResponse.contents);
 
-/*
-        this.error.text(response.rResponse.contents);
-        this.svg.style("display", "none");
-        this.proofDiv.style("display", "none");
-        this.error.style("display", "");
-*/
-
         return false;
     }
-    this.error.style("display", "none");
 
     // There should only be one goal at that point
     this.rootNode = {
         "id": _.uniqueId(),
         "name": response.rGoals.focused[0].gGoal,
         "pName": showTermText(response.rGoals.focused[0].gGoal),
-        "x0": 0.5,
-        "y0": 0,
+        "x0": 0,
+        "y0": 0.5,
         "allChildren": [], // will be filled once this.curNode is set
         "ndx": 1,
         "depth": 0, // need to set depth for isGoal() to work early
-        "offset": 0,
+        "focusIndex": 0,
         "hyps": [],
-        "displayedChildren": [], // will be filled after allChildren is computed
+        "collapsed": false,
     };
 
     this.curNode = this.rootNode;
 
     this.rootNode.allChildren = this.tryAllTactics();
-    this.rootNode.displayedChildren = this.rootNode.allChildren.slice(0, nbDisplayedTactics);
 
-    this.update(this.rootNode);
+    this.update();
 
     preAnimCallback(self);
 
@@ -582,552 +640,609 @@ ProofTree.prototype.isCurNodeAncestor = function(n) {
     return common.id === n.id;
 }
 
-function getVisibleChildren(n) {
-    return n.displayedChildren.slice(n.offset, n.offset + nbVisibleChildren(n));
+function getChildren(n) {
+    return n.allChildren;
 }
 
-function getVisibleGrandChildren(n) {
-    return _(getVisibleChildren(n))
-        .map(getVisibleChildren)
+function getGrandChildren(n) {
+    return _(getChildren(n))
+        .map(getChildren)
         .flatten()
         .value()
     ;
 }
 
-ProofTree.prototype.update = function(source, callback) {
+ProofTree.prototype.resetSVGTransform = function() {
+    var m = parseSVGTransform(this.viewport.attr('transform'));
+    if (m.hasOwnProperty('matrix')) {
+        m = m.matrix;
+        this.viewport.attr('transform',
+                    'matrix(1' + ',' + m[1] + ',' + m[2]
+                    + ', 1' + ',' + m[4] + ',' + m[5] +')')
+        ;
+    }
+}
+
+ProofTree.prototype.update = function(callback) {
+
     var self = this;
-    var curNode = this.curNode; // expected to stay constant throughout
+
+    // shorter name, expected to stay constant throughout
+    var curNode = this.curNode;
 
     // if the viewpoint has been zoomed, cancel the zoom so that the computed
     // sizes are correct
-    var m = parseSVGTransform(this.canvas.attr('transform'));
-    if (m.hasOwnProperty('matrix')) {
-        m = m.matrix;
-        this.canvas.attr('transform',
-                    'matrix(1'
-                    + ',' + m[1]
-                    + ',' + m[2]
-                    + ', 1'
-                    + ',' + m[4]
-                    + ',' + m[5]
-                    +')')
-        ;
-    }
+    this.resetSVGTransform();
 
     var nodes = this.tree.nodes(this.rootNode);
-
     var links = this.tree.links(nodes);
 
-    var node =
-        this.canvas
-        .selectAll("g.node")
-        .data(nodes, function(d) {
-            return d.id || (d.id = _.uniqueId());
-        })
+    // we build the foreignObject first, as its dimensions will guide the others
+    var textSelection = this.textLayer
+        .selectAll(function() { return this.getElementsByTagName("foreignObject"); })
+        .data(nodes, function(d) { return d.id || (d.id = _.uniqueId()); })
     ;
 
-    var link =
-        this.canvas
-        .selectAll("path")
-        .data(links, function(d) {
-            return d.id = d.source.id + "," + d.target.id;
-        });
-
-    var nodeEnter = node.enter();
-
-    var gs = nodeEnter
-        .append("g")
-        .attr("class", "node")
-        .on("click", function(d) {
-            self.click(d)
-        })
-    ;
-
-    var fo =
-        gs
+    var textEnter = textSelection.enter()
         .append("foreignObject")
+        .classed("monospace", true)
+    // the goal nodes need to be rendered at fixed width goalNodeWidth
+    // the tactic nodes will be resized to their actual width later
         .attr("width", function(d) {
-            return self.nodeWidth(d) - rectMargin.left - rectMargin.right;
+            return isGoal(d) ? goalNodeWidth : tacticNodeMaxWidth;
         })
     ;
 
-    fo
+    textEnter
         .append("xhtml:body")
+        .style("padding", function(d) {
+            return isGoal(d) ? "4px" : "4px 0px";
+        })
         .style("background-color", "rgba(0, 0, 0, 0)")
         .each(function(d) {
-
             var jqObject = $(d3.select(this).node());
-            var jQDiv = $("<div>").addClass("node");
-            jqObject.append(jQDiv);
-            var fo = d3.select(this);
-
-            // TODO: this jquery/d3 business is ugly, fix it somehow
-            self.computeDiff(fo, jQDiv, d);
-
+            var jQContents;
+            if (isTactic(d)) {
+                d.span = $("<span>")
+                    .addClass("tacticNode")
+                    .css("padding", "4px")
+                    .text(d.pName);
+                jQContents = d.span;
+            } else {
+                jQContents = $("<div>").addClass("goalNode");
+                _(d.hyps).each(function(h) {
+                    var jQDiv = $("<div>")
+                        .html(PT.showHypothesis(h))
+                        .attr("id", _.uniqueId())
+                    ;
+                    h.div = jQDiv[0];
+                    jQContents.append(h.div);
+                });
+                jQContents.append($("<hr>"));
+                d.goalSpan = $("<span>").html(showTerm(d.name));
+                jQContents.append(d.goalSpan);
+            }
+            jqObject.append(jQContents);
         })
-    ;
-
-    node
-        .select(".ctxt")
-        .style("display", function(d) {
-            return self.isCurNode(d) ? "" : "none";
-        })
-    ;
-
-    node
-        .select(".diff")
-        .style("display", function(d) {
-            return self.isCurNode(d) ? "none" : "";
-        })
-    ;
-
-    // now we need to update the foreignObject height (it changes depending on whether the
-    // context or the diff is displayed)
-    node
-        .selectAll(function() {
-            return this.getElementsByTagName("foreignObject");
-        })
-        .attr("height", function(d) {
-            var h = this.firstChild.getBoundingClientRect().height;
-            d.height = h + 2 * nodeStroke;
-            return h;
-        })
-        .attr("transform", function(d) {
-            return 'translate(-'
-                + ((self.nodeWidth(d) / 2) - rectMargin.left)
-                + ', -'
-                + ((d.height / 2) - rectMargin.top)
-                + ')'
+        .each(function(d) {
+            var jQElementToMeasure =
+                isTactic(d)
+                ? $(d3.select(this).node()).children(0) // get the span
+                : $(d3.select(this).node()) // get the foreignObject itself
             ;
+            // we save in the rect field the size of the text rectangle
+            var rect = jQElementToMeasure[0].getBoundingClientRect();
+            d.width =
+                isTactic(d)
+                ? Math.min(rect.width, tacticNodeMaxWidth)
+                : rect.width
+            ;
+            d.height = rect.height;
         })
     ;
 
-    // compute the new visible nodes, determine the translation and zoom
+    // Now that the nodes have a size, we can compute the factors
 
-    var visibleChildren = _(getVisibleChildren(curNode));
-    var visibleGrandChildren = _(getVisibleGrandChildren(curNode));
+    var visibleChildren = _(getChildren(curNode));
+    var visibleGrandChildren = _(getGrandChildren(curNode));
     var visibleNodes = _([]);
-    if (hasParent(curNode)) {
-        visibleNodes = visibleNodes.concat(curNode.parent);
-    }
+    if (hasParent(curNode)) { visibleNodes = visibleNodes.concat([curNode.parent]); }
     visibleNodes = visibleNodes.concat([curNode]);
     visibleNodes = visibleNodes.concat(visibleChildren.value());
     visibleNodes = visibleNodes.concat(visibleGrandChildren.value());
-
-    var displayedChildren = _(curNode.displayedChildren);
-    var displayedGrandChildren = _(displayedChildren)
-        .map(function(c) {
-            if (c.hasOwnProperty('displayedChildren')) {
-                return _(c.displayedChildren).value();
-            }
-            return [];
-        })
-        .flatten()
-    ;
-    var displayedNodes = _([]);
-    if (hasParent(curNode)) {
-        displayedNodes = displayedNodes.concat(curNode.parent);
-    }
-    displayedNodes = displayedNodes.concat([curNode]);
-    displayedNodes = displayedNodes.concat(displayedChildren.value());
-    displayedNodes = displayedNodes.concat(displayedGrandChildren.value());
-
-    var allChildren = _(curNode.allChildren);
-    var allGrandChildren = _(allChildren)
-        .map(function(c) {
-            if (c.hasOwnProperty('allChildren')) {
-                return c.allChildren;
-            }
-            return [];
-        })
-        .flatten()
-    ;
-
-    var firstVisibleChild = visibleChildren.first();
-    var lastVisibleChild = visibleChildren.last();
-    var firstVisibleGrandChild = visibleGrandChildren.first();
-    var lastVisibleGrandChild = visibleGrandChildren.last();
-
-    var minX = visibleNodes
-        .map(function(d) { return d.x; })
-        .min()
-        .value();
-
-    var maxX = visibleNodes
-        .map(function(d) { return d.x; })
-        .max()
-        .value();
-
-    // We want the current node to stay fixed as we scroll through
-    // its children, so we always center the viewpoint around it
-
-    var leftdX = curNode.x - minX;
-    var rightdX = maxX - curNode.x;
-    var halfdX = Math.max(leftdX, rightdX);
-    // now recompute the minX, maxX
-    minX = curNode.x - halfdX;
-    maxX = curNode.x + halfdX;
-    var minY = visibleNodes
-        .map(function(d) { return d.y; })
-        .min()
-        .value()
-    ;
-    var maxY = visibleNodes
-        .map(function(d) { return d.y; })
-        .max()
-        .value()
-    ;
+    var minXNode = _(visibleNodes).min(nodeX).value();
+    var maxXNode = _(visibleNodes).max(nodeX).value();
+    var minX = nodeX(minXNode), maxX = nodeX(maxXNode);
     var dX = maxX - minX;
-    var dY = maxY - minY;
 
-    var firstChild = allChildren.first();
-    var lastChild = allChildren.last();
-    var firstGrandChild = allGrandChildren.first();
-    var lastGrandChild = allGrandChildren.last();
+    /*
+      we want: width = goalNodeWidth/2 + xFactor * dX + goalNodeWidth/2
+    */
+    this.xFactor = dX === 0
+        ? this.width
+        : (this.width - minXNode.width / 2 - maxXNode.width / 2) / dX
+    ;
 
-    var firstDisplayedChild = displayedChildren.first();
-    var lastDisplayedChild = displayedChildren.last();
-
-    var leftmostNode = firstGrandChild;
-    if (leftmostNode === undefined) { leftmostNode = firstChild; }
-    if (leftmostNode === undefined) { leftmostNode = curNode; }
-
-    var rightmostNode = lastGrandChild;
-    if (rightmostNode === undefined) { rightmostNode = lastChild; }
-    if (rightmostNode === undefined) { rightmostNode = curNode; }
-
-    // We need to scale the view so that two adjacent nodes do not overlap and
-    // are well spaced.
-    // siblings = [ [gc0, gc1], [gc1, gc2], ... ] ++ [ [c0, c1], [c1, c2], ... ]
+    // we want all visible grand children to be apart from each other
+    // i.e. ∀ a b, yFactor * | a.y - b.y | > a.height/2 + b.height/2 + nodeVSpacing
     var gcSiblings =
         isGoal(curNode)
-        ? _.zip(displayedGrandChildren.value(), displayedGrandChildren.rest().value())
+        ? _.zip(visibleGrandChildren.value(), visibleGrandChildren.rest().value())
         : [] // because grand-children don't appear for tactic nodes
     ;
     gcSiblings.pop(); // removes [gc_last, undefined] at the end
-    var cSiblings = _.zip(displayedChildren.value(), displayedChildren.rest().value());
-    cSiblings.pop(); // removes [c_last, undefined] at the end
-    var siblings = gcSiblings.concat(cSiblings);
-
-    var siblingsDistances = siblings.map(function(e) {
-        return (e[1].x - e[0].x);
+    var yFactors = gcSiblings.map(function(e) {
+        var a = e[0], b = e[1];
+        return (((a.height + b.height) / 2) + nodeVSpacing) / (nodeY(b) - nodeY(a));
     });
+    this.yFactor = _.isEmpty(yFactors) ? this.height : _.max(yFactors);
 
-    var siblingMinDistance = _.min(siblingsDistances);
-
-    this.xFactor = (siblingMinDistance === Infinity)
-        ? this.xFactor
-        : (
-            ((this.width + nodeMinSpacing) / maxVisibleNodesOnLine)
-                / siblingMinDistance
-        )
-    ;
-
-    // the top-most node is always the parent if it exists, the current otherwise
-    var topmostNode = hasParent(curNode) ? curNode.parent : curNode;
-    // the bottom-most node is either the grand-child of largest height...
-    var bottommostNode =
-        (isGoal(curNode))
-        ? allGrandChildren.max(function(c) { return c.height; }).value()
-        : -Infinity
-    ;
-    // ...or the child of largest height...
-    if (bottommostNode === -Infinity) {
-        bottommostNode = allChildren.max(function(c) { return c.height; }).value();
+    //TODO?
+    var topMostDescendant = undefined;
+    var topMostChild = getChildren(curNode)[curNode.focusIndex];
+    if (topMostChild !== undefined) {
+        topMostDescendant = topMostChild;
+        var topMostGrandChild = getChildren(topMostChild)[topMostChild.focusIndex];
+        if (topMostGrandChild !== undefined) { topMostDescendant = topMostGrandChild; }
     }
-    // ...or the current node
-    if (bottommostNode === -Infinity) { bottommostNode = curNode; }
-    this.yFactor = (dY === 0)
-        ? this.yFactor
-        : ((this.height - (topmostNode.height / 2) - (bottommostNode.height / 2)) / dY)
-    ;
+    if (topMostDescendant !== undefined) {
+        this.descendantsOffset =
+            this.yFactor * (curNode.x - topMostDescendant.x)
+            + topMostDescendant.height/2 - curNode.height/2
+        ;
+    } else {
+        this.descendantsOffset = 0;
+    }
 
-    gs
-        .attr("transform", function(d) {
+    // now we need to set the x and y attributes of the entering foreignObjects,
+    // so we need to reuse the selection
+    textEnter
+        .attr("x", function(d) {
             if (hasParent(d)) {
                 // non-roots are spawned at their parent's (cX0, cY0)
                 d.cX0 = d.parent.cX0;
                 d.cY0 = d.parent.cY0;
             } else {
                 // the root stores its own (x0, y0)
-                d.cX0 = d.x0 * self.xFactor;
-                d.cY0 = d.y0 * self.yFactor;
+                d.cX0 = d.x0 * self.xFactor + self.xOffset(d);
+                d.cY0 = d.y0 * self.yFactor + self.yOffset(d);
             }
-            return "translate(" + d.cX0 + "," + d.cY0 + ")";
+            return d.cX0;
         })
-
-    gs
-        .insert("rect", ":first-child")
-    // x and y coordinates, as well as width and height will be set later
-        .attr("rx", function(d) {
-            return isTactic(d) ? tacticNodeRounding : goalNodeRounding;
-        })
-        .attr("ry", function(d) {
-            return isTactic(d) ? tacticNodeRounding : goalNodeRounding;
-        })
-        .attr("stroke-width", nodeStroke)
+        .attr("y", function(d, ndx) { return d.cY0; })
     ;
 
-    // these two need to be updated for all rects, as they change height when displaying
-    // context or diff
-    node
-        .selectAll("rect")
-        .attr("y", function(d) {
-            return this.nextSibling.getBBox().y - d.height / 2;
+    textSelection
+        .each(function(d) {
+            d.cX = nodeX(d) * self.xFactor + self.xOffset(d);
+            d.cY = nodeY(d) * self.yFactor + self.yOffset(d);
         })
-        .attr("height", function(n) {
-            var h = rectMargin.top
-                + this.nextSibling.getBBox().height
-                + rectMargin.bottom;
-            return h - nodeStroke;
-        })
-    ;
-
-    gs
-        .append("text")
-        .attr('class', 'leftarrow')
-        .text('←')
-        .attr("x", function() {
-            var pb = this.parentElement.getBBox();
-            return pb.x + pb.width / 2 - 40;
-        })
-        .on('click', function(n) {
-            self.shiftLeft(n);
-            d3.event.stopPropagation();
-        })
-    ;
-
-    gs
-        .append("text")
-        .attr('class', 'rightarrow')
-        .text('→')
-        .attr("x", function() {
-            var pb = this.parentElement.getBBox();
-            return pb.x + pb.width / 2 + 14;
-        })
-        .on('click', function(n) {
-            self.shiftRight(n);
-            d3.event.stopPropagation();
-        })
-    ;
-
-    node
-        .selectAll('text.leftarrow')
-    // update y coordinates for all since it changes for current node
-        .attr("y", function() {
-            var pb = this.parentElement.firstChild.getBBox();
-            return pb.y + pb.height + 26;
-        })
-        .classed('invisible', function(d) {
-            return !(
-                // visible when:
-                !d.solved
-                    && d.offset > 0
-                    && (self.isCurNode(d) || self.isCurNodeChild(d))
-                    && !_.isEmpty(d.displayedChildren)
-            );
-        })
-    ;
-
-    node
-        .selectAll('text.rightarrow')
-    // update y coordinates for all since it changes for current node
-        .attr("y", function() {
-            var pb = this.parentElement.firstChild.getBBox();
-            return pb.y + pb.height + 26;
-        })
-        .classed('invisible', function(d) {
-            return !(
-                // visible when:
-                ! d.solved
-                    && d.offset + nbVisibleChildren(d) < _(d.allChildren).size()
-                    && (self.isCurNode(d) || self.isCurNodeChild(d))
-                    && !_.isEmpty(d.displayedChildren)
-            );
-        })
-    ;
-
-    // We want
-    // (firstVisibleGrandChild.cX + lastVisibleGrandChild.cX) / 2 = curNode.cX
-    // We offset all the descendants to achieve this
-    var xMiddle;
-    if (firstVisibleGrandChild !== undefined && lastVisibleGrandChild !== undefined) {
-        xMiddle = (firstVisibleGrandChild.x + lastVisibleGrandChild.x) / 2;
-    } else if (firstVisibleChild !== undefined && lastVisibleChild !== undefined) {
-        xMiddle = (firstVisibleChild.x + lastVisibleChild.x) / 2;
-    } else {
-        xMiddle = curNode.x;
-    }
-
-    var descendantsXOffset = curNode.x - xMiddle;
-
-    _(nodes)
-        .each(function(n) {
-            if (self.isCurNodeGrandChild(n)) {
-                n.cX = (n.x + descendantsXOffset) * self.xFactor;
-            } else if (self.isCurNodeChild(n)) {
-                var grandChildren = _(getVisibleChildren(n));
-                if (grandChildren.isEmpty()) {
-                    n.cX = (n.x + descendantsXOffset) * self.xFactor;
-                } else {
-                    var first = grandChildren.first();
-                    var last = grandChildren.last();
-                    n.cX = ((first.x + last.x) / 2 + descendantsXOffset) * self.xFactor;
-                }
-            } else if (self.isCurNodeSibling(n)) {
-                var smallBigDelta = self.rootNodeWidth - self.bottomNodeWidth;
-                if (n.ndx < curNode.ndx) {
-                    n.cX = n.x * self.xFactor - smallBigDelta / 2;
-                } else {
-                    n.cX = n.x * self.xFactor + smallBigDelta / 2;
-                }
-            } else if (self.isCurNodeParent(n)) {
-                n.cX = curNode.x * self.xFactor;
-            } else {
-                n.cX = n.x * self.xFactor;
-            }
-            n.cY = n.y * self.yFactor;
-        })
-    ;
-
-    this.canvas
+        .attr("width", function(d) { return d.width; })
+        .attr("height", function(d) { return d.height; })
         .transition()
         .duration(animationDuration)
-        .attr("transform",
-              "translate("
-              + (
-                  this.width / 2 - curNode.cX
-/*
-                  (dX === 0)
-                      ? (width / 2 - minX * xFactor)
-                      : (bottomNodeWidth / 2 - minX * xFactor)
-*/
-              )
-              + ", "
-              + (
-                  (dY === 0)
-                      ? topmostNode.height / 2
-                      : (topmostNode.height / 2 - minY * self.yFactor)
-                )
-              + ")")
-    ;
-
-    node
-        .transition()
-        .duration(animationDuration)
-        .attr("transform", function(d) {
-            return "translate(" + d.cX + ", " + d.cY + ")";
+        .attr("x", function(d) { return d.cX; })
+        .attr("y", function(d) { return d.cY; })
+        .each("end", function() {
+            // this is here so that it does not work before nodes are positioned
+            d3.select(this)
+                .on("mouseover", function(d1) {
+                    self.diffLayer.selectAll("g.diff")
+                        .style("opacity", 0);
+                    self.diffLayer.selectAll("g.diff")
+                        .filter(function(d2) { return d1.id === d2.id; })
+                        .style("opacity", 1);
+                })
+                .on("mouseout", function(d1) {
+                    self.diffLayer.selectAll("g.diff")
+                        .style("opacity", 0);
+                    var focusChild = getChildren(curNode)[curNode.focusIndex];
+                    if (focusChild !== undefined) {
+                        var focusGrandChild = getChildren(focusChild)[focusChild.focusIndex];
+                        if (focusGrandChild !== undefined) {
+                            self.diffLayer.selectAll("g.diff")
+                                .filter(function(d) { return d.id === focusGrandChild.id; })
+                                .style("opacity", 1);
+                        }
+                    }
+                })
+                .on("click", function(d) { self.click(d); })
         })
     ;
 
-    node
-        .selectAll('rect')
+    textSelection.exit()
         .transition()
         .duration(animationDuration)
-        .attr("width", this.nodeWidth.bind(this))
         .attr("x", function(d) {
-            return this.nextSibling.getBBox().x - self.nodeWidth(d) / 2;
-        })
-    ;
-
-    node
-    // Webkit bug, cannot selectAll on camel case names :(
-        .selectAll(function() {
-            return this.getElementsByTagName("foreignObject");
-        })
-        .transition()
-        .duration(animationDuration)
-        .attr("width", function(d) {
-            return self.nodeWidth(d) - rectMargin.left - rectMargin.right;
-        })
-        .attr("transform", function(d) {
-            return 'translate(-'
-                + ((self.nodeWidth(d) / 2) - rectMargin.left)
-                + ', -'
-                + ((d.height / 2) - rectMargin.top)
-                + ')'
-            ;
-        })
-    ;
-
-    this.canvas
-        .selectAll("rect")
-        .classed("tactic", function(d) { return isTactic(d) && !d.solved; })
-        .classed("goal", function(d) { return isGoal(d) && !d.solved; })
-        .classed("solved", function(d) { return (d.solved); })
-        .classed("current", this.isCurNode.bind(this))
-    ;
-
-    var nodeExit = node.exit();
-
-    var nodeIsExiting = function(n1) {
-        var exiting = false;
-        // Apparently 'some' is not properly overridden for selections,
-        // so use 'each' instead...
-        nodeExit.each(function(n2) {
-            if (n1.id === n2.id) { exiting = true; }
-        });
-        return exiting;
-    }
-
-    nodeExit
-        .transition()
-        .duration(animationDuration)
-        .attr("transform", function(d) {
-            // if the previous root node tries to exit, just leave it where it was
-            if (!hasParent(d)) {
-                return "translate(" + d.cX + "," + d.cY + ")";
+            // in general, nodes should move towards the parent goal node
+            if (!hasParent(d) || self.isRootNode(d)) {
+                return d.cX;
             }
-            var parentAlsoExiting = nodeIsExiting(d.parent);
-            var nodeToReach = (parentAlsoExiting && hasGrandParent(d))
-                ? d.parent.parent
-                : d.parent
-            ;
-            return "translate(" + nodeToReach.cX + "," + nodeToReach.cY + ")";
+
+            if (isGoal(d)) {
+                var nodeToReach = d.parent.parent;
+                d.cX = nodeToReach.cX;
+                d.cY = nodeToReach.cY;
+            } else {
+                var nodeToReach = d.parent;
+                d.cX = nodeToReach.cX;
+                d.cY = nodeToReach.cY;
+            }
+
+            return d.cX;
+        })
+        .attr("y", function(d) { return d.cY; })
+        .style("opacity", "0")
+        .remove()
+    ;
+
+    var rectSelection = this.rectLayer.selectAll("rect").data(nodes, byNodeId);
+
+    rectSelection.enter()
+        .append("rect")
+        .classed("goal", isGoal)
+        .classed("tactic", isTactic)
+        .attr("width", function(d) { return d.width; })
+        .attr("height", function(d) { return d.height; })
+        .attr("x", function(d) { return d.cX0; })
+        .attr("y", function(d) { return d.cY0; })
+        .attr("rx", function(d) { return isTactic(d) ? 10 : 0; })
+    ;
+
+    rectSelection
+        .classed("current", function(d) { return self.isCurNode(d); })
+        .classed("solved", function(d) { return d.solved; })
+        .transition()
+        .duration(animationDuration)
+        .attr("x", function(d) { return d.cX; })
+        .attr("y", function(d) { return d.cY; })
+    ;
+
+    rectSelection.exit()
+        .transition()
+        .duration(animationDuration)
+        .attr("x", function(d) { return d.cX; })
+        .attr("y", function(d) { return d.cY; })
+        .style("opacity", "0")
+        .remove()
+    ;
+
+    var linkSelection = this.linkLayer.selectAll("path").data(links, byLinkId);
+
+    linkSelection.enter()
+        .append("path")
+        .classed("link", true)
+        .attr("d", function(d) {
+            var src = swapXY(centerRight0(d.source));
+            var tgt = swapXY(centerLeft0(d.target));
+            return self.diagonal({"source": src, "target": tgt});
+        })
+    ;
+
+    linkSelection
+        .transition()
+        .duration(animationDuration)
+        .attr("d", function(d) {
+            var src = swapXY(centerRight(d.source));
+            var tgt = swapXY(centerLeft(d.target));
+            return self.diagonal({"source": src, "target": tgt});
+        })
+    ;
+
+    linkSelection.exit()
+        .transition()
+        .duration(animationDuration)
+        .attr("d", function(d) {
+            var src = swapXY(centerRight(d.source));
+            var tgt = swapXY(centerLeft(d.target));
+            return self.diagonal({"source": src, "target": tgt});
         })
         .style("opacity", "0")
         .remove()
     ;
 
-    link
-        .enter()
-        .insert("path", "g")
-        .attr("class", "link")
-        .attr("id", function(d) { return d.id; })
-        .attr("d", function(d) {
-            var o = {"x": d.source.cX0, "y": d.source.cY0};
-            return diagonal({"source": o, "target": o});
-        })
-    ;
-
-    link
+    var viewportX = - (hasParent(curNode) ? curNode.parent.cX : curNode.cX);
+    var viewportY = - curNode.cY;
+    this.viewport
         .transition()
         .duration(animationDuration)
-        .attr("d", function(d) {
-            return diagonal(
-                {
-                    "source": {"x": d.source.cX, "y": d.source.cY,},
-                    "target": {"x": d.target.cX, "y": d.target.cY,},
+        .attr("transform", "translate(" + viewportX + ", " + viewportY + ")")
+    ;
+
+    var diffSelection = this.diffLayer.selectAll("g").data(
+        // only goal nodes with a grandparent give rise to a diff
+        _(nodes).filter(function(d) { return isGoal(d) && hasGrandParent(d); }).value(),
+        byNodeId
+    );
+
+    diffSelection.enter()
+        .append("g")
+        .classed("diff", true)
+        .each(function(d) {
+            var gp = d.parent.parent;
+
+            var d3this = d3.select(this);
+
+            // adding diffs for the goal
+
+            var subdiff = spotTheDifferences(gp.goalSpan, d.goalSpan);
+
+            d.removedSelection =
+                d3this.selectAll("rect.removed").data(subdiff.removed);
+
+            d.removedSelection.enter()
+                .append("rect")
+                .classed("removed", true)
+                .attr("fill", diffRed)
+            ;
+
+            d.addedSelection =
+                d3this.selectAll("rect.added").data(subdiff.added);
+
+            d.addedSelection.enter()
+                .append("rect")
+                .classed("added", true)
+                .attr("fill", diffGreen)
+            ;
+
+            // adding diffs for the hypotheses
+
+            var oldHyps = gp.hyps.slice(); // slice() creates a shallow copy
+            var newHyps = d.hyps.slice();
+
+            var diff = computeDiff(oldHyps, newHyps);
+            var removed = diff.removed;
+            var changed = diff.changed;
+            var added   = diff.added;
+
+            var diffList = [];
+            // try to match old and new hypotheses that are the same
+            while (oldHyps.length !== 0 && newHyps.length !== 0) {
+                var oldChanged = _(changed).some(function(c) {
+                    return c.before.hName === oldHyps[0].hName;
+                });
+                var newChanged = _(changed).some(function(c) {
+                    return c.after.hName === newHyps[0].hName;
+                });
+                if (oldChanged && newChanged) {
+                    var oldHyp = oldHyps.shift(), newHyp = newHyps.shift();
+                    diffList.push({ "oldHyp": oldHyp, "newHyp": newHyp });
+                } else if (oldChanged) {
+                    var newHyp = newHyps.shift();
+                    diffList.push({ "oldHyp": undefined, "newHyp": newHyp });
+                } else if (newChanged) {
+                    var oldHyp = oldHyps.shift();
+                    diffList.push({ "oldHyp": oldHyp, "newHyp": undefined });
+                } else {
+                    var oldHyp = oldHyps.shift();
+                    diffList.push({ "oldHyp": oldHyp, "newHyp": undefined });
                 }
-            );
+            }
+            // just push the remainder
+            _(oldHyps).each(function(oldHyp) {
+                diffList.push({ "oldHyp": oldHyp, "newHyp": undefined });
+            });
+            _(newHyps).each(function(newHyp) {
+                    diffList.push({ "oldHyp": undefined, "newHyp": newHyp });
+            });
+
+            d.diffListSelection = d3this.selectAll("g").data(diffList, byDiffId);
+
+            d.diffListSelection.enter()
+                .append("g")
+                .attr("id", byDiffId)
+                .each(function(diff) {
+
+                    var d3this = d3.select(this);
+
+                    if (diff.oldHyp === undefined) {
+
+                        var newHyp = diff.newHyp;
+                        d3this
+                            .append("path")
+                            .attr("fill", diffGreen)
+                            .attr("stroke", greenStroke)
+                            .attr("opacity", diffOpacity)
+                        ;
+
+                    } else if (diff.newHyp === undefined) {
+
+                        var oldHyp = diff.oldHyp;
+                        d3this
+                            .append("path")
+                            .attr("fill", diffRed)
+                            .attr("stroke", redStroke)
+                            .attr("opacity", diffOpacity)
+                        ;
+
+                    } else {
+
+                        var oldHyp = diff.oldHyp;
+                        var newHyp = diff.newHyp;
+                        if (JSON.stringify(oldHyp.hType) !== JSON.stringify(newHyp.hType)) {
+                            d3this
+                                .append("path")
+                                .attr("fill", diffBlue)
+                                .attr("stroke", blueStroke)
+                                .attr("opacity", diffOpacity)
+                            ;
+
+                            var subdiff = spotTheDifferences(oldHyp.div, newHyp.div);
+
+                            diff.removedSelection =
+                                d3this.selectAll("rect.removed").data(subdiff.removed);
+
+                            diff.removedSelection.enter()
+                                .append("rect")
+                                .classed("removed", true)
+                                .attr("fill", diffRed)
+                            ;
+
+                            diff.addedSelection =
+                                d3this.selectAll("rect.added").data(subdiff.added);
+
+                            diff.addedSelection.enter()
+                                .append("rect")
+                                .classed("added", true)
+                                .attr("fill", diffGreen)
+                            ;
+
+                        }
+
+                    }
+                })
+            ;
+
         })
     ;
 
-    link
-        .exit()
+    diffSelection
+        .each(function(d) {
+            var gp = d.parent.parent;
+
+            // updating the goal diffs
+
+            d.removedSelection
+                .each(function(jSpan) {
+                    var rect = elmtRect(gp, jSpan[0]);
+                    d3.select(this)
+                        .transition()
+                        .duration(animationDuration)
+                        .attr("x", rect.left)
+                        .attr("y", rect.top)
+                        .attr("width", rect.width)
+                        .attr("height", rect.height)
+                    ;
+                })
+            ;
+
+            d.addedSelection
+                .each(function(jSpan) {
+                    var rect = elmtRect(d, jSpan[0]);
+                    d3.select(this)
+                        .transition()
+                        .duration(animationDuration)
+                        .attr("x", rect.left)
+                        .attr("y", rect.top)
+                        .attr("width", rect.width)
+                        .attr("height", rect.height)
+                    ;
+                })
+            ;
+
+            // updating the hypotheses diffs
+
+            // keep track of how far we are vertically to draw the diffs with
+            // only one side nicely
+            var leftY = gp.cY;
+            var rightY = d.cY;
+
+            d.diffListSelection
+                .each(function(diff) {
+
+                    if (diff.oldHyp === undefined) {
+
+                        var newHyp = diff.newHyp;
+                        d3.select(this).select("path")
+                            .transition()
+                            .duration(animationDuration)
+                            .attr(
+                                "d",
+                                connectRects(
+                                    emptyRect(gp, leftY),
+                                    elmtRect(d, newHyp.div),
+                                    d.parent.cX
+                                )
+                            )
+                        ;
+                        rightY = elmtRect(d, newHyp.div).bottom;
+
+                    } else if (diff.newHyp === undefined) {
+
+                        var oldHyp = diff.oldHyp;
+                        d3.select(this).select("path")
+                            .transition()
+                            .duration(animationDuration)
+                            .attr(
+                                "d",
+                                connectRects(
+                                    elmtRect(gp, oldHyp.div),
+                                    emptyRect(d, rightY),
+                                    d.parent.cX
+                                )
+                            )
+                        ;
+                        leftY = elmtRect(gp, oldHyp.div).bottom;
+
+                    } else {
+
+                        var oldHyp = diff.oldHyp;
+                        var newHyp = diff.newHyp;
+                        if (JSON.stringify(oldHyp.hType) !== JSON.stringify(newHyp.hType)) {
+                            d3.select(this).select("path")
+                                .transition()
+                                .duration(animationDuration)
+                                .attr(
+                                    "d",
+                                    connectRects(
+                                        elmtRect(gp, oldHyp.div),
+                                        elmtRect(d, newHyp.div),
+                                        d.parent.cX
+                                    )
+                                )
+                            ;
+                        }
+                        leftY = elmtRect(gp, oldHyp.div).bottom;
+                        rightY = elmtRect(d, newHyp.div).bottom;
+
+                    }
+
+                    if (diff.hasOwnProperty("removedSelection")) {
+                        diff.removedSelection
+                            .each(function(jSpan) {
+                                var rect = elmtRect(gp, jSpan[0]);
+                                d3.select(this)
+                                    .transition()
+                                    .duration(animationDuration)
+                                    .attr("x", rect.left)
+                                    .attr("y", rect.top)
+                                    .attr("width", rect.width)
+                                    .attr("height", rect.height)
+                                ;
+                            })
+                        ;
+                    }
+
+                    if (diff.hasOwnProperty("addedSelection")) {
+                        diff.addedSelection
+                            .each(function(jSpan) {
+                                var rect = elmtRect(d, jSpan[0]);
+                                d3.select(this)
+                                    .transition()
+                                    .duration(animationDuration)
+                                    .attr("x", rect.left)
+                                    .attr("y", rect.top)
+                                    .attr("width", rect.width)
+                                    .attr("height", rect.height)
+                                ;
+                            })
+                        ;
+                    }
+
+                })
+            ;
+
+        })
+        .style("opacity", 0)
         .transition()
         .duration(animationDuration)
-        .attr("d", function(d) {
-            var sourceAlsoExiting = nodeIsExiting(d.source);
-            var sourceNode = (sourceAlsoExiting && hasParent(d.source))
-                ? d.source.parent
-                : d.source
-            ;
-            var o = {"x": sourceNode.cX, "y": sourceNode.cY};
-            return diagonal({"source": o, "target": o});
+        .style("opacity", function(d) {
+            if (!self.isCurNodeGrandChild(d)) { return 0; }
+            var gp = d.parent.parent;
+            var focusChild = gp.allChildren[gp.focusIndex];
+            var focusGrandChild = focusChild.allChildren[focusChild.focusIndex];
+            return d.id === focusGrandChild.id ? 1 : 0;
         })
-        .style("opacity", "0")
-        .remove()
     ;
 
     /*
@@ -1145,11 +1260,6 @@ ProofTree.prototype.update = function(source, callback) {
         d.cY0 = d.cY;
     });
 
-    // disabled for now
-    //this.updateContext();
-
-    this.updateDebug();
-
     this.animationRunning = true;
     window.setTimeout(function() {
         self.animationRunning = false;
@@ -1160,38 +1270,78 @@ ProofTree.prototype.update = function(source, callback) {
 
 }
 
-ProofTree.prototype.updateDisplayedChildren = function(n) {
-    if (isGoal(n)) {
-        if (nbDisplayedTactics !== +Infinity) {
-            n.displayedChildren = n.allChildren.slice(n.offset, n.offset + nbDisplayedTactics);
-        } else {
-            n.displayedChildren = n.allChildren;
-        }
-    } else { // isTactic(n)
-        if (nbDisplayedGoals !== +Infinity) {
-            n.displayedChildren = n.allChildren.slice(n.offset, n.offset + nbDisplayedGoals);
-        } else {
-            n.displayedChildren = n.allChildren;
-        }
-    }
+function byDiffId(d) {
+    var res = "";
+    if (d.oldHyp !== undefined) { res += $(d.oldHyp.div).attr("id"); }
+    res += "-";
+    if (d.newHyp !== undefined) { res += $(d.newHyp.div).attr("id"); }
+    return res;
 }
 
-ProofTree.prototype.shiftLeft = function(n) {
-    if (n.solved) { return; }
-    if (n.offset > 0) {
-        n.offset--;
-        this.updateDisplayedChildren(n);
-    }
-    this.update(n);
+function computeDiff(oldHyps, newHyps) {
+
+    var removed = [];
+    var added = [];
+    var changed = [];
+
+    _(oldHyps).each(function(h) {
+        var match = _(newHyps).find(function(g) { return g.hName === h.hName; });
+        if (match !== undefined) {
+            changed.push({"before": h, "after": match});
+        } else {
+            removed.push(h);
+        }
+    });
+    _(newHyps).each(function(h) {
+        var match = _(oldHyps).find(function(g) { return g.hName === h.hName; });
+        if (match === undefined) { added.push(h); }
+    });
+
+    return {
+        "removed": removed,
+        "changed": changed,
+        "added":   added,
+    };
+
 }
 
-ProofTree.prototype.shiftRight = function(n) {
-    if (n.solved) { return; }
-    if (n.offset + nbVisibleChildren(n) < n.allChildren.length) {
-        n.offset++;
-        this.updateDisplayedChildren(n);
+function elmtRect(node, elmt) {
+    var rect = elmt.getBoundingClientRect();
+    var containerRect = $(elmt).parents("foreignObject")[0].getBoundingClientRect();
+    var left = node.cX + deltaX(containerRect, rect);
+    var top = node.cY + deltaY(containerRect, rect);
+    return {
+        "left": left, "right": left + rect.width, "width": rect.width,
+        "top": top, "bottom": top + rect.height, "height": rect.height,
+    };
+}
+
+ProofTree.prototype.shiftPrev = function(n) {
+    var self = this;
+    function tryShifting(n) {
+        if (n.focusIndex> 0) {
+            n.focusIndex--; self.update(); return true;
+        }
+        return false;
     }
-    this.update(n);
+    if (n.solved) { return; }
+    // try to shift grandchild first
+    tryShifting(n.children[n.focusIndex])
+    || tryShifting(n);
+}
+
+ProofTree.prototype.shiftNext = function(n) {
+    var self = this;
+    function tryShifting(n) {
+        if (n.focusIndex + 1 < n.allChildren.length) {
+            n.focusIndex++; self.update(); return true;
+        }
+        return false;
+    }
+    if (n.solved) { return; }
+    // try to shift grandchild first
+    tryShifting(n.children[n.focusIndex])
+    || tryShifting(n);
 }
 
 ProofTree.prototype.click = function(d, remember, callback) {
@@ -1208,6 +1358,7 @@ ProofTree.prototype.click = function(d, remember, callback) {
     // when the user clicks on a tactic node below
     // bring them to the first unsolved goal instead
     if(isTactic(d) && d.depth > this.curNode.depth && d.allChildren.length > 0) {
+        expand(d);
         var firstUnsolved = _(d.allChildren)
             .find(function(e) { return !e.solved; });
         if (firstUnsolved !== undefined) {
@@ -1227,7 +1378,6 @@ ProofTree.prototype.click = function(d, remember, callback) {
     if (_.isEmpty(d.allChildren)) {
         if (isGoal(d)) {
             d.allChildren = this.tryAllTactics();
-            d.displayedChildren = d.allChildren.slice(0, nbDisplayedTactics);
         }
         // otherwise, this is a terminating tactic for this goal!
         else {
@@ -1235,8 +1385,8 @@ ProofTree.prototype.click = function(d, remember, callback) {
         }
     }
 
-    this.expand(d);
-    this.update(d, callback);
+    expand(d);
+    this.update(callback);
 
 }
 
@@ -1245,14 +1395,13 @@ ProofTree.prototype.solved = function(n) {
 
     var self = this;
     n.solved = true;
-    n.displayedChildren = [];
     collapse(n);
     if (hasParent(n)) {
         this.navigateTo(n.parent);
         this.animationRunning = true;
         window.setTimeout(function () {
             self.childSolved(n.parent);
-            self.update(n.parent);
+            self.update();
             self.animationRunning = false;
         }, animationDuration);
     } else {
@@ -1276,32 +1425,14 @@ ProofTree.prototype.childSolved = function(n) {
     }
 }
 
-function collapse(d) {
-    if (d.displayedChildren) {
-        d.displayedChildren = [];
-    }
-}
+function collapse(d) { d.collapsed = true; }
 
-function collapseChildren(d) {
-    _(d.displayedChildren)
-        .forEach(function(n) {
-            collapse(n);
-        })
-    ;
-}
+function collapseChildren(d) { _(d.allChildren).forEach(collapse); }
 
-function collapseExcept(d, e) {
-    if (d.displayedChildren) {
-        d.displayedChildren = [e];
-    }
-}
-
-ProofTree.prototype.expand = function(d) {
-    var self = this;
-    this.updateDisplayedChildren(d);
+function expand(d) {
+    d.collapsed = false;
     if (isGoal(d)) {
-        _(d.displayedChildren)
-            .each(self.updateDisplayedChildren.bind(self));
+        _(d.allChildren).each(expand);
     }
 }
 
@@ -1339,10 +1470,6 @@ function path(n1, n2) {
     }
 }
 
-function hasDisplayedChild(n) {
-    return (n.displayedChildren && n.displayedChildren[0]) ? true : false;
-}
-
 /*
 We need to compute how many layers of focusing are solved by a terminating
 tactic because of the way Undo works.
@@ -1351,15 +1478,12 @@ depth is always how deep the node is to its first ancestor with more than
 one child (since the other child will then remain to be proved).
 */
 function depthSolved(tacNode) {
-
-    if (!hasGrandParent(tacNode)) { return 1; }
-
     if (_(tacNode.children).size() <= 1) {
+        if (!hasGrandParent(tacNode)) { return 1; }
         return 1 + depthSolved(tacNode.parent.parent);
     } else {
         return 0;
     }
-
 }
 
 ProofTree.prototype.navigateTo = function(dest, remember) {
@@ -1415,8 +1539,7 @@ ProofTree.prototype.navigateTo = function(dest, remember) {
 
                 // hide sibling tactic nodes
                 if (isGoal(src)) {
-                    self.expand(src);
-                    collapseExcept(src, dst);
+                    collapse(src);
                 }
 
                 if (isTactic(dst)) {
@@ -1456,25 +1579,6 @@ ProofTree.prototype.syncQuery = function(q, h) { this.syncRequest('query', q, h)
 ProofTree.prototype.syncQueryUndo = function(q, h) { this.syncRequest('queryundo', q, h); }
 
 function hIgnore(response) { }
-
-function updateNodeHeight(selector) {
-    var div = selector.select('div');
-
-    selector
-    // Webkit bug, cannot selectAll on camel case names :(
-        .selectAll(function() {
-            return this.getElementsByTagName("foreignObject");
-        })
-        .attr("height", function() {
-            var height = div[0][0].getBoundingClientRect().height;
-            selector
-                .select('rect')
-                .attr('height', height)
-            ;
-            return height;
-        })
-    ;
-}
 
 function getBinder(t) {
     return t[0];
@@ -1556,63 +1660,6 @@ ProofTree.prototype.makeContextDiv = function(goal) {
 
 }
 
-// TODO: this should use d3 data binding rather than manual management...
-ProofTree.prototype.updateContext = function(d3ContextDiv) {
-
-    var contextDiv = this.context.select('div');
-    var jContextDiv = $(contextDiv[0]);
-
-    contextDiv.style("display", this.isCurNode(this.rootNode) ? "none" : "");
-
-    var curGoal = (isGoal(this.curNode)) ? this.curNode : this.curNode.parent;
-    var hypsLookup = {};
-    _(curGoal.hyps)
-        .each(function(h) {
-            hypsLookup[h.hName] = showTermText(h.hType);
-        })
-    ;
-
-    jContextDiv.empty();
-    var curGoal = (isGoal(this.curNode)) ? this.curNode : this.curNode.parent;
-    jContextDiv.append(this.makeContextDiv(curGoal));
-
-    if (jContextDiv.html() === "") {
-        jContextDiv.append("p").text("Empty context");
-    }
-
-    updateNodeHeight(this.context);
-
-}
-
-ProofTree.prototype.updateDebug = function() {
-
-    var debugDiv = this.debug.select('div');
-    var jDebugDiv = $(debugDiv[0]);
-
-    debugDiv.style("display", ((this.isCurNode(this.rootNode)) ? "none" : ""));
-
-    var partialProof = this.partialProofFrom(this.rootNode, 1);
-
-    jDebugDiv.empty();
-    jDebugDiv.append($("<div>").text(this.theorem));
-    jDebugDiv.append($("<div>").text("Proof."));
-    partialProof.prepend(span("&nbsp;&nbsp;")); // initial indentation
-    jDebugDiv.append(partialProof);
-    //$(".resizeWidth, .resizeHeight").change();
-    jDebugDiv.append($("<div>").text("Qed."));
-
-/*
-    if (response.rGoals.focused.length > 0) {
-        debugDiv.html(showTerm(response.rGoals.focused[0].gGoal));
-    } else {
-        debugDiv.html(response.rResponse.contents[0]);
-    }
-*/
-
-    updateNodeHeight(this.debug);
-
-}
-
 function keydownDispatcher() {
     if (activeProofTree !== undefined) {
         activeProofTree.keydownHandler.call(activeProofTree);
@@ -1626,7 +1673,7 @@ ProofTree.prototype.keydownHandler = function() {
 
     var curNode = this.curNode;
 
-    var visibleChildren = getVisibleChildren(curNode);
+    var children = getChildren(curNode);
 
     if (this.animationRunning) {
         // all keys are frozen during animation
@@ -1638,33 +1685,24 @@ ProofTree.prototype.keydownHandler = function() {
 
     case 37: // Left
     case 65: // a
-        this.shiftLeft(curNode);
-        break;
-
-    case 39: // Right
-    case 68: // d
-        this.shiftRight(curNode);
-        break;
-
-    case 38: // Up
-    case 87: // w
         if(hasParent(curNode)) {
             this.click(curNode.parent);
         }
         break;
 
+    case 39: // Right
+    case 68: // d
+        this.click(children[curNode.focusIndex]);
+        break;
+
+    case 38: // Up
+    case 87: // w
+        this.shiftPrev(curNode);
+        break;
+
     case 40: // Down
     case 83: // s
-        if (isTactic(curNode)) {
-            var dest = _(visibleChildren).find(function(n) {
-                return !n.solved;
-            });
-            if (dest !== undefined) { this.click(dest); }
-        } else {
-            if (visibleChildren.length > 0) {
-                this.click(visibleChildren[0]);
-            }
-        }
+        this.shiftNext(curNode);
         break;
 
     case 49: case 97: // 1, K1
@@ -1767,7 +1805,7 @@ ProofTree.prototype.partialProofFrom = function(t, indentation) {
                         var newNode = self.runTactic(tactic);
 
                         // now we can update and click on the node once it has appeared
-                        self.update(self.curNode, function() {
+                        self.update(function() {
                             self.click(newNode);
                         });
 
@@ -2316,259 +2354,6 @@ function showTermInline(t) {
     return showTermAux(t, 0, 0, false);
 }
 
-function computeDiffOldWay(fo, jQDiv, d) {
-
-    if (isGoal(d)) {
-
-        if (hasGrandParent(d)) {
-
-            // clone since I'm going to pull() from it
-            var gpHyps = _(_(d.parent.parent.hyps).clone());
-
-            var removed = [], changed = [], added = [];
-
-            _(d.hyps).each(function(h) {
-
-                var previousH =
-                    _(gpHyps).find(function(h0) {
-                        return h0.hName === h.hName;
-                    });
-
-                if (previousH === undefined) {
-                    added.push(h);
-                } else {
-                    if (JSON.stringify(previousH) !== JSON.stringify(h)) {
-                        changed.push({"before": previousH, "after": h});
-                    }
-                    gpHyps.pull(previousH);
-                }
-
-            });
-
-            removed = gpHyps.value();
-
-            _(removed).each(function(h) {
-                jQDiv.append(
-                    $("<span>")
-                        .addClass("removed")
-                        .html('⊖ ' + showHypothesis(h))
-                );
-                jQDiv.append($("<br>"));
-            });
-
-            var fo = d3.select(this);
-
-            _(changed).each(function(hs) {
-
-                fo
-                    .select("div")
-                    .append("span")
-                    .html("&nbsp;&nbsp;" + showHypothesis(hs.after))
-                    .attr("class", "changed")
-                    .on("mouseover", function() {
-                        d3.select(this)
-                            .attr("class", "removed")
-                            .html("&nbsp;&nbsp;" + showHypothesis(hs.before))
-                        ;
-                    })
-                    .on("mouseout", function(d) {
-                        d3.select(this)
-                            .attr("class", "changed")
-                            .html("&nbsp;&nbsp;" + showHypothesis(hs.after))
-                        ;
-                    })
-                ;
-
-                fo.select("div").append("br");
-
-            });
-
-            _(added).each(function(h) {
-                jQDiv.append(
-                    $("<span>")
-                        .addClass("added")
-                        .html('⊕ ' + showHypothesis(h))
-                );
-                jQDiv.append($("<br>"));
-            });
-
-            jQDiv.append($('<hr>'));
-
-        } else {
-
-            _(d.hyps).each(function(h) {
-                jQDiv.append(
-                    $("<span>")
-                        .addClass("added")
-                        .html('⊕ ' + showHypothesis(h))
-                );
-            });
-
-            if (!_(d.hyps).isEmpty()) { jQDiv.append($('<hr>')); }
-
-        }
-
-
-        jQDiv.append($("<span>").html(showTerm(d.name)));
-
-    } else { // not a goal, but a tactic
-
-        jQDiv
-            .css("text-align", "center")
-            .append(
-                $("<span>").text(d.name)
-            )
-        ;
-
-    }
-
-}
-
-function mkDiff(oldArray, newArray) {
-    var removed = [], changed = [], added = [];
-
-    var oldHyps = {};
-    _(oldArray).each(function(h) { oldHyps[h.hName] = h; });
-
-    var newHyps = {};
-    _(newArray).each(function(h) { newHyps[h.hName] = h; });
-
-    for (var o in oldHyps) {
-        if (newHyps.hasOwnProperty(o)) {
-            changed.push({
-                "before": oldHyps[o],
-                "after": newHyps[o],
-            });
-        } else {
-            removed.push(oldHyps[o]);
-        }
-    }
-
-    for (var n in newHyps) {
-        if (oldHyps.hasOwnProperty(n)) {
-            // nothing, already done
-        } else {
-            added.push(newHyps[n]);
-        }
-    }
-
-    return {
-        "removed": removed,
-        "changed": changed,
-        "added": added,
-    };
-}
-
-function spotTheDifferences(before, after) {
-
-    var nbBefore = before.children().length;
-    var nbAfter  =  after.children().length;
-    if (nbBefore !== nbAfter) {
-        before.addClass("removed");
-        after.addClass("added");
-        return;
-    }
-
-    var nbChildren = nbBefore;
-    if (nbChildren === 0) { // both leaves
-        if (before.html() !== after.html()) {
-            before.addClass("removed");
-            after.addClass("added");
-        }
-        return;
-    }
-
-    for (var i in _.range(nbChildren)) {
-        spotTheDifferences(
-            $(before.children()[i]),
-            $(after.children()[i])
-        );
-    }
-
-}
-
-ProofTree.prototype.computeDiff = function(fo, jQDiv, d) {
-
-    if (isGoal(d)) {
-
-        var diffDiv = $("<div>").addClass("diff");
-        var contextDiv = $("<div>").addClass("ctxt");
-        contextDiv.append(this.makeContextDiv(d));
-
-        jQDiv.append(diffDiv);
-        jQDiv.append(contextDiv);
-
-        if (hasGrandParent(d)) {
-
-            var diff = mkDiff(d.parent.parent.hyps, d.hyps);
-
-            var removed = diff.removed, changed = diff.changed, added = diff.added;
-
-            var minusPane = $("<div>").addClass("diff-pane");
-            diffDiv.append(minusPane);
-            diffDiv.append(
-                $("<div>").addClass("diff-pane-sep").text("⇒")
-            );
-            var plusPane = $("<div>").addClass("diff-pane");
-            diffDiv.append(plusPane);
-
-            _(changed).each(function(hs) {
-                if (JSON.stringify(hs.before) !== JSON.stringify(hs.after)) {
-                    var before = $("<span>").html(showHypothesis(hs.before));
-                    minusPane.append(before);
-                    minusPane.append($("<br>"));
-                    var after = $("<span>").html(showHypothesis(hs.after));
-                    plusPane.append(after);
-                    plusPane.append($("<br>"));
-                    spotTheDifferences(before, after);
-                }
-            });
-
-            _(removed).each(function(h) {
-                minusPane.append($("<span>").addClass("removed").html(showHypothesis(h)));
-                minusPane.append($("<br>"));
-            });
-
-            _(added).each(function(h) {
-                plusPane.append($("<span>").addClass("added").html(showHypothesis(h)));
-                plusPane.append($("<br>"));
-            });
-
-            if (minusPane.is(':empty') && plusPane.is(':empty')) {
-                diffDiv.empty();
-            }
-
-            jQDiv.append($('<hr>'));
-
-        } else {
-
-            _(d.hyps).each(function(h) {
-                diffDiv.append(
-                    $("<span>")
-                        .addClass("added")
-                        .html('⊕ ' + showHypothesis(h))
-                );
-            });
-
-            if (!_(d.hyps).isEmpty()) { diffDiv.append($('<hr>')); }
-
-        }
-
-        jQDiv.append($("<span>").html(showTerm(d.name)));
-
-    } else { // not a goal, but a tactic
-
-        jQDiv
-            .css("text-align", "center")
-            .append(
-                $("<span>").text(d.name)
-            )
-        ;
-
-    }
-
-}
-
 function setupTextareaResizing() {
     var minimalWidth = 16;
     var minimalHeight = 16;
@@ -2608,39 +2393,4 @@ function setupTextareaResizing() {
         .on('change keyup keydown paste', 'textarea', PT.resizeTextarea)
     ;
 
-}
-
-// TODO: make this non-destructive :'(
-function extractNodeUpToGrandChildren(n) {
-    function cleanup(n) {
-        delete n["cX0"];
-        delete n["cY0"];
-        delete n["cX"];
-        delete n["cY"];
-        delete n["x0"];
-        delete n["y0"];
-        delete n["x"];
-        delete n["y"];
-        delete n["gid"];
-        delete n["ndx"];
-        delete n["children"];
-        delete n["displayedChildren"];
-        delete n["parent"];
-        delete n["solved"];
-        delete n["offset"];
-        delete n["height"];
-    };
-    var root = $.extend({}, n);
-    var rootChildren = root.allChildren;
-    var rootGrandchildren =
-        _(root.children)
-        .map(function(d) { return d.allChildren; })
-        .flatten()
-        .value()
-    ;
-    cleanup(root);
-    _(rootChildren).each(cleanup);
-    _(rootGrandchildren).each(cleanup);
-    _(rootGrandchildren).each(function(e) { e.allChildren = []; })
-    return JSON.stringify(root);
 }

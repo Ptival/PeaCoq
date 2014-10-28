@@ -1,5 +1,7 @@
 
 var theorems = [
+//['Theorem trivial : True.', PT.tDiscriminate],
+//['Theorem trivialbranch : True /\\ True.', PT.tDiscriminate],
 ['Theorem branching : ∀(a b : comparison), a = Eq → b = Eq → a = b.', PT.tInversion],
 ['Theorem plus_O_n : ∀n : nat, 0 + n = n.', PT.tIntro],
 ['Theorem plus_1_l : ∀n : nat, 1 + n = S n.', PT.tIntro],
@@ -34,6 +36,8 @@ var theorems = [
 ];
 
 function qed(prooftree) {
+
+/*
     prooftree.svg
         .style("display", "none")
     ;
@@ -47,6 +51,8 @@ function qed(prooftree) {
                 + "<br>Qed."
         )
     ;
+*/
+
 }
 
 $(document).ready(function() {
@@ -72,7 +78,7 @@ $(document).ready(function() {
         .click(function() {
             var t = $(this).data("theorem");
             pt.syncQuery("Abort All.", hIgnore);
-            pt.newTheorem(t[0], t[1], function() { }, clickRoot);
+            pt.newTheorem(t[0], t[1], function() {}, function() {});
         })
     ;
 
@@ -93,15 +99,17 @@ $(document).ready(function() {
         theorems[ndx][0],
         theorems[ndx][1],
         function() { },
-        clickRoot
+        function() { }
     );
 
 });
 
+/*
 function clickRoot(pt) {
     pt.click(pt.rootNode);
     makeActive(pt);
 }
+*/
 
 function addTheorem(pt, t, ndx) {
     var b = $('<button>')
