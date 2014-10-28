@@ -9,8 +9,8 @@ $(document).ready(function() {
 
     $('head').append('<link rel="stylesheet" href="../d3tree.css" type="text/css" />');
     includes([
+        '../d3.js',
         '../lodash.js',
-        '../d3/d3.js',
         '../prooftree.js',
         '../jquery.cookie.js',
     ],
