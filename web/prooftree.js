@@ -19,7 +19,7 @@ var nbDisplayedTactics = +Infinity;
 var nbDisplayedGoals   = +Infinity; // per displayed tactic
 var nbVisibleTactics = +Infinity;
 var nbVisibleGoals   = +Infinity; // per focused tactic
-var animationDuration = 500;
+var animationDuration = 360;
 var tacticNodeRounding = 10;
 var goalNodeRounding = 0;
 var goalNodeWidth = 540;
@@ -30,7 +30,7 @@ $(document).ready(function() {
 var diffRed   = "#EE8888";
 var diffGreen = "#88EE88";
 var diffBlue  = "#8888EE";
-var diffOpacity = 1;
+var diffOpacity = 0.90;
 var redStroke   = diffRed;
 var greenStroke = diffGreen;
 var blueStroke  = diffBlue;
@@ -74,6 +74,39 @@ PT.tDiscriminate = PT.tSet.slice(0, 1 + PT.tSet.indexOf('discriminate'));
 // These ones are more specific
 PT.tCompute = PT.tReflexivity.concat(['compute']);
 
+function getAllChildren(n) {
+    return n.allChildren;
+}
+
+function getAllGrandChildren(n) {
+    return _(getAllChildren(n))
+        .map(getAllChildren)
+        .flatten()
+        .value()
+    ;
+}
+
+ProofTree.prototype.getVisibleChildren = function(d) {
+    var self = this;
+    if (d.solved) { return []; }
+    if (d.collapsed) {
+        // if d is collapsed, we only return an ancestor of the current node
+        return _(d.allChildren)
+            .filter(self.isCurNodeAncestor.bind(self))
+            .value()
+        ;
+    }
+    return d.allChildren;
+}
+
+ProofTree.prototype.getVisibleGrandChildren = function(d) {
+    return _(this.getVisibleChildren(d))
+        .map(this.getVisibleChildren.bind(this))
+        .flatten()
+        .value()
+    ;
+}
+
 /*
   The following DOM is constructed from the given anchor:
 
@@ -109,18 +142,7 @@ function ProofTree(anchor, width, height, qedCallback, peacoqDir, onError) {
     this.yFactor = this.height;
 
     this.tree = d3.layout.tree()
-        .children(function(d) {
-            if (d.solved) { return []; }
-            if (d.collapsed) {
-                // if d is collapsed, we only return an ancestor of the current node
-                return _(d.allChildren)
-                    .filter(self.isCurNodeAncestor.bind(self))
-                    .value()
-                ;
-            }
-            return d.allChildren;
-
-        })
+        .children(self.getVisibleChildren.bind(self))
         .separation(function(d) {
             return 1 / (d.depth + 1);
         })
@@ -288,7 +310,7 @@ ProofTree.prototype.xOffset = function(d) {
 
 ProofTree.prototype.yOffset = function(d) {
     var offset = - d.height / 2;
-    if (this.isCurNodeChild(d) || this.isCurNodeGrandChild(d)) {
+    if (this.isCurGoalChild(d) || this.isCurGoalGrandChild(d)) {
         return offset + this.descendantsOffset;
     } else {
         return offset;
@@ -613,6 +635,20 @@ function hasGrandParent(n) {
 }
 PT.hasGrandParent = hasGrandParent;
 
+ProofTree.prototype.curGoal = function() {
+    return isGoal(this.curNode) ? this.curNode : this.curNode.parent;
+}
+
+ProofTree.prototype.isCurGoal = function(n) { return n.id === this.curGoal().id; }
+
+ProofTree.prototype.isCurGoalChild = function(n) {
+    return hasParent(n) && this.isCurGoal(n.parent);
+}
+
+ProofTree.prototype.isCurGoalGrandChild = function(n) {
+    return hasParent(n) && this.isCurGoalChild(n.parent);
+}
+
 ProofTree.prototype.isRootNode = function(n) { return n.id === this.rootNode.id; }
 
 ProofTree.prototype.isCurNode = function(n) { return n.id === this.curNode.id; }
@@ -622,13 +658,11 @@ ProofTree.prototype.isCurNodeParent = function(n) {
 }
 
 ProofTree.prototype.isCurNodeChild = function(n) {
-    if (hasParent(n) && this.isCurNode(n.parent)) { return true; }
-    return false;
+    return hasParent(n) && this.isCurNode(n.parent);
 }
 
 ProofTree.prototype.isCurNodeGrandChild = function(n) {
-    if (hasParent(n) && this.isCurNodeChild(n.parent)) { return true; }
-    return false;
+    return hasParent(n) && this.isCurNodeChild(n.parent);
 }
 
 ProofTree.prototype.isCurNodeSibling = function(n) {
@@ -638,18 +672,6 @@ ProofTree.prototype.isCurNodeSibling = function(n) {
 ProofTree.prototype.isCurNodeAncestor = function(n) {
     var common = this.commonAncestor(this.curNode, n);
     return common.id === n.id;
-}
-
-function getChildren(n) {
-    return n.allChildren;
-}
-
-function getGrandChildren(n) {
-    return _(getChildren(n))
-        .map(getChildren)
-        .flatten()
-        .value()
-    ;
 }
 
 ProofTree.prototype.resetSVGTransform = function() {
@@ -699,6 +721,7 @@ ProofTree.prototype.update = function(callback) {
             return isGoal(d) ? "4px" : "4px 0px";
         })
         .style("background-color", "rgba(0, 0, 0, 0)")
+        .style("font-family", "monospace")
         .each(function(d) {
             var jqObject = $(d3.select(this).node());
             var jQContents;
@@ -743,11 +766,12 @@ ProofTree.prototype.update = function(callback) {
 
     // Now that the nodes have a size, we can compute the factors
 
-    var visibleChildren = _(getChildren(curNode));
-    var visibleGrandChildren = _(getGrandChildren(curNode));
+    var curGoal = this.curGoal();
+    var visibleChildren = _(this.getVisibleChildren(curGoal));
+    var visibleGrandChildren = _(this.getVisibleGrandChildren(curGoal));
     var visibleNodes = _([]);
-    if (hasParent(curNode)) { visibleNodes = visibleNodes.concat([curNode.parent]); }
-    visibleNodes = visibleNodes.concat([curNode]);
+    if (hasParent(curGoal)) { visibleNodes = visibleNodes.concat([curGoal.parent]); }
+    visibleNodes = visibleNodes.concat([curGoal]);
     visibleNodes = visibleNodes.concat(visibleChildren.value());
     visibleNodes = visibleNodes.concat(visibleGrandChildren.value());
     var minXNode = _(visibleNodes).min(nodeX).value();
@@ -766,9 +790,7 @@ ProofTree.prototype.update = function(callback) {
     // we want all visible grand children to be apart from each other
     // i.e. ∀ a b, yFactor * | a.y - b.y | > a.height/2 + b.height/2 + nodeVSpacing
     var gcSiblings =
-        isGoal(curNode)
-        ? _.zip(visibleGrandChildren.value(), visibleGrandChildren.rest().value())
-        : [] // because grand-children don't appear for tactic nodes
+        _.zip(visibleGrandChildren.value(), visibleGrandChildren.rest().value())
     ;
     gcSiblings.pop(); // removes [gc_last, undefined] at the end
     var yFactors = gcSiblings.map(function(e) {
@@ -779,15 +801,17 @@ ProofTree.prototype.update = function(callback) {
 
     //TODO?
     var topMostDescendant = undefined;
-    var topMostChild = getChildren(curNode)[curNode.focusIndex];
-    if (topMostChild !== undefined) {
-        topMostDescendant = topMostChild;
-        var topMostGrandChild = getChildren(topMostChild)[topMostChild.focusIndex];
-        if (topMostGrandChild !== undefined) { topMostDescendant = topMostGrandChild; }
+    var topMostTactic = this.getVisibleChildren(curGoal)[curGoal.focusIndex];
+    if (topMostTactic !== undefined) {
+        topMostDescendant = topMostTactic;
+        var topMostGoal = this.getVisibleChildren(topMostTactic)[topMostTactic.focusIndex];
+        if (topMostGoal !== undefined) {
+            topMostDescendant = topMostGoal;
+        }
     }
     if (topMostDescendant !== undefined) {
         this.descendantsOffset =
-            this.yFactor * (curNode.x - topMostDescendant.x)
+            this.yFactor * (curGoal.x - topMostDescendant.x)
             + topMostDescendant.height/2 - curNode.height/2
         ;
     } else {
@@ -836,9 +860,9 @@ ProofTree.prototype.update = function(callback) {
                 .on("mouseout", function(d1) {
                     self.diffLayer.selectAll("g.diff")
                         .style("opacity", 0);
-                    var focusChild = getChildren(curNode)[curNode.focusIndex];
+                    var focusChild = getAllChildren(curNode)[curNode.focusIndex];
                     if (focusChild !== undefined) {
-                        var focusGrandChild = getChildren(focusChild)[focusChild.focusIndex];
+                        var focusGrandChild = getAllChildren(focusChild)[focusChild.focusIndex];
                         if (focusGrandChild !== undefined) {
                             self.diffLayer.selectAll("g.diff")
                                 .filter(function(d) { return d.id === focusGrandChild.id; })
@@ -942,14 +966,14 @@ ProofTree.prototype.update = function(callback) {
     ;
 
     var viewportX = - (hasParent(curNode) ? curNode.parent.cX : curNode.cX);
-    var viewportY = - curNode.cY;
+    var viewportY = - curGoal.cY;
     this.viewport
         .transition()
         .duration(animationDuration)
         .attr("transform", "translate(" + viewportX + ", " + viewportY + ")")
     ;
 
-    var diffSelection = this.diffLayer.selectAll("g").data(
+    var diffSelection = this.diffLayer.selectAll("g.node-diff").data(
         // only goal nodes with a grandparent give rise to a diff
         _(nodes).filter(function(d) { return isGoal(d) && hasGrandParent(d); }).value(),
         byNodeId
@@ -957,6 +981,7 @@ ProofTree.prototype.update = function(callback) {
 
     diffSelection.enter()
         .append("g")
+        .classed("node-diff", true)
         .classed("diff", true)
         .each(function(d) {
             var gp = d.parent.parent;
@@ -1026,10 +1051,12 @@ ProofTree.prototype.update = function(callback) {
                     diffList.push({ "oldHyp": undefined, "newHyp": newHyp });
             });
 
-            d.diffListSelection = d3this.selectAll("g").data(diffList, byDiffId);
+            d.diffListSelection =
+                d3.select(this).selectAll("g.diff-item").data(diffList, byDiffId);
 
             d.diffListSelection.enter()
                 .append("g")
+                .classed("diff-item", true)
                 .attr("id", byDiffId)
                 .each(function(diff) {
 
@@ -1041,8 +1068,9 @@ ProofTree.prototype.update = function(callback) {
                         d3this
                             .append("path")
                             .attr("fill", diffGreen)
-                            .attr("stroke", greenStroke)
                             .attr("opacity", diffOpacity)
+                            .attr("stroke", "black")
+                            .attr("stroke-width", 0)
                         ;
 
                     } else if (diff.newHyp === undefined) {
@@ -1241,8 +1269,12 @@ ProofTree.prototype.update = function(callback) {
             var gp = d.parent.parent;
             var focusChild = gp.allChildren[gp.focusIndex];
             var focusGrandChild = focusChild.allChildren[focusChild.focusIndex];
-            return d.id === focusGrandChild.id ? 1 : 0;
+            return (focusGrandChild !== undefined && d.id === focusGrandChild.id) ? 1 : 0;
         })
+    ;
+
+    diffSelection.exit()
+        .remove()
     ;
 
     /*
@@ -1271,11 +1303,11 @@ ProofTree.prototype.update = function(callback) {
 }
 
 function byDiffId(d) {
-    var res = "";
+    var res = "{";
     if (d.oldHyp !== undefined) { res += $(d.oldHyp.div).attr("id"); }
     res += "-";
     if (d.newHyp !== undefined) { res += $(d.newHyp.div).attr("id"); }
-    return res;
+    return res + "}";
 }
 
 function computeDiff(oldHyps, newHyps) {
@@ -1325,23 +1357,29 @@ ProofTree.prototype.shiftPrev = function(n) {
         return false;
     }
     if (n.solved) { return; }
-    // try to shift grandchild first
-    tryShifting(n.children[n.focusIndex])
-    || tryShifting(n);
+    if (isGoal(n)) {
+        tryShifting(n.children[n.focusIndex])
+            || tryShifting(n);
+    } else {
+        tryShifting(n);
+    }
 }
 
 ProofTree.prototype.shiftNext = function(n) {
     var self = this;
     function tryShifting(n) {
-        if (n.focusIndex + 1 < n.allChildren.length) {
+        if (n.focusIndex + 1 < self.getVisibleChildren(n).length) {
             n.focusIndex++; self.update(); return true;
         }
         return false;
     }
     if (n.solved) { return; }
-    // try to shift grandchild first
-    tryShifting(n.children[n.focusIndex])
-    || tryShifting(n);
+    if (isGoal(n)) {
+        tryShifting(n.children[n.focusIndex])
+            || tryShifting(n);
+    } else {
+        tryShifting(n);
+    }
 }
 
 ProofTree.prototype.click = function(d, remember, callback) {
@@ -1673,7 +1711,7 @@ ProofTree.prototype.keydownHandler = function() {
 
     var curNode = this.curNode;
 
-    var children = getChildren(curNode);
+    var children = this.getVisibleChildren(curNode);
 
     if (this.animationRunning) {
         // all keys are frozen during animation
