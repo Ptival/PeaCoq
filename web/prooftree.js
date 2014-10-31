@@ -705,6 +705,14 @@ ProofTree.prototype.update = function(callback) {
         .data(nodes, function(d) { return d.id || (d.id = _.uniqueId()); })
     ;
 
+    // D3 populates the children field with undefined when no children
+    // it makes my life easier to instead put an empty list there
+    textSelection
+        .each(function(d) {
+            if (!d.hasOwnProperty("children")) { d.children = []; }
+        })
+    ;
+
     var textEnter = textSelection.enter()
         .append("foreignObject")
         .classed("monospace", true)
