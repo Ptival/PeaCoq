@@ -1,0 +1,2 @@
+Xavier Leroy OPLSS course
+http://gallium.inria.fr/~xleroy/courses/Eugene-2012/
