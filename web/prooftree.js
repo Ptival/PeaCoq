@@ -766,9 +766,9 @@ ProofTree.prototype.update = function(callback) {
             d.width =
                 isTactic(d)
                 ? Math.min(rect.width, tacticNodeMaxWidth)
-                : rect.width
+                : Math.ceil(rect.width)
             ;
-            d.height = rect.height;
+            d.height = Math.ceil(rect.height);
         })
     ;
 
