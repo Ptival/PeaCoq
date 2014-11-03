@@ -807,9 +807,10 @@ ProofTree.prototype.update = function(callback) {
     });
     this.yFactor = _.isEmpty(yFactors) ? this.height : _.max(yFactors);
 
-    //TODO?
     var topMostDescendant = undefined;
-    var topMostTactic = this.getVisibleChildren(curGoal)[curGoal.focusIndex];
+    // when we are focused on a tactic, it becomes the 0-th child of its current goal
+    var topMostTacticIndex = isGoal(this.curNode) ? curGoal.focusIndex : 0;
+    var topMostTactic = this.getVisibleChildren(curGoal)[topMostTacticIndex];
     if (topMostTactic !== undefined) {
         topMostDescendant = topMostTactic;
         var topMostGoal = this.getVisibleChildren(topMostTactic)[topMostTactic.focusIndex];
@@ -819,8 +820,8 @@ ProofTree.prototype.update = function(callback) {
     }
     if (topMostDescendant !== undefined) {
         this.descendantsOffset =
-            this.yFactor * (curGoal.x - topMostDescendant.x)
-            + topMostDescendant.height/2 - curNode.height/2
+            this.yFactor * (nodeY(curGoal) - nodeY(topMostDescendant))
+            + topMostDescendant.height/2 - curGoal.height/2
         ;
     } else {
         this.descendantsOffset = 0;
