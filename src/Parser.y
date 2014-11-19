@@ -17,12 +17,15 @@ import Lexer
 %name unsafeParseHypothesis Hypothesis
 %name unsafeParseEval       Eval
 %tokentype { Token }
+%lexer { lexWrap } { TokEOF }
+%monad { Alex }
 %error { parseError }
 
 %token
 
 var { TokSym $$ }
 num { TokNum $$ }
+comment { TokComment $$ }
 '(' { TokLParen }
 ')' { TokRParen }
 '{' { TokLBrace }
@@ -72,21 +75,23 @@ num { TokNum $$ }
 %left '*'
 %nonassoc '(' ')'
 %nonassoc '{' '}'
-%left var
+%nonassoc var num
+-- it is important that APP has higher precedence than var, num, '('
+-- so that shift/reduce conflicts of the form
+-- Term Term . <var/num/'('>
+-- gets resolved into a reduce rather than shifting the incoming token
+%nonassoc APP
 -- high precedence
 
 %%
-
-Eval :: { Eval }
-: '=' Term ':' Term { Eval $2 $4 }
 
 Sentence :: { Vernac }
 : "Inductive" var ':' Term ":=" Constructors '.' { Inductive $2 $4 $6 }
 | "Theorem" var ':' Term '.' { Theorem $2 $4 }
 | "Definition" var MaybeBinders MaybeTypeAnnotation ":=" Term '.'
-{ Definition $2 $3 $4 $6 }
+  { Definition $2 $3 $4 $6 }
 | "Fixpoint" var Binders MaybeAnnotation MaybeTypeAnnotation ":=" Term '.'
-{ Fixpoint $2 $3 $4 $5 $7 }
+  { Fixpoint $2 $3 $4 $5 $7 }
 
 Term :: { Term }
 : var                                              { Var $1 }
@@ -107,7 +112,7 @@ Term :: { Term }
 | Term "++" Term                                   { App (App (Var "app")   $1) $3 }
 | "[]"                                             { Var "nil" }
 | Term '%' var                                     { $1 }
-| Term Term %prec var                              { App $1 $2 }
+| Term Term %prec APP                              { App $1 $2 }
 | '(' Term ')'                                     { $2 }
 | "match" Term "with" MaybePipe EquationStar "end" { Match $2 $5 }
 
@@ -125,10 +130,6 @@ Equation :: { Equation }
 PipedPatternStar :: { [Pattern] }
 : {- empty -}              { [] }
 | '|' Pattern PipedPatternStar { $2 : $3 }
-
-PatternStar :: { [Pattern] }
-: {- empty -}         { [] }
-| Pattern PatternStar { $1 : $2 }
 
 Pattern :: { Pattern }
 : var SubpatternStar   { Pattern $1 $2 }
@@ -191,16 +192,24 @@ Hypothesis :: { Hypothesis }
 : var ':' Term           { MkHyp $1 Nothing $3 }
 | var ":=" Term ':' Term { MkHyp $1 (Just $3) $5 }
 
+Eval :: { Eval }
+: '=' Term ':' Term { Eval $2 $4 }
+
 {
 
-parseError :: [Token] -> a
-parseError l = error $ "Parse error on: " ++ show l
+parseError :: Token -> Alex a
+parseError t = do
+    (line, column) <- getPosition
+    alexError $ "unexpected token " ++ show t
+      ++ " at line " ++ show line
+      ++ ", column " ++ show (column - 1)
 
 data Vernac
   = Inductive String Type [Constructor]
   | Theorem String Type
   | Definition String [Binder] (Maybe Type) Term
   | Fixpoint String [Binder] (Maybe String) (Maybe Type) Term
+  | Comment String
   deriving (Generic, Show)
 
 data Constructor
@@ -241,17 +250,21 @@ data Hypothesis
 data Eval = Eval Term Type
   deriving (Generic, Show)
 
+unsafeRight :: Either String b -> b
+unsafeRight (Right b) = b
+unsafeRight (Left e) = error e
+
 parseVernac :: String -> Vernac
-parseVernac = unsafeParseVernac . scanTokens
+parseVernac s = unsafeRight $ runAlex s unsafeParseVernac
 
 parseTerm :: String -> Term
-parseTerm = unsafeParseTerm . scanTokens
+parseTerm s = unsafeRight $ runAlex s unsafeParseTerm
 
 parseHypothesis :: String -> Hypothesis
-parseHypothesis = unsafeParseHypothesis . scanTokens
+parseHypothesis s = unsafeRight $ runAlex s unsafeParseHypothesis
 
 parseEval :: String -> Eval
-parseEval = unsafeParseEval . scanTokens
+parseEval s = unsafeRight $ runAlex s unsafeParseEval
 
 instance ToJSON Vernac where
 instance ToJSON Constructor where

@@ -5,6 +5,7 @@ module XMLParsers where
 import           Control.Applicative ((<$>), (<*))
 import           Control.Monad.Catch ()
 import           Data.Conduit
+import           Data.Either
 import           Data.List (intersperse)
 import           Data.Maybe (fromMaybe)
 import qualified Data.Text as T
