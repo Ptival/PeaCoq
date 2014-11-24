@@ -23,6 +23,10 @@ import           Snap.Snaplet.Session.Backends.CookieSession (initCookieSessionM
 import           Snap.Snaplet.Session.SessionManager ()
 import           Snap.Util.FileServe
 import           System.IO
+import           System.Log.Formatter
+import           System.Log.Handler (setFormatter)
+import           System.Log.Handler.Simple
+import           System.Log.Logger
 import           System.Process
 import           System.Random
 
@@ -45,7 +49,11 @@ data SessionState
 
 type PeaCoqHandler = Handler PeaCoq PeaCoq ()
 
-type HandledPeaCoqHandler = Handle -> Handle -> PeaCoqHandler
+data HandlerInput = HandlerInput
+  { identifier :: String
+  , inputHandle :: Handle
+  , outputHandle :: Handle
+  }
 
 sessionTimeoutSeconds :: Int
 sessionTimeoutSeconds = 3600
@@ -53,10 +61,17 @@ sessionTimeoutSeconds = 3600
 sessionTimeoutMicroseconds :: Int
 sessionTimeoutMicroseconds = sessionTimeoutSeconds * 1000 * 1000
 
+loggingPriority :: Priority
+loggingPriority = INFO
+
+logAction :: String -> String -> IO ()
+logAction = infoM
+
 main :: IO ()
 main = do
+  updateGlobalLogger rootLoggerName (setLevel loggingPriority)
   globRef <- newIORef $ GlobalState 0 IM.empty
-  forkIO $ cleanStaleSessions globRef
+  forkIO $ cleanStaleSessions globRef -- parallel thread to regularly clean up
   serveSnaplet defaultConfig $ peacoqSnaplet globRef
 
 log :: String -> IO ()
@@ -76,8 +91,9 @@ touchSession (SessionState n _ h ph) = SessionState n True h ph
 cleanStaleSessions :: IORef GlobalState -> IO ()
 cleanStaleSessions globRef = forever $ do
   sessionsToClose <- atomicModifyIORef' globRef markAndSweep
-  forM sessionsToClose $ \(SessionState n _ (hi, ho) ph) -> do
-    log $ "Terminating coqtop session " ++ show n
+  forM sessionsToClose $ \(SessionState ident _ (hi, ho) ph) -> do
+    logAction (show ident) $ "END SESSION"
+    log $ "Terminating coqtop session " ++ show ident
     hClose hi
     hClose ho
     terminateProcess ph -- not stricly necessary
@@ -105,7 +121,7 @@ sessionKey = "key"
 
 withSessionHandles ::
   IORef GlobalState
-  -> HandledPeaCoqHandler
+  -> (HandlerInput -> PeaCoqHandler)
   -> PeaCoqHandler
 withSessionHandles r h = withSession lSession $ do
   -- retrieve or create a key for this session
@@ -119,20 +135,26 @@ withSessionHandles r h = withSession lSession $ do
       Just key -> do
         return . read . T.unpack $ key
   -- retrieve or create two handles for this session
-  (hi, ho) <- liftIO $ do
+  (ident, hi, ho) <- liftIO $ do
     GlobalState _ m <- readIORef r
     case IM.lookup mapKey m of
       Nothing -> do
         (hi, ho, ph) <- startCoqtop
         n <- atomicModifyIORef' r $ updateNewSession mapKey (hi, ho) ph
+        let ident = show n
+        handler <- fileHandler ("./log/log-" ++ ident) loggingPriority
+        let format = simpleLogFormatter "[$time] $msg"
+        let fHandler = setFormatter handler format
+        updateGlobalLogger ident $ addHandler fHandler
+        logAction ident "NEW SESSION"
         log $ "Starting coqtop session " ++ show n
-        return (hi, ho)
-      Just (SessionState _ _ hiho _) -> do
+        return (n, hi, ho)
+      Just (SessionState ident _ (hi, ho) _) -> do
         -- update the timestamp
         atomicModifyIORef' r $ updateTouchSession mapKey
-        return hiho
+        return (ident, hi, ho)
   -- run the handler
-  h hi ho
+  h (HandlerInput (show ident) hi ho)
   where
     updateNewSession
       :: Int -> (Handle, Handle) -> ProcessHandle -> GlobalState -> (GlobalState, Int)
@@ -158,7 +180,8 @@ peacoqSnaplet globRef = makeSnaplet "PeaCoq" "PeaCoq" Nothing $ do
     peacoqRoutes :: [(ByteString, PeaCoqHandler)]
     peacoqRoutes =
       map (\(r, handler) -> (r, withSessionHandles globRef handler))
-      [ ("query",            queryHandler)
+      [ ("log",              logHandler)
+      , ("query",            queryHandler)
       , ("queryundo",        queryUndoHandler)
       , ("undo",             undoHandler)
       , ("status",           statusHandler)
@@ -172,13 +195,13 @@ peacoqSnaplet globRef = makeSnaplet "PeaCoq" "PeaCoq" Nothing $ do
       [ ("/",                serveDirectoryWith myDirConfig "web/")
       ]
 
-respond :: CoqtopResponse [String] -> HandledPeaCoqHandler
-respond response hi ho = do
+respond :: CoqtopResponse [String] -> HandlerInput -> PeaCoqHandler
+respond response (HandlerInput _ hi ho) = do
   goals <- liftIO $ hQueryGoal hi ho
   writeJSON $ MkPeaCoqResponse goals response
 
-parseHandler :: HandledPeaCoqHandler
-parseHandler _ _ = do
+parseHandler :: HandlerInput -> PeaCoqHandler
+parseHandler _ = do
   param <- getParam "query"
   case param of
     Nothing -> return ()
@@ -186,8 +209,8 @@ parseHandler _ _ = do
       let response = parseVernac $ toString queryBS
       writeJSON response
 
-parseEvalHandler :: HandledPeaCoqHandler
-parseEvalHandler _ _ = do
+parseEvalHandler :: HandlerInput -> PeaCoqHandler
+parseEvalHandler _ = do
   param <- getParam "query"
   case param of
     Nothing -> return ()
@@ -195,8 +218,8 @@ parseEvalHandler _ _ = do
       let response = parseEval $ toString queryBS
       writeJSON response
 
-queryHandler :: HandledPeaCoqHandler
-queryHandler hi ho = do
+queryHandler :: HandlerInput -> PeaCoqHandler
+queryHandler input@(HandlerInput _ hi ho) = do
   param <- getParam "query"
   case param of
     Nothing -> return ()
@@ -207,10 +230,10 @@ queryHandler hi ho = do
         putStrLn $ query
         hInterp hi query
         hForceValueResponse ho
-      respond response hi ho
+      respond response input
 
-queryUndoHandler :: HandledPeaCoqHandler
-queryUndoHandler hi ho = do
+queryUndoHandler :: HandlerInput -> PeaCoqHandler
+queryUndoHandler input@(HandlerInput _ hi ho) = do
   param <- getParam "query"
   case param of
     Nothing -> return ()
@@ -220,7 +243,7 @@ queryUndoHandler hi ho = do
         let query = toString queryBS
         hInterp hi query
         hForceValueResponse ho
-      respond response hi ho
+      respond response input
       case response of
         Fail _ ->
           return ()
@@ -230,36 +253,36 @@ queryUndoHandler hi ho = do
             liftIO $ hForceValueResponse ho
             return ()
 
-undoHandler :: HandledPeaCoqHandler
-undoHandler hi ho = do
+undoHandler :: HandlerInput -> PeaCoqHandler
+undoHandler input@(HandlerInput _ hi ho) = do
   liftIO $ hCall hi [("val", "rewind"), ("steps", "1")] ""
   r <- liftIO $ hForceValueResponse ho
-  respond r hi ho
+  respond r input
 
-statusHandler :: HandledPeaCoqHandler
-statusHandler hi ho = do
+statusHandler :: HandlerInput -> PeaCoqHandler
+statusHandler input@(HandlerInput _ hi ho) = do
   liftIO $ hCall hi [("val", "status")] ""
   r <- liftIO $ hForceStatusResponse ho
-  respond (return . show <$> r) hi ho
+  respond (return . show <$> r) input
 
-rewindHandler :: HandledPeaCoqHandler
-rewindHandler hi ho = do
+rewindHandler :: HandlerInput -> PeaCoqHandler
+rewindHandler input@(HandlerInput _ hi ho) = do
   param <- getParam "query"
   case param of
     Nothing -> return ()
     Just stepsBS -> do
       liftIO $ hCall hi [("val", "rewind"), ("steps", toString stepsBS)] ""
       r <- liftIO $ hForceValueResponse ho
-      respond (return . show <$> r) hi ho
+      respond (return . show <$> r) input
 
-qedHandler :: HandledPeaCoqHandler
-qedHandler hi ho = do
+qedHandler :: HandlerInput -> PeaCoqHandler
+qedHandler input@(HandlerInput _ hi ho) = do
   liftIO $ hInterp hi "Qed."
   r <- liftIO $ hForceValueResponse ho
-  respond r hi ho
+  respond r input
 
-togglePrintingAll :: Bool -> HandledPeaCoqHandler
-togglePrintingAll b hi ho = do
+togglePrintingAll :: Bool -> HandlerInput -> PeaCoqHandler
+togglePrintingAll b input@(HandlerInput _ hi ho) = do
   let query =
         "<call id=\"0\" val=\"setoptions\">"
         ++ "<pair><list><string>Printing</string><string>All</string></list>"
@@ -269,4 +292,15 @@ togglePrintingAll b hi ho = do
         ++ "</pair></call>"
   liftIO $ hPutStrLn hi query
   r <- liftIO $ hForceValueResponse ho
-  respond r hi ho
+  respond r input
+
+logHandler :: HandlerInput -> PeaCoqHandler
+logHandler input@(HandlerInput ident _ _) = do
+  param <- getParam "query"
+  case param of
+    Nothing -> return ()
+    Just messageBS -> do
+      let message = toString messageBS
+      liftIO . putStrLn $ "Attempting to log: " ++ message
+      liftIO $ noticeM ident message
+      respond (Good ["OK"]) input

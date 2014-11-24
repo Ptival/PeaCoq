@@ -404,6 +404,8 @@ ProofTree.prototype.newTheorem = function(
         success = self.hInit(response, preAnimCallback, postAnimCallback);
     });
 
+    this.logAction("THEOREM " + theorem);
+
     return success;
 
 }
@@ -879,7 +881,13 @@ ProofTree.prototype.update = function(callback) {
                         }
                     }
                 })
-                .on("click", function(d) { self.click(d); })
+                .on("click", function(d) {
+
+                    self.logAction("CLICK " + nodeString(d));
+
+                    self.click(d);
+
+                })
         })
     ;
 
@@ -891,7 +899,6 @@ ProofTree.prototype.update = function(callback) {
             if (!hasParent(d) || self.isRootNode(d)) {
                 return d.cX;
             }
-
             if (isGoal(d)) {
                 var nodeToReach = d.parent.parent;
                 d.cX = nodeToReach.cX;
@@ -901,7 +908,6 @@ ProofTree.prototype.update = function(callback) {
                 d.cX = nodeToReach.cX;
                 d.cY = nodeToReach.cY;
             }
-
             return d.cX;
         })
         .attr("y", function(d) { return d.cY; })
@@ -1361,7 +1367,10 @@ ProofTree.prototype.shiftPrev = function(n) {
     var self = this;
     function tryShifting(n) {
         if (n.focusIndex> 0) {
-            n.focusIndex--; self.update(); return true;
+            n.focusIndex--;
+            self.logAction("UP " + nodeString(n.allChildren[n.focusIndex]));
+            self.update();
+            return true;
         }
         return false;
     }
@@ -1378,7 +1387,10 @@ ProofTree.prototype.shiftNext = function(n) {
     var self = this;
     function tryShifting(n) {
         if (n.focusIndex + 1 < self.getVisibleChildren(n).length) {
-            n.focusIndex++; self.update(); return true;
+            n.focusIndex++;
+            self.logAction("DOWN " + nodeString(n.allChildren[n.focusIndex]));
+            self.update();
+            return true;
         }
         return false;
     }
@@ -1439,7 +1451,6 @@ ProofTree.prototype.click = function(d, remember, callback) {
 
 // called when n has been solved
 ProofTree.prototype.solved = function(n) {
-
     var self = this;
     n.solved = true;
     collapse(n);
@@ -1453,6 +1464,7 @@ ProofTree.prototype.solved = function(n) {
         }, animationDuration);
     } else {
         window.setTimeout(function () {
+            self.logAction("QED " + JSON.stringify(PT.proofFrom(self.rootNode)));
             self.qedCallback(self);
         }, animationDuration);
     }
@@ -1624,6 +1636,7 @@ ProofTree.prototype.syncRequest = function(r, q, h) {
 
 ProofTree.prototype.syncQuery = function(q, h) { this.syncRequest('query', q, h); }
 ProofTree.prototype.syncQueryUndo = function(q, h) { this.syncRequest('queryundo', q, h); }
+ProofTree.prototype.logAction = function(s) { this.syncRequest("log", s, function() {}); }
 
 function hIgnore(response) { }
 
@@ -1733,13 +1746,16 @@ ProofTree.prototype.keydownHandler = function() {
     case 37: // Left
     case 65: // a
         if(hasParent(curNode)) {
+            this.logAction("LEFT " + nodeString(curNode.parent));
             this.click(curNode.parent);
         }
         break;
 
     case 39: // Right
     case 68: // d
-        this.click(children[curNode.focusIndex]);
+        var dest = children[curNode.focusIndex];
+        this.logAction("RIGHT " + nodeString(dest));
+        this.click(dest);
         break;
 
     case 38: // Up
@@ -2440,4 +2456,20 @@ function setupTextareaResizing() {
         .on('change keyup keydown paste', 'textarea', PT.resizeTextarea)
     ;
 
+}
+
+function nodeString(d) {
+    return JSON.stringify(
+        {
+            "id": d.id,
+            "depth": d.depth,
+            "pName": d.pName,
+            "hyps": _(d.hyps).map(function(h) { return {
+                "hName": h.hName,
+                "hType": h.hType,
+                "hValue": h.hValue,
+            }; }).value(),
+            "name": d.name,
+        }
+    );
 }

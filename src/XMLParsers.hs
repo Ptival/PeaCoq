@@ -5,7 +5,6 @@ module XMLParsers where
 import           Control.Applicative ((<$>), (<*))
 import           Control.Monad.Catch ()
 import           Data.Conduit
-import           Data.Either
 import           Data.List (intersperse)
 import           Data.Maybe (fromMaybe)
 import qualified Data.Text as T
@@ -38,6 +37,7 @@ parseOption pJust =
   case val of
     "some" -> pJust
     "none" -> return Nothing
+    _ -> error "option string was neither some nor none"
 
 forceOption :: ParseXML (Maybe a) -> ParseXML (Maybe a)
 forceOption pJust = force "option" $ parseOption pJust
@@ -68,6 +68,7 @@ parseGenericCoqtopResponse k =
       "good" -> do
         s <- k
         return $ Good s
+      _ -> error "value string was neither fail nor good"
 
 {-
 parseSuccessfulCoqtopResponse :: ParseXML t -> ParseXML (Maybe t)
@@ -109,6 +110,7 @@ forceGoalResponse =
     mgs <- forceOption parseGoals
     return $ fromMaybe (MkGoals [] []) mgs
 
+parseTheorem :: ParseXML (Maybe Theorem)
 parseTheorem =
   tagNoAttr "coq_object" $
   do
@@ -139,6 +141,7 @@ parseStatusResponse =
     i2 <- forceCoqInt
     return (l1, o1, l2, i1, i2)
 
+forceStatusResponse :: ParseXML (CoqtopResponse Status)
 forceStatusResponse =
   force "status" $ parseGenericCoqtopResponse $
   force "status" parseStatusResponse
