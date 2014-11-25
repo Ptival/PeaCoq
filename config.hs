@@ -1,0 +1,4 @@
+Config
+{ configUserId  = Nothing
+, configLogPath = "."
+}
