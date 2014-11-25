@@ -865,7 +865,11 @@ ProofTree.prototype.update = function(callback) {
                     self.diffLayer.selectAll("g.diff")
                         .style("opacity", 0);
                     self.diffLayer.selectAll("g.diff")
-                        .filter(function(d2) { return d1.id === d2.id; })
+                        .filter(function(d2) {
+                            // the first condition makes sure diffs don't show up for
+                            // nodes whose grandparents are off-screen
+                            return self.isCurGoalGrandChild(d2) && d1.id === d2.id;
+                        })
                         .style("opacity", 1);
                 })
                 .on("mouseout", function(d1) {
