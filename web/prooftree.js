@@ -983,7 +983,10 @@ ProofTree.prototype.update = function(callback) {
     ;
 
     var viewportX = - (hasParent(curNode) ? curNode.parent.cX : curNode.cX);
-    var viewportY = - curGoal.cY;
+    var viewportY = - (hasParent(curGoal)
+                       ? Math.min(curGoal.cY, curGoal.parent.cY)
+                       : curGoal.cY
+                      );
     this.viewport
         .transition()
         .duration(animationDuration)
