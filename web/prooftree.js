@@ -383,7 +383,7 @@ function evenFloor(x) {
 
 ProofTree.prototype.newTheorem = function(
     theorem,
-    tactics,           // set of tactics allowed (TODO: make this more dynamic)
+    tactics,           // function from prooftree to set of tactics allowed
     preAnimCallback,   // to be called once the data is ready
     postAnimCallback)  // to be called once the svg is ready
 {
@@ -531,7 +531,7 @@ ProofTree.prototype.tryAllTactics = function() {
     var curGoal = (isGoal(this.curNode)) ? this.curNode : this.curNode.parent;
     curHyps = curGoal.hyps;
 
-    _(this.tactics).each(function(t) {
+    _(this.tactics(this)).each(function(t) {
 
         switch (t) {
         case "destruct":
@@ -859,7 +859,7 @@ ProofTree.prototype.update = function(callback) {
         .attr("x", function(d) { return d.cX; })
         .attr("y", function(d) { return d.cY; })
         .each("end", function() {
-            // this is here so that it does not work before nodes are positioned
+            // this is in "end" so that it does not trigger before nodes are positioned
             d3.select(this)
                 .on("mouseover", function(d1) {
                     self.diffLayer.selectAll("g.diff")
@@ -871,6 +871,7 @@ ProofTree.prototype.update = function(callback) {
                 .on("mouseout", function(d1) {
                     self.diffLayer.selectAll("g.diff")
                         .style("opacity", 0);
+                    /* actually this is annoying because diffs won't go away
                     var focusChild = getAllChildren(curNode)[curNode.focusIndex];
                     if (focusChild !== undefined) {
                         var focusGrandChild = getAllChildren(focusChild)[focusChild.focusIndex];
@@ -880,6 +881,7 @@ ProofTree.prototype.update = function(callback) {
                                 .style("opacity", 1);
                         }
                     }
+                    */
                 })
                 .on("click", function(d) {
 

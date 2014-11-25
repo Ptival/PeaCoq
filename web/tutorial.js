@@ -24,118 +24,25 @@ var menu =
 
 function mkText(t) { return $("<div>").text(t); }
 
-function mkCoq(t) { return mkClickableTextarea(t, function() { }) }
+function mkCoq(t, tactics) { return mkClickableTextarea(t, tactics, function() { }) }
 
 function stackMachine(add) {
 
-    add(mkText("'sup?"));
+    add(mkText("One of the most basic datatypes is the boolean type. A boolean is either the constructor true, or the constructor false:"));
 
-    add(mkCoq("Inductive binop : Type := Plus | Times."));
+    add(mkCoq("Inductive bool : Type := true | false."));
 
-    add(mkCoq(
-        'Inductive exp : Set :='
-            + '\n| Const : nat -> exp'
-            + '\n| Binop : binop -> exp -> exp -> exp'
-            + '\n.'
-    ));
+    add(mkText("Let's prove something right away, a value of type bool can only be equal to true or equal to false."));
 
     add(mkCoq(
-        'Definition binopDenote (b : binop) : nat -> nat -> nat :='
-            + '\n  match b with'
-            + '\n  | Plus => plus'
-            + '\n  | Times => mult'
-            + '\nend.'
-    ));
-
-    add(mkCoq(
-        'Fixpoint expDenote (e : exp) : nat :='
-        + '\n  match e with'
-            + '\n  | Const n => n'
-            + '\n  | Binop b e1 e2 => (binopDenote b) (expDenote e1) (expDenote e2)'
-        + '\n  end.'
-    ));
-
-    add(mkCoq(
-        "Eval simpl in expDenote (Const 42)."
-    ));
-
-    add(mkCoq(
-        "Eval simpl in expDenote (Binop Plus (Const 2) (Const 2))."
-    ));
-
-    add(mkCoq(
-        "Eval simpl in expDenote (Binop Times (Binop Plus (Const 2) (Const 2)) (Const 7))."
-    ));
-
-    add(mkCoq(
-        "Inductive instr : Set :="
-            + "\n| iConst : nat -> instr"
-            + "\n| iBinop : binop -> instr"
-            + "\n."
-    ));
-
-    add(mkCoq(
-        "Definition prog := list instr."
-    ));
-
-    add(mkCoq(
-        "Definition stack := list nat."
-    ));
-
-    add(mkCoq(
-        "Definition instrDenote (i : instr) (s : stack) : option stack :="
-            + "\n  match i with"
-            + "\n  | iConst n => Some (n :: s)"
-            + "\n  | iBinop b =>"
-            + "\n    match s with"
-            + "\n    | arg1 :: arg2 :: s' => Some ((binopDenote b) arg1 arg2 :: s')"
-            + "\n    | _ => None"
-            + "\n    end"
-            + "\n  end."
-    ));
-
-    add(mkCoq(
-        "Fixpoint progDenote (p : prog) (s : stack) : option stack :="
-            + "\n  match p with"
-            + "\n    | nil => Some s"
-            + "\n    | i :: p' =>"
-            + "\n      match instrDenote i s with"
-            + "\n        | None => None"
-            + "\n        | Some s' => progDenote p' s'"
-            + "\n      end"
-            + "\n  end."
-    ));
-
-    add(mkCoq(
-        "Fixpoint compile (e : exp) : prog :="
-            + "\n  match e with"
-            + "\n    | Const n => iConst n :: nil"
-            + "\n    | Binop b e1 e2 => compile e2 ++ compile e1 ++ iBinop b :: nil"
-            + "\n  end."
-    ));
-
-    add(mkCoq(
-        "Eval simpl in compile (Const 42)."
-    ));
-
-    add(mkCoq(
-        "Eval simpl in compile (Binop Plus (Const 2) (Const 2))."
-    ));
-
-    add(mkCoq(
-        "Eval simpl in compile (Binop Times (Binop Plus (Const 2) (Const 2)) (Const 7))."
-    ));
-
-    add(mkCoq(
-        "Eval simpl in progDenote (compile (Const 42)) nil."
-    ));
-
-    add(mkCoq(
-        "Eval simpl in progDenote (compile (Binop Plus (Const 2) (Const 2))) nil."
-    ));
-
-    add(mkCoq(
-        "Eval simpl in progDenote (compile (Binop Times (Binop Plus (Const 2) (Const 2)) (Const 7))) nil."
+        'Theorem bools_are_true_or_false : forall b : bool, b = true \\\/ b = false.',
+        function(pt) {
+            if (pt.curNode.depth === 0) {
+                return ["intro"];
+            } else {
+                return ["left", "right", "destruct", "reflexivity"];
+            }
+        }
     ));
 
     add(mkCoq(
@@ -319,7 +226,7 @@ function firstStepsBooleans(addItem) {
 
 }
 
-function mkClickableTextarea(initialText) {
+function mkClickableTextarea(initialText, tactics) {
     var res = $("<div>").addClass("input-group");
     res.append(
         $("<textarea>")
@@ -333,6 +240,10 @@ function mkClickableTextarea(initialText) {
             .append(mkPlayButton(function() {
                 var li = $(this).parents("li").first();
                 var query = li.find("textarea").val();
+
+                $("body").animate({
+                    "scrollTop": li.offset().top,
+                }, 1000);
 
                 // remove the previous alert, if any
                 li.find("div.alert").remove();
@@ -353,9 +264,6 @@ function mkClickableTextarea(initialText) {
                                     .html(showVernac(response))
                                 ;
                                 li.append(answer);
-                                $("body").animate({
-                                        "scrollTop": li.offset().top,
-                                }, 1000);
                             });
                             break;
 
@@ -427,7 +335,10 @@ function mkClickableTextarea(initialText) {
                         makeActive(pt);
                     });
 
-                    pt.newTheorem(query, PT.tDiscriminate, function() { }, function() { });
+                    pt.newTheorem(query,
+                                  (tactics === undefined) ? PT.tDiscriminate : tactics,
+                                  function() { },
+                                  function() { });
 
                 } else if (query.startsWith("Definition")) {
 
@@ -445,9 +356,6 @@ function mkClickableTextarea(initialText) {
                                     .html(showVernac(response))
                                 ;
                                 li.append(answer);
-                                $("body").animate({
-                                        "scrollTop": li.offset().top,
-                                }, 1000);
                             });
                             break;
 
@@ -485,9 +393,6 @@ function mkClickableTextarea(initialText) {
                                     .html(showVernac(response))
                                 ;
                                 li.append(answer);
-                                $("body").animate({
-                                        "scrollTop": li.offset().top,
-                                }, 1000);
                             });
                             break;
 
