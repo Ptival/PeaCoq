@@ -24,73 +24,98 @@ function firstSteps(add) {
             switch(pt.curNode.depth) {
 
             case 0:
-                tooltipSequence(pt, [
-                    {
-                        "node": pt.curNode,
-                        "arrowPosition": "left",
-                        "contents":
-                        "<p>This is your current goal. It is highlighted in green.</p>"
-                            + '<p><code>∀</code> is a sign we use to mean "for all".</p>'
-                            + '<p><code>b : bool</code> should be read as "b of type bool".</p>'
-                            + '<p>Therefore, this goal asks you to prove that something is true '
-                            + 'for any element <code>b</code> of the <code>bool</code> type.</p>'
-                        ,
-                    },
-                    {
-                        "node": pt.curNode.children[0],
-                        "arrowPosition": "top",
-                        "contents":
-                        "<p>This is a tactic node.</p>"
-                            + "<p>In order to prove a goal, you will need to pick which tactic "
-                            + "to run.</p>"
-                            + "<p><code>intro</code> is the only tactic which applies here.</p>"
-                            + "<p>It moves the universally-quantified variable <code>b</code> "
-                            + "from your goal to your context.</p>"
-                        ,
-                    },
-                    {
-                        "node": pt.curNode.children[0].children[0],
-                        "arrowPosition": "right",
-                        "contents":
-                        "<p>This is the resulting subgoal.</p>"
-                            + "<p>Everything above the horizontal line is your context.</p>"
-                            + "<p>You can see the variable <code>b</code> of type "
-                            + "<code>bool</code> has been moved from the goal to the "
-                            + "context.</p>"
-                            + "<p>You can hover your mouse over a subgoal to see what has "
-                            + "changed from the previous goal. It's an easy way of checking "
-                            + "what a tactic does.</p>"
-                        ,
-                    },
-                ]);
+                if (!pt.userState.introducedGoal) {
+                    pt.userState.introducedGoal = true;
+                    tooltipSequence(pt, [
+                        {
+                            "node": pt.curNode,
+                            "arrowPosition": "left",
+                            "contents":
+                            "<p>This is your current goal. It is highlighted in green.</p>"
+                                + '<p><code>∀</code> is a sign we use to mean "for all".</p>'
+                                + '<p><code>b : bool</code> should be read as "b of type bool".</p>'
+                                + '<p>Therefore, this goal asks you to prove that something is true '
+                                + 'for any element <code>b</code> of the <code>bool</code> type.</p>'
+                            ,
+                        },
+                        {
+                            "node": pt.curNode.children[0],
+                            "arrowPosition": "top",
+                            "contents":
+                            "<p>This is a tactic node.</p>"
+                                + "<p>In order to prove a goal, you will need to pick which tactic "
+                                + "to run.</p>"
+                                + "<p><code>intro</code> is the only tactic which applies here.</p>"
+                                + "<p>It moves the universally-quantified variable <code>b</code> "
+                                + "from your goal to your context.</p>"
+                            ,
+                        },
+                        {
+                            "node": pt.curNode.children[0].children[0],
+                            "arrowPosition": "right",
+                            "contents":
+                            "<p>This is the resulting subgoal.</p>"
+                                + "<p>Everything above the horizontal line is your context.</p>"
+                                + "<p>You can see the variable <code>b</code> of type "
+                                + "<code>bool</code> has been moved from the goal to the "
+                                + "context.</p>"
+                                + "<p>You can hover your mouse over a subgoal to see what has "
+                                + "changed from the previous goal. It's an easy way of checking "
+                                + "what a tactic does.</p>"
+                            ,
+                        },
+                    ]);
+                }
                 return;
                 break;
 
             case 2:
-                tooltipSequence(pt, [
-                    {
-                        "node": pt.curNode.children[2],
-                        "arrowPosition": "top",
-                        "contents":
-                        "<p>There can be more than one tactic applicable to a given goal.</p>"
-                            + "<p>Some of them might do the wrong thing, so be mindful.</p>"
-                        ,
-                    },
-                    {
-                        "node": pt.curNode.parent,
-                        "arrowPosition": "top",
-                        "contents":
-                        "<p>If you made a wrong move, you can always click on the parent "
-                        + "tactic to go back up in the tree and change your decision.</p>"
-                        ,
-                    },
-                ]);
+                if (!pt.userState.introducedMultipleTactics) {
+                    pt.userState.introducedMultipleTactics = true;
+                    tooltipSequence(pt, [
+                        {
+                            "node": pt.curNode.children[2],
+                            "arrowPosition": "top",
+                            "contents":
+                            "<p>There can be more than one tactic applicable to a given goal.</p><p>Some of them might do the wrong thing, so be mindful.</p>"
+                            ,
+                        },
+                        {
+                            "node": pt.curNode.parent,
+                            "arrowPosition": "top",
+                            "contents":
+                            "<p>If you made a wrong move, you can always click on the parent tactic to go back up in the tree and change your decision.</p>"
+                            ,
+                        },
+                        {
+                            "node": pt.curNode.children[0],
+                            "arrowPosition": "top",
+                            "contents":
+                            "<p>The <code>left</code> tactic should be used when you think the left side of a disjunction is true. You will need to prove only that side if you pick this tactic.</p>"
+                            ,
+                        },
+                        {
+                            "node": pt.curNode.children[1],
+                            "arrowPosition": "top",
+                            "contents":
+                            "<p>The <code>right</code> tactic should be used when you think the right side of a disjunction is true.</p>"
+                            ,
+                        },
+                        {
+                            "node": pt.curNode.children[2],
+                            "arrowPosition": "top",
+                            "contents":
+                            "<p>The <code>destruct</code> tactic lets you perform case-analysis on a value, according to its type. Here, it will split your goal into two subgoals, one for the case where <code>b</code> is <code>true</code>, and one for the case where <code>b</code> is <code>false</code>.</p>"
+                            ,
+                        },
+                    ]);
+                }
                 return;
                 break;
 
             };
 
-            if (pt.curNode.depth === 6 && pt.curNode.children.length == 0) {
+            if (pt.curNode.children.length === 0) {
                 tooltipSequence(pt, [
                     {
                         "node": pt.curNode,
@@ -112,8 +137,10 @@ function firstSteps(add) {
                 return;
             }
 
-            if (pt.curNode.allChildren.length == 1
-                && pt.curNode.allChildren[0].allChildren.length == 0) {
+            if (!pt.userState.introducedFinishingTactic
+                && pt.curNode.allChildren.length === 1
+                && pt.curNode.allChildren[0].allChildren.length === 0) {
+                pt.userState.introducedFinishingTactic = true;
                 tooltipSequence(pt, [
                     {
                         "node": pt.curNode.allChildren[0],

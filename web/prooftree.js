@@ -141,6 +141,7 @@ function ProofTree(anchor, width, height, qedCallback, peacoqDir, onError) {
     this.svgId = _.uniqueId();
     this.xFactor = this.width;
     this.yFactor = this.height;
+    this.userState = {};
 
     this.tree = d3.layout.tree()
         .children(self.getVisibleChildren.bind(self))
