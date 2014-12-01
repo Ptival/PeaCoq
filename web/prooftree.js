@@ -137,6 +137,7 @@ function ProofTree(anchor, width, height, qedCallback, peacoqDir, onError) {
     this.onError = onError;
 
     this.animationRunning = false;
+    this.paused = false;
     this.svgId = _.uniqueId();
     this.xFactor = this.width;
     this.yFactor = this.height;
@@ -180,6 +181,7 @@ function ProofTree(anchor, width, height, qedCallback, peacoqDir, onError) {
     this.rectLayer = this.viewport.append("g").attr("id", "rect-layer");
     this.diffLayer = this.viewport.append("g").attr("id", "diff-layer");
     this.textLayer = this.viewport.append("g").attr("id", "text-layer");
+    this.tipsLayer = this.viewport.append("g").attr("id", "tips-layer");
 
     this.svg
         .insert("script", ":first-child")
@@ -383,15 +385,16 @@ function evenFloor(x) {
 
 ProofTree.prototype.newTheorem = function(
     theorem,
-    tactics,           // function from prooftree to set of tactics allowed
-    preAnimCallback,   // to be called once the data is ready
-    postAnimCallback)  // to be called once the svg is ready
+    tactics,    // function from prooftree to set of tactics allowed
+    afterUpdate // callback after update
+)
 {
 
     var self = this;
 
     this.theorem = theorem;
     this.tactics = tactics;
+    this.afterUpdate = afterUpdate === undefined ? function(){} : afterUpdate;
 
     // hide previous proof result if any, show svg if hidden
     this.svg.style("display", "");
@@ -401,7 +404,7 @@ ProofTree.prototype.newTheorem = function(
     var success = false;
 
     this.syncQuery(theorem, function(response) {
-        success = self.hInit(response, preAnimCallback, postAnimCallback);
+        success = self.hInit(response);
     });
 
     this.logAction("THEOREM " + theorem);
@@ -585,7 +588,7 @@ ProofTree.prototype.tryAllTactics = function() {
 
 }
 
-ProofTree.prototype.hInit = function(response, preAnimCallback, postAnimCallback) {
+ProofTree.prototype.hInit = function(response) {
 
     var self = this;
 
@@ -617,10 +620,6 @@ ProofTree.prototype.hInit = function(response, preAnimCallback, postAnimCallback
     this.rootNode.allChildren = this.tryAllTactics();
 
     this.update();
-
-    preAnimCallback(self);
-
-    window.setTimeout(function() { postAnimCallback(self); }, animationDuration);
 
     return true;
 
@@ -986,15 +985,15 @@ ProofTree.prototype.update = function(callback) {
         .remove()
     ;
 
-    var viewportX = - (hasParent(curNode) ? curNode.parent.cX : curNode.cX);
-    var viewportY = - (hasParent(curGoal)
+    this.viewportX = - (hasParent(curNode) ? curNode.parent.cX : curNode.cX);
+    this.viewportY = - (hasParent(curGoal)
                        ? Math.min(curGoal.cY, curGoal.parent.cY)
                        : curGoal.cY
                       );
     this.viewport
         .transition()
         .duration(animationDuration)
-        .attr("transform", "translate(" + viewportX + ", " + viewportY + ")")
+        .attr("transform", "translate(" + self.viewportX + ", " + self.viewportY + ")")
     ;
 
     var diffSelection = this.diffLayer.selectAll("g.node-diff").data(
@@ -1288,6 +1287,7 @@ ProofTree.prototype.update = function(callback) {
         .style("opacity", 0)
         .transition()
         .duration(animationDuration)
+    /*
         .style("opacity", function(d) {
             if (!self.isCurNodeGrandChild(d)) { return 0; }
             var gp = d.parent.parent;
@@ -1295,6 +1295,7 @@ ProofTree.prototype.update = function(callback) {
             var focusGrandChild = focusChild.allChildren[focusChild.focusIndex];
             return (focusGrandChild !== undefined && d.id === focusGrandChild.id) ? 1 : 0;
         })
+    */
     ;
 
     diffSelection.exit()
@@ -1322,6 +1323,7 @@ ProofTree.prototype.update = function(callback) {
         if (callback !== undefined) {
             callback();
         }
+        self.afterUpdate(self);
     }, animationDuration);
 
 }
@@ -1414,7 +1416,7 @@ ProofTree.prototype.shiftNext = function(n) {
 
 ProofTree.prototype.click = function(d, remember, callback) {
 
-    if (this.animationRunning) { return; }
+    if (this.animationRunning || this.paused) { return; }
 
     if (d.solved) {
         if (hasParent(d)) {

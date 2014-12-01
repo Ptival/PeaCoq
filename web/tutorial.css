@@ -39,3 +39,90 @@ a.collapsed .panel-title:after {
 }
 
 @import url("//netdna.bootstrapcdn.com/bootstrap/3.0.0-rc2/css/bootstrap-glyphicons.css");
+
+.top_arrow_box,.right_arrow_box,.bottom_arrow_box,.left_arrow_box {
+    position: fixed;
+    background: #b2dba1;
+    border: 2px solid #000000;
+    border-radius: 6px;
+    padding: 10px;
+}
+
+.top_arrow_box:after,.top_arrow_box:before,.right_arrow_box:after,.right_arrow_box:before,.bottom_arrow_box:after,.bottom_arrow_box:before,.left_arrow_box:after,.left_arrow_box:before {
+    border: solid transparent;
+    content: " ";
+    height: 0;
+    width: 0;
+    position: absolute;
+    pointer-events: none;
+}
+
+.top_arrow_box:after,.right_arrow_box:after,.bottom_arrow_box:after,.left_arrow_box:after {
+    border-color: rgba(178, 219, 161, 0);
+    border-width: 12px;
+}
+
+.top_arrow_box:before,.right_arrow_box:before,.bottom_arrow_box:before,.left_arrow_box:before {
+    border-color: rgba(0, 0, 0, 0);
+    border-width: 14px;
+}
+
+.top_arrow_box:after,.top_arrow_box:before {
+    bottom: 100%;
+    left: 50%;
+}
+
+.right_arrow_box:after,.right_arrow_box:before {
+    left: 100%;
+    top: 50%;
+}
+
+.bottom_arrow_box:after,.bottom_arrow_box:before {
+    top: 100%;
+    left: 50%;
+}
+
+.left_arrow_box:after,.left_arrow_box:before {
+    right: 100%;
+    top: 50%;
+}
+
+.top_arrow_box:after {
+    border-bottom-color: #b2dba1;
+    margin-left: -12px;
+}
+
+.top_arrow_box:before {
+    border-bottom-color: #000000;
+    margin-left: -14px;
+}
+
+.right_arrow_box:after {
+    border-left-color: #b2dba1;
+    margin-top: -12px;
+}
+
+.right_arrow_box:before {
+    border-left-color: #000000;
+    margin-top: -14px;
+}
+
+.bottom_arrow_box:after {
+    border-top-color: #b2dba1;
+    margin-left: -12px;
+}
+
+.bottom_arrow_box:before {
+    border-top-color: #000000;
+    margin-left: -14px;
+}
+
+.left_arrow_box:after {
+    border-right-color: #b2dba1;
+    margin-top: -12px;
+}
+
+.left_arrow_box:before {
+    border-right-color: #000000;
+    margin-top: -14px;
+}

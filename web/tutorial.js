@@ -1,21 +1,148 @@
-
 var scrollbarWidth = 20; // arbitrary
 var spacing = 20;
 var accordionWidth = 200;
 
+function firstSteps(add) {
+
+    add(mkText("One of the most basic datatypes is the boolean type. A boolean is either the constructor true, or the constructor false:"));
+
+    add(mkCoqReadonly("Inductive bool : Type := true | false."));
+
+    add(mkText("Let's prove something right away, a value of type bool can only be equal to true or equal to false."));
+
+    add(mkCoqReadonly(
+        'Theorem bools_are_true_or_false : forall b : bool, b = true \\\/ b = false.',
+        function(pt) {
+            if (pt.curNode.depth === 0) {
+                return ["intro"];
+            } else {
+                return ["left", "right", "destruct", "reflexivity"];
+            }
+        },
+        function(pt) {
+
+            switch(pt.curNode.depth) {
+
+            case 0:
+                tooltipSequence(pt, [
+                    {
+                        "node": pt.curNode,
+                        "arrowPosition": "left",
+                        "contents":
+                        "<p>This is your current goal. It is highlighted in green.</p>"
+                            + '<p><code>∀</code> is a sign we use to mean "for all".</p>'
+                            + '<p><code>b : bool</code> should be read as "b of type bool".</p>'
+                            + '<p>Therefore, this goal asks you to prove that something is true '
+                            + 'for any element <code>b</code> of the <code>bool</code> type.</p>'
+                        ,
+                    },
+                    {
+                        "node": pt.curNode.children[0],
+                        "arrowPosition": "top",
+                        "contents":
+                        "<p>This is a tactic node.</p>"
+                            + "<p>In order to prove a goal, you will need to pick which tactic "
+                            + "to run.</p>"
+                            + "<p><code>intro</code> is the only tactic which applies here.</p>"
+                            + "<p>It moves the universally-quantified variable <code>b</code> "
+                            + "from your goal to your context.</p>"
+                        ,
+                    },
+                    {
+                        "node": pt.curNode.children[0].children[0],
+                        "arrowPosition": "right",
+                        "contents":
+                        "<p>This is the resulting subgoal.</p>"
+                            + "<p>Everything above the horizontal line is your context.</p>"
+                            + "<p>You can see the variable <code>b</code> of type "
+                            + "<code>bool</code> has been moved from the goal to the "
+                            + "context.</p>"
+                            + "<p>You can hover your mouse over a subgoal to see what has "
+                            + "changed from the previous goal. It's an easy way of checking "
+                            + "what a tactic does.</p>"
+                        ,
+                    },
+                ]);
+                return;
+                break;
+
+            case 2:
+                tooltipSequence(pt, [
+                    {
+                        "node": pt.curNode.children[2],
+                        "arrowPosition": "top",
+                        "contents":
+                        "<p>There can be more than one tactic applicable to a given goal.</p>"
+                            + "<p>Some of them might do the wrong thing, so be mindful.</p>"
+                        ,
+                    },
+                    {
+                        "node": pt.curNode.parent,
+                        "arrowPosition": "top",
+                        "contents":
+                        "<p>If you made a wrong move, you can always click on the parent "
+                        + "tactic to go back up in the tree and change your decision.</p>"
+                        ,
+                    },
+                ]);
+                return;
+                break;
+
+            };
+
+            if (pt.curNode.depth === 6 && pt.curNode.children.length == 0) {
+                tooltipSequence(pt, [
+                    {
+                        "node": pt.curNode,
+                        "arrowPosition": "top",
+                        "contents":
+                        "<p>No tactic applies to this goal!</p>"
+                            + "<p>We can't solve it, it might be false!</p>"
+                        ,
+                    },
+                    {
+                        "node": pt.curNode.parent,
+                        "arrowPosition": "top",
+                        "contents":
+                        "<p>Looks like you made a wrong decision.</p>"
+                            + "<p>Click on this node to go back.</p>"
+                        ,
+                    },
+                ]);
+                return;
+            }
+
+            if (pt.curNode.allChildren.length == 1
+                && pt.curNode.allChildren[0].allChildren.length == 0) {
+                tooltipSequence(pt, [
+                    {
+                        "node": pt.curNode.allChildren[0],
+                        "arrowPosition": "right",
+                        "contents":
+                        "<p>This tactic does not have any subgoal.</p>"
+                            + "<p>This means it solves the subgoal!</p>"
+                            + "<p>Once you click on it, an animation will fold the "
+                            + "things that have been proven.</p>"
+                        ,
+                    },
+                ]);
+                return;
+            }
+
+        }
+    ));
+
+}
+
 var menu =
     [
         {
-            "title": "CPDT rip-off",
+            "title": "PeaCoq tutorial",
             "items":
             [
                 {
-                    "name": "Stack Machine",
-                    "setup": stackMachine,
-                },
-                {
-                    "name": "Booleans",
-                    "setup": firstStepsBooleans,
+                    "name": "First steps",
+                    "setup": firstSteps,
                 },
             ]
         },
@@ -24,58 +151,125 @@ var menu =
 
 function mkText(t) { return $("<div>").text(t); }
 
-function mkCoq(t, tactics) { return mkClickableTextarea(t, tactics, function() { }) }
+function mkCoq(t, tactics, postAnim) {
+    return mkClickableTextarea(t, tactics, postAnim);
+}
 
-function stackMachine(add) {
+function mkCoqReadonly(t, tactics, postAnim) {
+    return mkReadonlyClickableTextarea(t, tactics, postAnim);
+}
 
-    add(mkText("One of the most basic datatypes is the boolean type. A boolean is either the constructor true, or the constructor false:"));
+function drawTooltip(pt, node, arrowPosition, contents, onClick) {
 
-    add(mkCoq("Inductive bool : Type := true | false."));
+    var arrowSize = 12;
+    var tooltipMaxWidth = 400;
 
-    add(mkText("Let's prove something right away, a value of type bool can only be equal to true or equal to false."));
+    pt.paused = true;
+    // disable SVGPan
+    enablePan  = 0;
+    enableZoom = 0;
 
-    add(mkCoq(
-        'Theorem bools_are_true_or_false : forall b : bool, b = true \\\/ b = false.',
-        function(pt) {
-            if (pt.curNode.depth === 0) {
-                return ["intro"];
-            } else {
-                return ["left", "right", "destruct", "reflexivity"];
-            }
-        }
-    ));
+    /*
+    var grayLayer = pt.tipsLayer
+        .append("rect")
+        .attr("width", pt.width)
+        .attr("height", pt.height)
+        .attr("x", - pt.viewportX)
+        .attr("y", - pt.viewportY)
+        .attr("fill", "gray")
+        .attr("opacity", 0.2)
+    ;
+    */
 
-    add(mkCoq(
-        ""
-    ));
+    var fo = pt.tipsLayer
+        .append("foreignObject")
+        .attr("width", tooltipMaxWidth)
+        .attr("height", 42)
+    ;
 
-    add(mkCoq(
-        ""
-    ));
+    var body = fo
+        .append("xhtml:body")
+        .style("background-color", "rgba(0, 0, 0, 0)")
+        .html(
+            '<div>'
+                + '<div class="' + arrowPosition + '_arrow_box">'
+                + contents
+                + '</div>'
+        )
+        .on("click", function() {
 
-    add(mkCoq(
-        ""
-    ));
+            pt.paused = false;
+            // enable SVGPan
+            enablePan  = 1;
+            enableZoom = 1;
 
-    add(mkCoq(
-        ""
-    ));
+            // clean up
+            //grayLayer.remove();
+            fo.remove();
 
-    add(mkCoq(
-        ""
-    ));
+            onClick();
 
+        })
+    ;
+
+    $(body[0][0].children[0].children[0])
+        .attr("position", "relative")
+        .attr("z-index", 3)
+    ;
+
+    var bodyRect = body[0][0].children[0].children[0].getBoundingClientRect();
+
+    switch(arrowPosition) {
+    case "top":
+        fo
+            .attr("x", node.cX + node.width / 2 - bodyRect.width / 2)
+            .attr("y", node.cY + node.height + arrowSize)
+        ;
+        break;
+    case "right":
+        fo
+            .attr("x", node.cX - bodyRect.width - arrowSize)
+            .attr("y", node.cY + node.height / 2 - bodyRect.height / 2)
+        ;
+        break;
+    case "bottom":
+        fo
+            .attr("x", node.cX + node.width / 2 - bodyRect.width / 2)
+            .attr("y", node.cY - bodyRect.height / 2 - arrowSize)
+        ;
+        break;
+    case "left":
+        fo
+            .attr("x", node.cX + node.width + arrowSize)
+            .attr("y", node.cY + node.height / 2 - bodyRect.height / 2)
+        ;
+        break;
+    };
+
+}
+
+function tooltipSequence(pt, list) {
+    if (_(list).isEmpty()) {
+        return;
+    } else {
+        var head = _(list).first();
+        var rest = _(list).rest();
+        drawTooltip(pt, head.node, head.arrowPosition, head.contents, function() {
+            tooltipSequence(pt, rest);
+        });
+    }
 }
 
 $(document).ready(function() {
 
     $("#accordion")
         .css("width", accordionWidth)
+        .css("position", "fixed")
     ;
 
     $("#main")
         .css("width", $(window).width() - accordionWidth - scrollbarWidth - spacing)
-        .css("margin-left", spacing + "px")
+        .css("margin-left", accordionWidth + spacing + "px")
     ;
 
     populateMenu();
@@ -199,41 +393,18 @@ function populateMenu() {
     });
 }
 
-function firstStepsBooleans(addItem) {
-
-    addItem(
-        $("<div>")
-            .text("Here is our first Coq definition, the inductive type bool:")
-    );
-
-    addItem(mkClickableTextarea(inductiveBool, function() { }));
-
-    addItem(
-        $("<div>")
-            .text("Here is a provable thingy:")
-    );
-
-    addItem(mkClickableTextarea(
-        "Theorem trivial : forall b : bool, b = false \\/ b = true."
-        , function() { }));
-
-    addItem(
-        $("<div>")
-            .text("This one doesn't belong here, but testing is easier this way!")
-    );
-
-    addItem(mkClickableTextarea(inductiveNat, function() { }));
-
-}
-
-function mkClickableTextarea(initialText, tactics) {
+function clickableTextarea(readonly, initialText, tactics, postAnim) {
     var res = $("<div>").addClass("input-group");
+
     res.append(
         $("<textarea>")
             .addClass("form-control")
             .addClass("resizeHeight")
+            .attr("readonly", readonly)
+            .css("z-index", "0")
             .val(initialText)
     );
+
     res.append(
         $("<span>")
             .addClass("input-group-btn")
@@ -241,9 +412,11 @@ function mkClickableTextarea(initialText, tactics) {
                 var li = $(this).parents("li").first();
                 var query = li.find("textarea").val();
 
+                /*
                 $("body").animate({
                     "scrollTop": li.offset().top,
                 }, 1000);
+                */
 
                 // remove the previous alert, if any
                 li.find("div.alert").remove();
@@ -337,8 +510,8 @@ function mkClickableTextarea(initialText, tactics) {
 
                     pt.newTheorem(query,
                                   (tactics === undefined) ? PT.tDiscriminate : tactics,
-                                  function() { },
-                                  function() { });
+                                  (postAnim === undefined) ? function(){} : postAnim
+                                 );
 
                 } else if (query.startsWith("Definition")) {
 
@@ -476,6 +649,14 @@ function mkClickableTextarea(initialText, tactics) {
             }))
     );
     return res;
+}
+
+function mkReadonlyClickableTextarea(initialText, tactic, postAnim) {
+    return clickableTextarea(true, initialText, tactic, postAnim);
+}
+
+function mkClickableTextarea(initialText, tactic, postAnim) {
+    return clickableTextarea(false, initialText, tactic, postAnim);
 }
 
 function mkGlyph(name) {
