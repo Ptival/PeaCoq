@@ -312,7 +312,7 @@ ProofTree.prototype.xOffset = function(d) {
 }
 
 ProofTree.prototype.yOffset = function(d) {
-    var offset = - d.height / 2;
+    var offset = - d.height / 2; // for the center
     if (this.isCurGoalChild(d) || this.isCurGoalGrandChild(d)) {
         return offset + this.descendantsOffset;
     } else {
@@ -989,10 +989,13 @@ ProofTree.prototype.update = function(callback) {
     ;
 
     this.viewportX = - (hasParent(curNode) ? curNode.parent.cX : curNode.cX);
-    this.viewportY = - (hasParent(curGoal)
-                       ? Math.min(curGoal.cY, curGoal.parent.cY)
-                       : curGoal.cY
-                      );
+    this.viewportY = - (curNode.cY + curNode.height / 2 - this.height / 2);
+        /* was:
+           - (hasParent(curGoal)
+           ? Math.min(curGoal.cY, curGoal.parent.cY)
+           : curGoal.cY
+           );
+        */
     this.viewport
         .transition()
         .duration(animationDuration)

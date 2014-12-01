@@ -299,6 +299,18 @@ $(document).ready(function() {
         .css("margin-left", accordionWidth + spacing + "px")
     ;
 
+    // artificially increase the document height to allow scrolling to the top of
+    // any element
+    $("body")
+        .append(
+            $("<div>")
+                .css("height", $(window).height())
+                .css("clear", "both")
+                .css("float", "left")
+                .html("&nbsp;")
+        )
+    ;
+
     populateMenu();
 
     PT.resetCoq();
@@ -307,6 +319,9 @@ $(document).ready(function() {
 
     // for faster debugging
     $("li > a").first().click();
+
+    // scroll back to top once everything is laid out (arbitrary delay)
+    window.setTimeout(function() { window.scrollTo(0, 0); }, 500);
 
 });
 
@@ -439,12 +454,6 @@ function clickableTextarea(readonly, initialText, tactics, postAnim) {
                 var li = $(this).parents("li").first();
                 var query = li.find("textarea").val();
 
-                /*
-                $("body").animate({
-                    "scrollTop": li.offset().top,
-                }, 1000);
-                */
-
                 // remove the previous alert, if any
                 li.find("div.alert").remove();
 
@@ -494,7 +503,7 @@ function clickableTextarea(readonly, initialText, tactics, postAnim) {
                     var pt = new ProofTree(
                         d3.select(anchor.get(0)),
                         anchor.width(),
-                        400,
+                        $(window).height(),
                         function(prooftree) {
 
                             var prettyTheorem;
@@ -661,6 +670,10 @@ function clickableTextarea(readonly, initialText, tactics, postAnim) {
                 } else {
                     alert("This type of query is not supported yet.");
                 }
+
+                $("body").animate({
+                    "scrollTop": li.children("div:nth(1)").offset().top,
+                }, 1000);
 
 /*
                 PT.syncParse(text, function(response) {
