@@ -8,7 +8,9 @@ if [ ! -f bootstrap.js ]; then
     wget https://github.com/twbs/bootstrap/releases/download/v3.3.1/bootstrap-3.3.1-dist.zip
     unzip bootstrap-3.3.1-dist.zip
     cd ..
-    ln -s ./dist/js/bootstrap.min.js bootstrap.js
+    ln -s bootstrap/dist/js/bootstrap.min.js bootstrap.js
+    ln -s bootstrap/dist/css/bootstrap.min.css bootstrap.css
+    ln -s bootstrap/dist/css/bootstrap-theme.min.css bootstrap-theme.css
 fi
 
 if [ ! -f jquery.js ]; then
