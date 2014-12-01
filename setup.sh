@@ -11,6 +11,7 @@ if [ ! -f bootstrap.js ]; then
     ln -s bootstrap/dist/js/bootstrap.min.js bootstrap.js
     ln -s bootstrap/dist/css/bootstrap.min.css bootstrap.css
     ln -s bootstrap/dist/css/bootstrap-theme.min.css bootstrap-theme.css
+    ln -s bootstrap/dist/fonts fonts
 fi
 
 if [ ! -f jquery.js ]; then
