@@ -80,6 +80,7 @@ hQuery hi ho q = do
           Good gs -> Just (q, gs)
           Fail _ -> Nothing
     Just (Fail _) -> return Nothing
+    Nothing -> return Nothing
 
 hQueries :: Handle -> Handle -> [Query] -> IO [Maybe (Query, Goals)]
 hQueries hi ho = mapM (hQuery hi ho)
