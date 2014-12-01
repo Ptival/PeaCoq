@@ -596,7 +596,9 @@ ProofTree.prototype.hInit = function(response) {
     if (isBad(response)) {
         console.log(response.rResponse.contents);
 
-        this.onError(this, response.rResponse.contents);
+        if (this.onError !== undefined) {
+            this.onError(this, response.rResponse.contents);
+        }
 
         return false;
     }
@@ -2486,4 +2488,43 @@ function nodeString(d) {
             "name": d.name,
         }
     );
+}
+
+PT.syncRequest = function(r, q, h) {
+    if (r === 'query') { console.log(q); }
+    $.ajax({
+        type: 'POST',
+        url: r,
+        data: {query : q},
+        async: false,
+        success: function(response) {
+            h(response);
+        }
+    });
+}
+
+PT.syncQuery = function(q, h) { PT.syncRequest('query', q, h); }
+
+PT.syncQueryUndo = function(q, h) { PT.syncRequest('queryundo', q, h); }
+
+PT.syncParse = function(q, h) { PT.syncRequest('parse', q, h); }
+
+PT.syncParseEval = function(q, h) { PT.syncRequest('parseEval', q, h); }
+
+function currentLabel() {
+    var result;
+    PT.syncRequest("status", "", function(response) {
+        var msg = response.rResponse.contents[0];
+        result = msg.match("^.*,.*,.*,\"(.*)\",.*$")[1];
+    });
+    return + result;
+}
+
+PT.resetCoq = function() {
+    var label = currentLabel();
+    if (label > 1) {
+        PT.syncRequest("rewind", label - 1, function(){});
+        PT.syncQuery("Require Import Unicode.Utf8 Bool Arith List.", function(){});
+        PT.syncQuery("Open ListNotations.", function(){});
+    }
 }

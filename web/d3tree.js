@@ -57,6 +57,8 @@ function qed(prooftree) {
 
 $(document).ready(function() {
 
+    PT.resetCoq();
+
     PT.handleKeyboard();
 
     var ndx = 0;
@@ -78,7 +80,7 @@ $(document).ready(function() {
         .click(function() {
             var t = $(this).data("theorem");
             pt.syncQuery("Abort All.", hIgnore);
-            pt.newTheorem(t[0], t[1], function() {}, function() {});
+            pt.newTheorem(t[0], function(pt) { return t[1]; }, function(){});
         })
     ;
 
@@ -97,9 +99,8 @@ $(document).ready(function() {
     pt.syncQuery("Abort All.", hIgnore);
     pt.newTheorem(
         theorems[ndx][0],
-        theorems[ndx][1],
-        function() { },
-        function() { }
+        function(pt) { return theorems[ndx][1]; },
+        function(){}
     );
 
 });

@@ -301,7 +301,7 @@ $(document).ready(function() {
 
     populateMenu();
 
-    resetCoq();
+    PT.resetCoq();
 
     PT.handleKeyboard();
 
@@ -450,12 +450,12 @@ function clickableTextarea(readonly, initialText, tactics, postAnim) {
 
                 if (query.startsWith("Inductive")) {
 
-                    syncQuery(query, function(response) {
+                    PT.syncQuery(query, function(response) {
 
                         switch (response.rResponse.tag) {
 
                         case "Good":
-                            syncParse(query, function(response) {
+                            PT.syncParse(query, function(response) {
                                 var answer =
                                     $("<div>")
                                     .addClass("alert")
@@ -498,7 +498,7 @@ function clickableTextarea(readonly, initialText, tactics, postAnim) {
                         function(prooftree) {
 
                             var prettyTheorem;
-                            syncParse(prooftree.theorem, function(response) {
+                            PT.syncParse(prooftree.theorem, function(response) {
                                 prettyTheorem = showVernac(response);
                             });
 
@@ -536,18 +536,20 @@ function clickableTextarea(readonly, initialText, tactics, postAnim) {
                     });
 
                     pt.newTheorem(query,
-                                  (tactics === undefined) ? PT.tDiscriminate : tactics,
+                                  (tactics === undefined)
+                                  ? function(pt) { return PT.tDiscriminate; }
+                                  : tactics,
                                   (postAnim === undefined) ? function(){} : postAnim
                                  );
 
                 } else if (query.startsWith("Definition")) {
 
-                    syncQuery(query, function(response) {
+                    PT.syncQuery(query, function(response) {
 
                         switch (response.rResponse.tag) {
 
                         case "Good":
-                            syncParse(query, function(response) {
+                            PT.syncParse(query, function(response) {
                                 var answer =
                                     $("<div>")
                                     .addClass("alert")
@@ -579,12 +581,12 @@ function clickableTextarea(readonly, initialText, tactics, postAnim) {
 
                 } else if (query.startsWith("Fixpoint")) {
 
-                    syncQuery(query, function(response) {
+                    PT.syncQuery(query, function(response) {
 
                         switch (response.rResponse.tag) {
 
                         case "Good":
-                            syncParse(query, function(response) {
+                            PT.syncParse(query, function(response) {
                                 var answer =
                                     $("<div>")
                                     .addClass("alert")
@@ -616,13 +618,13 @@ function clickableTextarea(readonly, initialText, tactics, postAnim) {
 
                 } else if (query.startsWith("Eval")) {
 
-                    syncQuery(query, function(response) {
+                    PT.syncQuery(query, function(response) {
 
                         switch (response.rResponse.tag) {
 
                         case "Good":
                             var response = stripWarning(response.rResponse.contents[0]);
-                            syncParseEval(response, function(response) {
+                            PT.syncParseEval(response, function(response) {
                                 var value = response[0];
                                 var type = response[1];
                                 li.append(
@@ -661,7 +663,7 @@ function clickableTextarea(readonly, initialText, tactics, postAnim) {
                 }
 
 /*
-                syncParse(text, function(response) {
+                PT.syncParse(text, function(response) {
                     li.find("div.alert").remove();
                     li.append(
                         $("<div>")
@@ -713,45 +715,6 @@ var inductiveNat =
 + '| S : nat -> nat\n'
 + '.'
 ;
-
-function syncRequest(r, q, h) {
-    if (r === 'query') { console.log(q); }
-    $.ajax({
-        type: 'POST',
-        url: r,
-        data: {query : q},
-        async: false,
-        success: function(response) {
-            h(response);
-        }
-    });
-}
-
-function syncQuery(q, h) { syncRequest('query', q, h); }
-
-function syncQueryUndo(q, h) { syncRequest('queryundo', q, h); }
-
-function syncParse(q, h) { syncRequest('parse', q, h); }
-
-function syncParseEval(q, h) { syncRequest('parseEval', q, h); }
-
-function currentLabel() {
-    var result;
-    syncRequest("status", "", function(response) {
-        var msg = response.rResponse.contents[0];
-        result = msg.match("^.*,.*,.*,\"(.*)\",.*$")[1];
-    });
-    return + result;
-}
-
-function resetCoq() {
-    var label = currentLabel();
-    if (label > 1) {
-        syncRequest("rewind", label - 1, function() { });
-        syncQuery("Require Import Unicode.Utf8 Bool Arith List.", function() { });
-        syncQuery("Open ListNotations.", function() { });
-    }
-}
 
 if (!String.prototype.startsWith) {
   Object.defineProperty(String.prototype, 'startsWith', {
