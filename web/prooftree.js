@@ -1375,6 +1375,7 @@ function elmtRect(node, elmt) {
 }
 
 ProofTree.prototype.shiftPrev = function(n) {
+    if(this.paused) { return; }
     var self = this;
     function tryShifting(n) {
         if (n.focusIndex> 0) {
@@ -1395,6 +1396,7 @@ ProofTree.prototype.shiftPrev = function(n) {
 }
 
 ProofTree.prototype.shiftNext = function(n) {
+    if(this.paused) { return; }
     var self = this;
     function tryShifting(n) {
         if (n.focusIndex + 1 < self.getVisibleChildren(n).length) {
