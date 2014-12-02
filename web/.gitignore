@@ -4,7 +4,7 @@ bootstrap.js
 bootstrap/
 d3.js
 d3/
-fonts/
+fonts
 jquery.js
 jquery/
 lodash.js
