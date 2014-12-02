@@ -115,7 +115,7 @@ function firstSteps(add) {
 
             };
 
-            if (pt.curNode.children.length === 0) {
+            if (pt.curNode.allChildren.length === 0) {
                 tooltipSequence(pt, [
                     {
                         "node": pt.curNode,
