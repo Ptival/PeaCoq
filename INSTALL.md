@@ -8,3 +8,6 @@
 
 ### Webpage Stuff
 * $ ./setup.sh
+
+## 2. Build
+* $ cabal install peacoq
