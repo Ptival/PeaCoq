@@ -15,10 +15,6 @@ window.PT = {};
 var nodeVSpacing = 10;
 var nodeStroke = 2;
 var rectMargin = {top: 2, right: 8, bottom: 2, left: 8};
-var nbDisplayedTactics = +Infinity;
-var nbDisplayedGoals   = +Infinity; // per displayed tactic
-var nbVisibleTactics = +Infinity;
-var nbVisibleGoals   = +Infinity; // per focused tactic
 var animationDuration = 360;
 var tacticNodeRounding = 10;
 var goalNodeRounding = 0;
@@ -42,12 +38,9 @@ function assert(condition, message) {
         throw message || "Assertion failed";
     }
 }
-assert(nbDisplayedTactics >= nbVisibleTactics, "Make sure: nbDisplayedTactics >= nbVisibleTactics");
-assert(nbDisplayedGoals >= nbVisibleGoals, "Make sure: nbDisplayedGoals >= nbVisibleGoals");
 
 // COMPUTED GLOBALS
 var activeProofTree = undefined;
-var maxVisibleNodesOnLine = nbVisibleTactics * nbVisibleGoals;
 
 // These tactic sets each build on top of the previous one
 PT.tSet = [
@@ -337,14 +330,6 @@ function centerRight(d) {
 }
 
 function swapXY(r) { return {"x": r.y, "y": r.x}; }
-
-function nbDisplayedChildren(d) {
-    return isGoal(d) ? nbVisibleTactics : nbVisibleGoals;
-}
-
-function nbVisibleChildren(d) {
-    return isGoal(d) ? nbVisibleTactics : nbVisibleGoals;
-}
 
 function parseSVGTransform(a) {
     var b = {};
