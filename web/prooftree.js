@@ -12,6 +12,7 @@
 window.PT = {};
 
 // CONFIGURATION
+var svgPanEnabled = false;
 var nodeVSpacing = 10;
 var nodeStroke = 2;
 var rectMargin = {top: 2, right: 8, bottom: 2, left: 8};
@@ -177,10 +178,12 @@ function ProofTree(anchor, width, height, qedCallback, peacoqDir, onError) {
     this.textLayer = this.viewport.append("g").attr("id", "text-layer");
     this.tipsLayer = this.viewport.append("g").attr("id", "tips-layer");
 
-    this.svg
-        .insert("script", ":first-child")
-        .attr("xlink:href", this.peacoqDir + "SVGPan.js")
-    ;
+    if (svgPanEnabled) {
+        this.svg
+            .insert("script", ":first-child")
+            .attr("xlink:href", this.peacoqDir + "SVGPan.js")
+        ;
+    }
 
 }
 
