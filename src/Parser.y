@@ -12,10 +12,11 @@ import GHC.Generics hiding (Constructor)
 import Lexer
 }
 
-%name unsafeParseVernac     Sentence
-%name unsafeParseTerm       Term
-%name unsafeParseHypothesis Hypothesis
-%name unsafeParseEval       Eval
+%name unsafeParseVernac      Sentence
+%name unsafeParseTerm        Term
+%name unsafeParseHypothesis  Hypothesis
+%name unsafeParseEvalResult  EvalResult
+%name unsafeParseCheckResult CheckResult
 %tokentype { Token }
 %lexer { lexWrap } { TokEOF }
 %monad { Alex }
@@ -60,6 +61,7 @@ comment { TokComment $$ }
 "Theorem" { TokTheorem }
 "Definition" { TokDefinition }
 "Fixpoint" { TokFixpoint }
+"Check" { TokCheck }
 "struct" { TokStruct }
 "Proof" { TokProof }
 "Qed" { TokQed }
@@ -92,6 +94,7 @@ Sentence :: { Vernac }
   { Definition $2 $3 $4 $6 }
 | "Fixpoint" var Binders MaybeAnnotation MaybeTypeAnnotation ":=" Term '.'
   { Fixpoint $2 $3 $4 $5 $7 }
+| "Check" Term '.' { Check $2 }
 
 Term :: { Term }
 : var                                              { Var $1 }
@@ -192,8 +195,11 @@ Hypothesis :: { Hypothesis }
 : var ':' Term           { MkHyp $1 Nothing $3 }
 | var ":=" Term ':' Term { MkHyp $1 (Just $3) $5 }
 
-Eval :: { Eval }
-: '=' Term ':' Term { Eval $2 $4 }
+EvalResult :: { EvalResult }
+: '=' Term ':' Term { EvalResult $2 $4 }
+
+CheckResult :: { CheckResult }
+: var ':' Term { CheckResult $1 $3 }
 
 {
 
@@ -209,6 +215,7 @@ data Vernac
   | Theorem String Type
   | Definition String [Binder] (Maybe Type) Term
   | Fixpoint String [Binder] (Maybe String) (Maybe Type) Term
+  | Check Term
   | Comment String
   deriving (Generic, Show)
 
@@ -247,7 +254,10 @@ data Hypothesis
   }
   deriving (Eq, Generic, Show)
 
-data Eval = Eval Term Type
+data EvalResult = EvalResult Term Type
+  deriving (Generic, Show)
+
+data CheckResult = CheckResult String Type
   deriving (Generic, Show)
 
 unsafeRight :: Either String b -> b
@@ -263,8 +273,11 @@ parseTerm s = unsafeRight $ runAlex s unsafeParseTerm
 parseHypothesis :: String -> Hypothesis
 parseHypothesis s = unsafeRight $ runAlex s unsafeParseHypothesis
 
-parseEval :: String -> Eval
-parseEval s = unsafeRight $ runAlex s unsafeParseEval
+parseEvalResult :: String -> EvalResult
+parseEvalResult s = unsafeRight $ runAlex s unsafeParseEvalResult
+
+parseCheckResult :: String -> CheckResult
+parseCheckResult s = unsafeRight $ runAlex s unsafeParseCheckResult
 
 instance ToJSON Vernac where
 instance ToJSON Constructor where
@@ -272,6 +285,7 @@ instance ToJSON Binder where
 instance ToJSON Term where
 instance ToJSON Hypothesis where
 instance ToJSON Pattern where
-instance ToJSON Eval where
+instance ToJSON EvalResult where
+instance ToJSON CheckResult where
 
 }

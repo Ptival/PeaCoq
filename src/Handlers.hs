@@ -63,7 +63,16 @@ parseEvalHandler _ = do
   case param of
     Nothing -> return ()
     Just queryBS -> do
-      let response = parseEval $ toString queryBS
+      let response = parseEvalResult $ toString queryBS
+      writeJSON response
+
+parseCheckHandler :: HandlerInput -> PeaCoqHandler
+parseCheckHandler _ = do
+  param <- getParam "query"
+  case param of
+    Nothing -> return ()
+    Just queryBS -> do
+      let response = parseCheckResult $ toString queryBS
       writeJSON response
 
 queryHandler :: HandlerInput -> PeaCoqHandler

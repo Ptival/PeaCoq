@@ -50,6 +50,7 @@ tokens :-
   "Theorem"     { tok TokTheorem }
   "Definition"  { tok TokDefinition }
   "Fixpoint"    { tok TokFixpoint }
+  "Check"       { tok TokCheck }
   "struct"      { tok TokStruct }
   "Proof"       { tok TokProof }
   "Qed"         { tok TokQed }
@@ -100,6 +101,7 @@ data Token
   | TokTheorem
   | TokDefinition
   | TokFixpoint
+  | TokCheck
   | TokStruct
   | TokProof
   | TokQed

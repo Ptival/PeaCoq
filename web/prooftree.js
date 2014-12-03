@@ -2497,7 +2497,14 @@ PT.syncQueryUndo = function(q, h) { PT.syncRequest('queryundo', q, h); }
 
 PT.syncParse = function(q, h) { PT.syncRequest('parse', q, h); }
 
+// Eval returns something like:
+//   = <term>
+//   : <type>
 PT.syncParseEval = function(q, h) { PT.syncRequest('parseEval', q, h); }
+
+// Check returns something like:
+//   : <type>
+PT.syncParseCheck = function(q, h) { PT.syncRequest('parseCheck', q, h); }
 
 function currentLabel() {
     var result;
