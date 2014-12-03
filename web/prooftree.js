@@ -787,16 +787,24 @@ ProofTree.prototype.update = function(callback) {
         : (this.width - minXNode.width / 2 - maxXNode.width / 2) / dX
     ;
 
-    // we want all visible grand children to be apart from each other
-    // i.e. ∀ a b, yFactor * | a.y - b.y | > a.height/2 + b.height/2 + nodeVSpacing
-    var gcSiblings =
-        _.zip(visibleGrandChildren.value(), visibleGrandChildren.rest().value())
+    /*
+      we want all visible grand children to be apart from each other
+      i.e. ∀ a b, yFactor * | a.y - b.y | > a.height/2 + b.height/2 + nodeVSpacing
+      we also want all visible children to be apart from each other (especially when they
+      don't have their own children to separate them)
+    */
+    var gcSiblings = _.zip(visibleGrandChildren.value(), visibleGrandChildren.rest().value());
+    gcSiblings.pop(); // removes the [last, undefined] pair at the end
+    var cSiblings = _.zip(visibleChildren.value(), visibleChildren.rest().value());
+    cSiblings.pop();
+    var siblings = _(gcSiblings.concat(cSiblings));
+    var yFactors = siblings
+        .map(function(e) {
+            var a = e[0], b = e[1];
+            return (((a.height + b.height) / 2) + nodeVSpacing) / (nodeY(b) - nodeY(a));
+        })
+        .value()
     ;
-    gcSiblings.pop(); // removes [gc_last, undefined] at the end
-    var yFactors = gcSiblings.map(function(e) {
-        var a = e[0], b = e[1];
-        return (((a.height + b.height) / 2) + nodeVSpacing) / (nodeY(b) - nodeY(a));
-    });
     this.yFactor = _.isEmpty(yFactors) ? this.height : _.max(yFactors);
 
     var topMostDescendant = undefined;
