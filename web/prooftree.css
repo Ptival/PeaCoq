@@ -21,7 +21,7 @@ textarea {
 .context, .debug { fill: #CFCFC4; }
 .current {
     stroke: #03C03C;
-    stroke-width: 6px;
+    stroke-width: 4px;
 }
 
 .monospace {
