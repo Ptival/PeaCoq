@@ -1,20 +1,71 @@
+
 var scrollbarWidth = 20; // arbitrary
 var spacing = 20;
 var accordionWidth = 200;
 
+function findTacticByName(tactics, name) {
+    return _(tactics).find(function(x) { return x.name.indexOf(name) >= 0; });
+}
+
+function p(text) { return "<p>" + text + "</p>"; }
+
+function ul(text) {
+    return '<div class="panel panel-default"><ul class="list-group">'
+        + text
+        + '</ul></div>'
+    ;
+}
+
+function li(text) {
+    return '<li class="list-group-item">' + text + '</li>';
+}
+
 function firstSteps(add) {
 
-    add(mkText("One of the most basic datatypes is the boolean type. A boolean is either the constructor true, or the constructor false:"));
+    add(mkText(
+        "<p>Welcome to the world of the Coq proof assistant.</p>"
+    ));
 
-    add(mkCoqReadonly("Inductive bool : Type := true | false."));
+    add(mkText(
+        p("In this lecture, we will use the following lexicon:")
+            + ul(
+                li(
+                    "A <em>term</em> is any sequence of characters that makes sense in the language we will use to program and prove."
+                ) + li (
+                    "A <em>type</em> is a way to classify terms. Types can be empty (they don't contain any term), or have a finite or infinite number of terms."
+                ) + li (
+                    p(
+                        "A <em>value</em> is a term obtained after performing all the possible computations."
+                    ) + p(
+                        "Every term is a value or can be computed down to a value."
+                    ) + p(
+                        "In particular, the type of a term will remain compatible with the type of its value. A <code>nat</code> (say, <code>2 + 3</code>) stays a <code>nat</code> (<code>5</code>)."
+                    )
+                )
+            )
+    ));
 
-    add(mkText("Let's prove something right away, a value of type bool can only be equal to true or equal to false."));
+    add(mkText(
+        "<p>One of the most basic types is the boolean type. A boolean value (a value of type <code>bool</code>) is either the constructor <code>true</code>, or the constructor <code>false</code>.</p><p>Click on the Play button below before you keep reading.</p>"
+    ));
+
+    add(mkCoqReadonly(
+        "Inductive bool : Type := true | false."
+    ));
+
+    add(mkText(
+        "<p>Once Coq has registered this new type, we print it again for checking purposes.</p><p>This text says that <code>bool</code> is a new inductive type (a value of type <code>Type</code>), and that there exists (only) two ways to build a value of type <code>bool</code>: one is the value <code>true</code>, and the other is the value <code>false</code>.</p><p>The meaning of <code>Inductive</code> will be explained later on.</p>"
+    ));
+
+    add(mkText(
+        "<p>Let's prove something right away, a value of type <code>bool</code> can only be equal to <code>true</code> or equal to <code>false</code>.</p><p>Once again, and every time, click on the Play button and interact with the new window before continuing reading.</p>"
+    ));
 
     add(mkCoqReadonly(
         'Theorem bools_are_true_or_false : forall b : bool, b = true \\\/ b = false.',
         function(pt) {
             if (pt.curNode.depth === 0) {
-                return ["intro"];
+                return ["intro", "admit"];
             } else {
                 return ["left", "right", "destruct", "reflexivity"];
             }
@@ -26,6 +77,7 @@ function firstSteps(add) {
             case 0:
                 if (!pt.userState.introducedGoal) {
                     pt.userState.introducedGoal = true;
+                    var introNode = findTacticByName(pt.curNode.children, "intro");
                     tooltipSequence(pt, [
                         {
                             "node": pt.curNode,
@@ -39,7 +91,7 @@ function firstSteps(add) {
                             ,
                         },
                         {
-                            "node": pt.curNode.children[0],
+                            "node": introNode,
                             "arrowPosition": "top",
                             "contents":
                             "<p>This is a tactic node.</p>"
@@ -51,7 +103,7 @@ function firstSteps(add) {
                             ,
                         },
                         {
-                            "node": pt.curNode.children[0].children[0],
+                            "node": introNode.children[0],
                             "arrowPosition": "right",
                             "contents":
                             "<p>This is the resulting subgoal.</p>"
@@ -88,21 +140,21 @@ function firstSteps(add) {
                             ,
                         },
                         {
-                            "node": pt.curNode.children[0],
+                            "node": findTacticByName(pt.curNode.children, "left"),
                             "arrowPosition": "top",
                             "contents":
                             "<p>The <code>left</code> tactic should be used when you think the left side of a disjunction is true. You will need to prove only that side if you pick this tactic.</p>"
                             ,
                         },
                         {
-                            "node": pt.curNode.children[1],
+                            "node": findTacticByName(pt.curNode.children, "right"),
                             "arrowPosition": "top",
                             "contents":
                             "<p>The <code>right</code> tactic should be used when you think the right side of a disjunction is true.</p>"
                             ,
                         },
                         {
-                            "node": pt.curNode.children[2],
+                            "node": findTacticByName(pt.curNode.children, "destruct b"),
                             "arrowPosition": "top",
                             "contents":
                             "<p>The <code>destruct</code> tactic lets you perform case-analysis on a value, according to its type. Here, it will split your goal into two subgoals, one for the case where <code>b</code> is <code>true</code>, and one for the case where <code>b</code> is <code>false</code>.</p>"
@@ -159,6 +211,14 @@ function firstSteps(add) {
         }
     ));
 
+    add(mkText(
+        "<p>Once you are done with the proof, you should see the outline of the proof you just build. The Coq Proof Assistant registered the proof under the name <code>bools_are_true_or_false</code>.</p><p>The <code>Check</code> command lets you see the type of any value.</p>"
+    ));
+
+    add(mkCoqReadonly(
+        "Check bools_are_true_or_false."
+    ));
+
 }
 
 var menu =
@@ -176,7 +236,7 @@ var menu =
     ]
 ;
 
-function mkText(t) { return $("<div>").text(t); }
+function mkText(t) { return $("<div>").html(t); }
 
 function mkCoq(t, tactics, postAnim) {
     return mkClickableTextarea(t, tactics, postAnim);
@@ -526,6 +586,11 @@ function clickableTextarea(readonly, initialText, tactics, postAnim) {
                                             + "<br>" + vernac("Qed") + syntax(".")
                                     )
                             );
+
+                            $("body").animate({
+                                "scrollTop": li.children("div:nth(1)").offset().top,
+                            }, 1000);
+
                         },
                         undefined,
                         function(prooftree, error) {
@@ -551,44 +616,8 @@ function clickableTextarea(readonly, initialText, tactics, postAnim) {
                                   (postAnim === undefined) ? function(){} : postAnim
                                  );
 
-                } else if (query.startsWith("Definition")) {
-
-                    PT.syncQuery(query, function(response) {
-
-                        switch (response.rResponse.tag) {
-
-                        case "Good":
-                            PT.syncParse(query, function(response) {
-                                var answer =
-                                    $("<div>")
-                                    .addClass("alert")
-                                    .addClass("alert-success")
-                                    .css("font-family", "monospace")
-                                    .html(showVernac(response))
-                                ;
-                                li.append(answer);
-                            });
-                            break;
-
-                        case "Fail":
-                            li.append(
-                                $("<div>")
-                                    .addClass("alert")
-                                    .addClass("alert-danger")
-                                    .css("font-family", "monospace")
-                                    .html(response.rResponse.contents)
-                            );
-                            break;
-
-                        default:
-                            alert("TODO");
-                            break;
-
-                        };
-
-                    });
-
-                } else if (query.startsWith("Fixpoint")) {
+                } else if (query.startsWith("Definition")
+                           || query.startsWith("Fixpoint")) {
 
                     PT.syncQuery(query, function(response) {
 
@@ -644,6 +673,48 @@ function clickableTextarea(readonly, initialText, tactics, postAnim) {
                                         .html(
                                             syntax("=") + nbsp + showTerm(value)
                                                 + "<br>" + syntax(":") + nbsp + showTerm(type)
+                                        )
+                                );
+                            });
+                            break;
+
+                        case "Fail":
+                            li.append(
+                                $("<div>")
+                                    .addClass("alert")
+                                    .addClass("alert-danger")
+                                    .css("font-family", "monospace")
+                                    .html(response.rResponse.contents)
+                            );
+                            break;
+
+                        default:
+                            alert("TODO");
+                            break;
+
+                        };
+
+                    });
+
+                } else if (query.startsWith("Check")) {
+
+                    PT.syncQuery(query, function(response) {
+
+                        switch (response.rResponse.tag) {
+
+                        case "Good":
+                            var response = stripWarning(response.rResponse.contents[0]);
+                            PT.syncParseCheck(response, function(response) {
+                                var name = response[0];
+                                var type = response[1];
+                                li.append(
+                                    $("<div>")
+                                        .addClass("alert")
+                                        .addClass("alert-success")
+                                        .css("font-family", "monospace")
+                                        .html(
+                                            "<p>" + name + nbsp + syntax(":") + "</p>"
+                                                + "<p>" + showTerm(type) + "</p>"
                                         )
                                 );
                             });
