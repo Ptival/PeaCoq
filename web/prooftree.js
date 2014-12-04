@@ -178,6 +178,30 @@ function ProofTree(anchor, width, height, qedCallback, peacoqDir, onError) {
     this.textLayer = this.viewport.append("g").attr("id", "text-layer");
     this.tipsLayer = this.viewport.append("g").attr("id", "tips-layer");
 
+    this.debug = this.svg.append("g");
+
+    var debugHeight;
+
+    this.debug
+        .append("foreignObject")
+        .attr("width", this.width)
+        .append("xhtml:body")
+        .style("background-color", "rgba(0, 0, 0, 0)")
+        .style("font-family", "monospace")
+        .html('<div class="node"><p>No debug information</p></div>')
+        .attr("height", function() {
+            debugHeight = this.firstChild.getBoundingClientRect().height
+            return debugHeight;
+        })
+    ;
+
+    this.debug
+        .insert("rect", ":first-child")
+        .attr("width", this.width)
+        .attr("height", debugHeight)
+        .attr("fill", "#B2DBA1")
+    ;
+
     if (svgPanEnabled) {
         this.svg
             .insert("script", ":first-child")
@@ -1319,6 +1343,8 @@ ProofTree.prototype.update = function(callback) {
         d.cY0 = d.cY;
     });
 
+    this.updateDebug();
+
     this.animationRunning = true;
     window.setTimeout(function() {
         self.animationRunning = false;
@@ -1852,7 +1878,7 @@ ProofTree.prototype.partialProofFrom = function(t, indentation) {
                 .addClass("resizeWidth")
                 .addClass("resizeHeight")
                 .addClass("activeTextarea")
-                .css("background-color", "#77DD77")
+                .css("background-color", "#CB99C9")
                 .css("resize", "none")
             ;
             PT.resizeTextarea.call(ta);
@@ -1862,7 +1888,7 @@ ProofTree.prototype.partialProofFrom = function(t, indentation) {
                     .css("margin", 0)
                     .css("padding", "0px 2px")
                     .css("border", 0)
-                    .css("background-color", "#FFB347")
+                    .css("background-color", "#BB89B9")
                     .css("vertical-align", "top")
                     .text("OK")
                     .click(function() {
@@ -2533,4 +2559,52 @@ PT.resetCoq = function() {
         PT.syncQuery("Require Import Unicode.Utf8 Bool Arith List.", function(){});
         PT.syncQuery("Open ListNotations.", function(){});
     }
+}
+
+ProofTree.prototype.updateDebug = function() {
+
+    var debugDiv = this.debug.select('div');
+    var jDebugDiv = $(debugDiv[0]);
+
+    var partialProof = this.partialProofFrom(this.rootNode, 1);
+
+    jDebugDiv.empty();
+    jDebugDiv.append($("<div>").text(this.theorem));
+    jDebugDiv.append($("<div>").text("Proof."));
+    partialProof.prepend(span("&nbsp;&nbsp;")); // initial indentation
+    jDebugDiv.append(partialProof);
+    //$(".resizeWidth, .resizeHeight").change();
+    jDebugDiv.append($("<div>").text("Qed."));
+
+/*
+    if (response.rGoals.focused.length > 0) {
+        debugDiv.html(showTerm(response.rGoals.focused[0].gGoal));
+    } else {
+        debugDiv.html(response.rResponse.contents[0]);
+    }
+*/
+
+    updateNodeHeight(this.debug);
+
+}
+
+function updateNodeHeight(selector) {
+
+    var div = selector.select('div');
+
+    selector
+    // Webkit bug, cannot selectAll on camel case names :(
+        .selectAll(function() {
+            return this.getElementsByTagName("foreignObject");
+        })
+        .attr("height", function() {
+            var height = div[0][0].getBoundingClientRect().height;
+            selector
+                .select('rect')
+                .attr('height', height)
+            ;
+            return height;
+        })
+    ;
+
 }
