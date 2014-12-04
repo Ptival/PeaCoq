@@ -31,6 +31,7 @@ var diffOpacity = 0.90;
 var redStroke   = diffRed;
 var greenStroke = diffGreen;
 var blueStroke  = diffBlue;
+var goalBodyPadding = 4;
 
 // CHECKS
 function assert(condition, message) {
@@ -742,7 +743,7 @@ ProofTree.prototype.update = function(callback) {
     textEnter
         .append("xhtml:body")
         .style("padding", function(d) {
-            return isGoal(d) ? "4px" : "4px 0px";
+            return isGoal(d) ? goalBodyPadding + "px" : "4px 0px";
         })
         .style("background-color", "rgba(0, 0, 0, 0)")
         .style("font-family", "monospace")
@@ -1224,8 +1225,8 @@ ProofTree.prototype.update = function(callback) {
 
             // keep track of how far we are vertically to draw the diffs with
             // only one side nicely
-            var leftY = gp.cY;
-            var rightY = d.cY;
+            var leftY = gp.cY + goalBodyPadding;
+            var rightY = d.cY + goalBodyPadding;
 
             d.diffListSelection
                 .each(function(diff) {
