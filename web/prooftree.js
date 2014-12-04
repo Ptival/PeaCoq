@@ -843,10 +843,23 @@ ProofTree.prototype.update = function(callback) {
         }
     }
     if (topMostDescendant !== undefined) {
-        this.descendantsOffset =
-            this.yFactor * (nodeY(curGoal) - nodeY(topMostDescendant))
-            + topMostDescendant.height/2 - curGoal.height/2
-        ;
+        if (isGoal(topMostDescendant)) {
+            // computing the difference in height between the <hr> is not obvious...
+            var hrDelta =
+                this.curNode.goalSpan[0].offsetTop
+                - topMostDescendant.goalSpan[0].offsetTop
+            ;
+            this.descendantsOffset =
+                this.yFactor * (nodeY(curGoal) - nodeY(topMostDescendant))
+                + topMostDescendant.height/2 - curGoal.height/2
+                + hrDelta
+            ;
+        } else {
+            this.descendantsOffset =
+                this.yFactor * (nodeY(curGoal) - nodeY(topMostDescendant))
+                + topMostDescendant.height/2 - curGoal.height/2
+            ;
+        }
     } else {
         this.descendantsOffset = 0;
     }
