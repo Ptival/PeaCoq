@@ -2,6 +2,8 @@
 var scrollbarWidth = 20; // arbitrary
 var spacing = 20;
 var accordionWidth = 200;
+var currentTooltip = undefined;
+
 
 function findTacticByName(tactics, name) {
     return _(tactics).find(function(x) { return x.name.indexOf(name) >= 0; });
@@ -276,6 +278,7 @@ function drawTooltip(pt, node, arrowPosition, contents, onClick) {
 
     var body = fo
         .append("xhtml:body")
+        .classed("svg", true)
         .style("background-color", "rgba(0, 0, 0, 0)")
         .html(
             '<div>'
@@ -294,10 +297,14 @@ function drawTooltip(pt, node, arrowPosition, contents, onClick) {
             //grayLayer.remove();
             fo.remove();
 
+            currentTooltip = undefined;
+
             onClick();
 
         })
     ;
+
+    currentTooltip = body;
 
     $(body[0][0].children[0].children[0])
         .attr("position", "relative")
@@ -376,6 +383,18 @@ $(document).ready(function() {
     PT.resetCoq();
 
     PT.handleKeyboard();
+
+    $("body").on("keydown", function(event) {
+        switch (event.keyCode) {
+        case 13:
+            if (currentTooltip !== undefined) {
+                currentTooltip.on("click")();
+                event.preventDefault();
+                event.stopImmediatePropagation();
+            }
+            break;
+        };
+    });
 
     // for faster debugging
     $("li > a").first().click();
@@ -780,6 +799,7 @@ function mkPlayButton(onClick) {
     var res = $("<button>")
         .addClass("btn btn-default")
         .attr("type", "button")
+        .addClass("svg") // keeps the focus on SVG on click
         .append(mkGlyph("play"))
     ;
     res.click(onClick);

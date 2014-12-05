@@ -22,6 +22,14 @@ var goalNodeRounding = 0;
 var goalNodeWidth = 540;
 var tacticNodeMaxWidth = 140;
 $(document).ready(function() {
+    $(window).click(function(event) {
+        // TODO: this is kinda clunky, but at least we can mark tutorial windows
+        // as non-disactivating
+        // if the click did not originate in a SVG, disactivate proof trees
+        if ($(event.target).closest(".svg").length === 0) {
+            activeProofTree = undefined;
+        }
+    });
     setupTextareaResizing();
 });
 var diffRed   = "#EE8888";
@@ -157,9 +165,15 @@ function ProofTree(anchor, width, height, qedCallback, peacoqDir, onError) {
 
     this.svg = this.div
         .insert("svg", ":first-child")
+        .classed("svg", true)
         .attr("id", "svg-" + this.svgId)
         .attr("width", this.width)
         .attr("height", this.height)
+        .attr("focusable", true)
+        .attr("tabindex", 0)
+        .on("click", function() {
+            activeProofTree = self;
+        })
     ;
 
     this.viewport =
@@ -187,6 +201,7 @@ function ProofTree(anchor, width, height, qedCallback, peacoqDir, onError) {
         .append("foreignObject")
         .attr("width", this.width)
         .append("xhtml:body")
+        .classed("svg", true)
         .style("background-color", "rgba(0, 0, 0, 0)")
         .style("font-family", "monospace")
         .html('<div class="node"><p>No debug information</p></div>')
@@ -216,13 +231,6 @@ PT.ProofTree = ProofTree;
 
 PT.handleKeyboard = function() {
     d3.select("body")
-/*
-        .on("click", function() {
-            if($(":focus").size() > 0) {
-                activeProofTree = undefined;
-            }
-        })
-*/
         .on("keydown", keydownDispatcher)
     ;
 }
@@ -422,6 +430,9 @@ ProofTree.prototype.newTheorem = function(
     });
 
     this.logAction("THEOREM " + theorem);
+
+    $(this.svg[0]).focus();
+    this.svg.on("click")();
 
     return success;
 
@@ -742,6 +753,7 @@ ProofTree.prototype.update = function(callback) {
 
     textEnter
         .append("xhtml:body")
+        .classed("svg", true)
         .style("padding", function(d) {
             return isGoal(d) ? goalBodyPadding + "px" : "4px 0px";
         })
@@ -844,7 +856,7 @@ ProofTree.prototype.update = function(callback) {
         }
     }
     if (topMostDescendant !== undefined) {
-        if (isGoal(topMostDescendant)) {
+        if (isGoal(this.curNode) && isGoal(topMostDescendant)) {
             // computing the difference in height between the <hr> is not obvious...
             var hrDelta =
                 this.curNode.goalSpan[0].offsetTop
@@ -1841,7 +1853,9 @@ ProofTree.prototype.keydownHandler = function() {
         }
         break;
 
-    default: return;
+    default:
+        //console.log("Unhandled event", d3.event.keyCode);
+        return;
     }
 
     // if we haven't returned, we don't want the normal key behavior
