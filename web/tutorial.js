@@ -86,10 +86,10 @@ function firstSteps(add) {
                             "arrowPosition": "left",
                             "contents":
                             "<p>This is your current goal. It is highlighted in green.</p>"
-                                + '<p><code>∀</code> is a sign we use to mean "for all".</p>'
-                                + '<p><code>b : bool</code> should be read as "b of type bool".</p>'
-                                + '<p>Therefore, this goal asks you to prove that something is true '
-                                + 'for any element <code>b</code> of the <code>bool</code> type.</p>'
+                                + '<p><code>∀</code> means «for all».</p>'
+                                + '<p><code>b : bool</code> should be read as «b of type bool».</p>'
+                                + p('<code>∨</code> means «or».')
+                                + '<p>Therefore, this goal states that for any element <code>b</code> of type <code>bool</code>, either <code>b = true</code> or <code>b = false</code> holds.</p>'
                             ,
                         },
                         {
@@ -113,9 +113,14 @@ function firstSteps(add) {
                                 + "<p>You can see the variable <code>b</code> of type "
                                 + "<code>bool</code> has been moved from the goal to the "
                                 + "context.</p>"
-                                + "<p>You can hover your mouse over a subgoal to see what has "
-                                + "changed from the previous goal. It's an easy way of checking "
-                                + "what a tactic does.</p>"
+                            ,
+                        },
+                        {
+                            "node": introNode,
+                            "arrowPosition": "top",
+                            "contents":
+                            p("Each tactic either adds, removes, or modifies elements from your context or your goal. Try to understand what each of them does by comparing the state before (on the left) and after (on the right).")
+                              + p("You can hover your mouse over a resulting goal (on the right) to get a visual hint as to what has changed from the previous goal (on the left).")
                             ,
                         },
                     ]);
