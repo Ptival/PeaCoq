@@ -398,6 +398,7 @@ $(document).ready(function() {
 
     // for faster debugging
     $("li > a").first().click();
+    $("button:first").focus();
 
     // scroll back to top once everything is laid out (arbitrary delay)
     window.setTimeout(function() { window.scrollTo(0, 0); }, 500);
