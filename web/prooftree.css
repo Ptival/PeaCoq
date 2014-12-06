@@ -46,11 +46,7 @@ hr {
     margin: 0;
 }
 
-p {
-    margin: 0;
-}
-
-div, p, span, textarea, .form-control {
+div, span, p, textarea, .form-control {
     line-height: normal;
 }
 
