@@ -1035,13 +1035,20 @@ ProofTree.prototype.update = function(callback) {
     ;
 
     this.viewportX = - (hasParent(curNode) ? curNode.parent.cX : curNode.cX);
-    this.viewportY = - (curNode.cY + curNode.height / 2 - this.height / 2);
-        /* was:
-           - (hasParent(curGoal)
-           ? Math.min(curGoal.cY, curGoal.parent.cY)
-           : curGoal.cY
-           );
-        */
+    this.viewportY =
+        - (
+            (isGoal(curNode))
+                ? (curNode.cY + curNode.height / 2 - this.height / 2)
+                : (curNode.parent.cY + curNode.parent.height / 2 - this.height / 2)
+        )
+    ;
+    /* was:
+       - (hasParent(curGoal)
+       ? Math.min(curGoal.cY, curGoal.parent.cY)
+       : curGoal.cY
+       );
+    */
+
     this.viewport
         .transition()
         .duration(animationDuration)
