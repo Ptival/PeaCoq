@@ -589,7 +589,7 @@ function clickableTextarea(readonly, initialText, tactics, postAnim) {
                         d3.select(anchor.get(0)),
                         anchor.width(),
                         $(window).height(),
-                        function(prooftree) {
+                        function(prooftree) { // qedCallback
 
                             var prettyTheorem;
                             PT.syncParse(prooftree.theorem, function(response) {
@@ -615,6 +615,9 @@ function clickableTextarea(readonly, initialText, tactics, postAnim) {
                             $("body").animate({
                                 "scrollTop": li.children("div:nth(1)").offset().top,
                             }, 1000);
+
+                            // focus on the next button, if any
+                            li.nextAll().find("button").first().focus();
 
                         },
                         undefined,
