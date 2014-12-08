@@ -2141,7 +2141,11 @@ function showBinders(t) {
 }
 
 function showBinder(t) {
-    return showNames(t[0]) + syntax(":") + nbsp + showTermAux(t[1], 0, 0, false);
+    if(t[1] === null) {
+        return showNames(t[0]);
+    } else {
+        return showNames(t[0]) + syntax(":") + nbsp + showTermAux(t[1], 0, 0, false);
+    }
 }
 
 function showPatternAux(p, withParens) {
@@ -2178,7 +2182,10 @@ function showPattern(p) { return showPatternAux(p, false); }
 
 function showPatterns(ps) {
     if (ps.length === 1) {
-        return showPattern(ps[0]);
+        var patterns = ps[0];
+        return _(patterns).rest().reduce(function(acc, pattern) {
+            return acc + syntax(", ") + showPattern(pattern);
+        }, showPattern(patterns[0]));
     } else {
         alert("TODO");
     }
@@ -2333,6 +2340,12 @@ function showTermText(t) {
     return $(showTermInline(t)).text();
 }
 
+function showMatchItems(items) {
+    return _(items).rest().reduce(function(acc, term) {
+        return acc + syntax(", ") + showTermInline(term);
+    }, showTermInline(items[0]));
+}
+
 /*
   [t]           the term to show
   [indentation] the indentation to use if you make a newline
@@ -2389,13 +2402,13 @@ function showTermAux(t, indentation, precParent, newline) {
         );
 
     case "Match":
-        var discriminee = c[0];
-        var cases = c[1];
+        var matchItems = c[0];
+        var equations = c[1];
         return term(
             syntax("match") + nbsp
-                + showTermInline(discriminee) + nbsp
+                + showMatchItems(matchItems) + nbsp
                 + syntax("with") + "<br>"
-                + _(cases).reduce(function(acc, elt) {
+                + _(equations).reduce(function(acc, elt) {
                     var patterns = showPatterns(elt[0]);
                     var body = showTermAux(elt[1], indentation + 1, precParent, newline);
                     return acc

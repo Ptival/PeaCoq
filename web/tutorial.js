@@ -4,16 +4,17 @@ var spacing = 20;
 var accordionWidth = 200;
 var currentTooltip = undefined;
 
-
 function findTacticByName(tactics, name) {
     return _(tactics).find(function(x) { return x.name.indexOf(name) >= 0; });
 }
 
-function p(text) { return "<p>" + text + "</p>"; }
+function tag(tag, text) { return "<" + tag + ">" + text + "</" + tag + ">"; }
+function p(text) { return tag("p", text); }
+function code(text) { return tag("code", text); }
 
-function ul(text) {
+function ul(items) {
     return '<div class="panel panel-default"><ul class="list-group">'
-        + text
+        + items
         + '</ul></div>'
     ;
 }

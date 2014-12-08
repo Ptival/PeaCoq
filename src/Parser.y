@@ -97,27 +97,34 @@ Sentence :: { Vernac }
 | "Check" Term '.' { Check $2 }
 
 Term :: { Term }
-: var                                              { Var $1 }
-| num                                              { Var $1 }
-| '∀' Binders ',' Term                             { Forall $2 $4 }
-| 'λ' Binders ',' Term                             { Lambda $2 $4 }
-| Term '→' Term                                    { Arrow $1 $3 }
-| Term '=' Term                                    { App (App (Var "eq") $1) $3 }
-| Term '≠' Term                                    { App (Var "not") (App (App (Var "eq") $1) $3) }
-| Term '+' Term                                    { App (App (Var "plus")  $1) $3 }
-| Term '-' Term                                    { App (App (Var "minus") $1) $3 }
-| Term '*' Term                                    { App (App (Var "mult")  $1) $3 }
-| Term '∧' Term                                    { App (App (Var "and")   $1) $3 }
-| Term '∨' Term                                    { App (App (Var "or")    $1) $3 }
-| Term "&&" Term                                   { App (App (Var "andb")  $1) $3 }
-| Term "||" Term                                   { App (App (Var "orb")   $1) $3 }
-| Term "::" Term                                   { App (App (Var "cons")  $1) $3 }
-| Term "++" Term                                   { App (App (Var "app")   $1) $3 }
-| "[]"                                             { Var "nil" }
-| Term '%' var                                     { $1 }
-| Term Term %prec APP                              { App $1 $2 }
-| '(' Term ')'                                     { $2 }
-| "match" Term "with" MaybePipe EquationStar "end" { Match $2 $5 }
+: var                   { Var $1 }
+| num                   { Var $1 }
+| '∀' Binders ',' Term  { Forall $2 $4 }
+| 'λ' Binders ',' Term  { Lambda $2 $4 }
+| Term '→' Term         { Arrow $1 $3 }
+| Term '=' Term         { App (App (Var "eq") $1) $3 }
+| Term '≠' Term         { App (Var "not") (App (App (Var "eq") $1) $3) }
+| Term '+' Term         { App (App (Var "plus")  $1) $3 }
+| Term '-' Term         { App (App (Var "minus") $1) $3 }
+| Term '*' Term         { App (App (Var "mult")  $1) $3 }
+| Term '∧' Term         { App (App (Var "and")   $1) $3 }
+| Term '∨' Term         { App (App (Var "or")    $1) $3 }
+| Term "&&" Term        { App (App (Var "andb")  $1) $3 }
+| Term "||" Term        { App (App (Var "orb")   $1) $3 }
+| Term "::" Term        { App (App (Var "cons")  $1) $3 }
+| Term "++" Term        { App (App (Var "app")   $1) $3 }
+| "[]"                  { Var "nil" }
+| Term '%' var          { $1 }
+| Term Term %prec APP   { App $1 $2 }
+| '(' Term ')'          { $2 }
+| "match" MatchItems "with" MaybePipe EquationStar "end" { Match $2 $5 }
+
+MatchItems :: { [Term] }
+: MatchItem                { [$1] }
+| MatchItem ',' MatchItems { $1 : $3 }
+
+MatchItem :: { Term }
+: Term { $1 }
 
 EquationStar :: { [Equation] }
 : {- empty -}                          { [] }
@@ -128,11 +135,15 @@ PipedEquationStar :: { [Equation] }
 | '|' Equation PipedEquationStar { $2 : $3 }
 
 Equation :: { Equation }
-: Pattern PipedPatternStar "=>" Term { (($1 : $2), $4) }
+: MultiPattern PipedMultiPatternStar "=>" Term { (($1 : $2), $4) }
 
-PipedPatternStar :: { [Pattern] }
+PipedMultiPatternStar :: { [MultiPattern] }
 : {- empty -}              { [] }
-| '|' Pattern PipedPatternStar { $2 : $3 }
+| '|' MultiPattern PipedMultiPatternStar { $2 : $3 }
+
+MultiPattern :: { MultiPattern }
+: Pattern                  { [$1] }
+| Pattern ',' MultiPattern { $1 : $3 }
 
 Pattern :: { Pattern }
 : var SubpatternStar   { Pattern $1 $2 }
@@ -229,7 +240,7 @@ data Term
   | Lambda Binders Term
   | Arrow Term Term
   | App Term Term
-  | Match Term [Equation]
+  | Match [Term] [Equation]
   deriving (Eq, Generic, Show)
 
 type Type = Term
@@ -241,7 +252,9 @@ data Pattern
   | Wildcard
   deriving (Eq, Generic, Show)
 
-type Equation = ([Pattern], Term)
+type MultiPattern = [Pattern]
+
+type Equation = ([MultiPattern], Term)
 
 data Binder = MkBinder [Maybe String] (Maybe Type)
   deriving (Eq, Generic, Show)
