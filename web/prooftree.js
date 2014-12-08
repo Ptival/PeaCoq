@@ -864,13 +864,12 @@ ProofTree.prototype.update = function(callback) {
             ;
             this.descendantsOffset =
                 this.yFactor * (nodeY(curGoal) - nodeY(topMostDescendant))
-                + topMostDescendant.height/2 - curGoal.height/2
+                - topMostDescendant.height/2 + curGoal.height/2
                 + hrDelta
             ;
         } else {
             this.descendantsOffset =
                 this.yFactor * (nodeY(curGoal) - nodeY(topMostDescendant))
-                + topMostDescendant.height/2 - curGoal.height/2
             ;
         }
     } else {
