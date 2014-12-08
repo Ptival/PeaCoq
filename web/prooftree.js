@@ -145,6 +145,7 @@ function ProofTree(anchor, width, height, qedCallback, peacoqDir, onError) {
     this.xFactor = this.width;
     this.yFactor = this.height;
     this.userState = {};
+    this.usingKeyboard = false;
 
     this.tree = d3.layout.tree()
         .children(self.getVisibleChildren.bind(self))
@@ -173,6 +174,7 @@ function ProofTree(anchor, width, height, qedCallback, peacoqDir, onError) {
         .attr("tabindex", 0)
         .on("click", function() {
             activeProofTree = self;
+            self.usingKeyboard = false;
         })
     ;
 
@@ -1019,6 +1021,26 @@ ProofTree.prototype.update = function(callback) {
             var tgt = swapXY(centerLeft(d.target));
             return self.diagonal({"source": src, "target": tgt});
         })
+        .attr("stroke-width", function(d) {
+            var src = d.source;
+            var tgt = d.target;
+            var curNode = self.curNode;
+            if (!self.usingKeyboard) { return "2px"; }
+            if (isGoal(curNode)) {
+                var focusedChild = curNode.allChildren[curNode.focusIndex];
+                if (
+                    (self.isCurNode(src) && focusedChild.id == tgt.id)
+                        || (src.id == focusedChild.id && src.allChildren[src.focusIndex].id == tgt.id)
+                ) {
+                    return "4px";
+                } else {
+                    return "2px";
+                }
+            } else {
+                alert("todo");
+                return "2px";
+            }
+        })
     ;
 
     linkSelection.exit()
@@ -1345,7 +1367,6 @@ ProofTree.prototype.update = function(callback) {
         .style("opacity", 0)
         .transition()
         .duration(animationDuration)
-    /*
         .style("opacity", function(d) {
             if (!self.isCurNodeGrandChild(d)) { return 0; }
             var gp = d.parent.parent;
@@ -1353,7 +1374,6 @@ ProofTree.prototype.update = function(callback) {
             var focusGrandChild = focusChild.allChildren[focusChild.focusIndex];
             return (focusGrandChild !== undefined && d.id === focusGrandChild.id) ? 1 : 0;
         })
-    */
     ;
 
     diffSelection.exit()
@@ -1813,6 +1833,8 @@ ProofTree.prototype.keydownHandler = function() {
         d3.event.preventDefault();
         return;
     }
+
+    this.usingKeyboard = true;
 
     switch (d3.event.keyCode) {
 

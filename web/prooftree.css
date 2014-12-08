@@ -12,7 +12,6 @@ textarea {
 .link {
     fill: none;
     stroke: black;
-    stroke-width: 2px;
 }
 
 .goal { fill: #AEC6CF; margin: 0; }
