@@ -321,6 +321,8 @@ function spotTheDifferences(before, after) {
     return {"removed": removed, "added": added};
 }
 
+function sameNode(n1, n2) { return n1.id === n2.id; }
+
 // creates an empty rectangle in the same column as [node], at vertical position [currentY]
 function emptyRect(node, currentY) {
     var delta = 1; // how big to make the empty rectangle
@@ -715,6 +717,46 @@ ProofTree.prototype.resetSVGTransform = function() {
     }
 }
 
+ProofTree.prototype.linkWidth = function(d) {
+    var src = d.source;
+    var tgt = d.target;
+    var thin = "2px";
+    var thick = "5px";
+    // if the user uses his mouse, highlight the path under hover
+    if (!this.usingKeyboard) {
+        if (this.hoveredNode === undefined) {
+            return thin;
+        } else {
+            if (this.isCurNode(src)) {
+                if (sameNode(tgt, this.hoveredNode)) { return thick; }
+                else if (sameNode(tgt, this.hoveredNode.parent)) { return thick; }
+                else { return thin; }
+            } else if (this.isCurNodeChild(src)) {
+                if (sameNode(tgt, this.hoveredNode)) { return thick; }
+                else { return thin; }
+            } else {
+                return thin;
+            }
+        }
+    }
+    // if the user uses his keyboard, highlight the focused path
+    if (isGoal(this.curNode)) {
+        var focusedChild = this.curNode.allChildren[this.curNode.focusIndex];
+        if (
+            (this.isCurNode(src) && focusedChild.id === tgt.id)
+                || (src.id === focusedChild.id
+                    && src.allChildren[src.focusIndex].id === tgt.id)
+        ) {
+            return thick;
+        } else {
+            return thin;
+        }
+    } else {
+        alert("todo");
+        return thin;
+    }
+}
+
 ProofTree.prototype.update = function(callback) {
 
     var self = this;
@@ -911,6 +953,12 @@ ProofTree.prototype.update = function(callback) {
             // this is in "end" so that it does not trigger before nodes are positioned
             d3.select(this)
                 .on("mouseover", function(d1) {
+                    self.usingKeyboard = false;
+                    self.hoveredNode = d1;
+                    // update links width
+                    self.linkLayer.selectAll("path").data(links, byLinkId)
+                        .attr("stroke-width", self.linkWidth.bind(self))
+                    ;
                     self.diffLayer.selectAll("g.diff")
                         .style("opacity", 0);
                     self.diffLayer.selectAll("g.diff")
@@ -922,6 +970,12 @@ ProofTree.prototype.update = function(callback) {
                         .style("opacity", 1);
                 })
                 .on("mouseout", function(d1) {
+                    self.usingKeyboard = false;
+                    self.hoveredNode = undefined;
+                    // update links width
+                    self.linkLayer.selectAll("path").data(links, byLinkId)
+                        .attr("stroke-width", self.linkWidth.bind(self))
+                    ;
                     self.diffLayer.selectAll("g.diff")
                         .style("opacity", 0);
                     /* actually this is annoying because diffs won't go away
@@ -1021,26 +1075,7 @@ ProofTree.prototype.update = function(callback) {
             var tgt = swapXY(centerLeft(d.target));
             return self.diagonal({"source": src, "target": tgt});
         })
-        .attr("stroke-width", function(d) {
-            var src = d.source;
-            var tgt = d.target;
-            var curNode = self.curNode;
-            if (!self.usingKeyboard) { return "2px"; }
-            if (isGoal(curNode)) {
-                var focusedChild = curNode.allChildren[curNode.focusIndex];
-                if (
-                    (self.isCurNode(src) && focusedChild.id == tgt.id)
-                        || (src.id == focusedChild.id && src.allChildren[src.focusIndex].id == tgt.id)
-                ) {
-                    return "4px";
-                } else {
-                    return "2px";
-                }
-            } else {
-                alert("todo");
-                return "2px";
-            }
-        })
+        .attr("stroke-width", self.linkWidth.bind(self))
     ;
 
     linkSelection.exit()
