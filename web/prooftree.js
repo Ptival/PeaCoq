@@ -413,7 +413,7 @@ ProofTree.prototype.newTheorem = function(
     theorem,
     tactics,    // function from prooftree to set of tactics allowed
     afterUpdate, // callback after every update
-    whenReady // callback when the nodes are set up, only once
+    afterFirstUpdate // callback after the first update ends
 )
 {
 
@@ -431,15 +431,13 @@ ProofTree.prototype.newTheorem = function(
     var success = false;
 
     this.syncQuery(theorem, function(response) {
-        success = self.hInit(response);
+        success = self.hInit(response, afterFirstUpdate);
     });
 
     this.logAction("THEOREM " + theorem);
 
     $(this.svg[0]).focus();
     this.svg.on("click")();
-
-    if (whenReady !== undefined) { whenReady(); }
 
     return success;
 
@@ -620,7 +618,7 @@ ProofTree.prototype.tryAllTactics = function() {
 
 }
 
-ProofTree.prototype.hInit = function(response) {
+ProofTree.prototype.hInit = function(response, afterUpdate) {
 
     var self = this;
 
@@ -653,7 +651,7 @@ ProofTree.prototype.hInit = function(response) {
 
     this.rootNode.allChildren = this.tryAllTactics();
 
-    this.update();
+    this.update(afterUpdate);
 
     return true;
 
