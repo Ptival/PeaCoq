@@ -507,7 +507,7 @@ ProofTree.prototype.runTactic = function(t) {
     var newChild;
 
     self.syncQueryUndo(t, function(response) {
-        if(isGood(response)) {
+        if (isGood(response)) {
             // if it did not solve the goal
             if (_.isEqual(response.rGoals.unfocused, unfocusedBefore)) {
                 newChild = mkTacticNode(self.curNode, t, response.rGoals.focused);
@@ -539,7 +539,7 @@ ProofTree.prototype.tryAllTactics = function() {
 
     var run = function(t) {
         self.syncQueryUndo(t + '.', function(response) {
-            if(isGood(response)) {
+            if (isGood(response)) {
                 // if the tactic did not finish the goal
                 if (_.isEqual(response.rGoals.unfocused, unfocusedBefore)) {
                     res.push(mkTacticNode(self.curNode, t + '.', response.rGoals.focused));
@@ -1490,7 +1490,7 @@ function elmtRect(node, elmt) {
 }
 
 ProofTree.prototype.shiftPrev = function(n) {
-    if(this.paused) { return; }
+    if (this.paused) { return; }
     var self = this;
     function tryShifting(n) {
         if (n.focusIndex> 0) {
@@ -1511,7 +1511,7 @@ ProofTree.prototype.shiftPrev = function(n) {
 }
 
 ProofTree.prototype.shiftNext = function(n) {
-    if(this.paused) { return; }
+    if (this.paused) { return; }
     var self = this;
     function tryShifting(n) {
         if (n.focusIndex + 1 < self.getVisibleChildren(n).length) {
@@ -1537,26 +1537,26 @@ ProofTree.prototype.click = function(d, remember, callback) {
 
     if (d.solved) {
         if (hasParent(d)) {
-            this.click(d.parent);
+            this.click(d.parent, remember, callback);
         }
         return;
     }
 
     // when the user clicks on a tactic node below
     // bring them to the first unsolved goal instead
-    if(isTactic(d) && d.depth > this.curNode.depth && d.allChildren.length > 0) {
+    if (isTactic(d) && d.depth > this.curNode.depth && d.allChildren.length > 0) {
         expand(d);
         var firstUnsolved = _(d.allChildren)
             .find(function(e) { return !e.solved; });
         if (firstUnsolved !== undefined) {
-            this.click(firstUnsolved);
+            this.click(firstUnsolved, remember, callback);
             return;
         }
     }
 
     // when the user clicks on the parent tactic, bring them back to its parent
-    if(isTactic(d) && d.depth < this.curNode.depth) {
-        this.click(d.parent);
+    if (isTactic(d) && d.depth < this.curNode.depth) {
+        this.click(d.parent, remember, callback);
         return;
     }
 
@@ -1706,7 +1706,7 @@ ProofTree.prototype.navigateTo = function(dest, remember) {
                 if (isTactic(src)) {
                     // need to Undo as many times as the focus depth difference
                     // between before and after the terminating tactic + 1
-                    if(src.terminating) {
+                    if (src.terminating) {
                         _(_.range(depthSolved(src))).each(function() {
                             self.syncQuery('Undo.', hIgnore);
                         });
@@ -1875,7 +1875,7 @@ ProofTree.prototype.keydownHandler = function() {
 
     case 37: // Left
     case 65: // a
-        if(hasParent(curNode)) {
+        if (hasParent(curNode)) {
             this.logAction("LEFT " + nodeString(curNode.parent));
             this.click(curNode.parent);
         }
@@ -2197,7 +2197,7 @@ function showBinders(t) {
 }
 
 function showBinder(t) {
-    if(t[1] === null) {
+    if (t[1] === null) {
         return showNames(t[0]);
     } else {
         return showNames(t[0]) + syntax(":") + nbsp + showTermAux(t[1], 0, 0, false);
@@ -2215,7 +2215,7 @@ function showPatternAux(p, withParens) {
         if (c[1].length === 0) { // constructor with no parameters, never parenthesized
             return c[0];
         } else { // constructor with parameters, parenthesized if subpattern
-            if(c[0] === "cons" && c[1].length === 2) {
+            if (c[0] === "cons" && c[1].length === 2) {
                 return (withParens ? syntax("(") : "")
                     + showPatternAux(c[1][0], true)
                     + nbsp + syntax("::") + nbsp
