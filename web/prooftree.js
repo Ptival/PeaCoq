@@ -412,7 +412,8 @@ function evenFloor(x) {
 ProofTree.prototype.newTheorem = function(
     theorem,
     tactics,    // function from prooftree to set of tactics allowed
-    afterUpdate // callback after update
+    afterUpdate, // callback after every update
+    whenReady // callback when the nodes are set up, only once
 )
 {
 
@@ -437,6 +438,8 @@ ProofTree.prototype.newTheorem = function(
 
     $(this.svg[0]).focus();
     this.svg.on("click")();
+
+    if (whenReady !== undefined) { whenReady(); }
 
     return success;
 
