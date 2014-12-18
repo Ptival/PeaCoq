@@ -16,12 +16,6 @@ $(document).ready(function() {
 
     makeActive(pt);
 
-    pt.newTheorem(
-        "Theorem stress : False.",
-        function(pt) { return ["pose proof I"]; },
-        function(){}
-    );
-
     var times = [];
 
     var n = 0;
@@ -44,6 +38,10 @@ $(document).ready(function() {
         }
     }
 
-    proceed();
+    pt.newTheorem(
+        "Theorem stress : False.",
+        function(pt) { return ["pose proof I"]; },
+        function(){ proceed(); }
+    );
 
 });
