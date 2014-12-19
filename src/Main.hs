@@ -35,16 +35,19 @@ data GlobalState
   = GlobalState
     Int                      -- next session number
     (IM.IntMap SessionState) -- active sessions
+    (Maybe String)           -- user name
 
 main :: IO ()
 main = mainUW
 
+{-
 mainWeb :: IO ()
 mainWeb =do
   updateGlobalLogger rootLoggerName (setLevel loggingPriority)
   globRef <- newIORef $ GlobalState 0 IM.empty
   forkIO $ cleanStaleSessions globRef -- parallel thread to regularly clean up
   serveSnaplet defaultConfig $ peacoqSnaplet globRef
+-}
 
 data Config =
   Config
@@ -66,8 +69,9 @@ mainUW = do
       let format = simpleLogFormatter "[$time] $msg"
       let fHandler = setFormatter handler format
       updateGlobalLogger rootLoggerName (setLevel loggingPriority . addHandler fHandler)
+      logAction $ "User identified: " ++ userId
     Nothing -> return ()
-  globRef <- newIORef $ GlobalState 0 IM.empty
+  globRef <- newIORef $ GlobalState 0 IM.empty mUserId
   forkIO $ cleanStaleSessions globRef -- parallel thread to regularly clean up
   serveSnaplet defaultConfig $ peacoqSnaplet globRef
 
@@ -80,12 +84,9 @@ sessionTimeoutMicroseconds = sessionTimeoutSeconds * 1000 * 1000
 loggingPriority :: Priority
 loggingPriority = INFO
 
-logAction :: String -> String -> IO ()
-logAction = infoM
-
 closeSession :: SessionState -> IO ()
-closeSession (SessionState ident _ (hi, ho) ph) = do
-  logAction (show ident) $ "END SESSION"
+closeSession (SessionState sessId _ (hi, ho) ph) = do
+  logAction $ "END SESSION " ++ show sessId
   hClose hi
   hClose ho
   terminateProcess ph -- not stricly necessary
@@ -99,9 +100,9 @@ cleanStaleSessions globRef = forever $ do
   threadDelay sessionTimeoutMicroseconds
   where
     markAndSweep :: GlobalState -> (GlobalState, [SessionState])
-    markAndSweep (GlobalState c m) =
+    markAndSweep (GlobalState c m u) =
       let (alive, stale) = IM.partition isAlive m in
-      (GlobalState c (IM.map markStale alive), IM.elems stale)
+      (GlobalState c (IM.map markStale alive) u, IM.elems stale)
 
 startCoqtop :: IO (Handle, Handle, ProcessHandle)
 startCoqtop = do
@@ -110,8 +111,8 @@ startCoqtop = do
   hSetBinaryMode hi False
   hSetBuffering stdin LineBuffering
   hSetBuffering hi NoBuffering
-  hInterp hi "Require Import Unicode.Utf8."
-  hForceValueResponse ho
+  --hInterp hi "Require Import Unicode.Utf8."
+  --hForceValueResponse ho
   return (hi, ho, ph)
 
 withSessionHandles ::
@@ -122,30 +123,29 @@ withSessionHandles r h = withSession lSession $ do
   -- retrieve or create a key for this session
   mapKey <- getSessionKey
   -- retrieve or create two handles for this session
-  (mUserId, hi, ho) <- liftIO $ do
-    GlobalState _ m <- readIORef r
+  (hi, ho) <- liftIO $ do
+    GlobalState _ m _ <- readIORef r
     case IM.lookup mapKey m of
       Nothing -> do
         (hi, ho, ph) <- startCoqtop
-        n <- atomicModifyIORef' r $ updateNewSession mapKey (hi, ho) ph
-        let ident = show n
-        logAction ident "NEW SESSION"
-        return (Nothing, hi, ho)
-      Just (SessionState mUserId _ (hi, ho) _) -> do
+        sessionIdentity <- atomicModifyIORef' r $ updateNewSession mapKey (hi, ho) ph
+        logAction $ "NEW SESSION " ++ show sessionIdentity
+        return (hi, ho)
+      Just (SessionState _ _ (hi, ho) _) -> do
         -- update the timestamp
         atomicModifyIORef' r $ updateTouchSession mapKey
-        return (mUserId, hi, ho)
+        return (hi, ho)
   -- run the handler
-  h (HandlerInput mUserId hi ho)
+  h (HandlerInput hi ho)
   where
     updateNewSession :: Int -> (Handle, Handle) -> ProcessHandle -> GlobalState -> (GlobalState, Int)
-    updateNewSession mapKey hs ph (GlobalState c m) =
-      (GlobalState (c + 1) (IM.insert mapKey (SessionState Nothing True hs ph) m), c)
+    updateNewSession mapKey hs ph (GlobalState c m u) =
+      (GlobalState (c + 1) (IM.insert mapKey (SessionState c True hs ph) m) u, c)
     updateTouchSession :: Int -> GlobalState -> (GlobalState, Int)
     updateTouchSession = adjustSession touchSession
 
 adjustSession :: (SessionState -> SessionState) -> Int -> GlobalState -> (GlobalState, Int)
-adjustSession f mapKey (GlobalState c m) = (GlobalState c (IM.adjust f mapKey m), c)
+adjustSession f mapKey (GlobalState c m u) = (GlobalState c (IM.adjust f mapKey m) u, c)
 
 peacoqSnaplet :: IORef GlobalState -> SnapletInit PeaCoq PeaCoq
 peacoqSnaplet globRef = makeSnaplet "PeaCoq" "PeaCoq" Nothing $ do
@@ -181,7 +181,7 @@ peacoqSnaplet globRef = makeSnaplet "PeaCoq" "PeaCoq" Nothing $ do
       ]
 
 togglePrintingAll :: Bool -> HandlerInput -> PeaCoqHandler
-togglePrintingAll b input@(HandlerInput _ hi ho) = do
+togglePrintingAll b input@(HandlerInput hi ho) = do
   let query =
         "<call id=\"0\" val=\"setoptions\">"
         ++ "<pair><list><string>Printing</string><string>All</string></list>"

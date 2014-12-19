@@ -24,10 +24,12 @@ import           PeaCoq
 type PeaCoqHandler = Handler PeaCoq PeaCoq ()
 
 data HandlerInput = HandlerInput
-  { identifier :: Maybe String
-  , inputHandle :: Handle
+  { inputHandle :: Handle
   , outputHandle :: Handle
   }
+
+logAction :: String -> IO ()
+logAction = infoM rootLoggerName
 
 keyField :: T.Text
 keyField = "key"
@@ -44,7 +46,7 @@ getSessionKey = with lSession $ do
       return . read . T.unpack $ key
 
 respond :: CoqtopResponse [String] -> HandlerInput -> PeaCoqHandler
-respond response (HandlerInput _ hi ho) = do
+respond response (HandlerInput hi ho) = do
   goals <- liftIO $ hQueryGoal hi ho
   writeJSON $ MkPeaCoqResponse goals response
 
@@ -76,7 +78,7 @@ parseCheckHandler _ = do
       writeJSON response
 
 queryHandler :: HandlerInput -> PeaCoqHandler
-queryHandler input@(HandlerInput _ hi ho) = do
+queryHandler input@(HandlerInput hi ho) = do
   param <- getParam "query"
   case param of
     Nothing -> return ()
@@ -84,13 +86,14 @@ queryHandler input@(HandlerInput _ hi ho) = do
       response <- liftIO $ do
         -- might want to sanitize? :3
         let query = toString queryBS
+        logAction $ "Serving query: " ++ query
         putStrLn $ query
         hInterp hi query
         hForceValueResponse ho
       respond response input
 
 queryUndoHandler :: HandlerInput -> PeaCoqHandler
-queryUndoHandler input@(HandlerInput _ hi ho) = do
+queryUndoHandler input@(HandlerInput hi ho) = do
   param <- getParam "query"
   case param of
     Nothing -> return ()
@@ -111,19 +114,20 @@ queryUndoHandler input@(HandlerInput _ hi ho) = do
             return ()
 
 undoHandler :: HandlerInput -> PeaCoqHandler
-undoHandler input@(HandlerInput _ hi ho) = do
+undoHandler input@(HandlerInput hi ho) = do
   liftIO $ hCall hi [("val", "rewind"), ("steps", "1")] ""
   r <- liftIO $ hForceValueResponse ho
   respond r input
 
 statusHandler :: HandlerInput -> PeaCoqHandler
-statusHandler input@(HandlerInput _ hi ho) = do
+statusHandler input@(HandlerInput hi ho) = do
+  liftIO $ logAction "status handler"
   liftIO $ hCall hi [("val", "status")] ""
   r <- liftIO $ hForceStatusResponse ho
   respond (return . show <$> r) input
 
 rewindHandler :: HandlerInput -> PeaCoqHandler
-rewindHandler input@(HandlerInput _ hi ho) = do
+rewindHandler input@(HandlerInput hi ho) = do
   param <- getParam "query"
   case param of
     Nothing -> return ()
@@ -133,24 +137,21 @@ rewindHandler input@(HandlerInput _ hi ho) = do
       respond (return . show <$> r) input
 
 qedHandler :: HandlerInput -> PeaCoqHandler
-qedHandler input@(HandlerInput _ hi ho) = do
+qedHandler input@(HandlerInput hi ho) = do
   liftIO $ hInterp hi "Qed."
   r <- liftIO $ hForceValueResponse ho
   respond r input
 
 logHandler :: HandlerInput -> PeaCoqHandler
-logHandler input@(HandlerInput mUserId _ _) = do
-  case mUserId of
-    Nothing -> respond (Fail "Not identified, cannot log") input
-    Just userId -> do
-      param <- getParam "query"
-      case param of
-        Nothing -> return ()
-        Just messageBS -> do
-          let message = toString messageBS
-          liftIO . putStrLn $ "Attempting to log: " ++ message
-          liftIO $ noticeM userId message
-          respond (Good ["OK"]) input
+logHandler input = do
+  param <- getParam "query"
+  case param of
+    Nothing -> return ()
+    Just messageBS -> do
+      let message = toString messageBS
+      liftIO . putStrLn $ "Attempting to log: " ++ message
+      liftIO $ noticeM rootLoggerName message
+      respond (Good ["OK"]) input
 
 {-
 identifyHandler :: IORef GlobalState -> HandlerInput -> PeaCoqHandler

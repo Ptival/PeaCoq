@@ -6,7 +6,7 @@ import System.Process
 
 data SessionState
   = SessionState
-    (Maybe String)   -- an identifier for the session
+    Int              -- an identifier for the session
     Bool             -- True while the session is alive
     (Handle, Handle) -- I/O handles
     ProcessHandle    -- useful to kill the process
@@ -20,5 +20,5 @@ markStale (SessionState n _ h ph) = SessionState n False h ph
 touchSession :: SessionState -> SessionState
 touchSession (SessionState n _ h ph) = SessionState n True h ph
 
-setIdentity :: String -> SessionState -> SessionState
-setIdentity ident (SessionState _ t h ph) = SessionState (Just ident) t h ph
+setSession :: Int -> SessionState -> SessionState
+setSession ident (SessionState _ t h ph) = SessionState ident t h ph
