@@ -210,7 +210,7 @@ EvalResult :: { EvalResult }
 : '=' Term ':' Term { EvalResult $2 $4 }
 
 CheckResult :: { CheckResult }
-: var ':' Term { CheckResult $1 $3 }
+: Term ':' Term { CheckResult $1 $3 }
 
 {
 
@@ -270,7 +270,7 @@ data Hypothesis
 data EvalResult = EvalResult Term Type
   deriving (Generic, Show)
 
-data CheckResult = CheckResult String Type
+data CheckResult = CheckResult Term Type
   deriving (Generic, Show)
 
 unsafeRight :: Either String b -> b

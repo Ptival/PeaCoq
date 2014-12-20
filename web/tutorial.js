@@ -535,7 +535,7 @@ function clickableTextarea(readonly, initialText, tactics, postAnim) {
                         case "Good":
                             var response = stripWarning(response.rResponse.contents[0]);
                             PT.syncParseCheck(response, function(response) {
-                                var name = response[0];
+                                var term = response[0];
                                 var type = response[1];
                                 li.append(
                                     $("<div>")
@@ -543,8 +543,8 @@ function clickableTextarea(readonly, initialText, tactics, postAnim) {
                                         .addClass("alert-success")
                                         .css("font-family", "monospace")
                                         .html(
-                                            "<p>" + name + nbsp + syntax(":") + "</p>"
-                                                + "<p>" + showTerm(type) + "</p>"
+                                            "<p>" + showTerm(term) + "</p>"
+                                                + "<p>" + syntax(":") + nbsp + showTerm(type) + "</p>"
                                         )
                                 );
                             });

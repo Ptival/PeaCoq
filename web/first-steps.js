@@ -231,4 +231,27 @@ function firstSteps(add) {
         }
     ));
 
+    add(mkText(
+        "<p>Now we will work with natural numbers. They are defined in Coq as yet another inductive type, but this one is recursive: a number is either <code>O</code> for zero, or the successor of a number (that is, the next one), noted <code>S n</code> where <code>n</code> is the predecessor.</p>"
+    ));
+
+    add(mkCoqReadonly(
+        "Inductive nat : Type :=\n"
+            + "| O : nat\n"
+            + "| S : nat -> nat\n"
+            + "."
+    ));
+
+    add(mkText(
+        "<p>This encoding of natural numbers is called the Peano encoding. If you've never seen it before, here are a few constants.</p>"
+    ));
+
+    add(mkCoqReadonly(
+        "Check O. (* zero *)"
+    ));
+
+    add(mkCoqReadonly(
+        "Check (S (S O)). (* two *)"
+    ));
+
 }
