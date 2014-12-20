@@ -41,8 +41,10 @@ getSessionKey = with lSession $ do
     Nothing -> do
       key <- liftIO randomIO
       setInSession keyField (T.pack . show $ key)
+      liftIO . logAction $ "No session key found, initializing: " ++ show key
       return key
     Just key -> do
+      liftIO . logAction $ "Session key found: " ++ show key
       return . read . T.unpack $ key
 
 respond :: CoqtopResponse [String] -> HandlerInput -> PeaCoqHandler
