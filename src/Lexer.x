@@ -22,7 +22,6 @@ tokens :-
   (\→|\-\>)     { tok TokArrow }
   (\=\>)        { tok TokDoubleArrow }
   (\λ|\\)       { tok TokLambda }
-  \.            { tok TokPeriod }
   \:\=          { tok TokColonEq }
   \:            { tok TokColon }
   \:\:          { tok TokCons }
@@ -51,10 +50,13 @@ tokens :-
   "Definition"  { tok TokDefinition }
   "Fixpoint"    { tok TokFixpoint }
   "Check"       { tok TokCheck }
+  "Print"       { tok TokPrint }
   "struct"      { tok TokStruct }
   "Proof"       { tok TokProof }
   "Qed"         { tok TokQed }
-  $alpha [$alpha $digit \_ \']* { tokS TokSym }
+  $alpha [$alpha $digit \_ \']* { tokS TokId }
+  \. $alpha [$alpha $digit \_ \']* { tokS TokAccessId }
+  \. { tok TokPeriod }
 
 {
 
@@ -65,7 +67,8 @@ tokS :: (String -> Token) -> AlexInput -> Int -> Alex Token
 tokS t (_, _, _, str) len = return (t (take len str))
 
 data Token
-  = TokSym String
+  = TokId String
+  | TokAccessId String
   | TokLParen
   | TokRParen
   | TokLBrace
@@ -102,6 +105,7 @@ data Token
   | TokDefinition
   | TokFixpoint
   | TokCheck
+  | TokPrint
   | TokStruct
   | TokProof
   | TokQed

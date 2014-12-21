@@ -24,7 +24,8 @@ import Lexer
 
 %token
 
-var { TokSym $$ }
+var { TokId $$ }
+access_ident { TokAccessId $$ }
 num { TokNum $$ }
 comment { TokComment $$ }
 '(' { TokLParen }
@@ -97,7 +98,7 @@ Sentence :: { Vernac }
 | "Check" Term '.' { Check $2 }
 
 Term :: { Term }
-: var                   { Var $1 }
+: QualId                { Var $1 }
 | num                   { Var $1 }
 | '∀' Binders ',' Term  { Forall $2 $4 }
 | 'λ' Binders ',' Term  { Lambda $2 $4 }
@@ -118,6 +119,10 @@ Term :: { Term }
 | Term Term %prec APP   { App $1 $2 }
 | '(' Term ')'          { $2 }
 | "match" MatchItems "with" MaybePipe EquationStar "end" { Match $2 $5 }
+
+QualId :: {String}
+: var                 { $1 }
+| QualId access_ident { $1 ++ $2 }
 
 MatchItems :: { [Term] }
 : MatchItem                { [$1] }
