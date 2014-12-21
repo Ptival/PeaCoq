@@ -753,7 +753,7 @@ ProofTree.prototype.linkWidth = function(d) {
             return thin;
         }
     } else {
-        alert("todo");
+        //alert("todo");
         return thin;
     }
 }

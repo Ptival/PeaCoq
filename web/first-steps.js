@@ -25,7 +25,7 @@ function firstSteps(add) {
     ));
 
     add(mkText(
-        "<p>One of the most basic types is the boolean type. A boolean value (a value of type <code>bool</code>) is either the constructor <code>true</code>, or the constructor <code>false</code>.</p><p>Click on the Play button below before you keep reading.</p>"
+        "<p>One of the most basic types is the boolean type. A boolean value (a value of type <code>bool</code>) is either the constructor <code>true</code>, or the constructor <code>false</code>.</p><p>Click on the " + mkGlyph("play").get(0).outerHTML + " button below before you keep reading.</p>"
     ));
 
     add(mkCoqReadonly(
@@ -37,14 +37,14 @@ function firstSteps(add) {
     ));
 
     add(mkText(
-        "<p>Let's prove something right away, a value of type <code>bool</code> can only be equal to <code>true</code> or equal to <code>false</code>.</p><p>Once again, and every time, click on the Play button and interact with the new window before continuing reading.</p>"
+        "<p>Let's prove something right away, a value of type <code>bool</code> can only be equal to <code>true</code> or equal to <code>false</code>.</p><p>Once again, and every time, click on the " + mkGlyph("play").get(0).outerHTML + " button and interact with the new window before continuing reading.</p>"
     ));
 
     add(mkCoqReadonly(
         'Theorem bools_are_true_or_false : forall b : bool, b = true \\\/ b = false.',
         function(pt) {
             if (pt.curNode.depth === 0) {
-                return ["intro", "admit"];
+                return ["intro"];
             } else {
                 return ["left", "right", "destruct", "reflexivity"];
             }
@@ -247,11 +247,38 @@ function firstSteps(add) {
     ));
 
     add(mkCoqReadonly(
-        "Check O. (* zero *)"
+        "Definition zero := O."
     ));
 
     add(mkCoqReadonly(
-        "Check (S (S O)). (* two *)"
+        "Definition one := S O."
+    ));
+
+    add(mkCoqReadonly(
+        "Definition two := S (S O)."
+    ));
+
+    add(mkText(
+        "<p>Let us define what it means to add two numbers.</p>"
+    ));
+
+    add(mkCoqReadonly(
+        "Fixpoint plus (a b : nat) :=\n"
+            + "  match a with\n"
+            + "  | O => b\n"
+            + "  | S n => S (plus n b)\n"
+            + "  end."
+    ));
+
+    add(mkCoqReadonly(
+        "Eval compute in (plus two two)."
+    ));
+
+    add(mkCoqReadonly(
+        "Theorem plus_commutative : forall a b, plus a b = plus b a.",
+        function(pt) {
+            return PT.tDiscriminate;
+        }
     ));
 
 }

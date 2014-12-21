@@ -569,7 +569,42 @@ function clickableTextarea(readonly, initialText, tactics, postAnim) {
                     });
 
                 } else {
-                    alert("This type of query is not supported yet.");
+
+                    console.log("Query not supported", query);
+
+                    PT.syncQuery(query, function(response) {
+
+                        switch (response.rResponse.tag) {
+
+                        case "Good":
+                            var response = stripWarning(response.rResponse.contents[0]);
+                            li.append(
+                                $("<div>")
+                                    .addClass("alert")
+                                    .addClass("alert-success")
+                                    .css("font-family", "monospace")
+                                    .html(response)
+                            );
+                            break;
+
+                        case "Fail":
+                            li.append(
+                                $("<div>")
+                                    .addClass("alert")
+                                    .addClass("alert-danger")
+                                    .css("font-family", "monospace")
+                                    .html(response.rResponse.contents)
+                            );
+                            break;
+
+                        default:
+                            alert("TODO");
+                            break;
+
+                        };
+
+                    });
+
                 }
 
                 $("body").animate({
