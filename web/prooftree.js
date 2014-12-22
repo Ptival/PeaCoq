@@ -2659,7 +2659,7 @@ function currentLabel() {
 
 PT.resetCoq = function() {
     var label = currentLabel();
-    if (label > 1) {
+    if (label > 0) {
         PT.syncRequest("rewind", label - 1, function(){});
         PT.syncQuery("Require Import Unicode.Utf8 Bool Arith List.", function(){});
         PT.syncQuery("Open ListNotations.", function(){});

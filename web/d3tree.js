@@ -79,28 +79,16 @@ $(document).ready(function() {
     $(".theorem")
         .click(function() {
             var t = $(this).data("theorem");
-            pt.syncQuery("Abort All.", hIgnore);
-            pt.newTheorem(t[0], function(pt) { return t[1]; }, function(){});
+            PT.resetCoq();
+            pt.newTheorem(t[0], function(pt) { return t[1]; });
         })
     ;
 
     makeActive(pt);
 
-    var verbose =
-        true
-        //false
-    ;
-    if (verbose) {
-        pt.syncRequest("unsetprintingall", "", function() {});
-    } else {
-        pt.syncRequest("setprintingall", "", function() {});
-    }
-
-    pt.syncQuery("Abort All.", hIgnore);
     pt.newTheorem(
         theorems[ndx][0],
-        function(pt) { return theorems[ndx][1]; },
-        function(){}
+        function(pt) { return theorems[ndx][1]; }
     );
 
 });
