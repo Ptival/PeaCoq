@@ -21,7 +21,7 @@ var theorems = [
 // ['Theorem minus_diag : ∀n, minus n n = 0.', PT.tInduction],
 // ['Theorem mult_0_r : ∀n:nat, n * 0 = 0.', PT.tInduction],
 // ['Theorem plus_n_Sm : ∀n m : nat, S (n + m) = n + (S m).', PT.tInduction],
-// ['Theorem plus_comm : ∀n m : nat, n + m = m + n.', PT.tInduction],
+['Theorem plus_comm : ∀n m : nat, n + m = m + n.', PT.tInduction],
 ['Theorem plus_assoc : ∀n m p : nat, n + (m + p) = (n + m) + p.', PT.tInduction],
 ['Theorem plus_rearrange : ∀n m p q : nat, (n + m) + (p + q) = (m + n) + (p + q).',
  PT.tInduction],
