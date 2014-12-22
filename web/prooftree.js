@@ -839,7 +839,7 @@ ProofTree.prototype.update = function(callback) {
             var rect = jQElementToMeasure[0].getBoundingClientRect();
             d.width =
                 isTactic(d)
-                ? Math.min(rect.width, tacticNodeMaxWidth)
+                ? Math.min(Math.ceil(rect.width), tacticNodeMaxWidth)
                 : Math.ceil(rect.width)
             ;
             d.height = Math.ceil(rect.height);
