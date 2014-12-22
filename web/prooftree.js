@@ -19,7 +19,7 @@ var rectMargin = {top: 2, right: 8, bottom: 2, left: 8};
 var animationDuration = 360;
 var tacticNodeRounding = 10;
 var goalNodeRounding = 0;
-var goalNodeWidth = 540;
+var goalNodeWidth = 400;
 var tacticNodeMaxWidth = 140;
 $(document).ready(function() {
     $(window).click(function(event) {
