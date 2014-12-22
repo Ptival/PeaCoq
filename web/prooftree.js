@@ -19,7 +19,6 @@ var rectMargin = {top: 2, right: 8, bottom: 2, left: 8};
 var animationDuration = 360;
 var tacticNodeRounding = 10;
 var goalNodeRounding = 0;
-var goalNodeWidth = 400;
 var tacticNodeMaxWidth = 140;
 $(document).ready(function() {
     $(window).click(function(event) {
@@ -146,6 +145,7 @@ function ProofTree(anchor, width, height, qedCallback, peacoqDir, onError) {
     this.yFactor = this.height;
     this.userState = {};
     this.usingKeyboard = false;
+    this.goalNodeWidth = this.width/3;
 
     this.tree = d3.layout.tree()
         .children(self.getVisibleChildren.bind(self))
@@ -184,7 +184,7 @@ function ProofTree(anchor, width, height, qedCallback, peacoqDir, onError) {
         .attr("id", "viewport") // for SVGPan.js
         .attr("class", "viewport")
         .attr("transform",
-              "translate(" + goalNodeWidth + ", " + 0 + ")"
+              "translate(" + self.goalNodeWidth + ", " + 0 + ")"
              )
     ;
 
@@ -792,7 +792,7 @@ ProofTree.prototype.update = function(callback) {
     // the goal nodes need to be rendered at fixed width goalNodeWidth
     // the tactic nodes will be resized to their actual width later
         .attr("width", function(d) {
-            return isGoal(d) ? goalNodeWidth : tacticNodeMaxWidth;
+            return isGoal(d) ? self.goalNodeWidth : tacticNodeMaxWidth;
         })
     ;
 
