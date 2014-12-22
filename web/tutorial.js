@@ -488,6 +488,8 @@ function clickableTextarea(readonly, initialText, tactics, postAnim) {
 
                     PT.syncQuery(query, function(response) {
 
+                        var response = stripWarning(response.rResponse.contents[0]);
+
                         switch (response.rResponse.tag) {
 
                         case "Good":
