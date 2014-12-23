@@ -22,15 +22,6 @@ if [ ! -f bootstrap-filestyle.js ]; then
     ln -s bootstrap-filestyle/bootstrap-filestyle.min.js bootstrap-filestyle.js
 fi
 
-
-if [ ! -f jquery.js ]; then
-    mkdir -p jquery
-    cd jquery/
-    wget http://code.jquery.com/jquery-1.11.1.min.js
-    cd ..
-    ln -s jquery/jquery-1.11.1.min.js jquery.js
-fi
-
 if [ ! -f d3.js ]; then
     mkdir -p d3
     cd d3
@@ -40,12 +31,28 @@ if [ ! -f d3.js ]; then
     ln -s d3/d3.min.js d3.js
 fi
 
+if [ ! -f jquery.js ]; then
+    mkdir -p jquery
+    cd jquery/
+    wget http://code.jquery.com/jquery-1.11.1.min.js
+    cd ..
+    ln -s jquery/jquery-1.11.1.min.js jquery.js
+fi
+
 if [ ! -f lodash.js ]; then
     mkdir -p lodash
     cd lodash/
     wget https://raw.github.com/lodash/lodash/2.4.1/dist/lodash.min.js
     cd ..
     ln -s lodash/lodash.min.js lodash.js
+fi
+
+if [ ! -f rangy-core.js ]; then
+    mkdir -p rangy
+    cd rangy/
+    wget https://cdnjs.cloudflare.com/ajax/libs/rangy/1.2.3/rangy-core.js
+    cd ..
+    ln -s rangy/rangy-core.js rangy-core.js
 fi
 
 cd ..
