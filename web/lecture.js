@@ -102,7 +102,14 @@ function onLoad(text) {
 // Their license is unclear, TODO make sure we can borrow, oops!
 
 function my_index(str) {
-    return str.indexOf(".");
+    var delimiters = [".", "{", "}"];
+    var index = +Infinity;
+    _(delimiters).each(function(delimiter) {
+        var pos = str.indexOf(delimiter);
+        if (pos >= 0 && pos < index) { index = pos; }
+    });
+    if (index !== +Infinity) { return index; }
+    else { return -1; }
 }
 
 function next(str) {
@@ -118,6 +125,7 @@ function count (str, pat) {
     return (arr.length);
 }
 
+// removes dots that are not meant to be terminators
 function coq_undot(str) {
     return str
         .replace(/Undo.Undo/g, 'Undo. ndo')
