@@ -98,6 +98,9 @@ function onLoad(text) {
 
 }
 
+// Some of this code has been borrowed from the ProofWeb project
+// Their license is unclear, TODO make sure we can borrow, oops!
+
 function my_index(str) {
     return str.indexOf(".");
 }
@@ -221,18 +224,9 @@ function proverUp () {
     if (processing != "") {
         index = prev(processing);
     }
-/*
-        index = proved.length + proving.length + prev(processing);
-    } else if (proving != "") {
-        index = proved.length + prev(proving);
-    } else if (proved != "") {
-        index = prev(proved);
-    }
-*/
     $("#processing").text(processing.substring(0, index));
     $("#typing").text(zwsp + processing.substring(index) + typing);
     repositionCaret(1);
-    //myx_undo (index, undo_cb);
 }
 
 function repositionCaret(offset) {
