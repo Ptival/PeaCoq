@@ -14,6 +14,15 @@ if [ ! -f bootstrap.js ]; then
     ln -s bootstrap/dist/fonts fonts
 fi
 
+if [ ! -f bootstrap-filestyle.js ]; then
+    mkdir -p bootstrap-filestyle
+    cd bootstrap-filestyle/
+    wget http://markusslima.github.io/bootstrap-filestyle/js/bootstrap-filestyle.min.js
+    cd ..
+    ln -s bootstrap-filestyle/bootstrap-filestyle.min.js bootstrap-filestyle.js
+fi
+
+
 if [ ! -f jquery.js ]; then
     mkdir -p jquery
     cd jquery/
