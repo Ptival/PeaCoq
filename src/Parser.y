@@ -49,6 +49,7 @@ comment { TokComment $$ }
 '|' { TokPipe }
 '∧' { TokAnd }
 '∨' { TokOr }
+'¬' { TokNeg }
 "&&" { TokAndB }
 "||" { TokOrB }
 ":=" { TokColonEq }
@@ -70,6 +71,7 @@ comment { TokComment $$ }
 -- low precedence
 %right '→'
 %left '∧' '∨'
+%nonassoc '¬'
 %nonassoc '=' '≠'
 %right "++"
 %right "::"
@@ -110,6 +112,7 @@ Term :: { Term }
 | Term '*' Term         { App (App (Var "mult")  $1) $3 }
 | Term '∧' Term         { App (App (Var "and")   $1) $3 }
 | Term '∨' Term         { App (App (Var "or")    $1) $3 }
+| '¬' Term              { App (Var "neg") $2 }
 | Term "&&" Term        { App (App (Var "andb")  $1) $3 }
 | Term "||" Term        { App (App (Var "orb")   $1) $3 }
 | Term "::" Term        { App (App (Var "cons")  $1) $3 }
