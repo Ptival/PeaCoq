@@ -152,7 +152,6 @@ function onLoad(text) {
         .css("float", "left")
         .css("width", paneWidth)
         .css("height", paneHeight)
-        .html("Other pane")
     ;
 
     $("#main").empty();
@@ -300,32 +299,32 @@ function keyDownHandler(evt) {
 }
 
 function updateCoqtopPane(response) {
-    // first the color
     switch(response.rResponse.tag) {
     case "Good":
         $("#coqtop")
             .toggleClass("alert-success", true)
             .toggleClass("alert-danger", false)
         ;
+        $("#coqtop").text("");
+        if (response.rGoals.focused.length > 0) {
+            _(response.rGoals.focused[0].gHyps).each(function(h) {
+                $("#coqtop").append(PT.showHypothesis(h) + "\n");
+            });
+            $("#coqtop").append($("<hr>").css("border", "1px solid black"));
+            $("#coqtop").append(showTerm(response.rGoals.focused[0].gGoal));
+        } else {
+            $("#coqtop").append(response.rResponse.contents);
+        }
         break;
     case "Fail":
         $("#coqtop")
             .toggleClass("alert-danger", true)
             .toggleClass("alert-success", false)
         ;
+        // maybe still display the goal?
+        $("#coqtop").text(response.rResponse.contents);
         break;
     };
-    // then the contents
-    $("#coqtop").text("");
-    if (response.rGoals.focused.length > 0) {
-        _(response.rGoals.focused[0].gHyps).each(function(h) {
-            $("#coqtop").append(PT.showHypothesis(h) + "\n");
-        });
-        $("#coqtop").append($("<hr>").css("border", "1px solid black"));
-        $("#coqtop").append(showTerm(response.rGoals.focused[0].gGoal));
-    } else {
-        $("#coqtop").append(response.rResponse.contents);
-    }
     //$("#coqtop").append("\n" + JSON.stringify(response));
 }
 
