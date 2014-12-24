@@ -1,7 +1,7 @@
 LEC=$(wildcard *.v)
 
 all: $(LEC:.v=.glob)
-	coqdoc $(LEC)
+	coqdoc --lib-name Episode $(LEC)
 
 %.glob: %.v
 	coqc $<
