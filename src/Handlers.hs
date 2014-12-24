@@ -88,8 +88,7 @@ queryHandler input@(HandlerInput hi ho) = do
       response <- liftIO $ do
         -- might want to sanitize? :3
         let query = toString queryBS
-        logAction $ "Serving query: " ++ query
-        putStrLn $ query
+        logAction $ "Serving query:\nSTART\n" ++ query ++ "\nEND"
         hInterp hi query
         hForceValueResponse ho
       respond response input
@@ -117,15 +116,16 @@ queryUndoHandler input@(HandlerInput hi ho) = do
 
 undoHandler :: HandlerInput -> PeaCoqHandler
 undoHandler input@(HandlerInput hi ho) = do
-  liftIO $ hCall hi [("val", "rewind"), ("steps", "1")] ""
-  r <- liftIO $ hForceValueResponse ho
+  r <- liftIO $ do
+    hCall hi [("val", "rewind"), ("steps", "1")] ""
+    hForceValueResponse ho
   respond r input
 
 statusHandler :: HandlerInput -> PeaCoqHandler
 statusHandler input@(HandlerInput hi ho) = do
-  liftIO $ logAction "status handler"
-  liftIO $ hCall hi [("val", "status")] ""
-  r <- liftIO $ hForceStatusResponse ho
+  r <- liftIO $ do
+    hCall hi [("val", "status")] ""
+    hForceStatusResponse ho
   respond (return . show <$> r) input
 
 rewindHandler :: HandlerInput -> PeaCoqHandler
@@ -134,8 +134,11 @@ rewindHandler input@(HandlerInput hi ho) = do
   case param of
     Nothing -> return ()
     Just stepsBS -> do
-      liftIO $ hCall hi [("val", "rewind"), ("steps", toString stepsBS)] ""
-      r <- liftIO $ hForceValueResponse ho
+      let steps = toString stepsBS
+      r <- liftIO $ do
+        logAction $ "Rewinding " ++ show steps ++ " steps"
+        hCall hi [("val", "rewind"), ("steps", steps)] ""
+        hForceValueResponse ho
       respond (return . show <$> r) input
 
 qedHandler :: HandlerInput -> PeaCoqHandler

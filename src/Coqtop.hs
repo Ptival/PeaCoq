@@ -29,6 +29,7 @@ hCall :: Handle -> [(String, String)] -> String -> IO ()
 hCall h args q = do
   let argsStr = concatMap (\(k, v) ->  " " ++ k ++ "=\"" ++ v ++ "\"") args
   let query = "<call id=\"0\"" ++ argsStr ++ ">" ++ escapeXML q ++ "</call>"
+  --putStrLn $ query
   hPutStrLn h query
 
 hInterp :: Handle -> String -> IO ()
