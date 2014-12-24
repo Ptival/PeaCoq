@@ -1,4 +1,4 @@
 *.glob
 *.vo
-*.css
-*.html
+coqdoc.css
+E*.html

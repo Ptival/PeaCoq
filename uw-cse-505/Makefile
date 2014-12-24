@@ -1,12 +1,13 @@
-LEC=$(wildcard *.v)
+EPISODES=$(wildcard E*.v)
 
-all: $(LEC:.v=.glob)
-	coqdoc --lib-name Episode $(LEC)
+all: $(EPISODES:.v=.glob)
+	coqdoc --short $(EPISODES)
+	./post-process.py
 
 %.glob: %.v
 	coqc $<
 
 clean:
-	rm -f *.glob *.vo *.css *.html
+	rm -f *.glob *.vo coqdoc.css E*.html
 
 .PHONY: all clean

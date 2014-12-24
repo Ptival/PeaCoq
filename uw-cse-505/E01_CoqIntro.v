@@ -1,11 +1,12 @@
-(** 
+(** * Episode 1: A Quick Introduction to Coq
 
-Let us kick things off with a lightning fast introduction to Coq:
-   https://coq.inria.fr/
+Comments are real important. They go between paren star / star paren like this:
+<<
+  (* this is a comment *)
+>>
+We're in a comment right now!
 
-Comments go between "(*" and "*)".  We're in a comment right now!
-
-This _binding_ associates the name [x] with the expression [0]:
+This _binding_ associates the name [x] to the expression [0]:
 
 *)
 
@@ -13,31 +14,42 @@ Definition x := 0.
 
 (** 
 
-Coq code is primarily a sequence of bindings.
+Coq code is primarily a sequence of bindings. We can step through the bindings and process them one at a time by pressing:
+<<
+  Control-Alt-Down
+>>
+When we ask Coq to process a binding like:
+<<
+  Definition foo := bar.
+>>
+it does the following:
+- Type check the expression [bar].
+  - This ensures that, if asked, Coq will be able to evaluate [bar] down to a value.
+- Extend the environment to associate the name [foo] to the expression [bar].
 
-We can step through the bindings and process one at a time by pressing Control-Alt-Down.
+Coq also has _commands_ which let us poke around and ask Coq questions about the bindings we have processed so far.
 
-When we process a binding Coq does the following:
-- Evaluate the expression to the right of the ":=" using the existing environment.
-- This produces a value.
-- Extend the environment to bind the name to the value.
+The [Print] command displays the value associated with a name:
 
-We can use a "command" to ask Coq to print expressions too.
-
-The [Print] command prints the value of an expression.
-
-*)
+ *)
 
 Print x.
 
-(**
+(** 
 
-The _Check_ command just prints the type of an expression.
+The [Check] command displays the type of an expression:
 
 *)
 
 Check x.
 
+(** 
+
+The [Eval cbv in] command evaluates an expression to a value:
+
+*)
+
+Eval cbv in (1 + 1).
 
 
 
