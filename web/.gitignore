@@ -1,3 +1,5 @@
+bootstrap-filestyle.js
+bootstrap-filestyle/
 bootstrap-theme.css
 bootstrap.css
 bootstrap.js
@@ -9,3 +11,5 @@ jquery.js
 jquery/
 lodash.js
 lodash/
+rangy-core.js
+rangy/
