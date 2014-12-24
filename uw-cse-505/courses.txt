@@ -1,2 +1,8 @@
-Xavier Leroy OPLSS course
+Graduate Programming Languages Course
+Dan Grossman
+http://homes.cs.washington.edu/~djg/teachingMaterials/gpl/
+
+Proving a Compiler
+Xavier Leroy
 http://gallium.inria.fr/~xleroy/courses/Eugene-2012/
+http://gallium.inria.fr/~xleroy/courses/Eugene-2011/
