@@ -1,3 +1,53 @@
+(** 
+
+Let us kick things off with a lightning fast introduction to Coq:
+   https://coq.inria.fr/
+
+Comments go between "(*" and "*)".  We're in a comment right now!
+
+This _binding_ associates the name [x] with the expression [0]:
+
+*)
+
+Definition x := 0.
+
+(** 
+
+Coq code is primarily a sequence of bindings.
+
+We can step through the bindings and process one at a time by pressing Control-Alt-Down.
+
+When we process a binding Coq does the following:
+- Evaluate the expression to the right of the ":=" using the existing environment.
+- This produces a value.
+- Extend the environment to bind the name to the value.
+
+We can use a "command" to ask Coq to print expressions too.
+
+The [Print] command prints the value of an expression.
+
+*)
+
+Print x.
+
+(**
+
+The _Check_ command just prints the type of an expression.
+
+*)
+
+Check x.
+
+
+
+
+
+
+
+
+
+
+
 (* Simple Inductive Definitions *)
 
 Inductive boolean : Type :=
