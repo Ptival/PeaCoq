@@ -3,19 +3,99 @@ var zwsp = "\u200B";
 
 $(document).ready(function() {
 
-    $("body").append(
-        $("<input>")
-            .attr("type", "file")
-            .attr("id", "filepicker")
-            .on("change", function() {
-                loadFile();
-                $(this).filestyle("clear"); // forces change when same file is picked
-            })
-    );
+    var toolBar =
+        $("<div>", {
+            "id": "toolbar",
+        })
+        .appendTo("body")
+        .css("display", "table")
+    ;
+
+    var buttonGroup;
+
+    $("<div>")
+        .css("display", "table-cell")
+        .css("vertical-align", "top")
+        .append(
+            buttonGroup = $("<div>", { "class": "btn-group" })
+        )
+        .appendTo(toolBar)
+    ;
+
+    var inputGroup;
+
+    $("<div>")
+        .css("display", "table-cell")
+        .css("vertical-align", "top")
+        .append(
+            inputGroup = $("<div>", { "class": "input-group input-group-sm" })
+        )
+        .appendTo(toolBar)
+    ;
+
+    var inputGroup2;
+
+    $("<div>")
+        .css("display", "table-cell")
+        .css("vertical-align", "top")
+        .append(
+            inputGroup2 = $("<div>", { "class": "input-group input-group-sm" })
+        )
+        .appendTo(toolBar)
+    ;
+
+    $("<input>", {
+        "id": "filepicker",
+        "type": "file",
+    })
+        .appendTo(inputGroup)
+        .on("change", function() {
+            loadFile();
+            $(this).filestyle("clear"); // forces change when same file is picked
+        })
+    ;
+
+    $("<span>", {
+        "class": "input-group-addon",
+        "html":
+        $("<input>", {
+            "checked": true,
+            "type": "checkbox",
+        })
+            .css("vertical-align", "middle")
+        ,
+    })
+        .appendTo(inputGroup2)
+    ;
+    $("<span>", { "class": "input-group-addon" })
+        .text("Proof Tree")
+        .css("padding-left", 0)
+        .appendTo(inputGroup2)
+    ;
+
+    $("<button>", {
+        "class": "btn btn-default btn-sm",
+    })
+        .appendTo(buttonGroup)
+        .on("click", function() {
+            proverDown();
+        })
+        .append(mkGlyph("arrow-down"))
+    ;
+
+    $("<button>", {
+        "class": "btn btn-default btn-sm",
+    })
+        .appendTo(buttonGroup)
+        .on("click", function() {
+            proverUp();
+        })
+        .append(mkGlyph("arrow-up"))
+    ;
 
     $(":file").filestyle({
         badge: false,
-        buttonName: "btn-primary",
+        buttonName: "btn btn-default btn-sm",
         buttonText: "&nbsp;Load a .v file",
         input: false,
     });
@@ -27,6 +107,8 @@ $(document).ready(function() {
             .addClass("panel-primary")
             .css("font-family", "monospace")
     );
+
+    PT.resetCoqNoImports();
 
 });
 
@@ -65,6 +147,7 @@ function onLoad(text) {
     var coqtopPane = $("<pre>")
         .attr("id", "coqtop")
         .attr("contenteditable", "false")
+        .addClass("alert")
         .css("margin", 0)
         .css("float", "left")
         .css("width", paneWidth)
@@ -125,13 +208,12 @@ function count (str, pat) {
     return (arr.length);
 }
 
-// removes dots that are not meant to be terminators
+// highlight dot that are terminators as opposed to the others
 function coq_undot(str) {
     return str
-        .replace(/Undo.Undo/g, 'Undo. ndo')
-        .replace(/[.][.][.]/g, '__.')
-        .replace(/[.][.]/g, '__')
-        .replace(/[.][a-zA-Z1-9_]/g, 'AA')
+        .replace(/[.][.][.]/g, '__.')      // emphasize the last dot of ...
+        //.replace(/[.][.]/g, '__')
+        .replace(/[.][a-zA-Z1-9_]/g, 'AA') // hides qualified identifiers
     ;
 }
 
@@ -174,8 +256,6 @@ function coq_find_last_dot (str, toopen) {
 }
 
 function keyDownHandler(evt) {
-    //pweRestoreFinalBR();
-    //pweOptAdjustSelection();
 
     var prevent = true;
 
@@ -189,13 +269,10 @@ function keyDownHandler(evt) {
             proverUp();
             break;
         case 34: // PageDown
-            prover_bottom();
             break;
         case 33: // PageUp
-            prover_top();
             break;
         case 13: // Enter
-            prover_point();
             break;
         default:
             prevent = false;
@@ -203,7 +280,16 @@ function keyDownHandler(evt) {
         };
 
     } else {
-        prevent = false;
+
+        switch (evt.keyCode) {
+        case 13: // Enter
+            insertAtSelection("\n");
+            break;
+        default:
+            prevent = false;
+            break;
+        };
+
     }
 
     if (prevent) {
@@ -211,6 +297,36 @@ function keyDownHandler(evt) {
         evt.stopPropagation();
     }
 
+}
+
+function updateCoqtopPane(response) {
+    // first the color
+    switch(response.rResponse.tag) {
+    case "Good":
+        $("#coqtop")
+            .toggleClass("alert-success", true)
+            .toggleClass("alert-danger", false)
+        ;
+        break;
+    case "Fail":
+        $("#coqtop")
+            .toggleClass("alert-danger", true)
+            .toggleClass("alert-success", false)
+        ;
+        break;
+    };
+    // then the contents
+    $("#coqtop").text("");
+    if (response.rGoals.focused.length > 0) {
+        _(response.rGoals.focused[0].gHyps).each(function(h) {
+            $("#coqtop").append(PT.showHypothesis(h) + "\n");
+        });
+        $("#coqtop").append($("<hr>").css("border", "1px solid black"));
+        $("#coqtop").append(showTerm(response.rGoals.focused[0].gGoal));
+    } else {
+        $("#coqtop").append(response.rResponse.contents);
+    }
+    //$("#coqtop").append("\n" + JSON.stringify(response));
 }
 
 function proverDown() {
@@ -223,18 +339,19 @@ function proverDown() {
     $("#processing").text(processing + toProcess);
     $("#typing").text(zwsp + typing.substring(index));
     repositionCaret();
+    syncQuery(toProcess, updateCoqtopPane);
 }
 
 function proverUp () {
     var index = 0;
     var processing = $("#processing").text();
     var typing = $("#typing").text();
-    if (processing != "") {
-        index = prev(processing);
-    }
+    if (processing != "") { index = prev(processing); }
+    var unprocessed = processing.substring(index);
     $("#processing").text(processing.substring(0, index));
-    $("#typing").text(zwsp + processing.substring(index) + typing);
-    repositionCaret(1);
+    $("#typing").text(zwsp + unprocessed + typing.substring(1));
+    repositionCaret(index === 0 ? 0 : 1); // if at the start of file, no offset
+    if (unprocessed !== "") { syncUndo(updateCoqtopPane); }
 }
 
 function repositionCaret(offset) {
@@ -265,4 +382,46 @@ function repositionCaret(offset) {
         $("#editor").scrollTop(scroll);
     }
 
+}
+
+function syncRequest(r, q, h) {
+    if (r === 'query') { console.log(q); }
+    $.ajax({
+        type: 'POST',
+        url: r,
+        data: {query : q},
+        async: false,
+        success: function(response) {
+            h(response);
+        }
+    });
+}
+function syncQuery(q, h) { syncRequest('query', q, h); }
+function syncQueryAndUndo(q, h) { syncRequest('queryundo', q, h); }
+function syncUndo(h) { syncRequest('undo', undefined, h); }
+
+function mkGlyph(name) {
+    return $("<i>", {
+        "class": "glyphicon glyphicon-" + name,
+    });
+}
+
+function insertAtSelection(txt) {
+    var sel, newrange;
+
+    sel = rangy.getSelection();
+    if (sel.rangeCount > 0) {
+        newrange = insertText(txt,sel.getRangeAt(0));
+        sel.setSingleRange(newrange);
+    }
+}
+
+function insertText(txt,inrange) {
+    var range = inrange.cloneRange();
+    var tn = document.createTextNode(txt);
+    range.insertNode(tn);
+    range.selectNode(tn);
+    range.normalizeBoundaries();
+    range.collapse(false);
+    return range;
 }

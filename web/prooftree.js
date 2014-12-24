@@ -2666,6 +2666,13 @@ PT.resetCoq = function() {
     }
 }
 
+PT.resetCoqNoImports = function() {
+    var label = currentLabel();
+    if (label > 0) {
+        PT.syncRequest("rewind", label - 1, function(){});
+    }
+}
+
 ProofTree.prototype.updateDebug = function() {
 
     var debugDiv = this.debug.select('div');
