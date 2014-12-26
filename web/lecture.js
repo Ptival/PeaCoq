@@ -1,4 +1,5 @@
 
+var processing = false;
 var zwsp = "\u200B";
 
 $(document).ready(function() {
@@ -67,6 +68,7 @@ $(document).ready(function() {
     })
         .appendTo(inputGroup2)
     ;
+
     $("<span>", { "class": "input-group-addon" })
         .text("Proof Tree")
         .css("padding-left", 0)
@@ -123,10 +125,6 @@ function loadFile() {
     }
 }
 
-function nl2br (str) {
-    return (str + '').replace(/([^>\r\n]?)(\r\n|\n\r|\r|\n)/g, '$1<br>$2');
-}
-
 function onLoad(text) {
     // TODO: reset Coq
     // TODO: reset interface
@@ -158,21 +156,32 @@ function onLoad(text) {
     $("#main").append(editorPane);
     $("#main").append(coqtopPane);
 
-    $("#editor").append($("<span>").attr("id", "processed"));
-    $("#editor").append($("<span>").attr("id", "processing"));
-    $("#editor").append($("<span>").attr("id", "typing"));
+    $("#editor").append(
+        $("<span>")
+            .attr("id", "processed")
+            .css("background-color", "#90EE90")
+            //.text(zwsp)
+    );
 
-    $("#processed")
-        .css("background-color", "#90EE90")
-    ;
+    $("#editor").append(
+        $("<span>")
+            .attr("id", "processing")
+            .css("background-color", "#FFA500")
+            //.text(zwsp)
+    );
 
-    $("#processing")
-        .css("background-color", "#ADD8E6")
-    ;
+    $("#editor").append(
+        $("<span>")
+            .attr("id", "toprocess")
+            .css("background-color", "#ADD8E6")
+            //.text(zwsp)
+    );
 
-    $("#processed").text("");
-    $("#processing").text("");
-    $("#typing").text(zwsp + text);
+    $("#editor").append(
+        $("<span>")
+            .attr("id", "redacting")
+            .text(zwsp + text)
+    );
 
     $("#editor").on("keydown", keyDownHandler);
 
@@ -328,42 +337,108 @@ function updateCoqtopPane(response) {
     //$("#coqtop").append("\n" + JSON.stringify(response));
 }
 
+function undoCallback(response) {
+    switch(response.rResponse.tag) {
+    case "Good":
+        var stepsToRewind = + response.rResponse.contents[0];
+        while (stepsToRewind-- > 0) {
+            var index = 0;
+            var processed = $("#processed").text();
+            var redacting = $("#redacting").text();
+            if (processed != "") { index = prev(processed); }
+            var pieceUnprocessed = processed.substring(index);
+            $("#processed").text(processed.substring(0, index));
+            $("#redacting").text(zwsp + pieceUnprocessed + redacting.substring(1));
+            repositionCaret(index === 0 ? 0 : 1); // if at the start of file, no offset
+            var pieceUnprocessed = processed.substring(index);
+        }
+        response.rResponse.contents[0] = ""; // don't show the user the steps number
+        break;
+    };
+    updateCoqtopPane(response);
+}
+
+function tryProcessing() {
+    if (processing) { return; }
+    // grab the next piece to process, if any
+    var toprocess = $("#toprocess").text();
+    var index = next(toprocess);
+    if (index === 0) { return; }
+    // there is a piece to process, mark it as such
+    var pieceToProcess = toprocess.substring(0, index);
+    $("#processing").text(pieceToProcess);
+    $("#toprocess").text(toprocess.substring(index));
+    // process this piece, then process the rest
+    processing = true;
+    asyncQuery(pieceToProcess, function(response) {
+        processing = false;
+        $("#processing").text("");
+        switch(response.rResponse.tag) {
+        case "Good":
+            $("#processed").append(pieceToProcess);
+            updateCoqtopPane(response); // TODO: might be bothersome to do that at every step?
+            tryProcessing(); // if there is more to process
+            break;
+        case "Fail":
+            var redacting = $("#redacting").text().substring(1, index);
+            $("#redacting").text(zwsp + pieceToProcess + redacting);
+            repositionCaret();
+            updateCoqtopPane(response);
+            break;
+        };
+    });
+}
+
+/*
+  This should simply move the next line from the #redacting area to the #toprocess area,
+  then trigger a processing.
+*/
 function proverDown() {
-    var processing = $("#processing").text();
-    var typing = $("#typing").text();
-    var index = next(typing);
+    var toprocess = $("#toprocess").text();
+    var redacting = $("#redacting").text();
+    var index = next(redacting);
     if (index == 0) { return; }
     // 1 because we get rid of the zero-width spacing
-    var toProcess = typing.substring(1, index);
-    $("#processing").text(processing + toProcess);
-    $("#typing").text(zwsp + typing.substring(index));
+    var pieceToProcess = redacting.substring(1, index);
+    $("#toprocess").text(toprocess + pieceToProcess);
+    $("#redacting").text(zwsp + redacting.substring(index));
     repositionCaret();
-    syncQuery(toProcess, updateCoqtopPane);
+    tryProcessing();
 }
 
+/*
+  Assuming the system is done processing, #processing and #toprocess should be empty, we
+  should therefore be able to just undo the last step. Undo might undo more steps than
+  that though, in which case we want to mark them undone too.
+*/
 function proverUp () {
+    if (processing) { return; } // TODO: could prevent more processing?
     var index = 0;
-    var processing = $("#processing").text();
-    var typing = $("#typing").text();
-    if (processing != "") { index = prev(processing); }
-    var unprocessed = processing.substring(index);
-    $("#processing").text(processing.substring(0, index));
-    $("#typing").text(zwsp + unprocessed + typing.substring(1));
-    repositionCaret(index === 0 ? 0 : 1); // if at the start of file, no offset
-    if (unprocessed !== "") { syncUndo(updateCoqtopPane); }
+    var processed = $("#processed").text();
+    var redacting = $("#redacting").text();
+    if (processed != "") { index = prev(processed); }
+    var pieceToUnprocess = processed.substring(index);
+    if (pieceToUnprocess !== "") {
+        $("#processed").text(processed.substring(0, index));
+        $("#redacting").text(zwsp + pieceToUnprocess + redacting.substring(1));
+        repositionCaret(index === 0 ? 0 : 1); // if at the start of file, no offset
+        syncUndo(undoCallback);
+    }
 }
 
+// moves the caret to the start of the #redacting area
+// [offset] allows to move it slightly more
 function repositionCaret(offset) {
     if (offset === undefined) { offset = 0; }
     var sel = rangy.getSelection();
     var rng = rangy.createRange();
     // 1 for the zwsp
-    rng.setStart($("#typing").contents()[0], 1 + offset);
+    rng.setStart($("#redacting").contents()[0], 1 + offset);
     sel.setSingleRange(rng);
 
     // now let's scroll so that the cursor is visible
     var cursorMargin = 40; // about two lines
-    var cursorTop = $("#typing")[0].getBoundingClientRect().top;
+    var cursorTop = $("#redacting")[0].getBoundingClientRect().top;
     var editorRect = $("#editor")[0].getBoundingClientRect();
     var editorBottom = editorRect.bottom;
     var editorTop = editorRect.top;
@@ -399,6 +474,22 @@ function syncQuery(q, h) { syncRequest('query', q, h); }
 function syncQueryAndUndo(q, h) { syncRequest('queryundo', q, h); }
 function syncUndo(h) { syncRequest('undo', undefined, h); }
 
+function asyncRequest(r, q, h) {
+    if (r === 'query') { console.log(q); }
+    $.ajax({
+        type: 'POST',
+        url: r,
+        data: {query : q},
+        async: true,
+        success: function(response) {
+            h(response);
+        }
+    });
+}
+function asyncQuery(q, h) { asyncRequest('query', q, h); }
+function asyncQueryAndUndo(q, h) { asyncRequest('queryundo', q, h); }
+function asyncUndo(h) { asyncRequest('undo', undefined, h); }
+
 function mkGlyph(name) {
     return $("<i>", {
         "class": "glyphicon glyphicon-" + name,
@@ -407,7 +498,6 @@ function mkGlyph(name) {
 
 function insertAtSelection(txt) {
     var sel, newrange;
-
     sel = rangy.getSelection();
     if (sel.rangeCount > 0) {
         newrange = insertText(txt,sel.getRangeAt(0));
