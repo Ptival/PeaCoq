@@ -51,6 +51,7 @@ $(document).ready(function() {
     })
         .appendTo(inputGroup)
         .on("change", function() {
+            // TODO: warning about resetting Coq/saving file
             loadFile();
             $(this).filestyle("clear"); // forces change when same file is picked
         })
@@ -108,6 +109,7 @@ $(document).ready(function() {
             .addClass("panel")
             .addClass("panel-primary")
             .css("font-family", "monospace")
+            .css("border", 0)
     );
 
     PT.resetCoqNoImports();
@@ -125,36 +127,40 @@ function loadFile() {
     }
 }
 
-function onLoad(text) {
-    // TODO: reset Coq
-    // TODO: reset interface
-    // TODO: parse
+function resizePanes() {
+    var height = $(window).height() - $("#toolbar").height();
+    $("#editor").css("height", height);
+    $("#coqtop").css("height", height);
+}
 
-    var paneWidth = "50%";
-    var paneHeight = "400px";
+function onLoad(text) {
+
+    PT.resetCoqNoImports();
 
     var editorPane = $("<pre>")
         .attr("id", "editor")
         .attr("contenteditable", "true")
         .css("margin", 0)
         .css("float", "left")
-        .css("width", paneWidth)
-        .css("height", paneHeight)
+        .css("width", "50%")
     ;
 
     var coqtopPane = $("<pre>")
         .attr("id", "coqtop")
         .attr("contenteditable", "false")
-        .addClass("alert")
         .css("margin", 0)
+        .addClass("alert")
         .css("float", "left")
-        .css("width", paneWidth)
-        .css("height", paneHeight)
+        .css("border", 0)
+        .css("width", "50%")
     ;
 
     $("#main").empty();
     $("#main").append(editorPane);
     $("#main").append(coqtopPane);
+
+    resizePanes();
+    $(window).resize(resizePanes);
 
     $("#editor").append(
         $("<span>")
@@ -380,7 +386,7 @@ function tryProcessing() {
             tryProcessing(); // if there is more to process
             break;
         case "Fail":
-            var redacting = $("#redacting").text().substring(1, index);
+            var redacting = $("#redacting").text().substring(1);
             $("#redacting").text(zwsp + pieceToProcess + redacting);
             repositionCaret();
             updateCoqtopPane(response);
