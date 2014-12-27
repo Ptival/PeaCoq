@@ -5,6 +5,7 @@
     <meta charset="utf-8" />
     <link rel="stylesheet" href="bootstrap.css">
     <link rel="stylesheet" href="bootstrap-theme.css">
+    <link rel="stylesheet" href="prooftree.css">
     <link rel="stylesheet" href="lecture.css">
     <script src="jquery.js"></script>
     <script src="d3.js"></script>
@@ -16,8 +17,14 @@
     <script src="lecture.js"></script>
   </head>
   <body>
-
-      <!-- to be populated -->
-
+    <div id="toolbar">
+      <div class="btn-group"></div>
+      <div class="input-group input-group-sm"></div>
+    </div>
+    <div id="main">
+      <pre id="editor" contenteditable="true"></pre>
+      <pre id="coqtop" contenteditable="false" class="alert"></pre>
+    </div>
+    <div id="prooftree"></div>
   </body>
 </html>

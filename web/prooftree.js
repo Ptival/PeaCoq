@@ -19,7 +19,6 @@ var rectMargin = {top: 2, right: 8, bottom: 2, left: 8};
 var animationDuration = 360;
 var tacticNodeRounding = 10;
 var goalNodeRounding = 0;
-var tacticNodeMaxWidth = 140;
 $(document).ready(function() {
     $(window).click(function(event) {
         // TODO: this is kinda clunky, but at least we can mark tutorial windows
@@ -75,6 +74,7 @@ PT.tInversion    = PT.tSet.slice(0, 1 + PT.tSet.indexOf('inversion'));
 PT.tDiscriminate = PT.tSet.slice(0, 1 + PT.tSet.indexOf('discriminate'));
 // These ones are more specific
 PT.tCompute = PT.tReflexivity.concat(['compute']);
+PT.allTactics = PT.tDiscriminate;
 
 function getAllChildren(n) {
     return n.allChildren;
@@ -127,11 +127,12 @@ anchor
 `- div id="error-n"
 
 */
+// [anchor] is a native DOM element
 function ProofTree(anchor, width, height, qedCallback, peacoqDir, onError) {
 
     var self = this;
 
-    this.anchor = anchor;
+    this.anchor = d3.select(anchor);
     this.width = width;
     this.height = height;
     this.qedCallback = qedCallback;
@@ -145,7 +146,8 @@ function ProofTree(anchor, width, height, qedCallback, peacoqDir, onError) {
     this.yFactor = this.height;
     this.userState = {};
     this.usingKeyboard = false;
-    this.goalNodeWidth = this.width/3;
+    this.goalNodeWidth = Math.floor(this.width/3);
+    this.tacticNodeMaxWidth = Math.floor(this.width/6);
 
     this.tree = d3.layout.tree()
         .children(self.getVisibleChildren.bind(self))
@@ -159,7 +161,7 @@ function ProofTree(anchor, width, height, qedCallback, peacoqDir, onError) {
         .projection(function(d) { return [d.y, d.x]; })
     ;
 
-    this.div = anchor
+    this.div = this.anchor
         .insert("div", ":first-child")
         .attr("id", "pt-" + this.svgId)
     ;
@@ -168,10 +170,11 @@ function ProofTree(anchor, width, height, qedCallback, peacoqDir, onError) {
         .insert("svg", ":first-child")
         .classed("svg", true)
         .attr("id", "svg-" + this.svgId)
-        .attr("width", this.width)
-        .attr("height", this.height)
-        .attr("focusable", true)
-        .attr("tabindex", 0)
+        .attr("display", "block") // necessary for the height to be exactly what we set
+        .style("width", this.width)
+        .style("height", this.height)
+        //.attr("focusable", true)
+        //.attr("tabindex", 0) // this creates a blue outline that changes the width weirdly
         .on("click", function() {
             activeProofTree = self;
             self.usingKeyboard = false;
@@ -229,6 +232,18 @@ function ProofTree(anchor, width, height, qedCallback, peacoqDir, onError) {
 
 }
 
+ProofTree.prototype.resize = function(width, height) {
+    this.width = width;
+    this.height = height;
+    this.div.style("width", this.width);
+    this.div.style("height", this.height);
+    this.svg.style("width", this.width);
+    this.svg.style("height", this.height);
+    this.goalNodeWidth = Math.floor(this.width/3);
+    this.tacticNodeMaxWidth = Math.floor(this.width/6);
+    this.update();
+}
+
 PT.ProofTree = ProofTree;
 
 PT.handleKeyboard = function() {
@@ -259,7 +274,8 @@ function connectRects(r1, r2, rightsLeft) {
     var cp2 = mkDot(avg(f.x, g.x), c.y);
     var cp3 = mkDot(avg(f.x, g.x), f.y);
     var cp4 = mkDot(avg(f.x, g.x), g.y);
-/*
+
+    /*
 console.log("M", a,
     (
         "M" + showDot(a)
@@ -271,7 +287,8 @@ console.log("M", a,
             + "Z"
     )
 );
-*/
+    */
+
     return (
         "M" + showDot(a)
             + "L" + showDot(b)
@@ -435,6 +452,31 @@ ProofTree.prototype.newTheorem = function(
     });
 
     this.logAction("THEOREM " + theorem);
+
+    $(this.svg[0]).focus();
+    this.svg.on("click")();
+
+    return success;
+
+}
+
+ProofTree.prototype.newAlreadyStartedTheorem = function(lastResponse)
+{
+
+    var self = this;
+
+    this.theorem = "TODO: find the theorem's name";
+    this.tactics = function() { return PT.allTactics; };
+    this.afterUpdate = function(){};
+
+    // hide previous proof result if any, show svg if hidden
+    this.svg.style("display", "");
+
+    this.rootNode = undefined; // will be reset in hInit callback, prevents stale uses
+
+    var success = false;
+
+    self.hInit(lastResponse, function() {});
 
     $(this.svg[0]).focus();
     this.svg.on("click")();
@@ -730,6 +772,7 @@ ProofTree.prototype.linkWidth = function(d) {
         } else {
             if (this.isCurNode(src)) {
                 if (sameNode(tgt, this.hoveredNode)) { return thick; }
+                else if (!hasParent(this.hoveredNode)) { return thin; }
                 else if (sameNode(tgt, this.hoveredNode.parent)) { return thick; }
                 else { return thin; }
             } else if (this.isCurNodeChild(src)) {
@@ -756,6 +799,20 @@ ProofTree.prototype.linkWidth = function(d) {
         //alert("todo");
         return thin;
     }
+}
+
+// [nodeDOM] is the DOM foreignObject, [d] is the node in the tree structure
+function updateNodeMeasures(nodeDOM, d) {
+    var elementToMeasure =
+        isTactic(d)
+        ? nodeDOM.firstChild // get the span
+        : nodeDOM // get the foreignObject itself
+    ;
+    // we save in the rect field the size of the text rectangle
+    var rect = elementToMeasure.getBoundingClientRect();
+    console.log("measuring rect", elementToMeasure, rect);
+    d.width = Math.ceil(rect.width);
+    d.height = Math.ceil(rect.height);
 }
 
 ProofTree.prototype.update = function(callback) {
@@ -792,13 +849,13 @@ ProofTree.prototype.update = function(callback) {
     // the goal nodes need to be rendered at fixed width goalNodeWidth
     // the tactic nodes will be resized to their actual width later
         .attr("width", function(d) {
-            return isGoal(d) ? self.goalNodeWidth : tacticNodeMaxWidth;
+            return isGoal(d) ? self.goalNodeWidth : self.tacticNodeMaxWidth;
         })
     ;
 
     textEnter
         .append("xhtml:body")
-        .classed("svg", true)
+        //.classed("svg", true)
         .style("padding", function(d) {
             return isGoal(d) ? goalBodyPadding + "px" : "4px 0px";
         })
@@ -830,19 +887,20 @@ ProofTree.prototype.update = function(callback) {
             jqObject.append(jQContents);
         })
         .each(function(d) {
-            var jQElementToMeasure =
-                isTactic(d)
-                ? $(d3.select(this).node()).children(0) // get the span
-                : $(d3.select(this).node()) // get the foreignObject itself
-            ;
-            // we save in the rect field the size of the text rectangle
-            var rect = jQElementToMeasure[0].getBoundingClientRect();
-            d.width =
-                isTactic(d)
-                ? Math.min(Math.ceil(rect.width), tacticNodeMaxWidth)
-                : Math.ceil(rect.width)
-            ;
-            d.height = Math.ceil(rect.height);
+            var nodeDOM = d3.select(this).node();
+            updateNodeMeasures(nodeDOM, d);
+        })
+    ;
+
+    textSelection
+        // preset the width to update measures correctly
+        .attr("width", function(d) {
+            return isGoal(d) ? self.goalNodeWidth : self.tacticNodeMaxWidth;
+        })
+        .attr("height", "")
+        .each(function(d) {
+            var nodeDOM = d3.select(this).node().firstChild;
+            updateNodeMeasures(nodeDOM, d);
         })
     ;
 
@@ -944,6 +1002,17 @@ ProofTree.prototype.update = function(callback) {
             d.cX = nodeX(d) * self.xFactor + self.xOffset(d);
             d.cY = nodeY(d) * self.yFactor + self.yOffset(d);
         })
+        // preset the width to update measures correctly
+/*
+        .attr("width", function(d) {
+            return isGoal(d) ? self.goalNodeWidth : self.tacticNodeMaxWidth;
+        })
+        .attr("height", "")
+        .each(function(d) {
+            var nodeDOM = d3.select(this).node().firstChild;
+            updateNodeMeasures(nodeDOM, d);
+        })
+*/
         .attr("width", function(d) { return d.width; })
         .attr("height", function(d) { return d.height; })
         .transition()
@@ -1043,6 +1112,8 @@ ProofTree.prototype.update = function(callback) {
         .classed("solved", function(d) { return d.solved; })
         .transition()
         .duration(animationDuration)
+        .attr("width", function(d) { return d.width; })
+        .attr("height", function(d) { return d.height; })
         .attr("x", function(d) { return d.cX; })
         .attr("y", function(d) { return d.cY; })
     ;
@@ -2648,13 +2719,25 @@ PT.syncParseEval = function(q, h) { PT.syncRequest('parseEval', q, h); }
 //   : <type>
 PT.syncParseCheck = function(q, h) { PT.syncRequest('parseCheck', q, h); }
 
-function currentLabel() {
+PT.syncStatus = function() {
     var result;
     PT.syncRequest("status", "", function(response) {
         var msg = response.rResponse.contents[0];
-        result = msg.match("^.*,.*,.*,\"(.*)\",.*$")[1];
+        var r = msg.match("^\\\((.*),(.*),(.*),\"(.*)\",\"(.*)\"\\\)$");
+        result = {
+            "sections": r[1],
+            "current": (r[2] === "Nothing") ? null : r[2].substring(5).replace(/"/g, ""),
+            "currents": r[3],
+            "label": + r[4],
+            "proving": (r[5] === "1"),
+            "response": response,
+        };
     });
-    return + result;
+    return result;
+}
+
+function currentLabel() {
+    return PT.syncStatus().label;
 }
 
 PT.resetCoq = function() {

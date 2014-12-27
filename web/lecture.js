@@ -1,48 +1,28 @@
 
 var processing = false;
+var prooftree = undefined;
 var zwsp = "\u200B";
 
 $(document).ready(function() {
 
     var toolBar =
-        $("<div>", {
-            "id": "toolbar",
-        })
-        .appendTo("body")
+        $("#toolbar")
         .css("display", "table")
+        .css("border", 0)
+        .css("margin", 0)
+        .css("padding", 0)
     ;
 
-    var buttonGroup;
-
-    $("<div>")
+    var buttonGroup =
+        $(".btn-group")
         .css("display", "table-cell")
         .css("vertical-align", "top")
-        .append(
-            buttonGroup = $("<div>", { "class": "btn-group" })
-        )
-        .appendTo(toolBar)
     ;
 
-    var inputGroup;
-
-    $("<div>")
+    var inputGroup =
+        $(".input-group")
         .css("display", "table-cell")
         .css("vertical-align", "top")
-        .append(
-            inputGroup = $("<div>", { "class": "input-group input-group-sm" })
-        )
-        .appendTo(toolBar)
-    ;
-
-    var inputGroup2;
-
-    $("<div>")
-        .css("display", "table-cell")
-        .css("vertical-align", "top")
-        .append(
-            inputGroup2 = $("<div>", { "class": "input-group input-group-sm" })
-        )
-        .appendTo(toolBar)
     ;
 
     $("<input>", {
@@ -55,25 +35,6 @@ $(document).ready(function() {
             loadFile();
             $(this).filestyle("clear"); // forces change when same file is picked
         })
-    ;
-
-    $("<span>", {
-        "class": "input-group-addon",
-        "html":
-        $("<input>", {
-            "checked": true,
-            "type": "checkbox",
-        })
-            .css("vertical-align", "middle")
-        ,
-    })
-        .appendTo(inputGroup2)
-    ;
-
-    $("<span>", { "class": "input-group-addon" })
-        .text("Proof Tree")
-        .css("padding-left", 0)
-        .appendTo(inputGroup2)
     ;
 
     $("<button>", {
@@ -96,6 +57,16 @@ $(document).ready(function() {
         .append(mkGlyph("arrow-up"))
     ;
 
+    $("<button>", {
+        "class": "btn btn-default btn-sm",
+    })
+        .appendTo(buttonGroup)
+        .on("click", function() {
+            enterProofTree();
+        })
+        .append("Proof Tree")
+    ;
+
     $(":file").filestyle({
         badge: false,
         buttonName: "btn btn-default btn-sm",
@@ -103,16 +74,35 @@ $(document).ready(function() {
         input: false,
     });
 
-    $("body").append(
-        $("<div>")
-            .attr("id", "main")
-            .addClass("panel")
-            .addClass("panel-primary")
-            .css("font-family", "monospace")
-            .css("border", 0)
-    );
+    $("#main")
+        .css("font-family", "monospace")
+        .css("border", 0)
+    ;
+
+    $("#editor")
+        .css("margin", 0)
+        .css("float", "left")
+        .css("width", "50%")
+        .on("keydown", keyDownHandler);
+    ;
+
+    $("#coqtop")
+        .css("margin", 0)
+        .css("float", "left")
+        .css("width", "50%")
+        .css("border", 0)
+    ;
+
+    $("#prooftree")
+        .css("border", 0)
+        .css("display", "none")
+    ;
+
+    resize();
+    $(window).resize(resize);
 
     PT.resetCoqNoImports();
+    PT.handleKeyboard();
 
 });
 
@@ -127,40 +117,28 @@ function loadFile() {
     }
 }
 
-function resizePanes() {
-    var height = $(window).height() - $("#toolbar").height();
+function resize() {
+    var windowHeight = $(window).height();
+    // careful, there are many <body> when using proof tree!
+    $("html > body").height(windowHeight);
+    var height = windowHeight - $("#toolbar").height();
     $("#editor").css("height", height);
     $("#coqtop").css("height", height);
+    $("#prooftree").css("height", height);
+    $("#pt-1").css("height", height);
+    $("svg").css("height", height);
+    // TODO: fix height bug
+    var width = $(window).width();
+    if (prooftree !== undefined) { prooftree.resize($(window).width(), height); }
 }
 
 function onLoad(text) {
 
     PT.resetCoqNoImports();
 
-    var editorPane = $("<pre>")
-        .attr("id", "editor")
-        .attr("contenteditable", "true")
-        .css("margin", 0)
-        .css("float", "left")
-        .css("width", "50%")
-    ;
-
-    var coqtopPane = $("<pre>")
-        .attr("id", "coqtop")
-        .attr("contenteditable", "false")
-        .css("margin", 0)
-        .addClass("alert")
-        .css("float", "left")
-        .css("border", 0)
-        .css("width", "50%")
-    ;
-
-    $("#main").empty();
-    $("#main").append(editorPane);
-    $("#main").append(coqtopPane);
-
-    resizePanes();
-    $(window).resize(resizePanes);
+    $("#editor").empty().css("display", "");
+    $("#coqtop").empty().css("display", "");
+    $("#prooftree").empty().css("display", "none");
 
     $("#editor").append(
         $("<span>")
@@ -188,8 +166,6 @@ function onLoad(text) {
             .attr("id", "redacting")
             .text(zwsp + text)
     );
-
-    $("#editor").on("keydown", keyDownHandler);
 
     $("#editor").focus();
 
@@ -519,4 +495,33 @@ function insertText(txt,inrange) {
     range.normalizeBoundaries();
     range.collapse(false);
     return range;
+}
+
+function enterProofTree() {
+
+    var status = PT.syncStatus();
+
+    if (!status.proving) { return; }
+
+    $("#editor").css("display", "none");
+    $("#coqtop").css("display", "none");
+    $("#prooftree").css("display", "");
+
+    prooftree = new ProofTree(
+        $("#prooftree")[0],
+        $(window).width(),
+        $(window).height() - $("#toolbar").height() - 10, // TODO: fix height bug
+        function() {
+            // TODO QED
+        }
+    );
+
+    prooftree.newAlreadyStartedTheorem(status.response);
+
+}
+
+function exitProofTree() {
+    $("#editor").css("display", "");
+    $("#coqtop").css("display", "");
+    $("#prooftree").css("display", "none");
 }
