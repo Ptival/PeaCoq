@@ -48,7 +48,7 @@ function assert(condition, message) {
 }
 
 // COMPUTED GLOBALS
-var activeProofTree = undefined;
+var activeProofTree;
 
 // These tactic sets each build on top of the previous one
 PT.tSet = [
@@ -2149,13 +2149,13 @@ function hasBranching(proof) {
     return hasBranching(proof[1][0]);
 }
 
-PT.pprintAux = function(proof, indentation) {
+PT.pprintAux = function(proof, indentation, whiteSpace, lineSep) {
 
     if (_.isEmpty(proof)) { return ""; }
 
     var fst = proof[0];
     var snd = proof[1];
-    var indent = repeat(2 * indentation, "&nbsp;");
+    var indent = repeat(2 * indentation, whiteSpace);
 
     //if (fst === "todo.") { fst = '<span style="color: green;">admit.</span>'; }
 
@@ -2165,7 +2165,7 @@ PT.pprintAux = function(proof, indentation) {
         return fst + " "
             + _(snd).reduce(
                 function(acc, elt) {
-                    return acc + PT.pprintAux(elt, indentation);
+                    return acc + PT.pprintAux(elt, indentation, whiteSpace, lineSep);
                 },
                 ""
             )
@@ -2176,9 +2176,9 @@ PT.pprintAux = function(proof, indentation) {
         + _(snd).reduce(
             function(acc, elt) {
                 return acc
-                    + "<br>" + indent
-                    + "{ " + PT.pprintAux(elt, indentation + 1)
-                    + (hasBranching(elt) ? "<br>" + indent + "}" : " }")
+                    + lineSep + indent
+                    + "{ " + PT.pprintAux(elt, indentation + 1, whiteSpace, lineSep)
+                    + (hasBranching(elt) ? lineSep + indent + "}" : " }")
                 ;
             },
             ""
@@ -2187,8 +2187,12 @@ PT.pprintAux = function(proof, indentation) {
 
 }
 
-PT.pprint = function(proof, indentation) {
-    return repeat(2 * indentation, "&nbsp;") + PT.pprintAux(proof, indentation);
+PT.pprint = function(proof, indentation, whiteSpace, lineSep) {
+    if (indentation === undefined) { indentation = 0; }
+    if (whiteSpace === undefined) { whiteSpace = nbsp; }
+    if (lineSep === undefined) { lineSep = "\n"; }
+    return repeat(2 * indentation, whiteSpace)
+        + PT.pprintAux(proof, indentation, whiteSpace, lineSep);
 }
 
 function isBad(response) {
@@ -2212,8 +2216,11 @@ ProofTree.prototype.replayThisProof = function(proof) {
         var snd = proof[1];
         this.syncQuery(fst, function(response) {
             if (isGood(response)) {
+                var needToFocus = snd.length > 1;
                 _(snd).each(function(n) {
+                    if (needToFocus) { self.syncQuery(" { ", function(){}); }
                     self.replayThisProof(n);
+                    if (needToFocus) { self.syncQuery(" } ", function(){}); }
                 });
             } else {
                 console.log("Replay failed on applying " + fst);

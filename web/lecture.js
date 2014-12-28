@@ -509,6 +509,8 @@ function enterProofTree() {
     var status = PT.syncStatus();
     if (!status.proving) { return; }
 
+    var labelBeforeProofTree = status.label;
+
     $("#editor").css("display", "none");
     $("#coqtop").css("display", "none");
     $("#prooftree").css("display", "");
@@ -517,8 +519,38 @@ function enterProofTree() {
         $("#prooftree")[0],
         $(window).width(),
         $(window).height() - $("#toolbar").height(),
-        function() {
-            // TODO QED
+        function(prooftree) {
+            var processed = $("#processed").text();
+            var lastCommand = processed.substring(prev(processed)).trim();
+
+            var textToAppend = (lastCommand === "Proof.") ? "\n" : "\nProof.\n";
+            var proof = PT.pprint(prooftree.proof(), 1, " ", "\n");
+            textToAppend += proof;
+            textToAppend += "\nQed."; // invariant: #processed ends on a period
+            $("#processed").append(textToAppend);
+            // switching display back
+            $("#editor").css("display", "");
+            $("#coqtop").css("display", "");
+            $("#prooftree").css("display", "none");
+
+            // first, revert all the steps done in proof mode, to keep the labels clean
+            var newStatus = PT.syncStatus();
+            PT.syncRequest("rewind", newStatus.label - labelBeforeProofTree, function(){});
+            // since we are going to write Proof., we must actually send it
+            if (lastCommand !== "Proof.") {
+                prooftree.syncQuery("Proof.", function(){});
+            }
+            // now we can replay the actuall proof and conclude
+            prooftree.replay();
+            prooftree.syncQuery("Qed.", function(response) {
+                updateCoqtopPane(response);
+            });
+
+            // is this enough to eventually allow garbage-collection of the proof tree?
+            $("#prooftree").empty();
+            activeProofTree = undefined;
+
+            repositionCaret();
         }
     );
 
