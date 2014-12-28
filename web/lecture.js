@@ -38,7 +38,7 @@ $(document).ready(function() {
     ;
 
     $("<button>", {
-        "class": "btn btn-default btn-sm",
+        "class": "btn btn-default",
     })
         .appendTo(buttonGroup)
         .on("click", function() {
@@ -48,7 +48,7 @@ $(document).ready(function() {
     ;
 
     $("<button>", {
-        "class": "btn btn-default btn-sm",
+        "class": "btn btn-default",
     })
         .appendTo(buttonGroup)
         .on("click", function() {
@@ -58,19 +58,21 @@ $(document).ready(function() {
     ;
 
     $("<button>", {
-        "class": "btn btn-default btn-sm",
+        "class": "btn btn-success",
+        "html": $("<span>").append(mkGlyph("tree-deciduous")).append(nbsp + "Proof Tree"),
+        "id": "proof-tree-button",
     })
         .appendTo(buttonGroup)
         .on("click", function() {
             enterProofTree();
         })
-        .append("Proof Tree")
+        .attr("disabled", true)
     ;
 
     $(":file").filestyle({
         badge: false,
-        buttonName: "btn btn-default btn-sm",
-        buttonText: "&nbsp;Load a .v file",
+        buttonName: "btn btn-default",
+        buttonText: nbsp + "Load a .v file",
         input: false,
     });
 
@@ -304,6 +306,7 @@ function updateCoqtopPane(response) {
             $("#coqtop").append($("<hr>").css("border", "1px solid black"));
             $("#coqtop").append(showTerm(response.rGoals.focused[0].gGoal));
         } else {
+            $("#proof-tree-button").attr("disabled", true);
             $("#coqtop").append(response.rResponse.contents);
         }
         break;
@@ -316,7 +319,10 @@ function updateCoqtopPane(response) {
         $("#coqtop").text(response.rResponse.contents);
         break;
     };
-    //$("#coqtop").append("\n" + JSON.stringify(response));
+
+    // also, enable/disable the button depending on whether we are in proof mode
+    var status = PT.syncStatus();
+    $("#proof-tree-button").attr("disabled", !status.proving);
 }
 
 function undoCallback(response) {
@@ -499,8 +505,8 @@ function insertText(txt,inrange) {
 
 function enterProofTree() {
 
+    // this should always pass, unless we call enterProofTree asynchronously
     var status = PT.syncStatus();
-
     if (!status.proving) { return; }
 
     $("#editor").css("display", "none");
