@@ -2757,6 +2757,12 @@ PT.resetCoqNoImports = function() {
 
 ProofTree.prototype.updateDebug = function() {
 
+    this.debug
+        .selectAll(function() { return this.getElementsByTagName("foreignObject"); })
+        .attr("width", this.width)
+    ;
+    this.debug.select("rect").attr("width", this.width);
+
     var debugDiv = this.debug.select('div');
     var jDebugDiv = $(debugDiv[0]);
 
