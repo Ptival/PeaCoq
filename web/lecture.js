@@ -59,7 +59,10 @@ $(document).ready(function() {
 
     $("<button>", {
         "class": "btn btn-success",
-        "html": $("<span>").append(mkGlyph("tree-deciduous")).append(nbsp + "Proof Tree"),
+        "html": $("<span>")
+            .append(mkGlyph("tree-deciduous"))
+            .append(nbsp + "Proof Tree" + nbsp)
+        ,
         "id": "proof-tree-button",
     })
         .appendTo(buttonGroup)
@@ -323,6 +326,15 @@ function updateCoqtopPane(response) {
     // also, enable/disable the button depending on whether we are in proof mode
     var status = PT.syncStatus();
     $("#proof-tree-button").attr("disabled", !status.proving);
+    if (status.proving) {
+        var iterations = 3;
+        var delay = 50;
+        var iterate = function() {
+            if (iterations-- === 0) { return; }
+            $("#proof-tree-button").delay(delay).fadeOut(delay).fadeIn(delay, iterate);
+        }
+        iterate();
+    }
 }
 
 function undoCallback(response) {
