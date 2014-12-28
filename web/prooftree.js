@@ -810,7 +810,6 @@ function updateNodeMeasures(nodeDOM, d) {
     ;
     // we save in the rect field the size of the text rectangle
     var rect = elementToMeasure.getBoundingClientRect();
-    console.log("measuring rect", elementToMeasure, rect);
     d.width = Math.ceil(rect.width);
     d.height = Math.ceil(rect.height);
 }
