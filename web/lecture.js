@@ -516,7 +516,7 @@ function enterProofTree() {
     prooftree = new ProofTree(
         $("#prooftree")[0],
         $(window).width(),
-        $(window).height() - $("#toolbar").height() - 10, // TODO: fix height bug
+        $(window).height() - $("#toolbar").height(),
         function() {
             // TODO QED
         }
