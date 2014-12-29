@@ -3,6 +3,15 @@ var processing = false;
 var prooftree = undefined;
 var zwsp = "\u200B";
 
+var delimiters = [".", "{", "}"];
+
+var unicodeList = [
+    ("forall", "∀"),
+    ("\/", "∨"),
+    ("/\\", "∧"),
+    ("neg", "¬"),
+];
+
 $(document).ready(function() {
 
     var toolBar =
@@ -55,6 +64,17 @@ $(document).ready(function() {
             proverUp();
         })
         .append(mkGlyph("arrow-up"))
+    ;
+
+    $("<button>", {
+        "class": "btn btn-default",
+    })
+        .appendTo(buttonGroup)
+        .on("click", function() {
+            proverToCaret();
+        })
+        .append(mkGlyph("arrow-right"))
+        .append(mkGlyph("italic"))
     ;
 
     $("<button>", {
@@ -180,7 +200,6 @@ function onLoad(text) {
 // Their license is unclear, TODO make sure we can borrow, oops!
 
 function my_index(str) {
-    var delimiters = [".", "{", "}"];
     var index = +Infinity;
     _(delimiters).each(function(delimiter) {
         var pos = str.indexOf(delimiter);
@@ -268,6 +287,7 @@ function keyDownHandler(evt) {
         case 33: // PageUp
             break;
         case 13: // Enter
+            proverToCaret();
             break;
         default:
             prevent = false;
@@ -389,6 +409,14 @@ function tryProcessing() {
     });
 }
 
+function getCaretPos() {
+    var sel = rangy.getSelection();
+    var rng = rangy.createRange();
+    rng.selectNodeContents($("#editor").get(0));
+    rng.setEnd(sel.focusNode,sel.focusOffset);
+    return rng.toString().length;
+}
+
 /*
   This should simply move the next line from the #redacting area to the #toprocess area,
   then trigger a processing.
@@ -404,6 +432,32 @@ function proverDown() {
     $("#redacting").text(zwsp + redacting.substring(index));
     repositionCaret();
     tryProcessing();
+}
+
+function proverToCaret () {
+    if (processing) { return; }
+    var index = getCaretPos();
+    var processed = $("#processed").text();
+    var processing = $("#processing").text();
+    var toprocess = $("#toprocess").text();
+    var redacting = $("#redacting").text();
+    // the caret is in the processed region, undo actions
+    if (index < processed.length) {
+        console.log("TODO: prove to caret should undo");
+    } else {
+        index -= processed.length + processing.length + toprocess.length;
+        // if the caret is in the #processing or #toprocess, do nothing
+        if (index <= 0) { return; }
+        // if the character at index is not a delimiter, process to the next one
+        if (!_(delimiters).contains(redacting[index-1])) {
+            index += next(redacting.substring(index));
+        }
+        var pieceToProcess = redacting.substring(1, index); // 1 for zwsp
+        $("#toprocess").text(toprocess + pieceToProcess);
+        $("#redacting").text(zwsp + redacting.substring(index));
+        repositionCaret();
+        tryProcessing();
+    }
 }
 
 /*
