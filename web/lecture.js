@@ -83,13 +83,25 @@ $(document).ready(function() {
             .append(mkGlyph("tree-deciduous"))
             .append(nbsp + "Proof Tree" + nbsp)
         ,
-        "id": "proof-tree-button",
+        "id": "prooftree-button",
     })
         .appendTo(buttonGroup)
         .on("click", function() {
             enterProofTree();
         })
         .attr("disabled", true)
+    ;
+
+    $("<button>", {
+        "class": "btn btn-danger",
+        "html": $("<span>")
+            .append(mkGlyph("fire"))
+            .append(nbsp + "Abort Proof Tree" + nbsp)
+        ,
+        "id": "noprooftree-button",
+    })
+        .appendTo(buttonGroup)
+        .css("display", "none")
     ;
 
     $(":file").filestyle({
@@ -329,7 +341,7 @@ function updateCoqtopPane(response) {
             $("#coqtop").append($("<hr>").css("border", "1px solid black"));
             $("#coqtop").append(showTerm(response.rGoals.focused[0].gGoal));
         } else {
-            $("#proof-tree-button").attr("disabled", true);
+            $("#prooftree-button").attr("disabled", true);
             $("#coqtop").append(response.rResponse.contents);
         }
         break;
@@ -345,13 +357,13 @@ function updateCoqtopPane(response) {
 
     // also, enable/disable the button depending on whether we are in proof mode
     var status = PT.syncStatus();
-    $("#proof-tree-button").attr("disabled", !status.proving);
+    $("#prooftree-button").attr("disabled", !status.proving);
     if (status.proving) {
         var iterations = 3;
         var delay = 50;
         var iterate = function() {
             if (iterations-- === 0) { return; }
-            $("#proof-tree-button").delay(delay).fadeOut(delay).fadeIn(delay, iterate);
+            $("#prooftree-button").delay(delay).fadeOut(delay).fadeIn(delay, iterate);
         }
         iterate();
     }
@@ -581,11 +593,21 @@ function enterProofTree() {
     $("#coqtop").css("display", "none");
     $("#prooftree").css("display", "");
 
+    $("#prooftree-button").css("display", "none");
+    $("#noprooftree-button")
+        .css("display", "")
+        .on("click", function() { exitProofTree(labelBeforeProofTree); })
+    ;
+
     prooftree = new ProofTree(
         $("#prooftree")[0],
         $(window).width(),
         $(window).height() - $("#toolbar").height(),
         function(prooftree) {
+
+            $("#prooftree-button").css("display", "");
+            $("#noprooftree-button").css("display", "none");
+
             var processed = $("#processed").text();
             var lastCommand = processed.substring(prev(processed)).trim();
 
@@ -624,8 +646,17 @@ function enterProofTree() {
 
 }
 
-function exitProofTree() {
+function exitProofTree(labelBeforeProofTree) {
     $("#editor").css("display", "");
     $("#coqtop").css("display", "");
     $("#prooftree").css("display", "none");
+
+    $("#prooftree-button").css("display", "");
+    $("#noprooftree-button").css("display", "none");
+
+    // revert all the steps done in proof mode, to keep the labels clean
+    var newStatus = PT.syncStatus();
+    PT.syncRequest("rewind", newStatus.label - labelBeforeProofTree, function(){});
+
+    repositionCaret();
 }
