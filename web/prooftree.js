@@ -460,12 +460,12 @@ ProofTree.prototype.newTheorem = function(
 
 }
 
-ProofTree.prototype.newAlreadyStartedTheorem = function(lastResponse)
+ProofTree.prototype.newAlreadyStartedTheorem = function(theoremStatement, lastResponse)
 {
 
     var self = this;
 
-    this.theorem = "TODO: find the theorem's name";
+    this.theorem = theoremStatement;
     this.tactics = function() { return PT.allTactics; };
     this.afterUpdate = function(){};
 

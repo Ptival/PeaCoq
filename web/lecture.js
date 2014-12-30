@@ -48,6 +48,7 @@ $(document).ready(function() {
 
     $("<button>", {
         "class": "btn btn-default",
+        "id": "prover-down",
     })
         .appendTo(buttonGroup)
         .on("click", function() {
@@ -58,6 +59,7 @@ $(document).ready(function() {
 
     $("<button>", {
         "class": "btn btn-default",
+        "id": "prover-up",
     })
         .appendTo(buttonGroup)
         .on("click", function() {
@@ -68,6 +70,7 @@ $(document).ready(function() {
 
     $("<button>", {
         "class": "btn btn-default",
+        "id": "prover-caret",
     })
         .appendTo(buttonGroup)
         .on("click", function() {
@@ -581,21 +584,43 @@ function insertText(txt,inrange) {
     return range;
 }
 
+function switchToProofUI() {
+
+    $("#editor").css("display", "none");
+    $("#coqtop").css("display", "none");
+    $("#prooftree").css("display", "");
+    $("#prover-down").attr("disabled", true);
+    $("#prover-up").attr("disabled", true);
+    $("#prover-caret").attr("disabled", true);
+    $("#prooftree-button").css("display", "none");
+    $("#noprooftree-button").css("display", "");
+
+}
+
+function switchToEditorUI() {
+
+    $("#editor").css("display", "");
+    $("#coqtop").css("display", "");
+    $("#prooftree").css("display", "none");
+    $("#prover-down").attr("disabled", false);
+    $("#prover-up").attr("disabled", false);
+    $("#prover-caret").attr("disabled", false);
+    $("#prooftree-button").css("display", "");
+    $("#noprooftree-button").css("display", "none");
+
+}
+
 function enterProofTree() {
 
-    // this should always pass, unless we call enterProofTree asynchronously
+    // this should always pass, unless we call enterProofTree manually
     var status = PT.syncStatus();
     if (!status.proving) { return; }
 
     var labelBeforeProofTree = status.label;
 
-    $("#editor").css("display", "none");
-    $("#coqtop").css("display", "none");
-    $("#prooftree").css("display", "");
+    switchToProofUI();
 
-    $("#prooftree-button").css("display", "none");
     $("#noprooftree-button")
-        .css("display", "")
         .on("click", function() { exitProofTree(labelBeforeProofTree); })
     ;
 
@@ -605,9 +630,6 @@ function enterProofTree() {
         $(window).height() - $("#toolbar").height(),
         function(prooftree) {
 
-            $("#prooftree-button").css("display", "");
-            $("#noprooftree-button").css("display", "none");
-
             var processed = $("#processed").text();
             var lastCommand = processed.substring(prev(processed)).trim();
 
@@ -616,10 +638,8 @@ function enterProofTree() {
             textToAppend += proof;
             textToAppend += "\nQed."; // invariant: #processed ends on a period
             $("#processed").append(textToAppend);
-            // switching display back
-            $("#editor").css("display", "");
-            $("#coqtop").css("display", "");
-            $("#prooftree").css("display", "none");
+
+            switchToEditorUI();
 
             // first, revert all the steps done in proof mode, to keep the labels clean
             var newStatus = PT.syncStatus();
@@ -642,21 +662,38 @@ function enterProofTree() {
         }
     );
 
-    prooftree.newAlreadyStartedTheorem(status.response);
+    /*
+      need to figure out what the statement of the theorem is, and there seems to be no way to
+      ask that with status, so look it up in the processed region as the last statement
+    */
+    var processed = $("#processed").text();
+    var assertionKeywords = [
+        "Theorem", "Lemma", "Remark", "Fact", "Corollary", "Proposition"
+    ];
+    // lookup the last time an assertion keyword was processed
+    var position = _(assertionKeywords)
+        .map(function(keyword) {
+            console.log("candidate", processed.lastIndexOf(keyword));
+            return processed.lastIndexOf(keyword);
+        })
+        .max()
+        .value()
+    ;
+    var theoremStatement = processed.substring(position);
+    // get rid of anything after the statement, like "Proof."
+    theoremStatement = theoremStatement.substring(0, next(theoremStatement));
+    prooftree.newAlreadyStartedTheorem(theoremStatement, status.response);
 
 }
 
 function exitProofTree(labelBeforeProofTree) {
-    $("#editor").css("display", "");
-    $("#coqtop").css("display", "");
-    $("#prooftree").css("display", "none");
 
-    $("#prooftree-button").css("display", "");
-    $("#noprooftree-button").css("display", "none");
+    switchToEditorUI();
 
     // revert all the steps done in proof mode, to keep the labels clean
     var newStatus = PT.syncStatus();
     PT.syncRequest("rewind", newStatus.label - labelBeforeProofTree, function(){});
 
     repositionCaret();
+
 }
