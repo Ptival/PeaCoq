@@ -424,6 +424,10 @@ function tryProcessing() {
     });
 }
 
+/*
+  Returns the position of the caret w.r.t. the editor: this includes all the characters in
+  #processed, #processing, #toprocess and #redacting
+*/
 function getCaretPos() {
     var sel = rangy.getSelection();
     var rng = rangy.createRange();
@@ -458,7 +462,11 @@ function proverToCaret () {
     var redacting = $("#redacting").text();
     // the caret is in the processed region, undo actions
     if (index < processed.length) {
-        console.log("TODO: prove to caret should undo");
+        var caretInitialPosition = getCaretPos();
+        // this assumes proverUp is synchronous
+        while ($("#processed").text().length > caretInitialPosition) {
+            proverUp();
+        }
     } else {
         index -= processed.length + processing.length + toprocess.length;
         // if the caret is in the #processing or #toprocess, do nothing
@@ -673,7 +681,6 @@ function enterProofTree() {
     // lookup the last time an assertion keyword was processed
     var position = _(assertionKeywords)
         .map(function(keyword) {
-            console.log("candidate", processed.lastIndexOf(keyword));
             return processed.lastIndexOf(keyword);
         })
         .max()
