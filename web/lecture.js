@@ -1,6 +1,7 @@
 
 var processing = false;
 var prooftree = undefined;
+var nbsp = "&nbsp;";
 var zwsp = "\u200B";
 
 var delimiters = [".", "{", "}"];
@@ -242,11 +243,11 @@ function coq_undot(str) {
     return str
         .replace(/[.][.][.]/g, '__.')      // emphasize the last dot of ...
         //.replace(/[.][.]/g, '__')
-        .replace(/[.][a-zA-Z1-9_]/g, 'AA') // hides qualified identifiers
+        .replace(/[.][a-zA-Z1-9_]/g, '__') // hides qualified identifiers
     // hide curly braces that are implicit arguments
         .replace(/\{((?:[^\.]|\.(?!\ ))*)\}/g, "_$1_")
     // make other bullets look like curly braces
-        .replace(/(\.\s*)[\-\+\*]/g, "$1{")
+        .replace(/(\.\s*)[\-\+\*](?!\))/g, "$1{")
         .replace(/^([\u200B\s]*)[\-\+\*]/, "$1{")
     ;
 }
