@@ -57,7 +57,7 @@ function qed(prooftree) {
 
 $(document).ready(function() {
 
-    PT.resetCoq();
+    syncResetCoq();
 
     PT.handleKeyboard();
 
@@ -70,7 +70,7 @@ $(document).ready(function() {
     $("body").prepend($("<div>").attr("id", "pt"))
 
     var pt = new ProofTree(
-        d3.select("#pt"),
+        $("#pt")[0],
         $(window).width() - scrollbarWidth,
         $(window).height(),// - $("#tips").height() - $("#buttons").height(),
         qed
@@ -79,7 +79,7 @@ $(document).ready(function() {
     $(".theorem")
         .click(function() {
             var t = $(this).data("theorem");
-            PT.resetCoq();
+            syncResetCoq();
             pt.newTheorem(t[0], function(pt) { return t[1]; });
         })
     ;

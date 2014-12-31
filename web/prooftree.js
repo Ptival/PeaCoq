@@ -128,7 +128,7 @@ anchor
 
 */
 // [anchor] is a native DOM element
-function ProofTree(anchor, width, height, qedCallback, peacoqDir, onError) {
+function ProofTree(anchor, width, height, qedCallback, onError) {
 
     var self = this;
 
@@ -136,7 +136,6 @@ function ProofTree(anchor, width, height, qedCallback, peacoqDir, onError) {
     this.width = width;
     this.height = height;
     this.qedCallback = qedCallback;
-    this.peacoqDir = (typeof peacoqDir === "undefined") ? "./" : peacoqDir + "/";
     this.onError = onError;
 
     this.animationRunning = false;
@@ -226,7 +225,7 @@ function ProofTree(anchor, width, height, qedCallback, peacoqDir, onError) {
     if (svgPanEnabled) {
         this.svg
             .insert("script", ":first-child")
-            .attr("xlink:href", this.peacoqDir + "SVGPan.js")
+            .attr("xlink:href", "SVGPan.js")
         ;
     }
 
@@ -447,11 +446,11 @@ ProofTree.prototype.newTheorem = function(
 
     var success = false;
 
-    this.syncQuery(theorem, function(response) {
+    syncQuery(theorem, function(response) {
         success = self.hInit(response, afterFirstUpdate);
     });
 
-    this.logAction("THEOREM " + theorem);
+    syncLogAction("THEOREM " + theorem);
 
     $(this.svg[0]).focus();
     this.svg.on("click")();
@@ -543,13 +542,13 @@ ProofTree.prototype.runTactic = function(t) {
 
     var unfocusedBefore;
 
-    this.syncQueryUndo('idtac.', function(response) {
+    syncQueryUndo('idtac.', function(response) {
         unfocusedBefore = response.rGoals.unfocused;
     });
 
     var newChild;
 
-    self.syncQueryUndo(t, function(response) {
+    syncQueryUndo(t, function(response) {
         if (isGood(response)) {
             // if it did not solve the goal
             if (_.isEqual(response.rGoals.unfocused, unfocusedBefore)) {
@@ -573,7 +572,7 @@ ProofTree.prototype.tryAllTactics = function() {
     var res = [];
     var unfocusedBefore;
 
-    this.syncQueryUndo('idtac.', function(response) {
+    syncQueryUndo('idtac.', function(response) {
         unfocusedBefore = response.rGoals.unfocused;
         // preemptively put idtac so that it cancels tactics that do nothing by
         // duplication. eventually it will be removed since it does nothing.
@@ -581,7 +580,7 @@ ProofTree.prototype.tryAllTactics = function() {
     });
 
     var run = function(t) {
-        self.syncQueryUndo(t + '.', function(response) {
+        syncQueryUndo(t + '.', function(response) {
             if (isGood(response)) {
                 // if the tactic did not finish the goal
                 if (_.isEqual(response.rGoals.unfocused, unfocusedBefore)) {
@@ -1061,7 +1060,7 @@ ProofTree.prototype.update = function(callback) {
                 })
                 .on("click", function(d) {
 
-                    self.logAction("CLICK " + nodeString(d));
+                    syncLogAction("CLICK " + nodeString(d));
 
                     self.click(d);
 
@@ -1566,7 +1565,7 @@ ProofTree.prototype.shiftPrev = function(n) {
     function tryShifting(n) {
         if (n.focusIndex> 0) {
             n.focusIndex--;
-            self.logAction("UP " + nodeString(n.allChildren[n.focusIndex]));
+            syncLogAction("UP " + nodeString(n.allChildren[n.focusIndex]));
             self.update();
             return true;
         }
@@ -1587,7 +1586,7 @@ ProofTree.prototype.shiftNext = function(n) {
     function tryShifting(n) {
         if (n.focusIndex + 1 < self.getVisibleChildren(n).length) {
             n.focusIndex++;
-            self.logAction("DOWN " + nodeString(n.allChildren[n.focusIndex]));
+            syncLogAction("DOWN " + nodeString(n.allChildren[n.focusIndex]));
             self.update();
             return true;
         }
@@ -1663,7 +1662,7 @@ ProofTree.prototype.solved = function(n) {
         }, animationDuration);
     } else {
         window.setTimeout(function () {
-            self.logAction("QED " + JSON.stringify(PT.proofFrom(self.rootNode)));
+            syncLogAction("QED " + JSON.stringify(PT.proofFrom(self.rootNode)));
             self.qedCallback(self);
         }, animationDuration);
     }
@@ -1779,10 +1778,10 @@ ProofTree.prototype.navigateTo = function(dest, remember) {
                     // between before and after the terminating tactic + 1
                     if (src.terminating) {
                         _(_.range(depthSolved(src))).each(function() {
-                            self.syncQuery('Undo.', hIgnore);
+                            syncQuery('Undo.', hIgnore);
                         });
                     }
-                    self.syncQuery('Undo.', hIgnore);
+                    syncQuery('Undo.', hIgnore);
                 } else {
                     // 'Back.' does not work in -ideslave
                     // 'Back.' takes one step to undo 'Show.'
@@ -1790,7 +1789,7 @@ ProofTree.prototype.navigateTo = function(dest, remember) {
                     // 'Undo.' does not care about 'Show.' commands
                     // Undo the 'Focus.' command.
                     // Do not use 'Unfocus.' as it is itself undone by 'Undo.'
-                    self.syncQuery('Undo.', hIgnore);
+                    syncQuery('Undo.', hIgnore);
                 }
 
             } else { // going down
@@ -1801,9 +1800,9 @@ ProofTree.prototype.navigateTo = function(dest, remember) {
                 }
 
                 if (isTactic(dst)) {
-                    self.syncQuery(dst.name, hIgnore);
+                    syncQuery(dst.name, hIgnore);
                 } else {
-                    self.syncQuery('Focus ' + dst.ndx + '.', hIgnore);
+                    syncQuery('Focus ' + dst.ndx + '.', hIgnore);
                 }
 
             }
@@ -1817,25 +1816,6 @@ ProofTree.prototype.navigateTo = function(dest, remember) {
 function isTactic(n) { return (n.depth % 2 === 1); }
 
 function isGoal(n) { return (n.depth % 2 === 0); }
-
-ProofTree.prototype.syncRequest = function(r, q, h) {
-    var self = this;
-    if (r === 'query') { console.log(q); }
-    $.ajax({
-        type: 'POST',
-        url: this.peacoqDir + r,
-        data: {query : q},
-        async: false,
-        success: function(response) {
-            //console.log("response", response);
-            h(response);
-        }
-    });
-}
-
-ProofTree.prototype.syncQuery = function(q, h) { this.syncRequest('query', q, h); }
-ProofTree.prototype.syncQueryUndo = function(q, h) { this.syncRequest('queryundo', q, h); }
-ProofTree.prototype.logAction = function(s) { this.syncRequest("log", s, function() {}); }
 
 function hIgnore(response) { }
 
@@ -1947,7 +1927,7 @@ ProofTree.prototype.keydownHandler = function() {
     case 37: // Left
     case 65: // a
         if (hasParent(curNode)) {
-            this.logAction("LEFT " + nodeString(curNode.parent));
+            syncLogAction("LEFT " + nodeString(curNode.parent));
             this.click(curNode.parent);
         }
         break;
@@ -1955,7 +1935,7 @@ ProofTree.prototype.keydownHandler = function() {
     case 39: // Right
     case 68: // d
         var dest = children[curNode.focusIndex];
-        this.logAction("RIGHT " + nodeString(dest));
+        syncLogAction("RIGHT " + nodeString(dest));
         this.click(dest);
         break;
 
@@ -2214,13 +2194,13 @@ ProofTree.prototype.replayThisProof = function(proof) {
     if (!_.isEmpty(proof)) {
         var fst = proof[0];
         var snd = proof[1];
-        this.syncQuery(fst, function(response) {
+        syncQuery(fst, function(response) {
             if (isGood(response)) {
                 var needToFocus = snd.length > 1;
                 _(snd).each(function(n) {
-                    if (needToFocus) { self.syncQuery(" { ", function(){}); }
+                    if (needToFocus) { syncQuery(" { ", function(){}); }
                     self.replayThisProof(n);
-                    if (needToFocus) { self.syncQuery(" } ", function(){}); }
+                    if (needToFocus) { syncQuery(" } ", function(){}); }
                 });
             } else {
                 console.log("Replay failed on applying " + fst);
@@ -2240,7 +2220,7 @@ ProofTree.prototype.replay = function() {
 }
 
 ProofTree.prototype.qed = function() {
-    this.syncQuery("Qed.", function(response) {
+    syncQuery("Qed.", function(response) {
         if (isBad(response)) {
             console.log("Qed failed, error:" + contents(response));
         }
@@ -2695,71 +2675,6 @@ function nodeString(d) {
             "name": d.name,
         }
     );
-}
-
-PT.syncRequest = function(r, q, h) {
-    if (r === 'query') { console.log(q); }
-    $.ajax({
-        type: 'POST',
-        url: r,
-        data: {query : q},
-        async: false,
-        success: function(response) {
-            h(response);
-        }
-    });
-}
-
-PT.syncQuery = function(q, h) { PT.syncRequest('query', q, h); }
-
-PT.syncQueryUndo = function(q, h) { PT.syncRequest('queryundo', q, h); }
-
-PT.syncParse = function(q, h) { PT.syncRequest('parse', q, h); }
-
-// Eval returns something like:
-//   = <term>
-//   : <type>
-PT.syncParseEval = function(q, h) { PT.syncRequest('parseEval', q, h); }
-
-// Check returns something like:
-//   : <type>
-PT.syncParseCheck = function(q, h) { PT.syncRequest('parseCheck', q, h); }
-
-PT.syncStatus = function() {
-    var result;
-    PT.syncRequest("status", "", function(response) {
-        var msg = response.rResponse.contents[0];
-        var r = msg.match("^\\\((.*),(.*),(.*),\"(.*)\",\"(.*)\"\\\)$");
-        result = {
-            "sections": r[1],
-            "current": (r[2] === "Nothing") ? null : r[2].substring(5).replace(/"/g, ""),
-            "currents": r[3],
-            "label": + r[4],
-            "proving": (r[5] === "1"),
-            "response": response,
-        };
-    });
-    return result;
-}
-
-function currentLabel() {
-    return PT.syncStatus().label;
-}
-
-PT.resetCoq = function() {
-    var label = currentLabel();
-    if (label > 0) {
-        PT.syncRequest("rewind", label - 1, function(){});
-        PT.syncQuery("Require Import Unicode.Utf8 Bool Arith List.", function(){});
-        PT.syncQuery("Open ListNotations.", function(){});
-    }
-}
-
-PT.resetCoqNoImports = function() {
-    var label = currentLabel();
-    if (label > 0) {
-        PT.syncRequest("rewind", label - 1, function(){});
-    }
 }
 
 ProofTree.prototype.updateDebug = function() {
