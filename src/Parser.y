@@ -35,6 +35,7 @@ comment { TokComment $$ }
 '→' { TokArrow }
 "=>" { TokDoubleArrow }
 '∀' { TokForall }
+'∃' { TokExists }
 'λ' { TokLambda }
 ':' { TokColon }
 '.' { TokPeriod }
@@ -50,6 +51,10 @@ comment { TokComment $$ }
 '∧' { TokAnd }
 '∨' { TokOr }
 '¬' { TokNeg }
+'<' { TokLt }
+'>' { TokGt }
+"<=" { TokLe }
+">=" { TokGe }
 "&&" { TokAndB }
 "||" { TokOrB }
 ":=" { TokColonEq }
@@ -61,6 +66,7 @@ comment { TokComment $$ }
 "end" { TokEnd }
 "Inductive" { TokInductive }
 "Theorem" { TokTheorem }
+"Lemma" { TokLemma }
 "Definition" { TokDefinition }
 "Fixpoint" { TokFixpoint }
 "Check" { TokCheck }
@@ -76,6 +82,7 @@ comment { TokComment $$ }
 %right "++"
 %right "::"
 %left "&&" "||"
+%nonassoc '<' '>'
 %left '+' '-'
 %left '*'
 %nonassoc '(' ')'
@@ -93,6 +100,7 @@ comment { TokComment $$ }
 Sentence :: { Vernac }
 : "Inductive" var ':' Term ":=" Constructors '.' { Inductive $2 $4 $6 }
 | "Theorem" var ':' Term '.' { Theorem $2 $4 }
+| "Lemma" var ':' Term '.' { Lemma $2 $4 }
 | "Definition" var MaybeBinders MaybeTypeAnnotation ":=" Term '.'
   { Definition $2 $3 $4 $6 }
 | "Fixpoint" var Binders MaybeAnnotation MaybeTypeAnnotation ":=" Term '.'
@@ -104,6 +112,7 @@ Term :: { Term }
 | num                   { Var $1 }
 | '∀' Binders ',' Term  { Forall $2 $4 }
 | 'λ' Binders ',' Term  { Lambda $2 $4 }
+| '∃' Binders ',' Term  { Exists $2 $4 }
 | Term '→' Term         { Arrow $1 $3 }
 | Term '=' Term         { App (App (Var "eq") $1) $3 }
 | Term '≠' Term         { App (Var "not") (App (App (Var "eq") $1) $3) }
@@ -113,6 +122,10 @@ Term :: { Term }
 | Term '∧' Term         { App (App (Var "and")   $1) $3 }
 | Term '∨' Term         { App (App (Var "or")    $1) $3 }
 | '¬' Term              { App (Var "neg") $2 }
+| Term '<' Term         { App (App (Var "lt")    $1) $3 }
+| Term '>' Term         { App (App (Var "gt")    $1) $3 }
+| Term "<=" Term        { App (App (Var "le")    $1) $3 }
+| Term ">=" Term        { App (App (Var "ge")    $1) $3 }
 | Term "&&" Term        { App (App (Var "andb")  $1) $3 }
 | Term "||" Term        { App (App (Var "orb")   $1) $3 }
 | Term "::" Term        { App (App (Var "cons")  $1) $3 }
@@ -232,6 +245,7 @@ parseError t = do
 data Vernac
   = Inductive String Type [Constructor]
   | Theorem String Type
+  | Lemma String Type
   | Definition String [Binder] (Maybe Type) Term
   | Fixpoint String [Binder] (Maybe String) (Maybe Type) Term
   | Check Term
@@ -246,6 +260,7 @@ data Term
   = Var String
   | Forall Binders Term
   | Lambda Binders Term
+  | Exists Binders Term
   | Arrow Term Term
   | App Term Term
   | Match [Term] [Equation]

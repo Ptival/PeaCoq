@@ -1874,6 +1874,10 @@ ProofTree.prototype.makeContextDiv = function(goal) {
                     annotateTerm(c[1], _.union(newBound, boundVars));
                     break;
 
+                case "Exists":
+                    alert("TODO: Exists annotateTerm");
+                    break;
+
                 case "Arrow":
                     annotateTerm(c[0], boundVars);
                     annotateTerm(c[1], boundVars);
@@ -1885,7 +1889,7 @@ ProofTree.prototype.makeContextDiv = function(goal) {
                     break;
 
                 default:
-                    alert("UNKNOWN TAG");
+                    alert("UNKNOWN TAG: " + t.tag);
                     break;
 
                 };
@@ -2511,6 +2515,14 @@ function showTermAux(t, indentation, precParent, newline) {
         return par(
             precForall,
             syntax("∀") + nbsp + showBinders(c[0]) + syntax(",")
+                + (newline ? "<br/>" + getIndent(indentation + 1) : " ")
+                + showTermAux(c[1], indentation + 1, precParent, newline)
+        );
+
+    case "Exists":
+        return par(
+            precForall,
+            syntax("∃") + nbsp + showBinders(c[0]) + syntax(",")
                 + (newline ? "<br/>" + getIndent(indentation + 1) : " ")
                 + showTermAux(c[1], indentation + 1, precParent, newline)
         );

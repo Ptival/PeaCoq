@@ -19,6 +19,7 @@ tokens :-
   \{            { tok TokLBrace }
   \}            { tok TokRBrace }
   (\∀|"forall") { tok TokForall }
+  (\∃|"exists") { tok TokExists }
   (\→|\-\>)     { tok TokArrow }
   (\=\>)        { tok TokDoubleArrow }
   (\λ|\\)       { tok TokLambda }
@@ -41,6 +42,10 @@ tokens :-
   \|            { tok TokPipe }
   \|\|          { tok TokOrB }
   \¬            { tok TokNeg }
+  \<            { tok TokLt }
+  \>            { tok TokGt }
+  \<\=          { tok TokLe }
+  \>\=          { tok TokGe }
   \%            { tok TokPercent }
   \+\+          { tok TokAppend }
   "match"       { tok TokMatch }
@@ -48,6 +53,7 @@ tokens :-
   "end"         { tok TokEnd }
   "Inductive"   { tok TokInductive }
   "Theorem"     { tok TokTheorem }
+  "Lemma"       { tok TokLemma }
   "Definition"  { tok TokDefinition }
   "Fixpoint"    { tok TokFixpoint }
   "Check"       { tok TokCheck }
@@ -58,6 +64,7 @@ tokens :-
   $alpha [$alpha $digit \_ \']* { tokS TokId }
   \. $alpha [$alpha $digit \_ \']* { tokS TokAccessId }
   \. { tok TokPeriod }
+  $printable { tokS TokUnknown }
 
 {
 
@@ -77,6 +84,7 @@ data Token
   | TokArrow
   | TokDoubleArrow
   | TokForall
+  | TokExists
   | TokLambda
   | TokPeriod
   | TokColon
@@ -96,6 +104,10 @@ data Token
   | TokAndB
   | TokOrB
   | TokNeg
+  | TokLt
+  | TokGt
+  | TokLe
+  | TokGe
   | TokPercent
   | TokAppend
   | TokNum String
@@ -104,6 +116,7 @@ data Token
   | TokEnd
   | TokInductive
   | TokTheorem
+  | TokLemma
   | TokDefinition
   | TokFixpoint
   | TokCheck
@@ -113,6 +126,7 @@ data Token
   | TokQed
   | TokComment String
   | TokEOF
+  | TokUnknown String
   deriving (Eq,Show)
 
 lexWrap :: (Token -> Alex a) -> Alex a
