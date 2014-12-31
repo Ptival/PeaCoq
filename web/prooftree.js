@@ -19,7 +19,11 @@ var rectMargin = {top: 2, right: 8, bottom: 2, left: 8};
 var animationDuration = 360;
 var tacticNodeRounding = 10;
 var goalNodeRounding = 0;
+
 $(document).ready(function() {
+
+    /* DISABLED for lecture.js, this should be opt-in
+
     $(window).click(function(event) {
         // TODO: this is kinda clunky, but at least we can mark tutorial windows
         // as non-disactivating
@@ -28,8 +32,11 @@ $(document).ready(function() {
             activeProofTree = undefined;
         }
     });
+    */
+
     setupTextareaResizing();
 });
+
 var diffRed   = "#EE8888";
 var diffGreen = "#88EE88";
 var diffBlue  = "#8888EE";
