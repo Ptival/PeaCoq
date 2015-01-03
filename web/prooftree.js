@@ -405,7 +405,6 @@ function parseSVGTransform(a) {
 
 function SVGTransformX(elt) {
     var t = parseSVGTransform(elt.attr("transform"));
-console.log("X after parse", t.translate);
     if (t.hasOwnProperty("matrix")) {
         return + t.matrix[4];
     } else if (t.hasOwnProperty("translate")) {
@@ -417,7 +416,6 @@ console.log("X after parse", t.translate);
 
 function SVGTransformY(elt) {
     var t = parseSVGTransform(elt.attr("transform"));
-console.log("Y after parse", t.translate);
     if (t.hasOwnProperty("matrix")) {
         return + t.matrix[5];
     } else if (t.hasOwnProperty("translate")) {
