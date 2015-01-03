@@ -457,7 +457,7 @@ ProofTree.prototype.newTheorem = function(
         success = self.hInit(response, afterFirstUpdate);
     });
 
-    syncLogAction("THEOREM " + theorem);
+    syncLog("THEOREM " + theorem);
 
     $(this.svg[0]).focus();
     this.svg.on("click")();
@@ -1067,7 +1067,7 @@ ProofTree.prototype.update = function(callback) {
                 })
                 .on("click", function(d) {
 
-                    syncLogAction("CLICK " + nodeString(d));
+                    syncLog("CLICK " + nodeString(d));
 
                     self.click(d);
 
@@ -1572,7 +1572,7 @@ ProofTree.prototype.shiftPrev = function(n) {
     function tryShifting(n) {
         if (n.focusIndex> 0) {
             n.focusIndex--;
-            syncLogAction("UP " + nodeString(n.allChildren[n.focusIndex]));
+            syncLog("UP " + nodeString(n.allChildren[n.focusIndex]));
             self.update();
             return true;
         }
@@ -1593,7 +1593,7 @@ ProofTree.prototype.shiftNext = function(n) {
     function tryShifting(n) {
         if (n.focusIndex + 1 < self.getVisibleChildren(n).length) {
             n.focusIndex++;
-            syncLogAction("DOWN " + nodeString(n.allChildren[n.focusIndex]));
+            syncLog("DOWN " + nodeString(n.allChildren[n.focusIndex]));
             self.update();
             return true;
         }
@@ -1669,7 +1669,7 @@ ProofTree.prototype.solved = function(n) {
         }, animationDuration);
     } else {
         window.setTimeout(function () {
-            syncLogAction("QED " + JSON.stringify(PT.proofFrom(self.rootNode)));
+            syncLog("QED " + JSON.stringify(PT.proofFrom(self.rootNode)));
             self.qedCallback(self);
         }, animationDuration);
     }
@@ -1938,7 +1938,7 @@ ProofTree.prototype.keydownHandler = function() {
     case 37: // Left
     case 65: // a
         if (hasParent(curNode)) {
-            syncLogAction("LEFT " + nodeString(curNode.parent));
+            syncLog("LEFT " + nodeString(curNode.parent));
             this.click(curNode.parent);
         }
         break;
@@ -1946,7 +1946,7 @@ ProofTree.prototype.keydownHandler = function() {
     case 39: // Right
     case 68: // d
         var dest = children[curNode.focusIndex];
-        syncLogAction("RIGHT " + nodeString(dest));
+        syncLog("RIGHT " + nodeString(dest));
         this.click(dest);
         break;
 

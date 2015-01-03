@@ -18,7 +18,7 @@ function syncQueryUndo(q, h)  { syncRequest('queryundo', q, h); }
 function syncParse(q, h)      { syncRequest('parse', q, h); }
 function syncParseEval(q, h)  { syncRequest('parseEval', q, h); }
 function syncParseCheck(q, h) { syncRequest('parseCheck', q, h); }
-function syncLogAction(s)     { syncRequest("log", s, function() {}); }
+function syncLog(s)           { syncRequest("log", s, function() {}); }
 
 function syncStatus() {
     var result;
