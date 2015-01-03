@@ -375,6 +375,7 @@ function updateCoqtopPane(direction, response) {
         var lastCommand = getLastProcessed();
         if (direction ===goingDown
             && lastCommand !== "Proof."
+            && !_(lastCommand).contains("(* notree *)")
             && $("#toprocess").text().length === 0) {
             enterProofTree();
         }
