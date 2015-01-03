@@ -13,12 +13,14 @@ function syncRequest(r, q, h) {
     });
 }
 
-function syncQuery(q, h)      { syncRequest('query', q, h); }
-function syncQueryUndo(q, h)  { syncRequest('queryundo', q, h); }
-function syncParse(q, h)      { syncRequest('parse', q, h); }
-function syncParseEval(q, h)  { syncRequest('parseEval', q, h); }
-function syncParseCheck(q, h) { syncRequest('parseCheck', q, h); }
-function syncLog(s)           { syncRequest("log", s, function() {}); }
+function syncQuery(q, h)       { syncRequest('query', q, h); }
+function syncQueryUndo(q, h)   { syncRequest('queryundo', q, h); }
+function syncParse(q, h)       { syncRequest('parse', q, h); }
+function syncParseEval(q, h)   { syncRequest('parseEval', q, h); }
+function syncParseCheck(q, h)  { syncRequest('parseCheck', q, h); }
+function syncLog(s)            { syncRequest("log", s, function() {}); }
+function syncListLectures(h)   { syncRequest("listLectures", "", h); }
+function syncLoadLecture(q, h) { syncRequest("loadLecture", q, h); }
 
 function syncStatus() {
     var result;

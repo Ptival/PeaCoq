@@ -115,6 +115,18 @@ $(document).ready(function() {
         input: false,
     });
 
+    $("<button>", {
+        "class": "btn btn-default",
+        "html": $("<span>")
+            .append(mkGlyph("cloud"))
+            .append(nbsp + "Load a lecture" + nbsp)
+        ,
+        "id": "load-lecture-button",
+    })
+        .appendTo(buttonGroup)
+        .on("click", loadLecture)
+    ;
+
     $("#main")
         .css("font-family", "monospace")
         .css("border", 0)
@@ -735,4 +747,58 @@ function onQed(labelBeforeProofTree, prooftree) {
 
 function stripWarning(s) {
     return s.replace(/^Warning: query commands should not be inserted in scripts\n/g, "");
+}
+
+function loadLecture() {
+
+    var html = $("<div>");
+
+    var files;
+    syncListLectures(function(response) {
+        files = response.rResponse.contents;
+    });
+
+    var fileList = $("<select>", {
+        "class": "form-control",
+        "id": "lecture-select",
+        "width": "200px",
+    }).appendTo(html);
+    _(files).each(function(file) {
+        fileList.append(
+            $("<option>", {
+                "value": file,
+                "html": file,
+            })
+        );
+    });
+
+    $("<button>", {
+        "text": "Load",
+    })
+        .appendTo(html)
+        .on("click", function() {
+            var fileToLoad = $("#lecture-select").val();
+            $("#load-lecture-button").popover("destroy");
+            syncLoadLecture(fileToLoad, function(response) {
+                onLoad(response.rResponse.contents[0]);
+            });
+        })
+    ;
+
+    $("<button>", {
+        "text": "Cancel",
+    })
+        .appendTo(html)
+        .on("click", function() {
+            $("#load-lecture-button").popover("destroy");
+        })
+    ;
+    $("#load-lecture-button")
+        .popover({
+            "content": html,
+            "html": true,
+            "placement": "bottom",
+        })
+        .popover("show");
+
 }

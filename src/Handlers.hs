@@ -6,12 +6,14 @@ import           Control.Applicative ((<$>))
 import           Control.Monad.IO.Class (liftIO)
 import           Data.ByteString.UTF8 (toString)
 import qualified Data.IntMap as IM
+import           Data.List (isSuffixOf, sort)
 import qualified Data.Text as T
 import           Snap.Core
 import           Snap.Extras.JSON
 import           Snap.Snaplet
 import           Snap.Snaplet.Session hiding (touchSession)
 import           Snap.Snaplet.Session.SessionManager ()
+import           System.FilePath.Find ((==?), always, extension, find)
 import           System.IO
 import           System.Log.Logger
 import           System.Random
@@ -20,6 +22,9 @@ import           CoqTypes
 import           Coqtop
 import           Parser
 import           PeaCoq
+
+lecturePath :: String
+lecturePath = "web/coq/"
 
 type PeaCoqHandler = Handler PeaCoq PeaCoq ()
 
@@ -158,6 +163,23 @@ logHandler input = do
         putStrLn $ "Attempting to log: " ++ message
         noticeM rootLoggerName message
       respond (Good ["OK"]) input
+
+listLecturesHandler :: HandlerInput -> PeaCoqHandler
+listLecturesHandler input = do
+  filePaths <- liftIO $ find always (extension ==? ".v") lecturePath
+  -- don't want to show full path to users
+  let files = map (drop (length lecturePath)) filePaths
+  respond (Good files) input
+
+loadLectureHandler :: HandlerInput -> PeaCoqHandler
+loadLectureHandler input = do
+  param <- getParam "query"
+  case param of
+    Nothing -> return ()
+    Just messageBS -> do
+      let fileName = toString messageBS
+      contents <- liftIO $ readFile (lecturePath ++ fileName)
+      respond (Good [contents]) input
 
 {-
 identifyHandler :: IORef GlobalState -> HandlerInput -> PeaCoqHandler

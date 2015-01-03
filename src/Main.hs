@@ -175,6 +175,8 @@ peacoqSnaplet globRef = makeSnaplet "PeaCoq" "PeaCoq" Nothing $ do
       , ("parse",            parseHandler)
       , ("parseEval",        parseEvalHandler)
       , ("parseCheck",       parseCheckHandler)
+      , ("listLectures",     listLecturesHandler)
+      , ("loadLecture",      loadLectureHandler)
 --      , ("identify/:userid", identifyHandler globRef)
       ] ++ [
         ("/",                serveDirectoryWith myDirConfig "web/")
