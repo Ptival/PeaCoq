@@ -29,24 +29,6 @@ $(document).ready(function() {
         .css("vertical-align", "top")
     ;
 
-    var inputGroup =
-        $(".input-group")
-        .css("display", "table-cell")
-        .css("vertical-align", "top")
-    ;
-
-    $("<input>", {
-        "id": "filepicker",
-        "type": "file",
-    })
-        .appendTo(inputGroup)
-        .on("change", function() {
-            // TODO: warning about resetting Coq/saving file
-            loadFile();
-            $(this).filestyle("clear"); // forces change when same file is picked
-        })
-    ;
-
     $("<button>", {
         "class": "btn btn-default",
         "id": "prover-down",
@@ -85,7 +67,7 @@ $(document).ready(function() {
         "class": "btn btn-success",
         "html": $("<span>")
             .append(mkGlyph("tree-deciduous"))
-            .append(nbsp + "Proof Tree" + nbsp)
+            .append(nbsp + "Proof Tree")
         ,
         "id": "prooftree-button",
     })
@@ -100,7 +82,7 @@ $(document).ready(function() {
         "class": "btn btn-danger",
         "html": $("<span>")
             .append(mkGlyph("fire"))
-            .append(nbsp + "Abort Proof Tree" + nbsp)
+            .append(nbsp + "Abort Proof Tree")
         ,
         "id": "noprooftree-button",
     })
@@ -108,23 +90,34 @@ $(document).ready(function() {
         .css("display", "none")
     ;
 
-    $(":file").filestyle({
-        badge: false,
-        buttonName: "btn btn-default",
-        buttonText: nbsp + "Load a .v file",
-        input: false,
-    });
-
     $("<button>", {
         "class": "btn btn-default",
         "html": $("<span>")
             .append(mkGlyph("cloud"))
-            .append(nbsp + "Load a lecture" + nbsp)
+            .append(nbsp + "Load a distant file")
         ,
-        "id": "load-lecture-button",
+        "id": "load-distant-button",
     })
         .appendTo(buttonGroup)
-        .on("click", loadLecture)
+        .on("click", loadDistant)
+    ;
+
+    $("#filepicker").on("change", function() {
+        // TODO: warning about resetting Coq/saving file
+        loadFile();
+        $(this).val(""); // forces change when same file is picked
+    })
+
+    $("<button>", {
+        "class": "btn btn-default",
+        "html": $("<span>")
+            .append(mkGlyph("folder-open"))
+            .append(nbsp + nbsp + "Load a local file")
+        ,
+        "id": "load-local-button",
+    })
+        .appendTo(buttonGroup)
+        .on("click", loadLocal)
     ;
 
     $("#main")
@@ -160,14 +153,12 @@ $(document).ready(function() {
 });
 
 function loadFile() {
-    var files = $("#filepicker")[0].files;
-    if (files.length > 0) {
-        var reader = new FileReader();
-        reader.onload = function(e) {
-            onLoad(reader.result);
-        }
-        reader.readAsText(files[0]);
+    var file = $("#filepicker")[0].files[0];
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        onLoad(reader.result);
     }
+    reader.readAsText(file);
 }
 
 function resize() {
@@ -749,7 +740,7 @@ function stripWarning(s) {
     return s.replace(/^Warning: query commands should not be inserted in scripts\n/g, "");
 }
 
-function loadLecture() {
+function loadDistant() {
 
     var html = $("<div>");
 
@@ -778,7 +769,7 @@ function loadLecture() {
         .appendTo(html)
         .on("click", function() {
             var fileToLoad = $("#lecture-select").val();
-            $("#load-lecture-button").popover("destroy");
+            $("#load-distant-button").popover("destroy");
             syncLoadLecture(fileToLoad, function(response) {
                 onLoad(response.rResponse.contents[0]);
             });
@@ -790,15 +781,21 @@ function loadLecture() {
     })
         .appendTo(html)
         .on("click", function() {
-            $("#load-lecture-button").popover("destroy");
+            $("#load-distant-button").popover("destroy");
         })
     ;
-    $("#load-lecture-button")
+    $("#load-distant-button")
         .popover({
             "content": html,
             "html": true,
             "placement": "bottom",
         })
         .popover("show");
+
+}
+
+function loadLocal() {
+
+    $("#filepicker").click();
 
 }
