@@ -171,14 +171,13 @@ function ProofTree(anchor, width, height, qedCallback, onError) {
         .insert("div", ":first-child")
         .attr("id", "pt-" + this.svgId)
     ;
-
     this.svg = this.div
         .insert("svg", ":first-child")
         .classed("svg", true)
         .attr("id", "svg-" + this.svgId)
         .attr("display", "block") // necessary for the height to be exactly what we set
-        .style("width", this.width)
-        .style("height", this.height)
+        .style("width", this.width + "px")
+        .style("height", this.height + "px")
         //.attr("focusable", true)
         //.attr("tabindex", 0) // this creates a blue outline that changes the width weirdly
         .on("click", function() {
@@ -208,24 +207,29 @@ function ProofTree(anchor, width, height, qedCallback, onError) {
 
     var debugHeight;
 
-    this.debug
+    var fo = this.debug
         .append("foreignObject")
-        .attr("width", this.width)
+        .attr("width", this.width + "px")
+    ;
+
+    fo
         .append("xhtml:body")
         .classed("svg", true)
         .style("background-color", "rgba(0, 0, 0, 0)")
         .style("font-family", "monospace")
         .html('<div class="node"><p>No debug information</p></div>')
         .attr("height", function() {
-            debugHeight = this.firstChild.getBoundingClientRect().height
-            return debugHeight;
+            debugHeight = this.firstChild.getBoundingClientRect().height;
+            return debugHeight + "px";
         })
     ;
 
+    fo.attr("height", debugHeight + "px");
+
     this.debug
         .insert("rect", ":first-child")
-        .attr("width", this.width)
-        .attr("height", debugHeight)
+        .attr("width", this.width + "px")
+        .attr("height", debugHeight + "px")
         .attr("fill", "#B2DBA1")
     ;
 
@@ -241,10 +245,10 @@ function ProofTree(anchor, width, height, qedCallback, onError) {
 ProofTree.prototype.resize = function(width, height) {
     this.width = width;
     this.height = height;
-    this.div.style("width", this.width);
-    this.div.style("height", this.height);
-    this.svg.style("width", this.width);
-    this.svg.style("height", this.height);
+    this.div.style("width", this.width + "px");
+    this.div.style("height", this.height + "px");
+    this.svg.style("width", this.width + "px");
+    this.svg.style("height", this.height + "px");
     this.goalNodeWidth = Math.floor(this.width/3);
     this.tacticNodeMaxWidth = Math.floor(this.width/6);
     this.update();
@@ -900,7 +904,7 @@ ProofTree.prototype.update = function(callback) {
         .attr("width", function(d) {
             return isGoal(d) ? self.goalNodeWidth : self.tacticNodeMaxWidth;
         })
-        .attr("height", "")
+        .attr("height", 0)
         .each(function(d) {
             var nodeDOM = d3.select(this).node().firstChild;
             updateNodeMeasures(nodeDOM, d);
@@ -2051,7 +2055,6 @@ ProofTree.prototype.partialProofFrom = function(t, indentation) {
                         });
 
                         if (existingTactic !== undefined) {
-                            console.log(existingTactic);
                             self.click(existingTactic);
                             return;
                         }
@@ -2698,9 +2701,9 @@ ProofTree.prototype.updateDebug = function() {
 
     this.debug
         .selectAll(function() { return this.getElementsByTagName("foreignObject"); })
-        .attr("width", this.width)
+        .attr("width", this.width + "px")
     ;
-    this.debug.select("rect").attr("width", this.width);
+    this.debug.select("rect").attr("width", this.width + "px");
 
     var debugDiv = this.debug.select('div');
     var jDebugDiv = $(debugDiv[0]);
@@ -2739,10 +2742,10 @@ function updateNodeHeight(selector) {
         .attr("height", function() {
             var height = div[0][0].getBoundingClientRect().height;
             selector
-                .select('rect')
-                .attr('height', height)
+                .select("rect")
+                .attr("height", height + "px")
             ;
-            return height;
+            return height + "px";
         })
     ;
 
