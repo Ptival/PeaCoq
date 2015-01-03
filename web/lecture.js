@@ -185,21 +185,18 @@ function onLoad(text) {
         $("<span>")
             .attr("id", "processed")
             .css("background-color", "#90EE90")
-            //.text(zwsp)
     );
 
     $("#editor").append(
         $("<span>")
             .attr("id", "processing")
             .css("background-color", "#FFA500")
-            //.text(zwsp)
     );
 
     $("#editor").append(
         $("<span>")
             .attr("id", "toprocess")
             .css("background-color", "#ADD8E6")
-            //.text(zwsp)
     );
 
     $("#editor").append(
