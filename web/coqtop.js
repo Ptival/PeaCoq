@@ -15,6 +15,7 @@ function syncRequest(r, q, h) {
 
 function syncQuery(q, h)       { syncRequest('query', q, h); }
 function syncQueryUndo(q, h)   { syncRequest('queryundo', q, h); }
+function syncUndo(h)           { syncRequest('undo', undefined, h); }
 function syncParse(q, h)       { syncRequest('parse', q, h); }
 function syncParseEval(q, h)   { syncRequest('parseEval', q, h); }
 function syncParseCheck(q, h)  { syncRequest('parseCheck', q, h); }
@@ -58,3 +59,20 @@ function syncResetCoqNoImports() {
         syncRequest("rewind", label - 1, function(){});
     }
 }
+
+function asyncRequest(r, q, h) {
+    if (r === 'query') { console.log(q); }
+    $.ajax({
+        type: 'POST',
+        url: r,
+        data: {query : q},
+        async: true,
+        success: function(response) {
+            h(response);
+        }
+    });
+}
+
+function asyncQuery(q, h)        { asyncRequest('query', q, h); }
+function asyncQueryAndUndo(q, h) { asyncRequest('queryundo', q, h); }
+function asyncUndo(h)            { asyncRequest('undo', undefined, h); }

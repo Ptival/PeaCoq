@@ -1985,8 +1985,9 @@ ProofTree.prototype.keydownHandler = function() {
         return;
     }
 
+    // EDIT: now that we integrate the proof tree, it's best to let stuff bubble up
     // if we haven't returned, we don't want the normal key behavior
-    d3.event.preventDefault();
+    //d3.event.preventDefault();
 
 }
 

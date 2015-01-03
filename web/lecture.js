@@ -130,7 +130,6 @@ $(document).ready(function() {
         .css("margin", 0)
         .css("float", "left")
         .css("width", "50%")
-        .on("keydown", keyDownHandler);
     ;
 
     $("#coqtop")
@@ -149,6 +148,8 @@ $(document).ready(function() {
     $(window).resize(resize);
 
     syncResetCoqNoImports();
+
+    $("body").on("keydown", keyDownHandler);
     PT.handleKeyboard();
 
 });
@@ -295,6 +296,8 @@ function coq_find_last_dot (str, toopen) {
 
 function keyDownHandler(evt) {
 
+    //console.log("keyCode", evt.keyCode);
+
     var prevent = true;
 
     if (evt.ctrlKey) {
@@ -312,6 +315,13 @@ function keyDownHandler(evt) {
             break;
         case 13: // Enter
             proverToCaret();
+            break;
+        case 80: // p
+            if (activeProofTree !== undefined) {
+                $("#noprooftree-button").click();
+            } else {
+                $("#prooftree-button").click();
+            }
             break;
         default:
             prevent = false;
@@ -406,6 +416,7 @@ function undoCallback(response) {
     switch(response.rResponse.tag) {
     case "Good":
         var stepsToRewind = + response.rResponse.contents[0];
+        console.log("Rewinding additional " + stepsToRewind + " steps");
         while (stepsToRewind-- > 0) {
             var index = 0;
             var processed = $("#processed").text();
@@ -568,38 +579,6 @@ function repositionCaret(offset) {
 
 }
 
-function syncRequest(r, q, h) {
-    if (r === 'query') { console.log(q); }
-    $.ajax({
-        type: 'POST',
-        url: r,
-        data: {query : q},
-        async: false,
-        success: function(response) {
-            h(response);
-        }
-    });
-}
-function syncQuery(q, h) { syncRequest('query', q, h); }
-function syncQueryAndUndo(q, h) { syncRequest('queryundo', q, h); }
-function syncUndo(h) { syncRequest('undo', undefined, h); }
-
-function asyncRequest(r, q, h) {
-    if (r === 'query') { console.log(q); }
-    $.ajax({
-        type: 'POST',
-        url: r,
-        data: {query : q},
-        async: true,
-        success: function(response) {
-            h(response);
-        }
-    });
-}
-function asyncQuery(q, h) { asyncRequest('query', q, h); }
-function asyncQueryAndUndo(q, h) { asyncRequest('queryundo', q, h); }
-function asyncUndo(h) { asyncRequest('undo', undefined, h); }
-
 function mkGlyph(name) {
     return $("<i>", {
         "class": "glyphicon glyphicon-" + name,
@@ -648,6 +627,7 @@ function switchToEditorUI() {
     $("#prover-caret").attr("disabled", false);
     $("#prooftree-button").css("display", "");
     $("#noprooftree-button").css("display", "none");
+    $("#prooftree").empty();
 
 }
 
@@ -662,6 +642,7 @@ function enterProofTree() {
     switchToProofUI();
 
     $("#noprooftree-button")
+        .unbind("click")
         .on("click", function() { exitProofTree(labelBeforeProofTree); })
     ;
 
@@ -705,6 +686,7 @@ function exitProofTree(labelBeforeProofTree) {
 
     // revert all the steps done in proof mode, to keep the labels clean
     var newStatus = syncStatus();
+
     syncRequest("rewind", newStatus.label - labelBeforeProofTree, function(){});
 
     repositionCaret();
