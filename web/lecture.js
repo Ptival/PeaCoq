@@ -349,12 +349,12 @@ function updateCoqtopPane(response) {
             });
             $("#coqtop").append($("<hr>").css("border", "1px solid black"));
             $("#coqtop").append(showTerm(response.rGoals.focused[0].gGoal));
-            if (response.rResponse.contents.trim() !== "") {
+            if (response.rResponse.contents[0].trim() !== "") {
                 alert("Ignored response contents: " + response.rResponse.contents);
             }
         } else {
             $("#prooftree-button").attr("disabled", true);
-            $("#coqtop").text(stripWarning(response.rResponse.contents));
+            $("#coqtop").text(stripWarning(response.rResponse.contents[0]));
         }
         break;
     case "Fail":
@@ -363,7 +363,7 @@ function updateCoqtopPane(response) {
             .toggleClass("alert-success", false)
         ;
         // maybe still display the goal?
-        $("#coqtop").text(stripWarning(response.rResponse.contents));
+        $("#coqtop").text(stripWarning(response.rResponse.contents[0]));
         break;
     };
 
