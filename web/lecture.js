@@ -73,6 +73,7 @@ $(document).ready(function() {
     })
         .appendTo(buttonGroup)
         .on("click", function() {
+            syncLog("MANUALENTERPROOFTREE");
             enterProofTree();
         })
         .attr("disabled", true)
@@ -177,6 +178,8 @@ function resize() {
 }
 
 function onLoad(text) {
+
+    syncLog("LOAD " + text);
 
     syncResetCoqNoImports();
 
@@ -376,10 +379,14 @@ function updateCoqtopPane(direction, response) {
     if (status.proving) {
         // automatically enter proof mode if not in the process of proving more things
         var lastCommand = getLastProcessed();
+        if (_(lastCommand).contains("(* notree *)")) {
+            syncLog("NOTREE");
+        }
         if (direction ===goingDown
             && lastCommand !== "Proof."
             && !_(lastCommand).contains("(* notree *)")
             && $("#toprocess").text().length === 0) {
+            syncLog("AUTOENTERPROOFTREE");
             enterProofTree();
         }
         /*
@@ -472,6 +479,7 @@ function proverDown() {
     var pieceToProcess = redacting.substring(1, index);
     $("#toprocess").text(toprocess + pieceToProcess);
     $("#redacting").text(zwsp + redacting.substring(index));
+    syncLog("PROVERDOWN " + pieceToProcess);
     repositionCaret();
     tryProcessing();
 }
@@ -501,6 +509,7 @@ function proverToCaret () {
         var pieceToProcess = redacting.substring(1, index); // 1 for zwsp
         $("#toprocess").text(toprocess + pieceToProcess);
         $("#redacting").text(zwsp + redacting.substring(index));
+        syncLog("PROVERDOWN " + pieceToProcess);
         repositionCaret();
         tryProcessing();
     }
@@ -521,6 +530,7 @@ function proverUp () {
     if (pieceToUnprocess !== "") {
         $("#processed").text(processed.substring(0, index));
         $("#redacting").text(zwsp + pieceToUnprocess + redacting.substring(1));
+        syncLog("PROVERUP " + pieceToUnprocess);
         repositionCaret(index === 0 ? 0 : 1); // if at the start of file, no offset
         syncUndo(undoCallback);
     }
@@ -690,6 +700,8 @@ function exitProofTree(labelBeforeProofTree) {
     switchToEditorUI();
 
     activeProofTree = undefined;
+
+    syncLog("EXITPROOFTREE");
 
     // revert all the steps done in proof mode, to keep the labels clean
     var newStatus = syncStatus();
