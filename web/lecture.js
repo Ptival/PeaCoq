@@ -335,7 +335,10 @@ function keyDownHandler(evt) {
 
 }
 
-function updateCoqtopPane(response) {
+var goingDown = true, goingUp = false;
+
+function updateCoqtopPane(direction, response) {
+
     switch(response.rResponse.tag) {
     case "Good":
         $("#coqtop")
@@ -371,6 +374,15 @@ function updateCoqtopPane(response) {
     var status = syncStatus();
     $("#prooftree-button").attr("disabled", !status.proving);
     if (status.proving) {
+        // automatically enter proof mode if not in the process of proving more things
+        var lastCommand = getLastProcessed();
+        if (direction ===goingDown
+            && lastCommand !== "Proof."
+            && $("#toprocess").text().length === 0) {
+            enterProofTree();
+        }
+        /*
+        // flash the newly-enabled button a few times
         var iterations = 3;
         var delay = 50;
         var iterate = function() {
@@ -378,6 +390,7 @@ function updateCoqtopPane(response) {
             $("#prooftree-button").delay(delay).fadeOut(delay).fadeIn(delay, iterate);
         }
         iterate();
+        */
     }
 }
 
@@ -399,7 +412,7 @@ function undoCallback(response) {
         response.rResponse.contents[0] = ""; // don't show the user the steps number
         break;
     };
-    updateCoqtopPane(response);
+    updateCoqtopPane(goingUp, response);
 }
 
 function tryProcessing() {
@@ -420,14 +433,14 @@ function tryProcessing() {
         switch(response.rResponse.tag) {
         case "Good":
             $("#processed").append(pieceToProcess);
-            updateCoqtopPane(response); // TODO: might be bothersome to do that at every step?
+            updateCoqtopPane(goingDown, response); // TODO: might be bothersome to do that at every step?
             tryProcessing(); // if there is more to process
             break;
         case "Fail":
             var redacting = $("#redacting").text().substring(1);
             $("#redacting").text(zwsp + pieceToProcess + redacting);
             repositionCaret();
-            updateCoqtopPane(response);
+            updateCoqtopPane(goingDown, response);
             break;
         };
     });
@@ -685,11 +698,14 @@ function exitProofTree(labelBeforeProofTree) {
 
 }
 
+function getLastProcessed() {
+    var processed = $("#processed").text();
+    return processed.substring(prev(processed)).trim();
+}
+
 function onQed(labelBeforeProofTree, prooftree) {
 
-    var processed = $("#processed").text();
-    var lastCommand = processed.substring(prev(processed)).trim();
-
+    var lastCommand = getLastProcessed();
     var textToAppend = (lastCommand === "Proof.") ? "\n" : "\nProof.\n";
     var proof = PT.pprint(prooftree.proof(), 1, " ", "\n");
     textToAppend += proof;
@@ -708,7 +724,7 @@ function onQed(labelBeforeProofTree, prooftree) {
     // now we can replay the actuall proof and conclude
     prooftree.replay();
     syncQuery("Qed.", function(response) {
-        updateCoqtopPane(response);
+        updateCoqtopPane(goingDown, response);
     });
 
     // is this enough to eventually allow garbage-collection of the proof tree?
