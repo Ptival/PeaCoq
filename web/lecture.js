@@ -675,6 +675,8 @@ function exitProofTree(labelBeforeProofTree) {
 
     switchToEditorUI();
 
+    activeProofTree = undefined;
+
     // revert all the steps done in proof mode, to keep the labels clean
     var newStatus = syncStatus();
     syncRequest("rewind", newStatus.label - labelBeforeProofTree, function(){});
