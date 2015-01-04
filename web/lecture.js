@@ -94,13 +94,25 @@ $(document).ready(function() {
     $("<button>", {
         "class": "btn btn-default",
         "html": $("<span>")
-            .append(mkGlyph("cloud"))
-            .append(nbsp + "Load a distant file")
+            .append(mkGlyph("cloud-download"))
+            .append(nbsp + "Load remotely")
         ,
-        "id": "load-distant-button",
+        "id": "load-remote-button",
     })
         .appendTo(buttonGroup)
-        .on("click", loadDistant)
+        .on("click", loadRemote)
+    ;
+
+    $("<button>", {
+        "class": "btn btn-default",
+        "html": $("<span>")
+            .append(mkGlyph("cloud-upload"))
+            .append(nbsp + "Save remotely")
+        ,
+        "id": "save-remote-button",
+    })
+        .appendTo(buttonGroup)
+        .on("click", function() { alert("TODO"); })
     ;
 
     $("#filepicker").on("change", function() {
@@ -112,13 +124,33 @@ $(document).ready(function() {
     $("<button>", {
         "class": "btn btn-default",
         "html": $("<span>")
-            .append(mkGlyph("folder-open"))
-            .append(nbsp + nbsp + "Load a local file")
+            .append(mkGlyph("floppy-open"))
+            .append(nbsp + nbsp + "Load locally")
         ,
         "id": "load-local-button",
     })
         .appendTo(buttonGroup)
         .on("click", loadLocal)
+    ;
+
+    var saveLocalButton = $("<button>", {
+        "class": "btn btn-default",
+        "id": "save-local-button",
+    })
+        .appendTo(buttonGroup)
+        .on("click", saveLocal)
+    ;
+
+    $("<a>", {
+        "download": "output.v",
+        "id": "save-local-link",
+        "html": $("<span>")
+            .append(mkGlyph("floppy-save"))
+            .append(nbsp + nbsp + "Save locally")
+    })
+        .css("color", "inherit")
+        .css("text-decoration", "none")
+        .appendTo(saveLocalButton)
     ;
 
     $("#main")
@@ -734,7 +766,7 @@ function stripWarning(s) {
     return s.replace(/^Warning: query commands should not be inserted in scripts\n/g, "");
 }
 
-function loadDistant() {
+function loadRemote() {
 
     var html = $("<div>");
 
@@ -763,7 +795,7 @@ function loadDistant() {
         .appendTo(html)
         .on("click", function() {
             var fileToLoad = $("#lecture-select").val();
-            $("#load-distant-button").popover("destroy");
+            $("#load-remote-button").popover("destroy");
             syncLoadLecture(fileToLoad, function(response) {
                 onLoad(response.rResponse.contents[0]);
             });
@@ -775,10 +807,11 @@ function loadDistant() {
     })
         .appendTo(html)
         .on("click", function() {
-            $("#load-distant-button").popover("destroy");
+            $("#load-remote-button").popover("destroy");
         })
     ;
-    $("#load-distant-button")
+
+    $("#load-remote-button")
         .popover({
             "content": html,
             "html": true,
@@ -791,5 +824,14 @@ function loadDistant() {
 function loadLocal() {
 
     $("#filepicker").click();
+
+}
+
+function saveLocal() {
+
+    var text = $("#editor").text().replace(/\u200B/g, ""); // get rid of zwsp
+    var blob = new Blob([text], {type:'text/plain'});
+    var url = window.URL.createObjectURL(blob);
+    $("#save-local-link").attr("href", url);
 
 }
