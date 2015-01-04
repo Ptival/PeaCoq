@@ -366,7 +366,7 @@ function editorKeyHandler(evt) {
             proverToCaret();
             break;
         default:
-            prevent = false;
+            preventDefault = false;
             break;
         };
 
@@ -377,13 +377,13 @@ function editorKeyHandler(evt) {
             insertAtSelection("\n");
             break;
         default:
-            prevent = false;
+            preventDefault = false;
             break;
         };
 
     }
 
-    if (prevent) {
+    if (preventDefault) {
         evt.preventDefault();
     }
 
