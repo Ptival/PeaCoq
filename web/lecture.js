@@ -728,16 +728,12 @@ function enterProofTree() {
             var applies = _(namesPossiblyInScope).map(function(name) {
                 return "apply " + name;
             }).value();
-            console.log("applies", applies);
             var leftRewrites = _(namesPossiblyInScope).map(function(name) {
                 return "rewrite -> " + name;
             }).value();
             var rightRewrites = _(namesPossiblyInScope).map(function(name) {
                 return "rewrite <- " + name;
             }).value();
-            console.log("going to try",
-                applies + leftRewrites + rightRewrites + PT.tDiscriminate
-            );
             return applies.concat(leftRewrites, rightRewrites, PT.tDiscriminate);
         }
     );
