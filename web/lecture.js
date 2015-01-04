@@ -181,7 +181,8 @@ $(document).ready(function() {
 
     syncResetCoqNoImports();
 
-    $("body").on("keydown", keyDownHandler);
+    $("body").on("keydown", globalKeyHandler);
+    $("#editor").on("keydown", editorKeyHandler);
     PT.handleKeyboard();
 
 });
@@ -326,11 +327,27 @@ function coq_find_last_dot (str, toopen) {
     }
 }
 
-function keyDownHandler(evt) {
+function globalKeyHandler(evt) {
+    if (evt.ctrlKey) {
+        switch(evt.keyCode) {
+        case 80: // p
+            if (activeProofTree !== undefined) {
+                $("#noprooftree-button").click();
+            } else {
+                $("#prooftree-button").click();
+            }
+            evt.preventDefault();
+            break;
+        default:
+            break;
+        };
+    }
+}
 
-    //console.log("keyCode", evt.keyCode);
+function editorKeyHandler(evt) {
 
-    var prevent = true;
+    // set to false to allow default for any particular key combo
+    var preventDefault = true;
 
     if (evt.ctrlKey) {
 
@@ -347,13 +364,6 @@ function keyDownHandler(evt) {
             break;
         case 13: // Enter
             proverToCaret();
-            break;
-        case 80: // p
-            if (activeProofTree !== undefined) {
-                $("#noprooftree-button").click();
-            } else {
-                $("#prooftree-button").click();
-            }
             break;
         default:
             prevent = false;
@@ -375,7 +385,6 @@ function keyDownHandler(evt) {
 
     if (prevent) {
         evt.preventDefault();
-        evt.stopPropagation();
     }
 
 }
