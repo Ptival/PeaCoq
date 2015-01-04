@@ -3,6 +3,7 @@ var processing = false;
 var prooftree = undefined;
 var nbsp = "&nbsp;";
 var zwsp = "\u200B";
+var namesPossiblyInScope = [];
 
 var delimiters = [".", "{", "}"];
 
@@ -426,6 +427,13 @@ function updateCoqtopPane(direction, response) {
 
     // also, enable/disable the button depending on whether we are in proof mode
     var status = syncStatus();
+
+    // while at it, let's gather names of definitions for proof purposes
+    // TODO: should this be done by prooftree.js?
+    if (status.current !== null && !_(namesPossiblyInScope).contains(status.current)) {
+        namesPossiblyInScope.push(status.current);
+    }
+
     $("#prooftree-button").attr("disabled", !status.proving);
     if (status.proving) {
         // automatically enter proof mode if not in the process of proving more things
@@ -713,7 +721,26 @@ function enterProofTree() {
     var theoremStatement = processed.substring(position);
     // get rid of anything after the statement, like "Proof."
     theoremStatement = theoremStatement.substring(0, next(theoremStatement));
-    prooftree.newAlreadyStartedTheorem(theoremStatement, status.response);
+    prooftree.newAlreadyStartedTheorem(
+        theoremStatement,
+        status.response,
+        function(pt) {
+            var applies = _(namesPossiblyInScope).map(function(name) {
+                return "apply " + name;
+            }).value();
+            console.log("applies", applies);
+            var leftRewrites = _(namesPossiblyInScope).map(function(name) {
+                return "rewrite -> " + name;
+            }).value();
+            var rightRewrites = _(namesPossiblyInScope).map(function(name) {
+                return "rewrite <- " + name;
+            }).value();
+            console.log("going to try",
+                applies + leftRewrites + rightRewrites + PT.tDiscriminate
+            );
+            return applies.concat(leftRewrites, rightRewrites, PT.tDiscriminate);
+        }
+    );
 
 }
 

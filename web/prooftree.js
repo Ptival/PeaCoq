@@ -468,13 +468,13 @@ ProofTree.prototype.newTheorem = function(
 
 }
 
-ProofTree.prototype.newAlreadyStartedTheorem = function(theoremStatement, lastResponse)
+ProofTree.prototype.newAlreadyStartedTheorem = function(theoremStatement, lastResponse, tactics)
 {
 
     var self = this;
 
     this.theorem = theoremStatement;
-    this.tactics = function() { return PT.allTactics; };
+    this.tactics = tactics;
     this.afterUpdate = function(){};
 
     // hide previous proof result if any, show svg if hidden
