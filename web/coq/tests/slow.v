@@ -17,6 +17,7 @@ Ltac ackerman m n :=
       end
   end.
 
+(* notree *)
 Theorem t : False.
 Proof.
   let res := ackerman 3 5 in pose res.
