@@ -27,6 +27,7 @@ import Lexer
 var { TokId $$ }
 access_ident { TokAccessId $$ }
 num { TokNum $$ }
+str { TokString $$ }
 comment { TokComment $$ }
 '(' { TokLParen }
 ')' { TokRParen }
@@ -87,7 +88,7 @@ comment { TokComment $$ }
 %left '*'
 %nonassoc '(' ')'
 %nonassoc '{' '}'
-%nonassoc var num
+%nonassoc var num str
 -- it is important that APP has higher precedence than var, num, '('
 -- so that shift/reduce conflicts of the form
 -- Term Term . <var/num/'('>
@@ -110,6 +111,7 @@ Sentence :: { Vernac }
 Term :: { Term }
 : QualId                { Var $1 }
 | num                   { Var $1 }
+| str                   { Var $1 }
 | '∀' Binders ',' Term  { Forall $2 $4 }
 | 'λ' Binders ',' Term  { Lambda $2 $4 }
 | '∃' Binders ',' Term  { Exists $2 $4 }

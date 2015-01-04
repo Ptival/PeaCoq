@@ -63,6 +63,7 @@ tokens :-
   "Qed"         { tok TokQed }
   $alpha [$alpha $digit \_ \']* { tokS TokId }
   \. $alpha [$alpha $digit \_ \']* { tokS TokAccessId }
+  \" $printable* \" { tokS TokString }
   \. { tok TokPeriod }
   $printable { tokS TokUnknown }
 
@@ -77,6 +78,7 @@ tokS t (_, _, _, str) len = return (t (take len str))
 data Token
   = TokId String
   | TokAccessId String
+  | TokString String
   | TokLParen
   | TokRParen
   | TokLBrace
