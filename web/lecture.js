@@ -433,8 +433,8 @@ function updateCoqtopPane(direction, response) {
         if (_(lastCommand).contains("(* notree *)")) {
             syncLog("NOTREE");
         }
-        if (direction ===goingDown
-            && lastCommand !== "Proof."
+        if (direction === goingDown
+            && ! lastCommand.endsWith("Proof.")
             && !_(lastCommand).contains("(* notree *)")
             && $("#toprocess").text().length === 0) {
             syncLog("AUTOENTERPROOFTREE");
@@ -843,4 +843,18 @@ function saveLocal() {
     var url = window.URL.createObjectURL(blob);
     $("#save-local-link").attr("href", url);
 
+}
+
+if (!String.prototype.endsWith) {
+    Object.defineProperty(String.prototype, 'endsWith', {
+        value: function(searchString, position) {
+            var subjectString = this.toString();
+            if (position === undefined || position > subjectString.length) {
+                position = subjectString.length;
+            }
+            position -= searchString.length;
+            var lastIndex = subjectString.indexOf(searchString, position);
+            return lastIndex !== -1 && lastIndex === position;
+        }
+    });
 }
