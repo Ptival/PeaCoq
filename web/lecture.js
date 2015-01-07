@@ -507,7 +507,7 @@ function undoCallback(response) {
     switch(response.rResponse.tag) {
     case "Good":
         var stepsToRewind = + response.rResponse.contents[0];
-        console.log("Rewinding additional " + stepsToRewind + " steps");
+        //console.log("Rewinding additional " + stepsToRewind + " steps");
         while (stepsToRewind-- > 0) {
             var index = 0;
             var processed = $("#processed").text();
