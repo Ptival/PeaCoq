@@ -446,7 +446,10 @@ function updateCoqtopPane(direction, response) {
             $("#coqtop").append($("<hr>").css("border", "1px solid black"));
             $("#coqtop").append(showTerm(response.rGoals.focused[0].gGoal));
             if (contents !== "") {
-                alert("Ignored response contents: " + contents);
+                $("<div>", { "text": contents })
+                    .css("margin-top", "10px")
+                    .appendTo("#coqtop")
+                ;
             }
         } else {
             $("#prooftree-button").attr("disabled", true);
