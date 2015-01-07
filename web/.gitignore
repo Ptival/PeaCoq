@@ -7,9 +7,13 @@ bootstrap/
 d3.js
 d3/
 fonts
+highlight.css
+highlight.js
+highlight/
 jquery.js
 jquery/
 lodash.js
 lodash/
+ocaml.js
 rangy-core.js
 rangy/

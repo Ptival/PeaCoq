@@ -47,4 +47,16 @@ if [ ! -f rangy-core.js ]; then
     ln -s rangy/rangy-core.js rangy-core.js
 fi
 
+if [ ! -f highlight.js ]; then
+    mkdir -p highlight
+    cd highlight/
+    wget https://raw.githubusercontent.com/highlightjs/cdn-release/master/build/highlight.min.js
+    wget https://raw.githubusercontent.com/highlightjs/cdn-release/master/build/languages/ocaml.min.js
+    wget https://raw.githubusercontent.com/highlightjs/cdn-release/master/build/styles/github.min.css
+    cd ..
+    ln -s highlight/highlight.min.js highlight.js
+    ln -s highlight/ocaml.min.js ocaml.js
+    ln -s highlight/github.min.css highlight.css
+fi
+
 cd ..

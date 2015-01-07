@@ -225,26 +225,36 @@ function onLoad(text) {
     $("#editor").append(
         $("<span>")
             .attr("id", "processed")
+            .css("display", "inline")
+            .css("padding", 0)
             .css("background-color", "#90EE90")
     );
 
     $("#editor").append(
         $("<span>")
             .attr("id", "processing")
+            .css("display", "inline")
+            .css("padding", 0)
             .css("background-color", "#FFA500")
     );
 
     $("#editor").append(
         $("<span>")
             .attr("id", "toprocess")
+            .css("display", "inline")
+            .css("padding", 0)
             .css("background-color", "#ADD8E6")
     );
 
     $("#editor").append(
         $("<span>")
             .attr("id", "redacting")
+            .css("display", "inline")
+            .css("padding", 0)
             .text(zwsp + text)
     );
+
+    highlight();
 
     $("#editor").focus();
 
@@ -477,6 +487,15 @@ function updateCoqtopPane(direction, response) {
         */
     }
 
+    highlight();
+
+}
+
+function highlight() {
+    $("#processed").html(hljs.highlight("ocaml", $("#processed").text(), true).value);
+    $("#processing").html(hljs.highlight("ocaml", $("#processing").text(), true).value);
+    $("#toprocess").html(hljs.highlight("ocaml", $("#toprocess").text(), true).value);
+    $("#redacting").html(hljs.highlight("ocaml", $("#redacting").text(), true).value);
 }
 
 function undoCallback(response) {
