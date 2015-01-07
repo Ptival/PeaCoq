@@ -406,16 +406,6 @@ var goingDown = true, goingUp = false;
 
 function updateCoqtopPane(direction, response) {
 
-    // some sanity check and tentative fixes
-    if ($("#processing").length === 0) {
-        alert("#processing is missing, attempting recovery");
-        $("<span>", { "id": "processing" }).insertAfter($("#processed"));
-    }
-    if ($("#toprocess").length === 0) {
-        alert("#toprocess is missing, attempting recovery");
-        $("<span>", { "id": "toprocess" }).insertAfter($("#processing"));
-    }
-
     var contents = response.rResponse.contents;
     switch (typeof contents) {
     case "string": break;
@@ -586,6 +576,15 @@ function getCaretPos() {
   then trigger a processing.
 */
 function proverDown() {
+    // some sanity check and tentative fixes
+    if ($("#processing").length === 0) {
+        console.log("#processing is missing, attempting recovery");
+        $("<span>", { "id": "processing" }).insertAfter($("#processed"));
+    }
+    if ($("#toprocess").length === 0) {
+        console.log("#toprocess is missing, attempting recovery");
+        $("<span>", { "id": "toprocess" }).insertAfter($("#processing"));
+    }
     var toprocess = $("#toprocess").text();
     var redacting = $("#redacting").text();
     var index = next(redacting);
