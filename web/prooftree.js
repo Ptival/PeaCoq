@@ -568,7 +568,9 @@ ProofTree.prototype.runTactic = function(t) {
         }
     });
 
-    self.curNode.allChildren.unshift(newChild);
+    if (newChild !== undefined) {
+        self.curNode.allChildren.unshift(newChild);
+    }
 
     return newChild;
 
@@ -2047,6 +2049,7 @@ ProofTree.prototype.partialProofFrom = function(t, indentation) {
                     .click(function() {
 
                         var tactic = ta.val();
+
                         // if the tactic is already here, just click it
                         var existingTactic = _(self.curNode.allChildren).find(function(elt) {
                             return elt.name === tactic;
@@ -2061,9 +2064,11 @@ ProofTree.prototype.partialProofFrom = function(t, indentation) {
                         var newNode = self.runTactic(tactic);
 
                         // now we can update and click on the node once it has appeared
-                        self.update(function() {
-                            self.click(newNode);
-                        });
+                        if (newNode !== undefined) {
+                            self.update(function() {
+                                self.click(newNode);
+                            });
+                        }
 
                     })
             );
