@@ -92,6 +92,7 @@ $(document).ready(function() {
         .css("display", "none")
     ;
 
+    /* Temporarily disabled
     $("<button>", {
         "class": "btn btn-default",
         "html": $("<span>")
@@ -115,6 +116,7 @@ $(document).ready(function() {
         .appendTo(buttonGroup)
         .on("click", function() { alert("TODO"); })
     ;
+    */
 
     $("#filepicker").on("change", function() {
         // TODO: warning about resetting Coq/saving file
@@ -126,7 +128,7 @@ $(document).ready(function() {
         "class": "btn btn-default",
         "html": $("<span>")
             .append(mkGlyph("floppy-open"))
-            .append(nbsp + nbsp + "Load locally")
+            .append(nbsp + nbsp + "Load")
         ,
         "id": "load-local-button",
     })
@@ -147,7 +149,7 @@ $(document).ready(function() {
         "id": "save-local-link",
         "html": $("<span>")
             .append(mkGlyph("floppy-save"))
-            .append(nbsp + nbsp + "Save locally")
+            .append(nbsp + nbsp + "Save")
     })
         .css("color", "inherit")
         .css("text-decoration", "none")
