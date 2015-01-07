@@ -794,15 +794,12 @@ ProofTree.prototype.linkWidth = function(d) {
     // if the user uses his keyboard, highlight the focused path
     if (isGoal(this.curNode)) {
         var focusedChild = this.curNode.allChildren[this.curNode.focusIndex];
-        if (
-            (this.isCurNode(src) && focusedChild.id === tgt.id)
-                || (src.id === focusedChild.id
-                    && src.allChildren[src.focusIndex].id === tgt.id)
-        ) {
+        if (focusedChild === undefined) { return thin; }
+        if (this.isCurNode(src) && focusedChild.id === tgt.id) { return thick; }
+        if (src.id === focusedChild.id && src.allChildren[src.focusIndex].id === tgt.id) {
             return thick;
-        } else {
-            return thin;
         }
+        return thin;
     } else {
         //alert("todo");
         return thin;
