@@ -394,7 +394,23 @@ var goingDown = true, goingUp = false;
 
 function updateCoqtopPane(direction, response) {
 
-    switch(response.rResponse.tag) {
+    var contents = response.rResponse.contents;
+    switch (typeof contents) {
+    case "string": break;
+    case "object":
+        if (contents.length > 1) {
+            alert("Found contents with length greater than 1, see log");
+            console.log(contents);
+        }
+        contents = contents[0];
+        break;
+    default:
+        alert("Found contents with type different than string and object, see log");
+        console.log(typeof contents, contents);
+    };
+    contents = contents.trim();
+
+    switch (response.rResponse.tag) {
     case "Good":
         $("#coqtop")
             .toggleClass("alert-success", true)
@@ -407,12 +423,12 @@ function updateCoqtopPane(direction, response) {
             });
             $("#coqtop").append($("<hr>").css("border", "1px solid black"));
             $("#coqtop").append(showTerm(response.rGoals.focused[0].gGoal));
-            if (response.rResponse.contents[0].trim() !== "") {
-                alert("Ignored response contents: " + response.rResponse.contents);
+            if (contents !== "") {
+                alert("Ignored response contents: " + contents);
             }
         } else {
             $("#prooftree-button").attr("disabled", true);
-            $("#coqtop").text(stripWarning(response.rResponse.contents[0]));
+            $("#coqtop").text(stripWarning(contents));
         }
         break;
     case "Fail":
@@ -421,7 +437,8 @@ function updateCoqtopPane(direction, response) {
             .toggleClass("alert-success", false)
         ;
         // maybe still display the goal?
-        $("#coqtop").text(stripWarning(response.rResponse.contents[0]));
+        //console.log("Fail", response);
+        $("#coqtop").text(stripWarning(contents));
         break;
     };
 
@@ -459,6 +476,7 @@ function updateCoqtopPane(direction, response) {
         iterate();
         */
     }
+
 }
 
 function undoCallback(response) {
