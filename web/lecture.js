@@ -404,6 +404,16 @@ var goingDown = true, goingUp = false;
 
 function updateCoqtopPane(direction, response) {
 
+    // some sanity check and tentative fixes
+    if ($("#processing").length === 0) {
+        alert("#processing is missing, attempting recovery");
+        $("<span>", { "id": "processing" }).insertAfter($("#processed"));
+    }
+    if ($("#toprocess").length === 0) {
+        alert("#toprocess is missing, attempting recovery");
+        $("<span>", { "id": "toprocess" }).insertAfter($("#processing"));
+    }
+
     var contents = response.rResponse.contents;
     switch (typeof contents) {
     case "string": break;
