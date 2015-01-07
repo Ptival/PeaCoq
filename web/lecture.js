@@ -341,9 +341,9 @@ function coq_find_last_dot (str, toopen) {
 }
 
 function globalKeyHandler(evt) {
-    if (evt.ctrlKey) {
+    if (evt.ctrlKey && evt.altKey) {
         switch(evt.keyCode) {
-        case 80: // p
+        case 84: // t
             if (activeProofTree !== undefined) {
                 $("#noprooftree-button").click();
             } else {
@@ -362,7 +362,7 @@ function editorKeyHandler(evt) {
     // set to false to allow default for any particular key combo
     var preventDefault = true;
 
-    if (evt.ctrlKey) {
+    if (evt.ctrlKey && evt.altKey) {
 
         switch(evt.keyCode) {
         case 40: case 10: // Down
