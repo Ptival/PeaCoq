@@ -167,6 +167,8 @@ $(document).ready(function() {
         .css("width", "50%")
     ;
 
+    resetEditorWith("(* Your code here *)");
+
     $("#coqtop")
         .css("margin", 0)
         .css("float", "left")
@@ -224,37 +226,7 @@ function onLoad(text) {
     $("#coqtop").empty().css("display", "");
     $("#prooftree").empty().css("display", "none");
 
-    $("#editor").append(
-        $("<span>")
-            .attr("id", "processed")
-            .css("display", "inline")
-            .css("padding", 0)
-            .css("background-color", "#90EE90")
-    );
-
-    $("#editor").append(
-        $("<span>")
-            .attr("id", "processing")
-            .css("display", "inline")
-            .css("padding", 0)
-            .css("background-color", "#FFA500")
-    );
-
-    $("#editor").append(
-        $("<span>")
-            .attr("id", "toprocess")
-            .css("display", "inline")
-            .css("padding", 0)
-            .css("background-color", "#ADD8E6")
-    );
-
-    $("#editor").append(
-        $("<span>")
-            .attr("id", "redacting")
-            .css("display", "inline")
-            .css("padding", 0)
-            .text(zwsp + text)
-    );
+    resetEditorWith(text);
 
     highlight();
 
@@ -934,4 +906,40 @@ if (!String.prototype.endsWith) {
             return lastIndex !== -1 && lastIndex === position;
         }
     });
+}
+
+function resetEditorWith(text) {
+
+    $("#editor").append(
+        $("<span>")
+            .attr("id", "processed")
+            .css("display", "inline")
+            .css("padding", 0)
+            .css("background-color", "#90EE90")
+    );
+
+    $("#editor").append(
+        $("<span>")
+            .attr("id", "processing")
+            .css("display", "inline")
+            .css("padding", 0)
+            .css("background-color", "#FFA500")
+    );
+
+    $("#editor").append(
+        $("<span>")
+            .attr("id", "toprocess")
+            .css("display", "inline")
+            .css("padding", 0)
+            .css("background-color", "#ADD8E6")
+    );
+
+    $("#editor").append(
+        $("<span>")
+            .attr("id", "redacting")
+            .css("display", "inline")
+            .css("padding", 0)
+            .text(zwsp + text)
+    );
+
 }
