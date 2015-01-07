@@ -501,12 +501,15 @@ function tryProcessing() {
         switch(response.rResponse.tag) {
         case "Good":
             $("#processed").append(pieceToProcess);
-            updateCoqtopPane(goingDown, response); // TODO: might be bothersome to do that at every step?
+            // TODO: might be bothersome to do that at every step?
+            updateCoqtopPane(goingDown, response);
             tryProcessing(); // if there is more to process
             break;
         case "Fail":
+            var toprocess = $("#toprocess").text();
             var redacting = $("#redacting").text().substring(1);
-            $("#redacting").text(zwsp + pieceToProcess + redacting);
+            $("#toprocess").text("");
+            $("#redacting").text(zwsp + pieceToProcess + toprocess + redacting);
             repositionCaret();
             updateCoqtopPane(goingDown, response);
             break;
