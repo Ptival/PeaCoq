@@ -11,6 +11,8 @@ import           Data.ByteString (ByteString, append)
 import qualified Data.HashMap.Strict as HM (map)
 import           Data.IORef
 import qualified Data.IntMap as IM
+import           Data.Time.Format
+import           Data.Time.LocalTime
 import           Prelude hiding (log)
 import           Snap.Http.Server.Config (defaultConfig)
 import           Snap.Snaplet
@@ -20,10 +22,11 @@ import           Snap.Snaplet.Session.SessionManager ()
 import           Snap.Util.FileServe
 import           System.Directory
 import           System.IO
-import           System.Log.Logger
+import           System.Locale
 import           System.Log.Formatter
 import           System.Log.Handler (setFormatter)
 import           System.Log.Handler.Simple
+import           System.Log.Logger
 import           System.Process
 
 import           Coqtop
@@ -65,7 +68,9 @@ mainUW = do
   Config mUserId logPath <- read <$> readFile (curDir ++ "/config.hs")
   case mUserId of
     Just userId -> do
-      handler <- fileHandler (logPath ++ "/" ++ userId ++ ".log") loggingPriority
+      now <- getZonedTime
+      let nowString = formatTime defaultTimeLocale "-%F-%H-%M-%S" now
+      handler <- fileHandler (logPath ++ "/" ++ userId ++ nowString ++ ".log") loggingPriority
       let format = simpleLogFormatter "[$time] $msg"
       let fHandler = setFormatter handler format
       updateGlobalLogger rootLoggerName (setLevel loggingPriority . addHandler fHandler)
