@@ -855,7 +855,8 @@ function enterProofTree() {
             var rightRewrites = _(namesPossiblyInScope).map(function(name) {
                 return "rewrite <- " + name;
             }).value();
-            return applies.concat(leftRewrites, rightRewrites, PT.tDiscriminate);
+            // tDiscriminate first for simplicity
+            return PT.tDiscriminate.concat(applies, leftRewrites, rightRewrites);
         }
     );
 
