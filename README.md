@@ -6,6 +6,7 @@ Building PeaCoq
 
 You will need a somewhat recent `ghc` and `cabal`. You can find them in the Haskell Platform ( https://www.haskell.org/platform/ ).
 You will also need `wget` to run `setup.sh`. You should be able to find it in your software distribution.
+Finally, you will need an installation of `coq` to be visible in your `PATH`, in particular you should be able to run `coqtop`.
 
 ```
   git clone https://github.com/Ptival/PeaCoq.git
