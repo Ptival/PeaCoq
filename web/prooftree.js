@@ -1744,7 +1744,7 @@ one child (since the other child will then remain to be proved).
 */
 function depthSolved(tacNode) {
     if (_(tacNode.children).size() <= 1) {
-        if (!hasGrandParent(tacNode)) { return 1; }
+        if (!hasGrandParent(tacNode)) { return 0; }
         return 1 + depthSolved(tacNode.parent.parent);
     } else {
         return 0;
