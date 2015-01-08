@@ -158,7 +158,8 @@ peacoqSnaplet globRef = makeSnaplet "PeaCoq" "PeaCoq" Nothing $ do
     myDirConfig :: DirectoryConfig (Handler PeaCoq PeaCoq)
     myDirConfig =
       defaultDirectoryConfig {
-        mimeTypes = HM.map (\m -> append m "; charset=utf-8") defaultMimeTypes
+        mimeTypes = HM.map (\m -> append m "; charset=utf-8") defaultMimeTypes,
+        indexFiles = ["lecture.html"]
         }
     peacoqRoutes :: [(ByteString, PeaCoqHandler)]
     peacoqRoutes =
