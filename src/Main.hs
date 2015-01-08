@@ -76,7 +76,7 @@ mainUW = do
   serveSnaplet defaultConfig $ peacoqSnaplet globRef
 
 sessionTimeoutSeconds :: Int
-sessionTimeoutSeconds = 3600
+sessionTimeoutSeconds = 24 * 3600
 
 sessionTimeoutMicroseconds :: Int
 sessionTimeoutMicroseconds = sessionTimeoutSeconds * 1000 * 1000
