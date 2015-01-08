@@ -423,7 +423,6 @@ function editorKeyHandler(evt) {
             break;
         };
 
-
     }
 
 }
