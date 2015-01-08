@@ -986,8 +986,8 @@ function resetEditorWith(text) {
 
 function isSelectionLocked() {
     var sel = rangy.getSelection();
-    var selStart = $(sel.focusNode).parents("#editor >")[0];
-    var selEnd = $(sel.anchorNode).parents("#editor >")[0];
+    var selStart = $(sel.focusNode).closest("#editor >")[0];
+    var selEnd = $(sel.anchorNode).closest("#editor >")[0];
     if (selStart === undefined) { return true; }
     switch (selStart.id) {
     case "processed":
