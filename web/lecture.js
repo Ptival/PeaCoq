@@ -331,17 +331,18 @@ function globalKeyHandler(evt) {
 
 function editorKeyHandler(evt) {
 
-    // set to false to allow default for any particular key combo
-    var preventDefault = true;
+    //console.log(evt.keyCode)
 
     if (evt.ctrlKey && evt.altKey) {
 
         switch(evt.keyCode) {
         case 40: case 10: // Down
             proverDown();
+            evt.preventDefault();
             break;
         case 38: // Up
             proverUp();
+            evt.preventDefault();
             break;
         case 34: // PageDown
             break;
@@ -349,27 +350,66 @@ function editorKeyHandler(evt) {
             break;
         case 13: // Enter
             proverToCaret();
+            evt.preventDefault();
             break;
         default:
-            preventDefault = false;
             break;
         };
 
-    } else {
+    } else if (!evt.ctrlKey && !evt.altKey) {
+
+        // arrow keycodes
+        if (37 <= evt.keyCode && evt.keyCode <= 40) {
+            return;
+        }
+
+        // characters to be inserted
+        if (
+            (evt.keyCode === 32)
+                || (48 <= evt.keyCode && evt.keyCode <= 90)
+                || (96 <= evt.keyCode && evt.keyCode <= 111)
+                || (186 <= evt.keyCode && evt.keyCode <= 192)
+                || (219 <= evt.keyCode && evt.keyCode <= 222)
+        ) {
+            if (isSelectionLocked()) {
+                //console.log("prevented because locked");
+                evt.preventDefault();
+                return;
+            }
+        }
 
         switch (evt.keyCode) {
+        case 8: // Backspace
+            var caretOffset = 0;
+            var sel = rangy.getSelection();
+            if (sel.rangeCount) {
+                var range = sel.getRangeAt(0);
+                var preCaretRange = range.cloneRange();
+                preCaretRange.selectNodeContents($("#redacting")[0]);
+                preCaretRange.setEnd(range.endContainer, range.endOffset);
+                var caretOffset = preCaretRange.toString().length;
+            }
+            if (isSelectionLocked() || caretOffset < 2) {
+                evt.preventDefault(); return;
+            }
+            break;
+        case 9: // Tab
+            evt.preventDefault();
+            if (isSelectionLocked()) { return; }
+            insertAtSelection("  ");
+            break;
         case 13: // Enter
+            evt.preventDefault();
+            if (isSelectionLocked()) { return; }
             insertAtSelection("\n");
             break;
+        case 46: // Delete
+            if (isSelectionLocked()) { evt.preventDefault(); return; }
+            break;
         default:
-            preventDefault = false;
             break;
         };
 
-    }
-
-    if (preventDefault) {
-        evt.preventDefault();
     }
 
 }
@@ -539,7 +579,7 @@ function getCaretPos() {
     var sel = rangy.getSelection();
     var rng = rangy.createRange();
     rng.selectNodeContents($("#editor").get(0));
-    rng.setEnd(sel.focusNode,sel.focusOffset);
+    rng.setEnd(sel.focusNode, sel.focusOffset);
     return rng.toString().length;
 }
 
@@ -942,4 +982,22 @@ function resetEditorWith(text) {
             .text(zwsp + text)
     );
 
+}
+
+function isSelectionLocked() {
+    var sel = rangy.getSelection();
+    var selStart = $(sel.focusNode).parents("#editor >")[0];
+    var selEnd = $(sel.anchorNode).parents("#editor >")[0];
+    if (selStart === undefined) { return true; }
+    switch (selStart.id) {
+    case "processed":
+    case "processing":
+    case "toprocess":
+        return true;
+    case "redacting":
+        return false;
+    default:
+        console.log("selStart", selStart);
+        return true;
+    };
 }
