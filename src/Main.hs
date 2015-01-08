@@ -69,7 +69,7 @@ mainUW = do
       let format = simpleLogFormatter "[$time] $msg"
       let fHandler = setFormatter handler format
       updateGlobalLogger rootLoggerName (setLevel loggingPriority . addHandler fHandler)
-      logAction $ "User identified: " ++ userId
+      logAction $ "USERIDENTIFIED " ++ userId
     Nothing -> return ()
   globRef <- newIORef $ GlobalState 0 IM.empty mUserId
   forkIO $ cleanStaleSessions globRef -- parallel thread to regularly clean up
@@ -129,7 +129,7 @@ withSessionHandles r h = withSession lSession $ do
       Nothing -> do
         (hi, ho, ph) <- startCoqtop
         sessionIdentity <- atomicModifyIORef' r $ updateNewSession mapKey (hi, ho) ph
-        logAction $ "NEW SESSION " ++ show sessionIdentity
+        logAction $ "NEWSESSION " ++ show sessionIdentity
         return (hi, ho)
       Just (SessionState _ _ (hi, ho) _) -> do
         -- update the timestamp

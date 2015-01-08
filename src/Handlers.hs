@@ -45,10 +45,10 @@ getSessionKey = with lSession $ do
     Nothing -> do
       key <- liftIO randomIO
       setInSession keyField (T.pack . show $ key)
-      liftIO . logAction $ "No session key found, initializing: " ++ show key
+      --liftIO . logAction $ "No session key found, initializing: " ++ show key
       return key
     Just key -> do
-      liftIO . logAction $ "Session key found: " ++ show key
+      --liftIO . logAction $ "Session key found: " ++ show key
       return . read . T.unpack $ key
 
 respond :: CoqtopResponse [String] -> HandlerInput -> PeaCoqHandler
@@ -140,7 +140,7 @@ rewindHandler input@(HandlerInput hi ho) = do
     Just stepsBS -> do
       let steps = toString stepsBS
       r <- liftIO $ do
-        logAction $ "Rewinding " ++ show steps ++ " steps"
+        logAction $ "REWIND " ++ show steps
         hCall hi [("val", "rewind"), ("steps", steps)] ""
         hForceValueResponse ho
       respond (return . show <$> r) input
