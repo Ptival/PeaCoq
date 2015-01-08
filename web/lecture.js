@@ -454,21 +454,59 @@ function updateCoqtopPane(direction, response) {
             .toggleClass("alert-danger", false)
         ;
         $("#coqtop").text("");
-        if (response.rGoals.focused.length > 0) {
+
+        var nbFocused = response.rGoals.focused.length;
+        var unfocused = response.rGoals.unfocused[0];
+
+        if (nbFocused > 0) {
             _(response.rGoals.focused[0].gHyps).each(function(h) {
                 $("#coqtop").append(PT.showHypothesis(h) + "\n");
             });
             $("#coqtop").append($("<hr>").css("border", "1px solid black"));
             $("#coqtop").append(showTerm(response.rGoals.focused[0].gGoal));
+
+            var goalsDiv = $("<div>")
+                .css("margin-top", "10px")
+                .appendTo("#coqtop")
+            ;
+            var nbUnfocused = (unfocused === undefined)
+                ? 0
+                : unfocused[0].length + unfocused[1].length
+            ;
+            if (nbUnfocused === 0) {
+                goalsDiv.text(
+                    nbFocused + " subgoal" + (nbFocused <= 1 ? "" : "s")
+                );
+            } else {
+                goalsDiv.text(
+                    nbFocused + " focused subgoal" + (nbFocused <= 1 ? "" : "s")
+                        + ", " + nbUnfocused + " unfocused"
+                );
+            }
+
             if (contents !== "") {
                 $("<div>", { "text": contents })
                     .css("margin-top", "10px")
                     .appendTo("#coqtop")
                 ;
             }
+
+        } else if (unfocused !== undefined) {
+
+            var nbRemaining = unfocused[0].length + unfocused[1].length;
+
+            var goalsDiv = $("<div>", {
+                "text": nbRemaining + " remaining subgoal" + (nbRemaining <= 1 ? "" : "s")
+            })
+                .css("margin-top", "10px")
+                .appendTo("#coqtop")
+            ;
+
         } else {
+
             $("#prooftree-button").attr("disabled", true);
             $("#coqtop").text(stripWarning(contents));
+
         }
         break;
     case "Fail":
