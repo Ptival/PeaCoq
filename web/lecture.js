@@ -432,6 +432,7 @@ var goingDown = true, goingUp = false;
 function updateCoqtopPane(direction, response) {
 
     var contents = response.rResponse.contents;
+
     switch (typeof contents) {
     case "string": break;
     case "object":
