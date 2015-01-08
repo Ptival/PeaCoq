@@ -92,7 +92,7 @@ queryHandler input@(HandlerInput hi ho) = do
       response <- liftIO $ do
         -- might want to sanitize? :3
         let query = toString queryBS
-        logAction $ "Serving query:\nSTART\n" ++ query ++ "\nEND"
+        logAction $ "QUERY\nSTART\n" ++ query ++ "\nEND"
         hInterp hi query
         hForceValueResponse ho
       respond response input

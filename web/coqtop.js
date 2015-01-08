@@ -19,9 +19,12 @@ function syncUndo(h)           { syncRequest('undo', undefined, h); }
 function syncParse(q, h)       { syncRequest('parse', q, h); }
 function syncParseEval(q, h)   { syncRequest('parseEval', q, h); }
 function syncParseCheck(q, h)  { syncRequest('parseCheck', q, h); }
-function syncLog(s)            { syncRequest("log", s, function() {}); }
 function syncListLectures(h)   { syncRequest("listLectures", "", h); }
 function syncLoadLecture(q, h) { syncRequest("loadLecture", q, h); }
+function syncLog(s) {
+    var time = "[" + new Date().toLocaleString() + "] ";
+    syncRequest("log", time + s, function() {});
+}
 
 function syncStatus() {
     var result;
