@@ -410,6 +410,20 @@ function editorKeyHandler(evt) {
             break;
         };
 
+    } else if (evt.ctrlKey) {
+
+        switch (evt.keyCode) {
+        case 68: // Ctrl + d deletes the next character for some systems
+            if (isSelectionLocked()) { evt.preventDefault(); return; }
+            break;
+        case 75: // Ctrl + k kills the line for some systems
+            if (isSelectionLocked()) { evt.preventDefault(); return; }
+            break;
+        default:
+            break;
+        };
+
+
     }
 
 }
