@@ -1,4 +1,1 @@
-Config
-{ configUserId  = Nothing
-, configLogPath = "."
-}
+Config { configUserId  = Just "ptival", configLogPath = "/tmp" }

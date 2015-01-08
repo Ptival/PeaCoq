@@ -54,3 +54,11 @@ $LN highlight/ocaml.min.js ocaml.js
 $LN highlight/github.min.css highlight.css
 
 cd ..
+
+if [ "$#" -eq 1 ]; then
+    echo "Config { configUserId  = Just \"$1\", configLogPath = \".\" }" > config.hs
+fi
+
+if [ "$#" -eq 2 ]; then
+    echo "Config { configUserId  = Just \"$1\", configLogPath = \"$2\" }" > config.hs
+fi
