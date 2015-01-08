@@ -558,7 +558,10 @@ function tryProcessing() {
     var index = next(toprocess);
     if (index === 0) { return; }
     // there is a piece to process, mark it as such
-    var pieceToProcess = toprocess.substring(0, index);
+    var pieceToProcess = toprocess
+        .substring(0, index)
+        .replace(/\u200b/g, "") // better safe than sorry...
+    ;
     $("#processing").text(pieceToProcess);
     $("#toprocess").text(toprocess.substring(index));
     // process this piece, then process the rest
