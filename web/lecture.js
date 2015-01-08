@@ -526,6 +526,7 @@ function highlight() {
     $("#processing").html(hljs.highlight("ocaml", $("#processing").text(), true).value);
     $("#toprocess").html(hljs.highlight("ocaml", $("#toprocess").text(), true).value);
     $("#redacting").html(hljs.highlight("ocaml", $("#redacting").text(), true).value);
+    repositionCaret();
 }
 
 function undoCallback(response) {
