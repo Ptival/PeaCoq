@@ -159,7 +159,7 @@ logHandler input = do
     Just messageBS -> do
       let message = toString messageBS
       liftIO $ do
-        putStrLn $ "Attempting to log: " ++ message
+        --putStrLn $ "Attempting to log: " ++ message
         noticeM rootLoggerName message
       respond (Good ["OK"]) input
 
