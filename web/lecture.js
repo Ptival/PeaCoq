@@ -336,21 +336,27 @@ function editorKeyHandler(evt) {
     if (evt.ctrlKey && evt.altKey) {
 
         switch(evt.keyCode) {
-        case 40: case 10: // Down
-            proverDown();
+        case 13: // Enter
+            proverToCaret();
             evt.preventDefault();
+            break;
+        case 33: // PageUp
+            break;
+        case 34: // PageDown
             break;
         case 38: // Up
             proverUp();
             evt.preventDefault();
             break;
-        case 34: // PageDown
-            break;
-        case 33: // PageUp
-            break;
-        case 13: // Enter
-            proverToCaret();
+        case 40: case 10: // Down
+            proverDown();
             evt.preventDefault();
+            break;
+        case 76: // Ctrl + Alt + L
+            $("#load-local-button").click();
+            break;
+        case 83: // Ctrl + Alt + S
+            // TODO: find a way to programatically save
             break;
         default:
             break;
