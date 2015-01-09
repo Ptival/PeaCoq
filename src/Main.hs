@@ -13,8 +13,10 @@ import           Data.IORef
 import qualified Data.IntMap as IM
 import           Data.Time.Format
 import           Data.Time.LocalTime
+import           Network.Socket
 import           Prelude hiding (log)
-import           Snap.Http.Server.Config (defaultConfig)
+import           Snap.Core (MonadSnap)
+import           Snap.Http.Server.Config
 import           Snap.Snaplet
 import           Snap.Snaplet.Session hiding (touchSession)
 import           Snap.Snaplet.Session.Backends.CookieSession (initCookieSessionManager)
@@ -34,6 +36,8 @@ import           Handlers
 import           PeaCoq
 import           Session
 
+configFile = ".PeaCoqConfig.hs"
+
 data GlobalState
   = GlobalState
     Int                      -- next session number
@@ -52,20 +56,35 @@ mainWeb =do
   serveSnaplet defaultConfig $ peacoqSnaplet globRef
 -}
 
-data Config =
-  Config
+data PeaCoqConfig =
+  PeaCoqConfig
   { configUserId  :: Maybe String
   , configLogPath :: FilePath
   }
   deriving (Read)
+
+serverConfig :: MonadSnap m => FilePath -> Config m a
+serverConfig logPath =
+  setStartupHook hook
+  . setPort 0
+  . setAccessLog (ConfigFileLog $ logPath ++ "/access.log")
+  . setErrorLog (ConfigFileLog $ logPath ++ "/error.log")
+  $ defaultConfig
+  where
+    hook dat = do
+      port <- socketPort . head $ getStartupSockets dat
+      putStrLn $ "Server listening on port: " ++ show port
+      putStrLn $ "On recycle, visit: http://recycle.cs.washington.edu:" ++ show port
+      putStrLn $ "On attu, visit: http://attu.cs.washington.edu:" ++ show port
+      putStrLn $ "Otherwise, visit: http://localhost:" ++ show port
 
 {-
 For running the UW study, each participant will run their own instance of the server.
 -}
 mainUW :: IO ()
 mainUW = do
-  curDir <- getCurrentDirectory
-  Config mUserId logPath <- read <$> readFile (curDir ++ "/config.hs")
+  homeDir <- getHomeDirectory
+  PeaCoqConfig mUserId logPath <- read <$> readFile (homeDir ++ "/" ++ configFile)
   case mUserId of
     Just userId -> do
       now <- getZonedTime
@@ -78,7 +97,7 @@ mainUW = do
     Nothing -> return ()
   globRef <- newIORef $ GlobalState 0 IM.empty mUserId
   forkIO $ cleanStaleSessions globRef -- parallel thread to regularly clean up
-  serveSnaplet defaultConfig $ peacoqSnaplet globRef
+  serveSnaplet (serverConfig logPath) $ peacoqSnaplet globRef
 
 sessionTimeoutSeconds :: Int
 sessionTimeoutSeconds = 24 * 3600
