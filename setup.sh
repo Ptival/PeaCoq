@@ -55,10 +55,10 @@ $LN highlight/github.min.css highlight.css
 
 cd ..
 
-if [ "$#" -eq 1 ]; then
-    echo "Config { configUserId  = Just \"$1\", configLogPath = \".\" }" > config.hs
-fi
+CONFIGPATH="${HOME}"
+PEACOQCONFIG=".PeaCoqConfig.hs"
+FILE="${CONFIGPATH}/${PEACOQCONFIG}"
 
-if [ "$#" -eq 2 ]; then
-    echo "Config { configUserId  = Just \"$1\", configLogPath = \"$2\" }" > config.hs
+if [ ! -f $FILE ]; then
+    echo "PeaCoqConfig { configUserId  = Nothing, configLogPath = \"/tmp\" }" > "${FILE}"
 fi
