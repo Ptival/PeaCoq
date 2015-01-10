@@ -36,6 +36,7 @@ import           Handlers
 import           PeaCoq
 import           Session
 
+configFile :: FilePath
 configFile = ".PeaCoqConfig.hs"
 
 data GlobalState
