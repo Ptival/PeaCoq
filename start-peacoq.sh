@@ -22,4 +22,4 @@ pushd "${ZACHHOME}/PeaCoq/" > /dev/null
 
 peacoq &
 
-popd
+popd > /dev/null
