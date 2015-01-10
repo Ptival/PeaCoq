@@ -18,7 +18,7 @@ case "$1" in
         ;;
 esac
 
-pushd "${ZACHOME}/PeaCoq/" > /dev/null
+pushd "${ZACHHOME}/PeaCoq/" > /dev/null
 
 peacoq &
 
