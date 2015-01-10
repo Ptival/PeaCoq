@@ -6,7 +6,7 @@ LOGPATH="${ZACHHOME}/PeaCoq/logs/"
 USERNAME=$(whoami)
 PEACOQCONFIG=".PeaCoqConfig.hs"
 
-export PATH="~ztatlock/.cabal/bin:~ztatlock/local/bin:$PATH"
+export PATH="${ZACHHOME}/.cabal/bin:${ZACHHOME}/local/bin:$PATH"
 
 case "$1" in
     "nolog")
@@ -18,6 +18,8 @@ case "$1" in
         ;;
 esac
 
-cd "${ZACHOME}/PeaCoq/"
+pushd "${ZACHOME}/PeaCoq/" > /dev/null
 
 peacoq &
+
+popd
