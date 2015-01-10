@@ -2,7 +2,6 @@
 var processing = false;
 var prooftree = undefined;
 var nbsp = "&nbsp;";
-var zwsp = "\u200B";
 var namesPossiblyInScope = [];
 
 var delimiters = [".", "{", "}"];
@@ -186,9 +185,12 @@ $(document).ready(function() {
 
     syncResetCoqNoImports();
 
-    $("body").on("keydown", globalKeyHandler);
+    $("body")
+        .on("keydown", globalKeyHandler)
+    ;
     $("#editor")
-        .on("keydown", editorKeyHandler)
+        .keypress(keypressHandler)
+        .keydown(keydownHandler)
         .on("cut", cutHandler)
         .on("paste", pasteHandler)
     ;
@@ -276,7 +278,6 @@ function coq_undot(str) {
         .replace(/\{((?:[^\.]|\.(?!\ ))*)\}/g, "_$1_")
     // make other bullets look like curly braces
         .replace(/(\.\s*)[\-\+\*](?!\))/g, "$1{")
-        .replace(/^([\u200B\s]*)[\-\+\*]/, "$1{")
     ;
 }
 
@@ -335,9 +336,31 @@ function globalKeyHandler(evt) {
     }
 }
 
-function editorKeyHandler(evt) {
+function keypressHandler(evt) {
+    evt.preventDefault();
+    if (isSelectionLocked()) {
+        return;
+    } else {
+        var character = String.fromCharCode(evt.which);
+        insertAtSelection(character);
+    }
+}
+
+function keydownHandler(evt) {
 
     //console.log(evt.keyCode)
+
+    // Delete tends to delete these nodes, add them back if that is the case
+    if ($("#processing").length === 0) {
+        $("<span>", { "id": "processing" }).insertAfter($("#processed"));
+    }
+    if ($("#toprocess").length === 0) {
+        $("<span>", { "id": "toprocess" }).insertAfter($("#processing"));
+    }
+    if ($("#redacting").length === 0) {
+        $("<span>", { "id": "redacting" }).insertAfter($("#toprocess"));
+        repositionCaret();
+    }
 
     if (evt.ctrlKey && evt.altKey) {
 
@@ -375,35 +398,14 @@ function editorKeyHandler(evt) {
             return;
         }
 
-        // characters to be inserted
-        if (
-            (evt.keyCode === 32)
-                || (48 <= evt.keyCode && evt.keyCode <= 90)
-                || (96 <= evt.keyCode && evt.keyCode <= 111)
-                || (186 <= evt.keyCode && evt.keyCode <= 192)
-                || (219 <= evt.keyCode && evt.keyCode <= 222)
-        ) {
-            // TODO: adjust the caret here
-            if (isSelectionLocked()) {
-                //console.log("prevented because locked");
-                evt.preventDefault();
-                return;
-            }
-        }
-
         switch (evt.keyCode) {
         case 8: // Backspace
-            var caretOffset = 0;
-            var sel = rangy.getSelection();
-            if (sel.rangeCount) {
-                var range = sel.getRangeAt(0);
-                var preCaretRange = range.cloneRange();
-                preCaretRange.selectNodeContents($("#redacting")[0]);
-                preCaretRange.setEnd(range.endContainer, range.endOffset);
-                var caretOffset = preCaretRange.toString().length;
-            }
-            if (isSelectionLocked() || caretOffset < 2) {
-                evt.preventDefault(); return;
+            adjustSelection();
+            var s = peacoqGetSelection();
+            if (isSelectionLocked()
+                // or if the backspace action would delete something before #redacting
+                || (s.startSpan.id === "redacting" && s.startOffset === 0)) {
+                evt.preventDefault();
             }
             break;
         case 9: // Tab
@@ -417,10 +419,7 @@ function editorKeyHandler(evt) {
             insertAtSelection("\n");
             break;
         case 46: // Delete
-            evt.preventDefault();
-            if (!isSelectionLocked()) {
-                // TODO: delete correctly
-            }
+            if (isSelectionLocked()) { evt.preventDefault(); }
             break;
         default:
             break;
@@ -596,8 +595,8 @@ function undoCallback(response) {
             if (processed != "") { index = prev(processed); }
             var pieceUnprocessed = processed.substring(index);
             $("#processed").text(processed.substring(0, index));
-            $("#redacting").text(zwsp + pieceUnprocessed + redacting.substring(1));
-            repositionCaret(index === 0 ? 0 : 1); // if at the start of file, no offset
+            $("#redacting").text(pieceUnprocessed + redacting);
+            repositionCaret();
             var pieceUnprocessed = processed.substring(index);
         }
         response.rResponse.contents[0] = ""; // don't show the user the steps number
@@ -615,7 +614,6 @@ function tryProcessing() {
     // there is a piece to process, mark it as such
     var pieceToProcess = toprocess
         .substring(0, index)
-        .replace(/\u200b/g, "") // better safe than sorry...
     ;
     $("#processing").text(pieceToProcess);
     $("#toprocess").text(toprocess.substring(index));
@@ -633,9 +631,9 @@ function tryProcessing() {
             break;
         case "Fail":
             var toprocess = $("#toprocess").text();
-            var redacting = $("#redacting").text().substring(1);
+            var redacting = $("#redacting").text();
             $("#toprocess").text("");
-            $("#redacting").text(zwsp + pieceToProcess + toprocess + redacting);
+            $("#redacting").text(pieceToProcess + toprocess + redacting);
             repositionCaret();
             updateCoqtopPane(goingDown, response);
             break;
@@ -660,23 +658,14 @@ function getCaretPos() {
   then trigger a processing.
 */
 function proverDown() {
-    // some sanity check and tentative fixes
-    if ($("#processing").length === 0) {
-        console.log("#processing is missing, attempting recovery");
-        $("<span>", { "id": "processing" }).insertAfter($("#processed"));
-    }
-    if ($("#toprocess").length === 0) {
-        console.log("#toprocess is missing, attempting recovery");
-        $("<span>", { "id": "toprocess" }).insertAfter($("#processing"));
-    }
     var toprocess = $("#toprocess").text();
     var redacting = $("#redacting").text();
     var index = next(redacting);
     if (index == 0) { return; }
     // 1 because we get rid of the zero-width spacing
-    var pieceToProcess = redacting.substring(1, index);
+    var pieceToProcess = redacting.substring(0, index);
     $("#toprocess").text(toprocess + pieceToProcess);
-    $("#redacting").text(zwsp + redacting.substring(index));
+    $("#redacting").text(redacting.substring(index));
     syncLog("PROVERDOWN " + pieceToProcess);
     repositionCaret();
     tryProcessing();
@@ -704,9 +693,9 @@ function proverToCaret () {
         if (!_(delimiters).contains(redacting[index-1])) {
             index += next(redacting.substring(index));
         }
-        var pieceToProcess = redacting.substring(1, index); // 1 for zwsp
+        var pieceToProcess = redacting.substring(0, index);
         $("#toprocess").text(toprocess + pieceToProcess);
-        $("#redacting").text(zwsp + redacting.substring(index));
+        $("#redacting").text(redacting.substring(index));
         syncLog("PROVERDOWN " + pieceToProcess);
         repositionCaret();
         tryProcessing();
@@ -727,9 +716,9 @@ function proverUp () {
     var pieceToUnprocess = processed.substring(index);
     if (pieceToUnprocess !== "") {
         $("#processed").text(processed.substring(0, index));
-        $("#redacting").text(zwsp + pieceToUnprocess + redacting.substring(1));
+        $("#redacting").text(pieceToUnprocess + redacting);
         syncLog("PROVERUP " + pieceToUnprocess);
-        repositionCaret(index === 0 ? 0 : 1); // if at the start of file, no offset
+        repositionCaret(); // if at the start of file, no offset
         syncUndo(undoCallback);
     }
 }
@@ -740,8 +729,11 @@ function repositionCaret(offset) {
     if (offset === undefined) { offset = 0; }
     var sel = rangy.getSelection();
     var rng = rangy.createRange();
-    // 1 for the zwsp
-    rng.setStart($("#redacting").contents()[0], 1 + offset);
+    var contents = $("#redacting").contents();
+    rng.setStart(
+        (contents.length === 0) ? $("#redacting")[0] : contents[0],
+        offset
+    );
     sel.setSingleRange(rng);
 
     // now let's scroll so that the cursor is visible
@@ -1000,7 +992,7 @@ function loadLocal() {
 
 function saveLocal() {
 
-    var text = $("#editor").text().replace(/\u200B/g, ""); // get rid of zwsp
+    var text = $("#editor").text();
     var blob = new Blob([text], {type:'text/plain'});
     var url = window.URL.createObjectURL(blob);
     $("#save-local-link").attr("href", url);
@@ -1052,7 +1044,7 @@ function resetEditorWith(text) {
             .attr("id", "redacting")
             .css("display", "inline")
             .css("padding", 0)
-            .text(zwsp + text)
+            .text(text)
     );
 
 }
@@ -1084,8 +1076,6 @@ function peacoqGetSelection() {
     endRange.setEnd(sel.focusNode, sel.focusOffset);
     res.endOffset = endRange.toString().length;
 
-    //console.log(res);
-
     return res;
 }
 
@@ -1094,15 +1084,23 @@ function adjustSelection() {
     var sel = rangy.getSelection();
     var rng = sel.getRangeAt(0);
 
-    if (s.startSpan.id === "redacting" && s.startOffset === 0) {
-        rng.setStart($(s.startSpan).contents()[0], 1);
+    // if there is no selection, it's easy
+    if (s.startSpan === s.endSpan && s.startOffset === s.endOffset) {
+        var span = s.startSpan;
+        var offset = s.startOffset;
+        var processing = $("#processing").text();
+        var toprocess = $("#toprocess").text();
+        if (span.id === "processed" && offset === span.textContent.length
+            && processing.length === 0 && toprocess.length === 0) {
+            var contents = $("#redacting").contents();
+            var target = (contents.length === 0) ? $("#redacting")[0] : contents[0];
+            rng.setStart(target, 0);
+            rng.setEnd(target, 0);
+            sel.setSingleRange(rng);
+        }
+    } else {
+        // TODO: a bit harder when there is a selection
     }
-
-    if (s.endSpan.id === "redacting" && s.endOffset === 0) {
-        rng.setEnd($(s.endSpan).contents()[0], 1);
-    }
-
-    sel.setSingleRange(rng);
 }
 
 function isSelectionLocked() {
@@ -1120,7 +1118,6 @@ function pasteHandler(evt) {
     if (isSelectionLocked()) { return; }
     var clipped =
         evt.originalEvent.clipboardData.getData("text/plain")
-        .replace(/\u200b/g, "") // if the user copied over our zwsp, get rid of it
     ;
     var sel = rangy.getSelection();
     var range = sel.getRangeAt(0);
