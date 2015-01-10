@@ -187,8 +187,14 @@ $(document).ready(function() {
     syncResetCoqNoImports();
 
     $("body").on("keydown", globalKeyHandler);
-    $("#editor").on("keydown", editorKeyHandler);
+    $("#editor")
+        .on("keydown", editorKeyHandler)
+        .on("cut", cutHandler)
+        .on("paste", pasteHandler)
+    ;
     PT.handleKeyboard();
+
+    $("#editor").focus();
 
 });
 
@@ -377,6 +383,7 @@ function editorKeyHandler(evt) {
                 || (186 <= evt.keyCode && evt.keyCode <= 192)
                 || (219 <= evt.keyCode && evt.keyCode <= 222)
         ) {
+            // TODO: adjust the caret here
             if (isSelectionLocked()) {
                 //console.log("prevented because locked");
                 evt.preventDefault();
@@ -410,7 +417,10 @@ function editorKeyHandler(evt) {
             insertAtSelection("\n");
             break;
         case 46: // Delete
-            if (isSelectionLocked()) { evt.preventDefault(); return; }
+            evt.preventDefault();
+            if (!isSelectionLocked()) {
+                // TODO: delete correctly
+            }
             break;
         default:
             break;
@@ -640,7 +650,7 @@ function tryProcessing() {
 function getCaretPos() {
     var sel = rangy.getSelection();
     var rng = rangy.createRange();
-    rng.selectNodeContents($("#editor").get(0));
+    rng.selectNodeContents($("#editor")[0]);
     rng.setEnd(sel.focusNode, sel.focusOffset);
     return rng.toString().length;
 }
@@ -1047,20 +1057,73 @@ function resetEditorWith(text) {
 
 }
 
-function isSelectionLocked() {
+/*
+  should return an object
+  {
+  startSpan:   the <span> in which the focusNode lives,
+  startOffset: the offset at which the selection is relative to startSpan,
+  endSpan:     the <span> in which the anchorNode lives,
+  endOffset:   the offset at which the selection is relative to endSpan,
+  }
+*/
+function peacoqGetSelection() {
+    var res = {};
     var sel = rangy.getSelection();
-    var selStart = $(sel.focusNode).closest("#editor >")[0];
-    var selEnd = $(sel.anchorNode).closest("#editor >")[0];
-    if (selStart === undefined) { return true; }
-    switch (selStart.id) {
-    case "processed":
-    case "processing":
-    case "toprocess":
-        return true;
-    case "redacting":
-        return false;
-    default:
-        console.log("selStart", selStart);
-        return true;
-    };
+
+    res.startSpan = $(sel.anchorNode).closest("#editor >")[0];
+
+    var startRange = rangy.createRange();
+    startRange.selectNodeContents(res.startSpan);
+    startRange.setEnd(sel.anchorNode, sel.anchorOffset);
+    res.startOffset = startRange.toString().length;
+
+    res.endSpan = $(sel.focusNode).closest("#editor >")[0];
+
+    var endRange = rangy.createRange();
+    endRange.selectNodeContents(res.endSpan);
+    endRange.setEnd(sel.focusNode, sel.focusOffset);
+    res.endOffset = endRange.toString().length;
+
+    //console.log(res);
+
+    return res;
+}
+
+function adjustSelection() {
+    var s = peacoqGetSelection();
+    var sel = rangy.getSelection();
+    var rng = sel.getRangeAt(0);
+
+    if (s.startSpan.id === "redacting" && s.startOffset === 0) {
+        rng.setStart($(s.startSpan).contents()[0], 1);
+    }
+
+    if (s.endSpan.id === "redacting" && s.endOffset === 0) {
+        rng.setEnd($(s.endSpan).contents()[0], 1);
+    }
+
+    sel.setSingleRange(rng);
+}
+
+function isSelectionLocked() {
+    adjustSelection();
+    var s = peacoqGetSelection();
+    return (s.startSpan.id !== "redacting" || s.endSpan.id !== "redacting");
+}
+
+function cutHandler(evt) {
+    if (isSelectionLocked()) { return; }
+}
+
+function pasteHandler(evt) {
+    evt.preventDefault();
+    if (isSelectionLocked()) { return; }
+    var clipped =
+        evt.originalEvent.clipboardData.getData("text/plain")
+        .replace(/\u200b/g, "") // if the user copied over our zwsp, get rid of it
+    ;
+    var sel = rangy.getSelection();
+    var range = sel.getRangeAt(0);
+    range.deleteContents();
+    insertAtSelection(clipped);
 }
