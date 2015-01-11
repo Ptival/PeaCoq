@@ -623,6 +623,10 @@ function tryProcessing() {
     ;
     $("#processing").text(pieceToProcess);
     $("#toprocess").text(toprocess.substring(index));
+    // sometimes, a leftover \n stays in the #toprocess area, remove it
+    if($("#toprocess").text().trim === "") {
+        $("#toprocess").text("");
+    }
     // process this piece, then process the rest
     processing = true;
     asyncQuery(pieceToProcess, function(response) {
