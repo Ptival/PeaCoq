@@ -774,12 +774,12 @@ function insertAtSelection(txt) {
     var sel, newrange;
     sel = rangy.getSelection();
     if (sel.rangeCount > 0) {
-        newrange = insertText(txt,sel.getRangeAt(0));
+        newrange = insertText(txt, sel.getRangeAt(0));
         sel.setSingleRange(newrange);
     }
 }
 
-function insertText(txt,inrange) {
+function insertText(txt, inrange) {
     var range = inrange.cloneRange();
     var tn = document.createTextNode(txt);
     range.insertNode(tn);
