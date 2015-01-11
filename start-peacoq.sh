@@ -20,6 +20,6 @@ esac
 
 pushd "${ZACHHOME}/PeaCoq/" > /dev/null
 
-peacoq &
+peacoq 2>/dev/null &
 
 popd > /dev/null
