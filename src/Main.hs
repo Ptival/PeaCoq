@@ -64,14 +64,16 @@ data PeaCoqConfig =
   }
   deriving (Read)
 
-serverConfig :: MonadSnap m => FilePath -> Config m a
-serverConfig logPath =
-  setStartupHook hook
-  . setPort 0
-  . setAccessLog (ConfigFileLog $ logPath ++ "/access.log")
-  . setErrorLog (ConfigFileLog $ logPath ++ "/error.log")
+serverConfig :: MonadSnap m => FilePath -> Maybe String -> String -> Config m a
+serverConfig logPath mUserId nowString =
+  setStartupHook hook -- this hook will figure out which port was used and print it
+  . setPort 0 -- 0 means that unless specified, pick a random port
+  . setAccessLog (ConfigFileLog $ prefix mUserId ++ "access.log")
+  . setErrorLog (ConfigFileLog $ prefix mUserId ++ "error.log")
   $ defaultConfig
   where
+    prefix (Just userId) = logPath ++ "/" ++ userId ++ nowString ++ "-"
+    prefix Nothing       = logPath ++ "/" ++ nowString ++ "-"
     hook dat = do
       port <- socketPort . head $ getStartupSockets dat
       putStrLn $ "Server listening on port: " ++ show port
@@ -86,10 +88,10 @@ mainUW :: IO ()
 mainUW = do
   homeDir <- getHomeDirectory
   PeaCoqConfig mUserId logPath <- read <$> readFile (homeDir ++ "/" ++ configFile)
+  now <- getZonedTime
+  let nowString = formatTime defaultTimeLocale "-%F-%H-%M-%S" now
   case mUserId of
     Just userId -> do
-      now <- getZonedTime
-      let nowString = formatTime defaultTimeLocale "-%F-%H-%M-%S" now
       handler <- fileHandler (logPath ++ "/" ++ userId ++ nowString ++ ".log") loggingPriority
       let format = simpleLogFormatter "[$time] $msg"
       let fHandler = setFormatter handler format
@@ -98,7 +100,7 @@ mainUW = do
     Nothing -> return ()
   globRef <- newIORef $ GlobalState 0 IM.empty mUserId
   forkIO $ cleanStaleSessions globRef -- parallel thread to regularly clean up
-  serveSnaplet (serverConfig logPath) $ peacoqSnaplet globRef
+  serveSnaplet (serverConfig logPath mUserId nowString) $ peacoqSnaplet globRef
 
 sessionTimeoutSeconds :: Int
 sessionTimeoutSeconds = 24 * 3600
