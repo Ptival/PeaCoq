@@ -1,3 +1,5 @@
 #!/usr/bin/env bash
 
-killall peacoq
+USERNAME=$(whoami)
+
+killall -u $USERNAME peacoq > /dev/null
