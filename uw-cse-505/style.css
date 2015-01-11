@@ -1,0 +1,50 @@
+html {
+  font-family: sans-serif;
+}
+body {
+  max-width: 800px;
+  margin: 30px auto;
+  padding: 15px;
+}
+h1 {
+  font-size: 24pt;
+  color: green;
+}
+h2 {
+  font-size: 18pt;
+  color: green;
+}
+p {
+  font-size: 14pt;
+}
+.it {
+  font-style: italic;
+}
+#nav ul {
+  padding: 0;
+}
+#nav li {
+  display: inline;
+  list-style-type: none;
+  padding-right: 20px;
+  font-size: 14pt;
+}
+#overview table {
+  margin-left: 15px;
+}
+#overview td {
+  padding-right: 15px;
+  font-size: 14pt;
+}
+.pad-top {
+  padding-top: 10px;
+}
+#links li {
+  font-size: 14pt;
+  padding-bottom: 10px;
+}
+#listing li {
+  font-size: 14pt;
+  font-family: monospace;
+  padding-bottom: 10px;
+}

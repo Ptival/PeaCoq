@@ -1,0 +1,200 @@
+<html>
+<head>
+  <title>CSE 505 Winter 2015</title>
+  <link rel='stylesheet' type='text/css' href='style.css'>
+</head>
+<body>
+  <h1>Principles of Programming Languages 2015</h1>
+  <div id='nav'>
+    <ul>
+      <li><a href='http://piazza.com/washington/winter2015/cse505/home'>Piazza</a></li>
+      <li><a href='#lecture'>Lecture</a></li>
+      <li><a href='#homework'>Homework</a></li>
+      <li><a href='#exams'>Exams</a></li>
+      <li><a href='#peacoq'>PeaCoq</a></li>
+      <li><a href='#links'>Links</a></li>
+    </ul>
+  </div>
+  <hr>
+  <div id='overview'>
+    <p>
+
+    This quarter we'll learn some techniques for thinking crisply about
+    programming languages, write some fascinating programs, and discuss the
+    design tradeoffs different language features present.  Also, together
+    we'll conduct a grand experiment: covering the traditional 505 material
+    using the <a href='https://coq.inria.fr/'>Coq</a> proof assistant and a
+    new interface called <a href='http://goto.ucsd.edu/peacoq/'>PeaCoq</a>.
+
+    </p>
+    <table><tr>
+      <td class='it'>Meeting</td>
+      <td>Mon, Wed 10:30
+        <a href='http://www.css.washington.edu/room/MGH+251'>MGH 251</a>
+      </td>
+    <tr></tr>
+      <td class='pad-top it'>Instructor</td>
+      <td class='pad-top'>
+        <a href='http://homes.cs.washington.edu/~ztatlock/'>Zach Tatlock</a>
+        (ztatlock@cs)
+      </td>
+    <tr></tr>
+      <td></td>
+      <td>Fri 10:30
+        <a href='http://www.washington.edu/maps/#!/cse'>CSE</a> 546
+      </td>
+    <tr></tr>
+      <td class='pad-top it'>TA</td>
+      <td class='pad-top'>
+        <a href='http://homes.cs.washington.edu/~emullen/'>Eric Mullen</a>
+        (emullen@cs)
+      </td>
+    <tr></tr>
+      <td></td>
+      <td>Thu 2:30
+        <a href='http://www.washington.edu/maps/#!/cse'>CSE</a> 678
+      </td>
+    <tr></tr>
+      <td class='pad-top it'>Dr. PeaCoq</td>
+      <td class='pad-top'>
+        <a href='http://cseweb.ucsd.edu/~vrobert/'>Valentin Robert</a>
+      </td>
+<!--
+    <tr></tr>
+      <td></td>
+      <td>Tue 2:30
+        <a href='http://www.washington.edu/maps/#!/cse'>CSE</a> 678
+      </td>
+-->
+    <tr></tr>
+      <td class='pad-top it'>Discussion</td>
+      <td class='pad-top'>
+        <a href='http://piazza.com/washington/winter2015/cse505/home'>Piazza</a>
+      </td>
+    <tr></tr>
+      <td class='pad-top it'>Mailing List</td>
+      <td class='pad-top'>
+        <a href='https://mailman1.u.washington.edu/mailman/listinfo/cse505a_wi15'>
+          cse505a_wi15@uw.edu
+        </a>
+      </td>
+    </tr></table>
+    <p>
+
+    Throughout the quarter, grades will be posted at the <a
+      href='https://catalyst.uw.edu/gradebook/ztatlock/91217'>505 Grade
+      Book</a>.
+    </p>
+  </div>
+  <div id='lecture'>
+    <h2><a id='#lecture'></a>Lecture</h2>
+    <p>
+      <a href='https://docs.google.com/presentation/d/1Hqfg727_N84BQpFjnVfuQwVzWCGc--Hzx7Fw7I8TYRI/edit?usp=sharing'>
+      Episode 02</a> : Hello PeaCoq (<a href='e02/materials.html'>materials</a>)
+    </p>
+    <p>
+      <a href='https://docs.google.com/presentation/d/1dM4IjSQ9ClsCOKku0mbWaPfbjQvrG9LMbtP8WsqkBoI/edit?usp=sharing'>
+      Episode 01</a> : And So It Begins (<a href='e01/materials.html'>materials</a>)
+    </p>
+  </div>
+  <div id='homework'>
+    <h2><a id='#homework'></a>Homework</h2>
+    <p>
+
+    You can submit homework at the
+    <a href='https://catalyst.uw.edu/collectit/dropbox/ztatlock/34036'>
+    505 Dropbox</a>.
+
+    </p>
+  </div>
+  <div id='exams'>
+    <h2><a id='#exams'></a>Exams</h2>
+  </div>
+  <div id='peacoq'>
+    <h2><a id='#peacoq'></a>PeaCoq</h2>
+    <p>How to run PeaCoq on recycle / tricycle / bicycle:</p>
+    <iframe width="800" height="600"
+      src="//www.youtube.com/embed/M_fwlQTg-eg"
+      frameborder="0" allowfullscreen></iframe>
+    <pre>
+$ ssh recycle.cs.washington.edu
+$ ~ztatlock/PeaCoq/start-peacoq.sh
+[ links to your PeaCoq instance will show up here  ]
+[ click on the recycle link to go to the editor    ]
+[ when you're done, kill the server with Control-C ]
+^C
+$ logout
+    </pre>
+
+    <p>How to run PeaCoq on attu:</p>
+    <iframe width="800" height="600"
+      src="//www.youtube.com/embed/JqsLgvUSHO0"
+      frameborder="0" allowfullscreen></iframe>
+    <pre>
+$ ssh recycle.cs.washington.edu
+$ ~ztatlock/PeaCoq/start-peacoq.sh
+[ links to your PeaCoq instance will show up here  ]
+[ click on the attu link to go to the editor       ]
+[ when you're done, kill the server with Control-C ]
+^C
+$ logout
+    </pre>
+  </div>
+  <div id='links'>
+    <h2><a id='#links'></a>Links</h2>
+    <p>Superb Optional References:</p>
+    <ul><li>
+      <a href='http://homes.cs.washington.edu/~djg/teachingMaterials/gpl/'>
+        505: The Original Series
+      </a> by <a href='http://homes.cs.washington.edu/~djg/'>
+        Dan Grossman
+      </a>
+    </li><li>
+      <a href='http://gallium.inria.fr/~xleroy/courses/Eugene-2012/'>
+        Proving a Compiler
+      </a> and the
+      <a href='http://gallium.inria.fr/~xleroy/courses/Eugene-2011/'>
+        previous version
+      </a> by <a href='http://gallium.inria.fr/~xleroy/'>
+        Xavier Leroy
+      </a>
+    </li><li>
+      <a href='http://www.cis.upenn.edu/~bcpierce/sf/current/index.html'>
+        Software Foundations
+      </a> by <a href='http://www.cis.upenn.edu/~bcpierce/'>
+        Benjamin Pierce
+      </a>
+    </li><li>
+      <a href='http://www.cis.upenn.edu/~bcpierce/tapl/index.html'>
+        Types and Programming Languages
+      </a> by <a href='http://www.cis.upenn.edu/~bcpierce/'>
+        Benjamin Pierce
+      </a>
+    </li><li>
+      <a href='http://adam.chlipala.net/cpdt/'>
+        Certified Programming with Dependent Types
+      </a> by <a href='http://adam.chlipala.net/'>
+        Adam Chlipala
+      </a>
+    </li><li>
+      <a href='https://coq.inria.fr/'>
+        Coq
+      </a> by <a href='http://www.inria.fr/en/'>
+        INRIA
+      </a>
+    </li><li>
+      <a href='https://coq.inria.fr/'>
+        CoqIDE
+      </a> by <a href='https://coq.inria.fr/distrib/current/refman/Reference-Manual018.html'>
+        INRIA
+      </a>
+    </li><li>
+      <a href='http://proofgeneral.inf.ed.ac.uk/'>
+        Proof General
+      </a> by <a href='http://homepages.inf.ed.ac.uk/da/'>
+        David Aspinall
+      </a>
+    </li></ul>
+  </div>
+</body>
+</html>
