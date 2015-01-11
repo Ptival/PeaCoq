@@ -337,6 +337,12 @@ function globalKeyHandler(evt) {
 }
 
 function keypressHandler(evt) {
+    var toIgnore = [
+        0, // most keys
+        8, // Backspace
+    ];
+    // Firefox triggers this for all events, ignore those that aren't characters
+    if (_(toIgnore).contains(evt.which)) { return; }
     evt.preventDefault();
     if (isSelectionLocked()) {
         return;
