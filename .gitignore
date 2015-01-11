@@ -1,6 +1,4 @@
-
-encryption_key
-
 dist/
+encryption_key
 log/
-
+logs/
