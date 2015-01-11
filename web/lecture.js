@@ -1050,7 +1050,7 @@ function resetEditorWith(text) {
             .attr("id", "redacting")
             .css("display", "inline")
             .css("padding", 0)
-            .text(text)
+            .text(text + "\n")
     );
 
 }
