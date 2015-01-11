@@ -2,4 +2,4 @@
 
 USERNAME=$(whoami)
 
-killall -u $USERNAME peacoq > /dev/null
+killall -u $USERNAME peacoq &> /dev/null
