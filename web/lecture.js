@@ -423,6 +423,7 @@ function keydownHandler(evt) {
             evt.preventDefault();
             if (isSelectionLocked()) { return; }
             insertAtSelection("\n");
+            scrollViewToCaret();
             break;
         case 46: // Delete
             if (isSelectionLocked()) { evt.preventDefault(); }
@@ -746,9 +747,15 @@ function repositionCaret(offset) {
     );
     sel.setSingleRange(rng);
 
+    scrollViewToCaret();
+
+}
+
+function scrollViewToCaret() {
+
     // now let's scroll so that the cursor is visible
     var cursorMargin = 40; // about two lines
-    var cursorTop = $("#redacting")[0].getBoundingClientRect().top;
+    var cursorTop = getCaretVerticalPosition();
     var editorRect = $("#editor")[0].getBoundingClientRect();
     var editorBottom = editorRect.bottom;
     var editorTop = editorRect.top;
@@ -791,6 +798,16 @@ function insertText(txt, inrange) {
     range.normalizeBoundaries();
     range.collapse(false);
     return range;
+}
+
+function getCaretVerticalPosition() {
+    var sel = rangy.getSelection();
+    var range = sel.getRangeAt(0).cloneRange();
+    var span = $("<span>", { "id": "toremove", "text": " " })[0];
+    range.insertNode(span);
+    var caretTop = span.getBoundingClientRect().top;
+    span.remove();
+    return caretTop;
 }
 
 function switchToProofUI() {
