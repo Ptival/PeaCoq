@@ -84,7 +84,7 @@ PT.tCompute = PT.tReflexivity.concat(['compute']);
 PT.allTactics = PT.tDiscriminate;
 
 PT.uwSet = [
-    "simpl", "simpl in *", "reflexivity", "intro", "rewrite", "destruct", "induction", "inversion", "left", "right", "split", "discriminate", "firstorder", "f_equal", "apply", "eapply", "constructor", "subst"
+    "simpl", "simpl in *", "reflexivity", "intro", "rewrite", "destruct", "induction", "left", "right", "split", "discriminate", "firstorder", "f_equal", "apply", "eapply", "constructor", "subst", "inversion", "omega"
 ];
 
 function getAllChildren(n) {
