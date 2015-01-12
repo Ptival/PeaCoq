@@ -83,7 +83,7 @@ comment { TokComment $$ }
 %right "++"
 %right "::"
 %left "&&" "||"
-%nonassoc '<' '>'
+%nonassoc '<' '>' "<=" ">="
 %left '+' '-'
 %left '*'
 %nonassoc '(' ')'
