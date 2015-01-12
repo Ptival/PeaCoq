@@ -627,6 +627,7 @@ function tryProcessing() {
     if($("#toprocess").text().trim === "") {
         $("#toprocess").text("");
     }
+    syncLog("PROVERDOWN " + pieceToProcess);
     // process this piece, then process the rest
     processing = true;
     asyncQuery(pieceToProcess, function(response) {
@@ -676,7 +677,6 @@ function proverDown() {
     var pieceToProcess = redacting.substring(0, index);
     $("#toprocess").text(toprocess + pieceToProcess);
     $("#redacting").text(redacting.substring(index));
-    syncLog("PROVERDOWN " + pieceToProcess);
     repositionCaret();
     tryProcessing();
 }
