@@ -483,10 +483,10 @@ function updateCoqtopPane(direction, response) {
 
         if (nbFocused > 0) {
             _(response.rGoals.focused[0].gHyps).each(function(h) {
-                $("#coqtop").append(PT.showHypothesis(h) + "\n");
+                $("#coqtop").append(PT.showHypothesis(extractHypothesis(h)) + "\n");
             });
             $("#coqtop").append($("<hr>").css("border", "1px solid black"));
-            $("#coqtop").append(showTerm(response.rGoals.focused[0].gGoal));
+            $("#coqtop").append(showTerm(extractGoal(response.rGoals.focused[0].gGoal)));
 
             var goalsDiv = $("<div>")
                 .css("margin-top", "10px")
