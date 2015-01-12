@@ -72,7 +72,7 @@ serverConfig logPath mUserId nowString =
   . setErrorLog (ConfigFileLog $ prefix mUserId ++ "error.log")
   $ defaultConfig
   where
-    prefix (Just userId) = logPath ++ "/" ++ userId ++ nowString ++ "-"
+    prefix (Just userId) = logPath ++ "/" ++ userId ++ "-" ++ nowString ++ "-"
     prefix Nothing       = logPath ++ "/" ++ nowString ++ "-"
     hook dat = do
       port <- socketPort . head $ getStartupSockets dat
@@ -89,10 +89,10 @@ mainUW = do
   homeDir <- getHomeDirectory
   PeaCoqConfig mUserId logPath <- read <$> readFile (homeDir ++ "/" ++ configFile)
   now <- getZonedTime
-  let nowString = formatTime defaultTimeLocale "-%F-%H-%M-%S" now
+  let nowString = formatTime defaultTimeLocale "%F-%H-%M-%S" now
   case mUserId of
     Just userId -> do
-      handler <- fileHandler (logPath ++ "/" ++ userId ++ nowString ++ ".log") loggingPriority
+      handler <- fileHandler (logPath ++ "/" ++ userId ++ "-" ++ nowString ++ ".log") loggingPriority
       let format = simpleLogFormatter "[$time] $msg"
       let fHandler = setFormatter handler format
       updateGlobalLogger rootLoggerName (setLevel loggingPriority . addHandler fHandler)
