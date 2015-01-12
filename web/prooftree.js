@@ -83,6 +83,10 @@ PT.tDiscriminate = PT.tSet.slice(0, 1 + PT.tSet.indexOf('discriminate'));
 PT.tCompute = PT.tReflexivity.concat(['compute']);
 PT.allTactics = PT.tDiscriminate;
 
+PT.uwSet = [
+    "simpl", "simpl in *", "reflexivity", "intro", "rewrite", "destruct", "induction", "inversion", "left", "right", "split", "discriminate", "firstorder", "f_equal", "apply", "eapply", "constructor", "subst"
+];
+
 function getAllChildren(n) {
     return n.allChildren;
 }
@@ -642,6 +646,16 @@ ProofTree.prototype.tryAllTactics = function() {
             _(curHyps).each(function(h) {
                 run('rewrite -> ' + h.hName);
                 run('rewrite <- ' + h.hName);
+            });
+            break;
+        case "apply":
+            _(curHyps).each(function(h) {
+                run('apply ' + h.hName);
+            });
+            break;
+        case "eapply":
+            _(curHyps).each(function(h) {
+                run('eapply ' + h.hName);
             });
             break;
         default:

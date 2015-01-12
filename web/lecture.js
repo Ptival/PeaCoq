@@ -868,6 +868,9 @@ function enterProofTree() {
             var applies = _(namesPossiblyInScope).map(function(name) {
                 return "apply " + name;
             }).value();
+            var eapplies = _(namesPossiblyInScope).map(function(name) {
+                return "eapply " + name;
+            }).value();
             var leftRewrites = _(namesPossiblyInScope).map(function(name) {
                 return "rewrite -> " + name;
             }).value();
@@ -875,7 +878,7 @@ function enterProofTree() {
                 return "rewrite <- " + name;
             }).value();
             // tDiscriminate first for simplicity
-            return PT.tDiscriminate.concat(applies, leftRewrites, rightRewrites);
+            return PT.uwSet.concat(applies, eapplies, leftRewrites, rightRewrites);
         }
     );
 
