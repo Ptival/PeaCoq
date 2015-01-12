@@ -109,7 +109,7 @@ Fixpoint size (nt: nat_tree) : nat :=
 
 Define avg to compute the arithmetic mean of all the nats in a nat_tree.
 
-Note: / is nat division.
+Notes: Infix / is nat division. The average of an empty tree will be 0.
 *)
 Definition avg (nt: nat_tree) : nat :=
   (* TODO *)
@@ -162,7 +162,7 @@ Definition prod' := (* TODO *) 1.
 
 Define avg' to compute the arithmetic mean of all the nats in a nat_tree.
 
-For full credit, do not use recursion (keep the Definition, don't change to Fixpoint).
+For full credit, use fold.
 
 Hint: Use let and a pair.
 *)
@@ -214,8 +214,9 @@ Proof.
   (* [PROBLEM 16] *)
 Admitted.
 
+(* Hint: use nat_le_ok *)
 Lemma nat_lt_ok:
-  forall m n, nat_le m n = true -> m < n.
+  forall m n, nat_lt m n = true -> m < n.
 Proof.
   (* [PROBLEM 17] *)
 Admitted.
