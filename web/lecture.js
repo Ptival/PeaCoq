@@ -1009,6 +1009,8 @@ function saveLocal() {
     var blob = new Blob([text], {type:'text/plain'});
     var url = window.URL.createObjectURL(blob);
     $("#save-local-link").attr("href", url);
+    $("#editor").focus();
+    repositionCaret();
 
 }
 
