@@ -2537,6 +2537,14 @@ function showTermAux(t, indentation, precParent, newline) {
                 + showTermAux(c[1], indentation + 1, precParent, newline)
         );
 
+    case "Lambda":
+        return par(
+            precForall,
+            syntax("λ") + nbsp + showBinders(c[0]) + syntax(",")
+                + (newline ? "<br/>" + getIndent(indentation + 1) : " ")
+                + showTermAux(c[1], indentation + 1, precParent, newline)
+        );
+
     case "Exists":
         return par(
             precForall,

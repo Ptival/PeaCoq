@@ -51,6 +51,7 @@ tokens :-
   "match"       { tok TokMatch }
   "with"        { tok TokWith }
   "end"         { tok TokEnd }
+  "fun"         { tok TokFun }
   "Inductive"   { tok TokInductive }
   "Theorem"     { tok TokTheorem }
   "Lemma"       { tok TokLemma }
@@ -116,6 +117,7 @@ data Token
   | TokMatch
   | TokWith
   | TokEnd
+  | TokFun
   | TokInductive
   | TokTheorem
   | TokLemma

@@ -65,6 +65,7 @@ comment { TokComment $$ }
 "match" { TokMatch }
 "with" { TokWith }
 "end" { TokEnd }
+"fun" { TokFun }
 "Inductive" { TokInductive }
 "Theorem" { TokTheorem }
 "Lemma" { TokLemma }
@@ -109,33 +110,34 @@ Sentence :: { Vernac }
 | "Check" Term '.' { Check $2 }
 
 Term :: { Term }
-: QualId                { Var $1 }
-| num                   { Var $1 }
-| str                   { Var $1 }
-| '∀' Binders ',' Term  { Forall $2 $4 }
-| 'λ' Binders ',' Term  { Lambda $2 $4 }
-| '∃' Binders ',' Term  { Exists $2 $4 }
-| Term '→' Term         { Arrow $1 $3 }
-| Term '=' Term         { App (App (Var "eq") $1) $3 }
-| Term '≠' Term         { App (Var "not") (App (App (Var "eq") $1) $3) }
-| Term '+' Term         { App (App (Var "plus")  $1) $3 }
-| Term '-' Term         { App (App (Var "minus") $1) $3 }
-| Term '*' Term         { App (App (Var "mult")  $1) $3 }
-| Term '∧' Term         { App (App (Var "and")   $1) $3 }
-| Term '∨' Term         { App (App (Var "or")    $1) $3 }
-| '¬' Term              { App (Var "neg") $2 }
-| Term '<' Term         { App (App (Var "lt")    $1) $3 }
-| Term '>' Term         { App (App (Var "gt")    $1) $3 }
-| Term "<=" Term        { App (App (Var "le")    $1) $3 }
-| Term ">=" Term        { App (App (Var "ge")    $1) $3 }
-| Term "&&" Term        { App (App (Var "andb")  $1) $3 }
-| Term "||" Term        { App (App (Var "orb")   $1) $3 }
-| Term "::" Term        { App (App (Var "cons")  $1) $3 }
-| Term "++" Term        { App (App (Var "app")   $1) $3 }
-| "[]"                  { Var "nil" }
-| Term '%' var          { $1 }
-| Term Term %prec APP   { App $1 $2 }
-| '(' Term ')'          { $2 }
+: QualId                  { Var $1 }
+| num                     { Var $1 }
+| str                     { Var $1 }
+| '∀' Binders ',' Term    { Forall $2 $4 }
+| 'λ' Binders ',' Term    { Lambda $2 $4 }
+| "fun" Binders "=>" Term { Lambda $2 $4 }
+| '∃' Binders ',' Term    { Exists $2 $4 }
+| Term '→' Term           { Arrow $1 $3 }
+| Term '=' Term           { App (App (Var "eq") $1) $3 }
+| Term '≠' Term           { App (Var "not") (App (App (Var "eq") $1) $3) }
+| Term '+' Term           { App (App (Var "plus")  $1) $3 }
+| Term '-' Term           { App (App (Var "minus") $1) $3 }
+| Term '*' Term           { App (App (Var "mult")  $1) $3 }
+| Term '∧' Term           { App (App (Var "and")   $1) $3 }
+| Term '∨' Term           { App (App (Var "or")    $1) $3 }
+| '¬' Term                { App (Var "neg") $2 }
+| Term '<' Term           { App (App (Var "lt")    $1) $3 }
+| Term '>' Term           { App (App (Var "gt")    $1) $3 }
+| Term "<=" Term          { App (App (Var "le")    $1) $3 }
+| Term ">=" Term          { App (App (Var "ge")    $1) $3 }
+| Term "&&" Term          { App (App (Var "andb")  $1) $3 }
+| Term "||" Term          { App (App (Var "orb")   $1) $3 }
+| Term "::" Term          { App (App (Var "cons")  $1) $3 }
+| Term "++" Term          { App (App (Var "app")   $1) $3 }
+| "[]"                    { Var "nil" }
+| Term '%' var            { $1 }
+| Term Term %prec APP     { App $1 $2 }
+| '(' Term ')'            { $2 }
 | "match" MatchItems "with" MaybePipe EquationStar "end" { Match $2 $5 }
 
 QualId :: {String}
