@@ -865,6 +865,9 @@ function enterProofTree() {
         theoremStatement,
         status.response,
         function(pt) {
+            var unfolds = _(namesPossiblyInScope).map(function(name) {
+                return "unfold " + name;
+            }).value();
             var applies = _(namesPossiblyInScope).map(function(name) {
                 return "apply " + name;
             }).value();
@@ -878,7 +881,7 @@ function enterProofTree() {
                 return "rewrite <- " + name;
             }).value();
             // tDiscriminate first for simplicity
-            return PT.uwSet.concat(applies, eapplies, leftRewrites, rightRewrites);
+            return PT.uwSet.concat(applies, eapplies, leftRewrites, rightRewrites, unfolds);
         }
     );
 
