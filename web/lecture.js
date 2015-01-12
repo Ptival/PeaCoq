@@ -275,7 +275,7 @@ function coq_undot(str) {
         //.replace(/[.][.]/g, '__')
         .replace(/[.][a-zA-Z1-9_]/g, '__') // hides qualified identifiers
     // hide curly braces that are implicit arguments
-        .replace(/\{((?:[^\.]|\.(?!\ ))*)\}/g, "_$1_")
+        .replace(/\{((?:[^\.\}]|\.(?!\ ))*)\}/g, "_$1_")
     // make other bullets look like curly braces
         .replace(/(\.\s*)[\-\+\*](?!\))/g, "$1{")
     ;
