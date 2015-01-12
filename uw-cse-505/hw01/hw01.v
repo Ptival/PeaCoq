@@ -51,9 +51,9 @@ Fixpoint insert (n: nat) (nt: nat_tree) : nat_tree :=
     | Leaf => Branch n Leaf Leaf
     | Branch m tl tr =>
         if nat_lt n m then
-          Branch n (insert n tl) tr
+          Branch m (insert n tl) tr
         else
-          Branch n tl (insert n tr)
+          Branch m tl (insert n tr)
   end.
 
 (* [PROBLEM 3]
