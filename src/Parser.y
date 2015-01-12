@@ -307,11 +307,14 @@ unsafeRight (Left e) = error e
 parseVernac :: String -> Vernac
 parseVernac s = unsafeRight $ runAlex s unsafeParseVernac
 
-parseTerm :: String -> Term
-parseTerm s = unsafeRight $ runAlex s unsafeParseTerm
+-- successfully parse or let the string as is
+safeParse parser s = either (const (Left s)) Right (runAlex s parser)
 
-parseHypothesis :: String -> Hypothesis
-parseHypothesis s = unsafeRight $ runAlex s unsafeParseHypothesis
+parseTerm :: String -> Either String Term
+parseTerm = safeParse unsafeParseTerm
+
+parseHypothesis :: String -> Either String Hypothesis
+parseHypothesis = safeParse unsafeParseHypothesis
 
 parseEvalResult :: String -> EvalResult
 parseEvalResult s = unsafeRight $ runAlex s unsafeParseEvalResult
