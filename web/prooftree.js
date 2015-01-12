@@ -518,16 +518,20 @@ function mkNode(parent, name, pName, moreFields) {
 }
 
 function mkGoalNode(parent, g, ndx) {
+
+    var nodeName = extractGoal(g.gGoal);
+
     return mkNode(
         parent,
-        g.gGoal,
-        showTermText(g.gGoal),
+        nodeName,
+        showTermText(nodeName),
         {
-            "hyps": g.gHyps,
+            "hyps": _(g.gHyps).map(extractHypothesis).value(),
             "ndx": ndx + 1,
             "gid": g.gId,
         }
     );
+
 }
 
 function mkTacticNode(depth, tactic, goals) {
@@ -684,6 +688,52 @@ ProofTree.prototype.tryAllTactics = function() {
 
 }
 
+function extractGoal(gGoal) {
+
+    if (gGoal.hasOwnProperty("Left")) {
+        gGoal = {
+            "contents": gGoal.Left,
+            "tag": "Raw",
+        };
+    } else {
+        gGoal = gGoal.Right;
+    }
+
+    return gGoal;
+
+}
+
+function extractHypothesis(gHyp) {
+
+    if (gHyp.hasOwnProperty("Left")) {
+        // this tries to approximate parsing...
+        var matches = gHyp.Left.match(/^(.*) := (.*) : (.*)$/);
+        if (matches !== null) {
+            gHyp = {
+                "hName": matches[1],
+                "hValue": { "contents": matches[2], "tag": "Raw" },
+                "hType": { "contents": matches[3], "tag": "Raw" },
+            };
+        } else {
+            matches = gHyp.Left.match(/^(.*) : (.*)$/);
+            gHyp = {
+                "hName": matches[1],
+                "hValue": null,
+                "hType": { "contents": matches[2], "tag": "Raw" },
+            };
+        }
+        if (matches == null) {
+            console.log("could not extract hypothesis", gHyp);
+        }
+
+    } else {
+        gHyp = gHyp.Right;
+    }
+
+    return gHyp;
+
+}
+
 ProofTree.prototype.hInit = function(response, afterUpdate) {
 
     var self = this;
@@ -698,11 +748,13 @@ ProofTree.prototype.hInit = function(response, afterUpdate) {
         return false;
     }
 
+    var nodeName = extractGoal(response.rGoals.focused[0].gGoal);
+
     // There should only be one goal at that point
     this.rootNode = {
         "id": _.uniqueId(),
-        "name": response.rGoals.focused[0].gGoal,
-        "pName": showTermText(response.rGoals.focused[0].gGoal),
+        "name": nodeName,
+        "pName": showTermText(nodeName),
         "x0": 0,
         "y0": 0.5,
         "allChildren": [], // will be filled once this.curNode is set
@@ -2518,6 +2570,9 @@ function showTermAux(t, indentation, precParent, newline) {
     };
 
     switch (t.tag) {
+
+    case "Raw":
+        return '<span>' + c + '</span>';
 
     case "Var":
         if (t.type !== undefined) {

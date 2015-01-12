@@ -63,7 +63,11 @@ hQueryGoal hi ho = do
 
 gCurHypsNames :: Goals -> [String]
 gCurHypsNames (MkGoals []      _) = []
-gCurHypsNames (MkGoals (g : _) _) = map hName $ gHyps g
+gCurHypsNames (MkGoals (g : _) _) = map findName $ gHyps g
+  where
+    findName (Right h) = hName h
+    -- if parsing failed, we should still be able to grab the hypothesis name
+    findName (Left s)  = takeWhile (/= ' ') s
 
 hQuery :: Handle -> Handle -> Query -> IO (Maybe (Query, Goals))
 hQuery hi ho q = do

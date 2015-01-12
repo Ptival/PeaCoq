@@ -14,8 +14,8 @@ type Query = String
 data Goal
   = MkGoal
     { gId   :: String
-    , gHyps :: [Hypothesis]
-    , gGoal :: Term
+    , gHyps :: [Either String Hypothesis]
+    , gGoal :: Either String Term
     }
   deriving (Generic)
 
