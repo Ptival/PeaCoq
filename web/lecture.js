@@ -881,7 +881,14 @@ function enterProofTree() {
                 return "rewrite <- " + name;
             }).value();
             // tDiscriminate first for simplicity
-            return PT.uwSet.concat(applies, eapplies, leftRewrites, rightRewrites, unfolds);
+            return PT.uwSet.concat(
+                ["break_if"],
+                applies,
+                eapplies,
+                leftRewrites,
+                rightRewrites,
+                unfolds
+            );
         }
     );
 
