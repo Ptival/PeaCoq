@@ -1010,7 +1010,14 @@ ProofTree.prototype.update = function(callback) {
     gcSiblings.pop(); // removes the [last, undefined] pair at the end
     var cSiblings = _.zip(visibleChildren.value(), visibleChildren.rest().value());
     cSiblings.pop();
-    var siblings = _(gcSiblings.concat(cSiblings));
+    // also, the current node should not overlap its siblings
+    var currentSiblings = [];
+    if (isGoal(this.curNode) && hasParent(this.curNode)) {
+        var curNodeSiblings = _(this.getVisibleChildren(this.curNode.parent));
+        currentSiblings = _.zip(curNodeSiblings.value(), curNodeSiblings.rest().value());
+        currentSiblings.pop();
+    }
+    var siblings = _(gcSiblings.concat(cSiblings, currentSiblings));
     var yFactors = siblings
         .map(function(e) {
             var a = e[0], b = e[1];
