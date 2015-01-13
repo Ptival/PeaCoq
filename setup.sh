@@ -37,8 +37,8 @@ $LN lodash/lodash.min.js lodash.js
 
 $MKDIR rangy
 cd rangy/
-$GET https://rangy.googlecode.com/svn/trunk/currentrelease/uncompressed/rangy-core.js > rangy-core.js
-$GET https://rangy.googlecode.com/svn/trunk/src/js/modules/rangy-textrange.js > rangy-textrange.js
+$GET http://rangy.googlecode.com/svn/trunk/dev/uncompressed/rangy-core.js > rangy-core.js
+$GET http://rangy.googlecode.com/svn/trunk/dev/uncompressed/rangy-textrange.js > rangy-textrange.js
 cd ..
 $LN rangy/rangy-core.js rangy-core.js
 $LN rangy/rangy-textrange.js rangy-textrange.js

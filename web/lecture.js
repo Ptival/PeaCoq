@@ -2,7 +2,14 @@
 var processing = false;
 var prooftree = undefined;
 var nbsp = "&nbsp;";
+var zwsp = "\u200b";
 var namesPossiblyInScope = [];
+var electric = false;
+var workaround_no_focusing = false;
+
+var proved = "";
+var proving = "";
+var provwill = "";
 
 var delimiters = [".", "{", "}"];
 
@@ -14,6 +21,33 @@ var unicodeList = [
 ];
 
 $(document).ready(function() {
+
+    if (!rangy.initialized) {rangy.init();}
+
+    // Range.textContent : String.
+    // Returns the data content of all text nodes in the range, ignoring visibility.
+    rangy.rangePrototype.textContent = function() {
+        var textnodes = this.getNodes([3]);
+        var tn, res="";
+
+        for (var i=0; i < textnodes.length; i++) {
+            tn = textnodes[i];
+            if (tn === this.startContainer && tn === this.endContainer) {
+                res += tn.data.slice(this.startOffset, this.endOffset);
+            }
+            else if (tn === this.startContainer) {
+                res += tn.data.slice(this.startOffset);
+            }
+            else if (tn === this.endContainer) {
+                res += tn.data.slice(0,this.endOffset);
+            }
+            else {
+                res += tn.data;
+            }
+        }
+
+        return res;
+    }
 
     var toolBar =
         $("#toolbar")
@@ -335,38 +369,101 @@ function globalKeyHandler(evt) {
     }
 }
 
-function keypressHandler(evt) {
-    var toIgnore = [
-        0, // most keys
-        8, // Backspace
-    ];
-    // Firefox triggers this for all events, ignore those that aren't characters
-    if (_(toIgnore).contains(evt.which)) { return; }
-    evt.preventDefault();
-    if (isSelectionLocked()) {
-        return;
-    } else {
-        var character = String.fromCharCode(evt.which);
-        insertAtSelection(character);
+function keypressHandler(ev) {
+    pweRestoreFinalBR();
+    pweOptAdjustSelection();
+    if (!(ev.keyCode >= 33 && ev.keyCode <= 40) && pweSelectionLocked()) {
+        ev.preventDefault();
+        ev.stopPropagation();
     }
 }
 
-function keydownHandler(evt) {
+function keyupHandler(evt) {
+    var bufferText = $("#buffer").text();
+    if (bufferText === zwsp) { return; }
+    var unlocked = $("#unlocked").text();
+    $("#buffer").text(zwsp);
+    $("#unlocked").text(bufferText.substring(1) + unlocked);
+}
+
+function keydownHandler(ev) {
+
+    pweRestoreFinalBR();
+    pweOptAdjustSelection();
 
     //console.log(evt.keyCode)
 
     // Delete tends to delete these nodes, add them back if that is the case
-    if ($("#processing").length === 0) {
-        $("<span>", { "id": "processing" }).insertAfter($("#processed"));
+    /*
+    if ($("#proving").length === 0) {
+        $("<span>", { "id": "proving" }).insertAfter($("#proved"));
     }
-    if ($("#toprocess").length === 0) {
-        $("<span>", { "id": "toprocess" }).insertAfter($("#processing"));
+    if ($("#provwill").length === 0) {
+        $("<span>", { "id": "provwill" }).insertAfter($("#proving"));
     }
-    if ($("#redacting").length === 0) {
-        $("<span>", { "id": "redacting" }).insertAfter($("#toprocess"));
+    if ($("#unlocked").length === 0) {
+        $("<span>", { "id": "unlocked" }).insertAfter($("#provwill"));
         repositionCaret();
     }
+    */
 
+    if (ev.ctrlKey) {
+        if (ev.keyCode == 40 || ev.keyCode == 10) { //DOWN_ARROW
+            proverDown();
+            try {
+                ev.preventDefault();
+                ev.stopPropagation();
+            } catch (e) {}
+        } else if (ev.keyCode == 38) { //UP_ARROW
+            proverUp();
+            ev.preventDefault();
+            ev.stopPropagation();
+        } else if (ev.keyCode == 34) { //PGDN
+            prover_bottom();
+            ev.preventDefault();
+            ev.stopPropagation();
+        } else if (ev.keyCode == 33) { //PGUP
+            prover_top();
+            ev.preventDefault();
+            ev.stopPropagation();
+        } else if (ev.keyCode == 13) { //ENTER
+            proverToCaret();
+            ev.preventDefault();
+            ev.stopPropagation();
+        }
+    }
+
+    if (electric==true && evt.keyCode == 190) { setTimeout(prover_point, 0); }
+
+    if (ev.keyCode >= 33 && ev.keyCode <= 40) {
+        if (ev.keyCode == 37) {
+            if (pweMoveLeft(ev.shiftKey)) {
+                ev.preventDefault();
+                ev.stopPropagation();
+            }
+        }
+        if (ev.keyCode == 39) {
+            if (pweMoveRight(ev.shiftKey)) {
+                ev.preventDefault();
+                ev.stopPropagation();
+            }
+        }
+    } else if (!pweSelectionLocked()) {
+        if (ev.keyCode == 8) {
+            pweEmulateBackspace();
+            ev.preventDefault();
+            ev.stopPropagation();
+        } else if (ev.keyCode == 13 && !ev.ctrlKey) {
+            pweEmulateReturn();
+            ev.preventDefault();
+            ev.stopPropagation();
+        }
+    } else {
+        ev.preventDefault();
+        ev.stopPropagation();
+    }
+
+    /*
     if (evt.ctrlKey && evt.altKey) {
 
         switch(evt.keyCode) {
@@ -408,8 +505,8 @@ function keydownHandler(evt) {
             adjustSelection();
             var s = peacoqGetSelection();
             if (isSelectionLocked()
-                // or if the backspace action would delete something before #redacting
-                || (s.startSpan.id === "redacting" && s.startOffset === 0)) {
+                // or if the backspace action would delete something before #unlocked
+                || (s.startSpan.id === "unlocked" && s.startOffset === 0)) {
                 evt.preventDefault();
             }
             break;
@@ -445,6 +542,8 @@ function keydownHandler(evt) {
         };
 
     }
+
+    */
 
 }
 
@@ -554,14 +653,14 @@ function updateCoqtopPane(direction, response) {
     $("#prooftree-button").attr("disabled", !status.proving);
     if (status.proving) {
         // automatically enter proof mode if not in the process of proving more things
-        var lastCommand = getLastProcessed();
+        var lastCommand = getLastProved();
         if (_(lastCommand).contains("(* notree *)")) {
             syncLog("NOTREE");
         }
         if (direction === goingDown
             && ! lastCommand.endsWith("Proof.")
             && !_(lastCommand).contains("(* notree *)")
-            && $("#toprocess").text().length === 0) {
+            && $("#provwill").text().length === 0) {
             syncLog("AUTOENTERPROOFTREE");
             enterProofTree();
         }
@@ -582,11 +681,16 @@ function updateCoqtopPane(direction, response) {
 }
 
 function highlight() {
-    $("#processed").html(hljs.highlight("ocaml", $("#processed").text(), true).value);
-    $("#processing").html(hljs.highlight("ocaml", $("#processing").text(), true).value);
-    $("#toprocess").html(hljs.highlight("ocaml", $("#toprocess").text(), true).value);
-    $("#redacting").html(hljs.highlight("ocaml", $("#redacting").text(), true).value);
+    pweSetLockedPart("proved", hljs.highlight("ocaml", proved, true).value);
+    var unlocked = pweGetUnlocked();
+    pweSetUnlocked(hljs.highlight("ocaml", unlocked, true).value);
+    /*
+    $("#proved").html(hljs.highlight("ocaml", $("#proved").text(), true).value);
+    $("#proving").html(hljs.highlight("ocaml", $("#proving").text(), true).value);
+    $("#provwill").html(hljs.highlight("ocaml", $("#provwill").text(), true).value);
+    $("#unlocked").html(hljs.highlight("ocaml", $("#unlocked").text(), true).value);
     repositionCaret();
+    */
 }
 
 function undoCallback(response) {
@@ -596,14 +700,13 @@ function undoCallback(response) {
         //console.log("Rewinding additional " + stepsToRewind + " steps");
         while (stepsToRewind-- > 0) {
             var index = 0;
-            var processed = $("#processed").text();
-            var redacting = $("#redacting").text();
-            if (processed != "") { index = prev(processed); }
-            var pieceUnprocessed = processed.substring(index);
-            $("#processed").text(processed.substring(0, index));
-            $("#redacting").text(pieceUnprocessed + redacting);
+            var unlocked = pweGetUnlocked();
+            if (proved != "") { index = prev(proved); }
+            var pieceUnproved = proved.substring(index);
+            proved = proved.substring(0, index);
+            pweSetLockedPart("proved", proved);
+            pweSetUnlocked(pieceUnproved + unlocked);
             repositionCaret();
-            var pieceUnprocessed = processed.substring(index);
         }
         response.rResponse.contents[0] = ""; // don't show the user the steps number
         break;
@@ -613,48 +716,57 @@ function undoCallback(response) {
 
 function tryProcessing() {
     if (processing) { return; }
+
     // grab the next piece to process, if any
-    var toprocess = $("#toprocess").text();
-    var index = next(toprocess);
+    var index = next(provwill);
     if (index === 0) { return; }
     // there is a piece to process, mark it as such
-    var pieceToProcess = toprocess
-        .substring(0, index)
-    ;
-    $("#processing").text(pieceToProcess);
-    $("#toprocess").text(toprocess.substring(index));
-    // sometimes, a leftover \n stays in the #toprocess area, remove it
-    if($("#toprocess").text().trim === "") {
-        $("#toprocess").text("");
+    proving = provwill.substring(0, index);
+    provwill = provwill.substring(index);
+
+    pweSetLockedPart("provwill", provwill);
+    pweSetLockedPart("proving", proving);
+
+    // sometimes, a leftover \n stays in the #provwill area, remove it
+    /*
+    if($("#provwill").text().trim === "") {
+        $("#provwill").text("");
     }
-    syncLog("PROVERDOWN " + pieceToProcess);
+    */
+    syncLog("PROVERDOWN " + proving);
     // process this piece, then process the rest
     processing = true;
-    asyncQuery(pieceToProcess, function(response) {
+    asyncQuery(proving, function(response) {
         processing = false;
-        $("#processing").text("");
         switch(response.rResponse.tag) {
         case "Good":
-            $("#processed").append(pieceToProcess);
+            proved = proved + proving;
+            proving = "";
+            pweSetLockedPart("proved", proved);
+            pweSetLockedPart("proving", proving);
             // TODO: might be bothersome to do that at every step?
             updateCoqtopPane(goingDown, response);
+            repositionCaret();
             tryProcessing(); // if there is more to process
             break;
         case "Fail":
-            var toprocess = $("#toprocess").text();
-            var redacting = $("#redacting").text();
-            $("#toprocess").text("");
-            $("#redacting").text(pieceToProcess + toprocess + redacting);
+            var unlocked = pweGetUnlocked();
+            pweSetUnlocked(proving + provwill + unlocked);
+            proving = "";
+            pweSetLockedPart("proving", proving);
+            provwill = "";
+            pweSetLockedPart("provwill", provwill);
             repositionCaret();
             updateCoqtopPane(goingDown, response);
             break;
         };
     });
+
 }
 
 /*
   Returns the position of the caret w.r.t. the editor: this includes all the characters in
-  #processed, #processing, #toprocess and #redacting
+  #proved, #proving, #provwill and #unlocked
 */
 function getCaretPos() {
     var sel = rangy.getSelection();
@@ -665,47 +777,46 @@ function getCaretPos() {
 }
 
 /*
-  This should simply move the next line from the #redacting area to the #toprocess area,
+  This should simply move the next line from the #unlocked area to the #provwill area,
   then trigger a processing.
 */
 function proverDown() {
-    var toprocess = $("#toprocess").text();
-    var redacting = $("#redacting").text();
-    var index = next(redacting);
+    var unlocked = pweGetUnlocked();
+    var index = next(unlocked);
     if (index == 0) { return; }
-    // 1 because we get rid of the zero-width spacing
-    var pieceToProcess = redacting.substring(0, index);
-    $("#toprocess").text(toprocess + pieceToProcess);
-    $("#redacting").text(redacting.substring(index));
-    repositionCaret();
+    var pieceToProcess = unlocked.substring(0, index);
+    unlocked = unlocked.substring(index);
+    provwill += pieceToProcess;
+    pweSetLockedPart("provwill", provwill);
+    pweSetUnlocked(unlocked);
     tryProcessing();
 }
 
 function proverToCaret () {
     if (processing) { return; }
     var index = getCaretPos();
-    var processed = $("#processed").text();
-    var processing = $("#processing").text();
-    var toprocess = $("#toprocess").text();
-    var redacting = $("#redacting").text();
-    // the caret is in the processed region, undo actions
-    if (index < processed.length) {
-        var caretInitialPosition = getCaretPos();
+    //var proved = $("#proved").text();
+    //var processing = $("#proving").text();
+    //var provwill = $("#provwill").text();
+    var unlocked = pweGetUnlocked();
+    // the caret is in the proved region, undo actions
+    if (index < proved.length) {
         // this assumes proverUp is synchronous
-        while ($("#processed").text().length > caretInitialPosition) {
+        while (proved.length > index) {
             proverUp();
         }
     } else {
-        index -= processed.length + processing.length + toprocess.length;
-        // if the caret is in the #processing or #toprocess, do nothing
+        index -= proved.length + proving.length + provwill.length + 1;
+        // if the caret is in the #proving or #provwill, do nothing
         if (index <= 0) { return; }
         // if the character at index is not a delimiter, process to the next one
-        if (!_(delimiters).contains(redacting[index-1])) {
-            index += next(redacting.substring(index));
+        if (!_(delimiters).contains(unlocked[index-1])) {
+            index += next(unlocked.substring(index));
         }
-        var pieceToProcess = redacting.substring(0, index);
-        $("#toprocess").text(toprocess + pieceToProcess);
-        $("#redacting").text(redacting.substring(index));
+        var pieceToProcess = unlocked.substring(0, index);
+        provwill = provwill + pieceToProcess;
+        pweSetLockedPart("provwill", provwill);
+        pweSetUnlocked(unlocked.substring(index));
         syncLog("PROVERDOWN " + pieceToProcess);
         repositionCaret();
         tryProcessing();
@@ -713,35 +824,35 @@ function proverToCaret () {
 }
 
 /*
-  Assuming the system is done processing, #processing and #toprocess should be empty, we
+  Assuming the system is done processing, #proving and #provwill should be empty, we
   should therefore be able to just undo the last step. Undo might undo more steps than
   that though, in which case we want to mark them undone too.
 */
 function proverUp () {
     if (processing) { return; } // TODO: could prevent more processing?
     var index = 0;
-    var processed = $("#processed").text();
-    var redacting = $("#redacting").text();
-    if (processed != "") { index = prev(processed); }
-    var pieceToUnprocess = processed.substring(index);
+    var unlocked = pweGetUnlocked();
+    if (proved != "") { index = prev(proved); }
+    var pieceToUnprocess = proved.substring(index);
     if (pieceToUnprocess !== "") {
-        $("#processed").text(processed.substring(0, index));
-        $("#redacting").text(pieceToUnprocess + redacting);
+        proved = proved.substring(0, index);
+        pweSetLockedPart("proved", proved);
+        pweSetUnlocked(pieceToUnprocess + unlocked);
         syncLog("PROVERUP " + pieceToUnprocess);
-        repositionCaret(); // if at the start of file, no offset
+        repositionCaret();
         syncUndo(undoCallback);
     }
 }
 
-// moves the caret to the start of the #redacting area
+// moves the caret to the start of the #unlocked area
 // [offset] allows to move it slightly more
 function repositionCaret(offset) {
     if (offset === undefined) { offset = 0; }
     var sel = rangy.getSelection();
     var rng = rangy.createRange();
-    var contents = $("#redacting").contents();
+    var contents = $("#unlocked").contents();
     rng.setStart(
-        (contents.length === 0) ? $("#redacting")[0] : contents[0],
+        (contents.length === 0) ? $("#unlocked")[0] : contents[0],
         offset
     );
     sel.setSingleRange(rng);
@@ -860,21 +971,21 @@ function enterProofTree() {
 
     /*
       need to figure out what the statement of the theorem is, and there seems to be no way to
-      ask that with status, so look it up in the processed region as the last statement
+      ask that with status, so look it up in the proved region as the last statement
     */
-    var processed = $("#processed").text();
+    var proved = $("#proved").text();
     var assertionKeywords = [
         "Theorem", "Lemma", "Remark", "Fact", "Corollary", "Proposition"
     ];
-    // lookup the last time an assertion keyword was processed
+    // lookup the last time an assertion keyword was proved
     var position = _(assertionKeywords)
         .map(function(keyword) {
-            return processed.lastIndexOf(keyword);
+            return proved.lastIndexOf(keyword);
         })
         .max()
         .value()
     ;
-    var theoremStatement = processed.substring(position);
+    var theoremStatement = proved.substring(position);
     // get rid of anything after the statement, like "Proof."
     theoremStatement = theoremStatement.substring(0, next(theoremStatement));
     prooftree.newAlreadyStartedTheorem(
@@ -927,19 +1038,19 @@ function exitProofTree(labelBeforeProofTree) {
 
 }
 
-function getLastProcessed() {
-    var processed = $("#processed").text();
-    return processed.substring(prev(processed)).trim();
+function getLastProved() {
+    var proved = $("#proved").text();
+    return proved.substring(prev(proved)).trim();
 }
 
 function onQed(labelBeforeProofTree, prooftree) {
 
-    var lastCommand = getLastProcessed();
+    var lastCommand = getLastProved();
     var textToAppend = (lastCommand === "Proof.") ? "\n" : "\nProof.\n";
     var proof = PT.pprint(prooftree.proof(), 1, " ", "\n");
     textToAppend += proof;
-    textToAppend += "\nQed."; // invariant: #processed ends on a period
-    $("#processed").append(textToAppend);
+    textToAppend += "\nQed."; // invariant: #proved ends on a period
+    $("#proved").append(textToAppend);
 
     switchToEditorUI();
 
@@ -1057,9 +1168,13 @@ if (!String.prototype.endsWith) {
 
 function resetEditorWith(text) {
 
+    proved = "";
+    proving = "";
+    provwill = "";
+
     $("#editor").append(
         $("<span>")
-            .attr("id", "processed")
+            .attr("id", "proved")
             .css("display", "inline")
             .css("padding", 0)
             .css("background-color", "#90EE90")
@@ -1067,7 +1182,7 @@ function resetEditorWith(text) {
 
     $("#editor").append(
         $("<span>")
-            .attr("id", "processing")
+            .attr("id", "proving")
             .css("display", "inline")
             .css("padding", 0)
             .css("background-color", "#FFA500")
@@ -1075,7 +1190,7 @@ function resetEditorWith(text) {
 
     $("#editor").append(
         $("<span>")
-            .attr("id", "toprocess")
+            .attr("id", "provwill")
             .css("display", "inline")
             .css("padding", 0)
             .css("background-color", "#ADD8E6")
@@ -1083,10 +1198,11 @@ function resetEditorWith(text) {
 
     $("#editor").append(
         $("<span>")
-            .attr("id", "redacting")
+            .attr("id", "unlocked")
             .css("display", "inline")
             .css("padding", 0)
-            .text(text + "\n")
+            .text(zwsp + text)
+            .append('<br id=\"finalbr\"/>')
     );
 
 }
@@ -1130,12 +1246,12 @@ function adjustSelection() {
     if (s.startSpan === s.endSpan && s.startOffset === s.endOffset) {
         var span = s.startSpan;
         var offset = s.startOffset;
-        var processing = $("#processing").text();
-        var toprocess = $("#toprocess").text();
-        if (span.id === "processed" && offset === span.textContent.length
-            && processing.length === 0 && toprocess.length === 0) {
-            var contents = $("#redacting").contents();
-            var target = (contents.length === 0) ? $("#redacting")[0] : contents[0];
+        var processing = $("#proving").text();
+        var provwill = $("#provwill").text();
+        if (span.id === "proved" && offset === span.textContent.length
+            && processing.length === 0 && provwill.length === 0) {
+            var contents = $("#unlocked").contents();
+            var target = (contents.length === 0) ? $("#unlocked")[0] : contents[0];
             rng.setStart(target, 0);
             rng.setEnd(target, 0);
             sel.setSingleRange(rng);
@@ -1148,7 +1264,7 @@ function adjustSelection() {
 function isSelectionLocked() {
     adjustSelection();
     var s = peacoqGetSelection();
-    return (s.startSpan.id !== "redacting" || s.endSpan.id !== "redacting");
+    return (s.startSpan.id !== "unlocked" || s.endSpan.id !== "unlocked");
 }
 
 function cutHandler(evt) {
@@ -1165,4 +1281,564 @@ function pasteHandler(evt) {
     var range = sel.getRangeAt(0);
     range.deleteContents();
     insertAtSelection(clipped);
+}
+
+/* ProofWeb */
+
+function pweKeyPressHandler(ev) {
+    pweRestoreFinalBR();
+    pweOptAdjustSelection();
+    if (!(ev.keyCode >= 33 && ev.keyCode <= 40) && pweSelectionLocked()) {
+        ev.preventDefault();
+        ev.stopPropagation();
+    }
+}
+
+function pweRestoreFinalBR() {
+    var finalbr = $("#finalbr")[0];
+    if (!finalbr) {
+        $("#unlocked").append('<br id=\"finalbr\"/>');
+    }
+    return finalbr ? true : false;
+}
+
+function pweOptAdjustSelection() {
+    if (pweSelectionLockstate() === 1) {
+        pweAdjustSelection();
+    }
+}
+
+function pweAdjustSelection() {
+    var sel,bw,newrs;
+
+    sel = rangy.getSelection();
+    bw = sel.isBackwards();
+    newrs = $.map(sel.getAllRanges(), pweAdjustRange);
+
+    sel.removeAllRanges();
+    for (var i=0; i < newrs.length; i++) {
+        sel.addRange(newrs[i],bw);
+    }
+}
+
+function pweAdjustRange(range) {
+    var ulrange,cs,ce;
+
+    ulrange = pweUnlockedRange();
+
+    cs = rangy.dom.comparePoints(range.startContainer, range.startOffset,
+                                 ulrange.startContainer, ulrange.startOffset);
+    ce = rangy.dom.comparePoints(range.endContainer, range.endOffset,
+                                 ulrange.endContainer, ulrange.endOffset);
+
+    newrange = range.cloneRange();
+
+    if (cs < 0) {
+        newrange.setStart(ulrange.startContainer, ulrange.startOffset);
+    }
+
+    if (ce > 0) {
+        newrange.setEnd(ulrange.endContainer, ulrange.endOffset);
+    }
+
+    return newrange;
+}
+
+function pweSelectionLockstate() {
+    var sel = rangy.getSelection();
+    return arrmax($.map(sel.getAllRanges(), pweRangeLockstate));
+}
+
+function arrmax(arr) {
+    return (arr.length > 0) ? Math.max.apply(null, arr) : 0;
+}
+
+function pweRangeLockstate(range) {
+
+    var ulrange, trange, ts;
+
+    ulrange = pweUnlockedRange();
+
+    if (subrange(range,ulrange)) {
+        return 0; // UNLOCKED
+    } else {
+       trange = rangy.createRange();
+       trange.setStart(range.startContainer, range.startOffset);
+       trange.setEnd(ulrange.startContainer, ulrange.startOffset);
+       ts = trange.toString();
+       if (ts === "" || ts === zwsp) {
+           return 1; // LOCKED / Adjustable
+       }
+       else {
+           return 2; // LOCKED / Non-adjustable
+       }
+    }
+
+}
+
+function pweUnlockedRange() {
+    var finalbr, ulrange;
+    finalbr = $("#finalbr").get(0);
+    ulrange = rangy.createRange();
+    ulrange.selectNode($("#unlocked")[0]);
+    ulrange.moveStart("character", 1);
+    ulrange.setEndBefore(finalbr);
+    return ulrange;
+}
+
+function subrange(r1, r2) {
+    var intersection = intersectRanges(r1,r2);
+    return intersection !== null && r1.equals(intersection);
+}
+
+function intersectRanges(r1,r2) {
+    if (r1.intersectsOrTouchesRange(r2)) {
+	var startComparison = rangy.dom.comparePoints(r1.startContainer, r1.startOffset, r2.startContainer, r2.startOffset),
+	    endComparison = rangy.dom.comparePoints(r1.endContainer, r1.endOffset, r2.endContainer, r2.endOffset);
+
+	var intersectionRange = r1.cloneRange();
+	if (startComparison == -1) {
+	    intersectionRange.setStart(r2.startContainer, r2.startOffset);
+	}
+	if (endComparison == 1) {
+	    intersectionRange.setEnd(r2.endContainer, r2.endOffset);
+	}
+	return intersectionRange;
+    }
+    return null;
+}
+
+function pweSelectionLocked() {
+    return pweSelectionLockstate() > 0;
+}
+
+function pweKeyDownHandler(ev) {
+    pweRestoreFinalBR();
+    pweOptAdjustSelection();
+
+    kb_handler(ev);
+
+    if (ev.keyCode >= 33 && ev.keyCode <= 40) {
+        if (ev.keyCode == 37) {
+            if (pweMoveLeft(ev.shiftKey)) {
+                ev.preventDefault();
+                ev.stopPropagation();
+            }
+        }
+        if (ev.keyCode == 39) {
+            if (pweMoveRight(ev.shiftKey)) {
+                ev.preventDefault();
+                ev.stopPropagation();
+            }
+        }
+    } else if (!pweSelectionLocked()) {
+        if (ev.keyCode == 8) {
+            pweEmulateBackspace();
+            ev.preventDefault();
+            ev.stopPropagation();
+        } else if (ev.keyCode == 13 && !ev.ctrlKey) {
+            pweEmulateReturn();
+            ev.preventDefault();
+            ev.stopPropagation();
+        }
+    } else {
+        ev.preventDefault();
+        ev.stopPropagation();
+    }
+}
+
+function prover_up () {
+    if (sent == true) return;
+    var index = 0;
+    if (provwill != "") {
+        index = proved.length + proving.length + prev(provwill);
+    } else if (proving != "") {
+        index = proved.length + prev(proving);
+    } else if (proved != "") {
+        index = prev(proved);
+    }
+    myx_undo (index, undo_cb);
+}
+
+function kb_handler(evt) {
+    if (evt.ctrlKey) {
+        if (evt.keyCode == 40 || evt.keyCode == 10) { //DOWN_ARROW
+            prover_down();
+            try {
+                evt.preventDefault();
+                evt.stopPropagation();
+            } catch (e) {}
+        } else if (evt.keyCode == 38) { //UP_ARROW
+            prover_up();
+            evt.preventDefault();
+            evt.stopPropagation();
+        } else if (evt.keyCode == 34) { //PGDN
+            prover_bottom();
+            evt.preventDefault();
+            evt.stopPropagation();
+        } else if (evt.keyCode == 33) { //PGUP
+            prover_top();
+            evt.preventDefault();
+            evt.stopPropagation();
+        } else if (evt.keyCode == 13) { //ENTER
+            prover_point();
+            evt.preventDefault();
+            evt.stopPropagation();
+        }
+    }
+    if (electric==true && evt.keyCode == 190) { setTimeout(prover_point, 0); }
+}
+
+function prover_down () {
+    var provedit = pweGetUnlocked();
+    var index = next(provedit);
+    if (index == 0) return;
+    var sendtext = provedit.substring(0, index);
+    provedit = provedit.substring(index);
+    provwill += sendtext;
+    pweSetLockedPart("provwill", provwill);
+    pweSetUnlocked(provedit);
+    prover_send_if_can();
+}
+
+function prover_point () {
+    if (sent == true) return;
+    var len = pweGetCaretPos();
+    if (len < proved.length) {
+        myx_undo (len, undo_cb);
+        return;
+    }
+    len = len - proved.length - proving.length - provwill.length;
+    if (len > 0) len--; // adjustment for startmarker char
+    var provedit = pweGetUnlocked();
+    var old = provedit.length;
+    if (len > 0) prover_down ();
+    provedit = pweGetUnlocked();
+    while ((provedit.length < old) && (len > 0)) { // No infinite loop
+        len = len + provedit.length - old;
+        old = provedit.length;
+        if (len > 0) prover_down ();
+        provedit = pweGetUnlocked();
+    }
+}
+
+function pweGetUnlocked() {
+    var ulrange;
+    ulrange = pweUnlockedRange();
+    return ulrange.textContent();
+}
+
+function pweSetLockedPart(part,txt) {
+    $("#" + part).html(txt);
+}
+
+function pweSetUnlocked(txt) {
+    $("#unlocked").html(zwsp + txt);
+    pweRestoreFinalBR();
+    pweCaretAtStart();
+    pweFocusEditor();
+}
+
+function pweCaretAtStart() {
+    pwePlaceCaret(true);
+}
+
+function pwePlaceCaret(atstart) {
+    var range,sel;
+
+    range = pweUnlockedRange();
+    range.collapse(atstart);
+    sel = rangy.getSelection();
+    sel.setSingleRange(range);
+    pweScrollToCaret();
+}
+
+function pweScrollToCaret() {
+    var margin,sel,rr,nr,rects,extraheight,ct,cb,cl,cr;
+
+    margin = 3;
+
+    sel = rangy.getSelection();
+    try {
+        // use non-collapsed range, because webkit seems to prefer it.
+        rr=rangy.createRange();
+        rr.setStartAndEnd(sel.focusNode, sel.focusOffset);
+        rr.moveStart("character",-1);
+
+        nr=rangy.createNativeRange();
+        nr.setStart(rr.startContainer, rr.startOffset);
+        nr.setEnd(rr.endContainer, rr.endOffset);
+        rects = nr.getClientRects();
+
+        if (rects.length === 0) return;
+        if (rr.textContent() === "\n") extraheight = rects[0].bottom - rects[0].top;
+        else extraheight = 0;
+        ct = arrmin($.map(rects,function(r){return r.top;}))    - margin
+        cb = arrmax($.map(rects,function(r){return r.bottom;})) + margin + extraheight;
+        cl = arrmin($.map(rects,function(r){return r.left;}))   - margin
+        cr = arrmax($.map(rects,function(r){return r.right;}))  + margin
+    } catch (e) {
+        return;
+    }
+
+    function scrolldist(ve,cs,ce) {
+        if (ce > ve) return ce - ve;
+        if (cs < 0)  return cs;
+        return 0;
+    }
+
+    var $w = $(window);
+    var vt = $w.scrollTop();
+    var vl = $w.scrollLeft();
+    var vh = $w.height();
+    var vw = $w.width();
+    var newt = vt + scrolldist(vh,ct,cb);
+    var newl = vl + scrolldist(vw,cl,cr);
+
+    if (st.workaround_delay_scroll) {
+        // scroll unconditionally, even if current viewport seems correct.
+        setTimeout(function(){
+            $w.scrollTop(newt);
+            $w.scrollLeft(newl);
+        }, 0);
+    } else {
+        if (vt !== newt) $w.scrollTop(newt);
+        if (vl !== newl) $w.scrollLeft(newl);
+    }
+}
+
+function pweFocusEditor() {
+    if (!workaround_no_focusing) $("#editor").focus();
+}
+
+function prover_send_if_can () {
+    if (sent == true) return;
+    var pos = proved.length + proving.length;
+    var text = '' + pos;
+    while (provwill != '') {
+        var index = next(provwill);
+        if (index == 0) break;
+        pos = pos + index;
+        text = text + token + provwill.substring(0, index) + token + pos;
+        proving = proving + provwill.substring(0, index);
+        provwill = provwill.substring(index);
+    }
+    tosend = (unquote_str(text));
+    pweSetLockedPart("provwill",provwill);
+    pweSetLockedPart("proving",proving);
+    myx_say(tosend, undo_cb);
+}
+
+function unquote_str (oldstr) {
+    var str = oldstr
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&quot;/g, "\"")
+        .replace(/&apos;/g, "'")
+        .replace(/&amp;/g, "&")
+        .replace(/<br>/g,"\n")
+        .replace(/<BR>/g,"\n")
+        .replace(/<BR\/>/g,"\n")
+    ;
+    return str;
+}
+
+function pweMoveLeft(extend) {
+    var sel,newfocus,erange,bw,rs;
+    var res = false;
+
+    if (pweRelativeFocusPos()==0) {
+        sel=rangy.getSelection();
+
+        newfocus=rangy.createRange();
+        newfocus.setStart(sel.focusNode,sel.focusOffset);
+        newfocus.collapse(true);
+        newfocus.move("character",-2)
+
+        erange=rangy.createRange();
+        erange.selectNodeContents($("#editor")[0]);
+
+        if (subrange(newfocus,erange)) {
+            if (extend) {
+                bw = sel.isBackwards();
+                rs = sel.getAllRanges();
+
+                if (bw) {
+                    rs[rs.length-1].moveStart("character",-2);
+                } else {
+                    rs[rs.length-1].moveEnd("character",-2);
+                }
+
+                sel.removeAllRanges();
+                for (var i=0; i < rs.length; i++) {
+                    sel.addRange(rs[i],bw);
+                }
+            } else {
+                sel.move("character",-2);
+            }
+        }
+
+        res=true;
+    }
+
+    return res;
+}
+
+function pweMoveRight(extend) {
+    var sel,newfocus,erange,bw,rs;
+    var res = false;
+
+    if (pweRelativeFocusPos()==-1) {
+        sel = rangy.getSelection();
+
+        newfocus = rangy.createRange();
+        newfocus.setStart(sel.focusNode, sel.focusOffset);
+        newfocus.collapse(true);
+        newfocus.move("character", +2);
+
+        erange = rangy.createRange();
+        erange.selectNodeContents($("#editor")[0]);
+
+        if (subrange(newfocus,erange)) {
+            if (extend) {
+                bw = sel.isBackwards();
+                rs = sel.getAllRanges();
+
+                if (bw) {
+                    rs[rs.length-1].moveStart("character",+2);
+                } else {
+                    rs[rs.length-1].moveEnd("character",+2);
+                }
+
+                sel.removeAllRanges();
+                for (var i=0; i < rs.length; i++) {
+                    sel.addRange(rs[i],bw);
+                }
+            } else {
+                sel.move("character", +2);
+            }
+        }
+
+        res = true;
+    }
+
+    return res;
+}
+
+function pweRelativeFocusPos() {
+    var sel,ur,cp;
+
+    sel = rangy.getSelection();
+    ur = pweUnlockedRange();
+    ur.collapse(true);
+
+    cp = rangy.dom.comparePoints(sel.focusNode,sel.focusOffset,ur.startContainer,ur.startOffset);
+
+    if (cp >= 0) {
+      ur.setEnd(sel.focusNode,sel.focusOffset);
+    } else {
+      ur.setStart(sel.focusNode,sel.focusOffset);
+    }
+
+    return (cp * ur.toString().length)
+}
+
+function pweEmulateReturn() {
+    pweInsertAtSelection("\n");
+    pweScrollToCaret();
+}
+
+function pweInsertAtSelection(txt) {
+    var sel, newrange;
+
+    pweRemoveSelection();
+
+    pweOptAdjustSelection();
+    sel = rangy.getSelection();
+    if (!pweSelectionLocked() && sel.rangeCount > 0) {
+        newrange = pweInsertText(txt,sel.getRangeAt(0));
+        sel.setSingleRange(newrange);
+    }
+}
+
+function pweRemoveSelection() {
+    var sel;
+
+    pweOptAdjustSelection();
+    if (!pweSelectionLocked()) {
+        sel = rangy.getSelection();
+        sel.deleteFromDocument();
+    }
+}
+
+function pweInsertText(txt,inrange) {
+    var range = inrange.cloneRange();
+    var tn = document.createTextNode(txt);
+    range.insertNode(tn);
+    range.selectNode(tn);
+    range.normalizeBoundaries();
+    range.collapse(false);
+    return range;
+}
+
+function pweEmulateBackspace() {
+    var range, sel;
+
+    sel = rangy.getSelection();
+    if (sel.isCollapsed) {
+        range = sel.getRangeAt(0).cloneRange();
+        range.moveStart("character",-1);
+        if (!pweRangeLocked(range)) {
+           sel.setSingleRange(range);
+           sel.deleteFromDocument();
+        }
+    } else {
+        if (!pweSelectionLocked()) { // Superfluous condition?
+           sel.deleteFromDocument();
+        }
+    }
+}
+
+function pweRangeLocked(range) {
+    return pweRangeLockstate(range) > 0;
+}
+
+function undo_cb(z) {
+    if (z == "") { myx_listen (undo_cb); return; }
+    var provedit = pweGetUnlocked();
+    if (z == "+") {
+        provedit = proving + provwill + provedit;
+        proving = ""; provwill = "";
+        sent = false;
+        pweSetLockedPart("provwill",provwill);
+        pweSetLockedPart("proving",proving);
+        pweSetUnlocked(provedit);
+        return;
+    }
+    var index = z.indexOf ("__PWT__");
+    var out = "<pre>" + z.substring(0, index) + "</pre>";
+    var out = unicode(out);
+    get_frame("frame_state").body.innerHTML = out;
+    var rest = z.substring(index + 7);
+    index = rest.indexOf ("__PWT__");
+    get_frame("frame_error").body.innerHTML = "<pre>" + unicode(rest.substring(index + 7)) + "</pre>";
+    rest = rest.substring(0, index);
+    sent = false;
+    if (proved.length > rest) {
+        provedit = proved.substring(rest) + proving + provwill + provedit;
+        proved = proved.substring(0, rest); proving = ""; provwill = "";
+    } else if (proved.length == rest) {
+        provedit = proving + provwill + provedit;
+        proving = ""; provwill = "";
+    } else {
+        var tocut = rest - proved.length;
+        proved = (proved + proving).substring(0, rest);
+        proving = proving.substring(tocut);
+    }
+    pweSetLockedPart("proved",proved);
+    pweSetLockedPart("provwill",provwill);
+    pweSetLockedPart("proving",proving);
+    pweSetUnlocked(provedit);
+    if (proving == "") prover_send_if_can ();
+    else myx_listen (undo_cb);
 }
