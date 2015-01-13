@@ -707,7 +707,7 @@ function extractHypothesis(gHyp) {
 
     if (gHyp.hasOwnProperty("Left")) {
         // this tries to approximate parsing...
-        var matches = gHyp.Left.match(/^(.*) := (.*) : (.*)$/);
+        var matches = gHyp.Left.match(/^([\s\S]*) := ([\s\S]*) : ([\s\S]*)$/);
         if (matches !== null) {
             gHyp = {
                 "hName": matches[1],
@@ -715,7 +715,7 @@ function extractHypothesis(gHyp) {
                 "hType": { "contents": matches[3], "tag": "Raw" },
             };
         } else {
-            matches = gHyp.Left.match(/^(.*) : (.*)$/);
+            matches = gHyp.Left.match(/^([\s\S]*) : ([\s\S]*)$/);
             gHyp = {
                 "hName": matches[1],
                 "hValue": null,
