@@ -2843,6 +2843,13 @@ function updateNodeHeight(selector, maxHeight) {
         })
     ;
 
-    // TODO: also scroll the view inside the body so that the current goal is visible
+    var jDiv = $(div[0]);
+    var button = jDiv.find("button");
+    if (button.length !== 0) {
+        var topMargin = 60; // somewhat arbitrary, should be about 2 lines
+        jDiv.scrollTop(
+            jDiv.scrollTop() - jDiv.offset().top + button.offset().top - topMargin
+        );
+    }
 
 }
