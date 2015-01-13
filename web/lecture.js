@@ -436,24 +436,31 @@ function keydownHandler(ev) {
     if (electric==true && evt.keyCode == 190) { setTimeout(prover_point, 0); }
 
     if (ev.keyCode >= 33 && ev.keyCode <= 40) {
-        if (ev.keyCode == 37) {
+        if (ev.keyCode == 37) { // Left
             if (pweMoveLeft(ev.shiftKey)) {
                 ev.preventDefault();
                 ev.stopPropagation();
             }
         }
-        if (ev.keyCode == 39) {
+        if (ev.keyCode == 39) { // Right
             if (pweMoveRight(ev.shiftKey)) {
                 ev.preventDefault();
                 ev.stopPropagation();
             }
         }
     } else if (!pweSelectionLocked()) {
-        if (ev.keyCode == 8) {
-            pweEmulateBackspace();
-            ev.preventDefault();
-            ev.stopPropagation();
-        } else if (ev.keyCode == 13 && !ev.ctrlKey) {
+        if (ev.keyCode == 8) { // Backspace
+            if (pweSelectionLocked()) {
+                ev.preventDefault();
+                ev.stopPropagation();
+            } else {
+                if (pweEmulateBackspace()) {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                }
+            }
+        } else if (ev.keyCode == 13 && !ev.ctrlKey) { // Enter
+            // there is no way around emulating this: the browser adds a new <div>...
             pweEmulateReturn();
             ev.preventDefault();
             ev.stopPropagation();
@@ -1775,6 +1782,12 @@ function pweEmulateBackspace() {
     var range, sel;
 
     sel = rangy.getSelection();
+
+    // do not emulate if not needed, so that Ctrl-Z will work
+    if (sel.anchorOffset > 1 && sel.focusOffset > 1) {
+        return false;
+    }
+
     if (sel.isCollapsed) {
         range = sel.getRangeAt(0).cloneRange();
         range.moveStart("character",-1);
@@ -1787,6 +1800,8 @@ function pweEmulateBackspace() {
            sel.deleteFromDocument();
         }
     }
+
+    return true;
 }
 
 function pweRangeLocked(range) {
