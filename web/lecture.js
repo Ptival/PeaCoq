@@ -663,20 +663,10 @@ function updateCoqtopPane(direction, response) {
             && $("#provwill").text().length === 0) {
             syncLog("AUTOENTERPROOFTREE");
             enterProofTree();
+        } else {
+            highlight();
         }
-        /*
-        // flash the newly-enabled button a few times
-        var iterations = 3;
-        var delay = 50;
-        var iterate = function() {
-            if (iterations-- === 0) { return; }
-            $("#prooftree-button").delay(delay).fadeOut(delay).fadeIn(delay, iterate);
-        }
-        iterate();
-        */
     }
-
-    highlight();
 
 }
 
