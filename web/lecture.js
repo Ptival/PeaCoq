@@ -138,6 +138,9 @@ $(document).ready(function() {
     var saveLocalButton = $("<button>", {
         "class": "btn btn-default",
         "id": "save-local-button",
+        "html": $("<span>")
+            .append(mkGlyph("floppy-save"))
+            .append(nbsp + nbsp + "Save"),
     })
         .appendTo(buttonGroup)
         .on("click", saveLocal)
@@ -146,13 +149,9 @@ $(document).ready(function() {
     $("<a>", {
         "download": "output.v",
         "id": "save-local-link",
-        "html": $("<span>")
-            .append(mkGlyph("floppy-save"))
-            .append(nbsp + nbsp + "Save")
     })
-        .css("color", "inherit")
-        .css("text-decoration", "none")
-        .appendTo(saveLocalButton)
+        .css("display", "none")
+        .appendTo(buttonGroup)
     ;
 
     $("#main")
@@ -1033,9 +1032,10 @@ function loadLocal() {
 function saveLocal() {
 
     var text = $("#editor").text();
-    var blob = new Blob([text], {type:'text/plain'});
+    var blob = new Blob([text], {type:'text/plain;charset=UTF-8'});
     var url = window.URL.createObjectURL(blob);
     $("#save-local-link").attr("href", url);
+    $("#save-local-link")[0].click();
     $("#editor").focus();
     repositionCaret();
 
