@@ -209,11 +209,12 @@ function ProofTree(anchor, width, height, qedCallback, onError) {
 
     this.debug = this.svg.append("g");
 
+    var debugWidth = this.width / 2;
     var debugHeight;
 
     var fo = this.debug
         .append("foreignObject")
-        .attr("width", this.width + "px")
+        .attr("width", debugWidth + "px")
     ;
 
     fo
@@ -221,10 +222,9 @@ function ProofTree(anchor, width, height, qedCallback, onError) {
         .classed("svg", true)
         .style("background-color", "rgba(0, 0, 0, 0)")
         .style("font-family", "monospace")
-        .html('<div class="node"><p>No debug information</p></div>')
-        .attr("height", function() {
+        .html('<div class="node" style="overflow: auto;"><p>No debug information</p></div>')
+        .each(function() {
             debugHeight = this.firstChild.getBoundingClientRect().height;
-            return debugHeight + "px";
         })
     ;
 
@@ -232,9 +232,10 @@ function ProofTree(anchor, width, height, qedCallback, onError) {
 
     this.debug
         .insert("rect", ":first-child")
-        .attr("width", this.width + "px")
+        .attr("width", debugWidth  + "px")
         .attr("height", debugHeight + "px")
         .attr("fill", "#B2DBA1")
+        .attr("opacity", "0.9")
     ;
 
     if (svgPanEnabled) {
@@ -2779,11 +2780,13 @@ function nodeString(d) {
 
 ProofTree.prototype.updateDebug = function() {
 
+    var debugWidth = this.width / 2;
+
     this.debug
         .selectAll(function() { return this.getElementsByTagName("foreignObject"); })
-        .attr("width", this.width + "px")
+        .attr("width", debugWidth + "px")
     ;
-    this.debug.select("rect").attr("width", this.width + "px");
+    this.debug.select("rect").attr("width", debugWidth + "px");
 
     var debugDiv = this.debug.select('div');
     var jDebugDiv = $(debugDiv[0]);
@@ -2791,6 +2794,7 @@ ProofTree.prototype.updateDebug = function() {
     var partialProof = this.partialProofFrom(this.rootNode, 1);
 
     jDebugDiv.empty();
+    jDebugDiv.css("height", ""); // removing it so that it recomputes
     jDebugDiv.append($("<div>").text(this.theorem));
     jDebugDiv.append($("<div>").text("Proof."));
     partialProof.prepend(span("&nbsp;&nbsp;")); // initial indentation
@@ -2806,11 +2810,11 @@ ProofTree.prototype.updateDebug = function() {
     }
 */
 
-    updateNodeHeight(this.debug);
+    updateNodeHeight(this.debug, Math.floor(this.height / 3));
 
 }
 
-function updateNodeHeight(selector) {
+function updateNodeHeight(selector, maxHeight) {
 
     var div = selector.select('div');
 
@@ -2821,12 +2825,17 @@ function updateNodeHeight(selector) {
         })
         .attr("height", function() {
             var height = div[0][0].getBoundingClientRect().height;
+            var desiredHeight = Math.min(height, maxHeight);
+            $(this).css("height", desiredHeight + "px");
+            $(div[0][0]).css("height", desiredHeight + "px");
             selector
                 .select("rect")
-                .attr("height", height + "px")
+                .attr("height", desiredHeight + "px")
             ;
-            return height + "px";
+            return desiredHeight + "px";
         })
     ;
+
+    // TODO: also scroll the view inside the body so that the current goal is visible
 
 }
