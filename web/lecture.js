@@ -224,8 +224,8 @@ $(document).ready(function() {
     $("#editor")
         .keypress(keypressHandler)
         .keydown(keydownHandler)
-        .on("cut", cutHandler)
-        .on("paste", pasteHandler)
+        .on("cut", pweCutHandler)
+        .on("paste", pwePasteHandler)
     ;
     PT.handleKeyboard();
 
@@ -419,11 +419,11 @@ function keydownHandler(ev) {
             ev.preventDefault();
             ev.stopPropagation();
         } else if (ev.keyCode == 34) { //PGDN
-            prover_bottom();
+            //prover_bottom();
             ev.preventDefault();
             ev.stopPropagation();
         } else if (ev.keyCode == 33) { //PGUP
-            prover_top();
+            //prover_top();
             ev.preventDefault();
             ev.stopPropagation();
         } else if (ev.keyCode == 13) { //ENTER
@@ -433,7 +433,7 @@ function keydownHandler(ev) {
         }
     }
 
-    if (electric==true && evt.keyCode == 190) { setTimeout(prover_point, 0); }
+    if (electric==true && evt.keyCode == 190) { setTimeout(proverToCaret, 0); }
 
     if (ev.keyCode >= 33 && ev.keyCode <= 40) {
         if (ev.keyCode == 37) { // Left
@@ -673,6 +673,8 @@ function updateCoqtopPane(direction, response) {
         } else {
             highlight();
         }
+    } else {
+        highlight();
     }
 
 }
@@ -723,6 +725,7 @@ function tryProcessing() {
 
     pweSetLockedPart("provwill", provwill);
     pweSetLockedPart("proving", proving);
+    highlight();
 
     // sometimes, a leftover \n stays in the #provwill area, remove it
     /*
@@ -1282,15 +1285,6 @@ function pasteHandler(evt) {
 
 /* ProofWeb */
 
-function pweKeyPressHandler(ev) {
-    pweRestoreFinalBR();
-    pweOptAdjustSelection();
-    if (!(ev.keyCode >= 33 && ev.keyCode <= 40) && pweSelectionLocked()) {
-        ev.preventDefault();
-        ev.stopPropagation();
-    }
-}
-
 function pweRestoreFinalBR() {
     var finalbr = $("#finalbr")[0];
     if (!finalbr) {
@@ -1409,116 +1403,6 @@ function pweSelectionLocked() {
     return pweSelectionLockstate() > 0;
 }
 
-function pweKeyDownHandler(ev) {
-    pweRestoreFinalBR();
-    pweOptAdjustSelection();
-
-    kb_handler(ev);
-
-    if (ev.keyCode >= 33 && ev.keyCode <= 40) {
-        if (ev.keyCode == 37) {
-            if (pweMoveLeft(ev.shiftKey)) {
-                ev.preventDefault();
-                ev.stopPropagation();
-            }
-        }
-        if (ev.keyCode == 39) {
-            if (pweMoveRight(ev.shiftKey)) {
-                ev.preventDefault();
-                ev.stopPropagation();
-            }
-        }
-    } else if (!pweSelectionLocked()) {
-        if (ev.keyCode == 8) {
-            pweEmulateBackspace();
-            ev.preventDefault();
-            ev.stopPropagation();
-        } else if (ev.keyCode == 13 && !ev.ctrlKey) {
-            pweEmulateReturn();
-            ev.preventDefault();
-            ev.stopPropagation();
-        }
-    } else {
-        ev.preventDefault();
-        ev.stopPropagation();
-    }
-}
-
-function prover_up () {
-    if (sent == true) return;
-    var index = 0;
-    if (provwill != "") {
-        index = proved.length + proving.length + prev(provwill);
-    } else if (proving != "") {
-        index = proved.length + prev(proving);
-    } else if (proved != "") {
-        index = prev(proved);
-    }
-    myx_undo (index, undo_cb);
-}
-
-function kb_handler(evt) {
-    if (evt.ctrlKey) {
-        if (evt.keyCode == 40 || evt.keyCode == 10) { //DOWN_ARROW
-            prover_down();
-            try {
-                evt.preventDefault();
-                evt.stopPropagation();
-            } catch (e) {}
-        } else if (evt.keyCode == 38) { //UP_ARROW
-            prover_up();
-            evt.preventDefault();
-            evt.stopPropagation();
-        } else if (evt.keyCode == 34) { //PGDN
-            prover_bottom();
-            evt.preventDefault();
-            evt.stopPropagation();
-        } else if (evt.keyCode == 33) { //PGUP
-            prover_top();
-            evt.preventDefault();
-            evt.stopPropagation();
-        } else if (evt.keyCode == 13) { //ENTER
-            prover_point();
-            evt.preventDefault();
-            evt.stopPropagation();
-        }
-    }
-    if (electric==true && evt.keyCode == 190) { setTimeout(prover_point, 0); }
-}
-
-function prover_down () {
-    var provedit = pweGetUnlocked();
-    var index = next(provedit);
-    if (index == 0) return;
-    var sendtext = provedit.substring(0, index);
-    provedit = provedit.substring(index);
-    provwill += sendtext;
-    pweSetLockedPart("provwill", provwill);
-    pweSetUnlocked(provedit);
-    prover_send_if_can();
-}
-
-function prover_point () {
-    if (sent == true) return;
-    var len = pweGetCaretPos();
-    if (len < proved.length) {
-        myx_undo (len, undo_cb);
-        return;
-    }
-    len = len - proved.length - proving.length - provwill.length;
-    if (len > 0) len--; // adjustment for startmarker char
-    var provedit = pweGetUnlocked();
-    var old = provedit.length;
-    if (len > 0) prover_down ();
-    provedit = pweGetUnlocked();
-    while ((provedit.length < old) && (len > 0)) { // No infinite loop
-        len = len + provedit.length - old;
-        old = provedit.length;
-        if (len > 0) prover_down ();
-        provedit = pweGetUnlocked();
-    }
-}
-
 function pweGetUnlocked() {
     var ulrange;
     ulrange = pweUnlockedRange();
@@ -1606,24 +1490,6 @@ function pweScrollToCaret() {
 
 function pweFocusEditor() {
     if (!workaround_no_focusing) $("#editor").focus();
-}
-
-function prover_send_if_can () {
-    if (sent == true) return;
-    var pos = proved.length + proving.length;
-    var text = '' + pos;
-    while (provwill != '') {
-        var index = next(provwill);
-        if (index == 0) break;
-        pos = pos + index;
-        text = text + token + provwill.substring(0, index) + token + pos;
-        proving = proving + provwill.substring(0, index);
-        provwill = provwill.substring(index);
-    }
-    tosend = (unquote_str(text));
-    pweSetLockedPart("provwill",provwill);
-    pweSetLockedPart("proving",proving);
-    myx_say(tosend, undo_cb);
 }
 
 function unquote_str (oldstr) {
@@ -1808,42 +1674,67 @@ function pweRangeLocked(range) {
     return pweRangeLockstate(range) > 0;
 }
 
-function undo_cb(z) {
-    if (z == "") { myx_listen (undo_cb); return; }
-    var provedit = pweGetUnlocked();
-    if (z == "+") {
-        provedit = proving + provwill + provedit;
-        proving = ""; provwill = "";
-        sent = false;
-        pweSetLockedPart("provwill",provwill);
-        pweSetLockedPart("proving",proving);
-        pweSetUnlocked(provedit);
-        return;
-    }
-    var index = z.indexOf ("__PWT__");
-    var out = "<pre>" + z.substring(0, index) + "</pre>";
-    var out = unicode(out);
-    get_frame("frame_state").body.innerHTML = out;
-    var rest = z.substring(index + 7);
-    index = rest.indexOf ("__PWT__");
-    get_frame("frame_error").body.innerHTML = "<pre>" + unicode(rest.substring(index + 7)) + "</pre>";
-    rest = rest.substring(0, index);
-    sent = false;
-    if (proved.length > rest) {
-        provedit = proved.substring(rest) + proving + provwill + provedit;
-        proved = proved.substring(0, rest); proving = ""; provwill = "";
-    } else if (proved.length == rest) {
-        provedit = proving + provwill + provedit;
-        proving = ""; provwill = "";
+function pwePasteHandler(ev) {
+    var cbd,txt="";
+
+    pweOptAdjustSelection();
+    if (!pweSelectionLocked()) {
+        cbd = ev.originalEvent.clipboardData
+            || window.clipboardData
+            || st.editorwin.clipboardData
+        ;
+        if (cbd) {
+            ev.preventDefault();
+            ev.stopPropagation();
+            try { txt = cbd.getData("text/plain");  } catch (e) {}
+            try { txt = txt || cbd.getData("Text"); } catch (e) {}
+            txt = pweSanitizeInput(txt);
+            if (txt) pweInsertAtSelection(txt);
+            pweScrollToCaret();
+        } else {
+            if (!st.workaround_native_paste) {
+                alert("Warning: your browser does not allow access to the clipboard\n"+
+                      "from the paste event handler. Attempting workaround.");
+                st.workaround_native_paste=true;
+            }
+            setTimeout(pweCleanupPaste,0);
+        }
     } else {
-        var tocut = rest - proved.length;
-        proved = (proved + proving).substring(0, rest);
-        proving = proving.substring(tocut);
+        ev.preventDefault();
+        ev.stopPropagation();
     }
-    pweSetLockedPart("proved",proved);
-    pweSetLockedPart("provwill",provwill);
-    pweSetLockedPart("proving",proving);
-    pweSetUnlocked(provedit);
-    if (proving == "") prover_send_if_can ();
-    else myx_listen (undo_cb);
+}
+
+function pweCleanupPaste(ev) {
+    var caret,range,txt,txtclean;
+
+    caret = pweGetCaretPos();
+    range = rangy.createRange();
+    range.selectNodeContents($("#editor")[0]);
+    range.setStartAfter($("#provwill")[0]);
+
+    txt = range.textContent().substring(1);
+    txtclean =  pweSanitizeInput(txt);
+    caret -= (txt.length - txtclean.length);
+
+    range.pasteHtml('<span id="unlocked"></span>');
+    $("#unlocked").text(zwsp + txtclean);
+    pweRestoreFinalBR();
+    pweSetCaretPos(caret);
+}
+
+function pweSanitizeInput(txt) {
+    return txt
+        .replace(/\r\n/g,"\n")
+        .replace(/\r/g,"\n")
+        .replace(new RegExp(zwsp, 'g'), "")
+    ;
+}
+
+function pweCutHandler(ev) {
+    pweOptAdjustSelection();
+    if (pweSelectionLocked()) {
+        ev.preventDefault();
+        ev.stopPropagation();
+    }
 }
