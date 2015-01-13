@@ -55,6 +55,8 @@ Qed.
 
 Check orb.
 
+(*
+
 Fixpoint has_const (e: expr) : bool :=
   match e with
     | const _ => true
@@ -87,4 +89,4 @@ Lemma bottoms_out:
 
 
 
-
+*)
