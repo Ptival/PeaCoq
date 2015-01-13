@@ -273,7 +273,7 @@ Consider this alternate definition of fold:
 Fixpoint fold' {T: Type} (base: T) (f: T -> nat -> T) (nt: nat_tree) : T :=
   match nt with
     | Leaf => base
-    | Branch n l r => fold (f (fold base f l) n) f r
+    | Branch n l r => fold' (f (fold' base f l) n) f r
   end.
 (*
 In a short English paragraph, describe how fold and fold' differ.
