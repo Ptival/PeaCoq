@@ -24,15 +24,19 @@ Definition heap := var -> val.
 Definition empty : heap :=
   fun s => 0.
 
+Definition add_binding n v h : heap :=
+  fun s => if string_dec s n then v else h s.
+
 Inductive Eval (h: heap) : expr -> val -> Prop :=
 | EConst : forall n,
   Eval h (Const n) n
 | EVar : forall x,
   Eval h (Var x) (h x)
-| EAdd : forall e1 e2 c1 c2,
+| EAdd : forall e1 e2 c1 c2 c3,
   Eval h e1 c1 ->
   Eval h e2 c2 ->
-  Eval h (Add e1 e2) (c1 + c2)
+  c3 = c1 + c2 ->
+  Eval h (Add e1 e2) c3
 | EMul : forall e1 e2 c1 c2,
   Eval h e1 c1 ->
   Eval h e2 c2 ->
@@ -62,8 +66,28 @@ Inductive Step (h : heap) : stmt -> heap -> stmt -> Prop :=
 | SWhileF : forall e c s,
   Eval h e c ->
   c <= 0 ->
-  Step h (While e s) h Skip.​
+  Step h (While e s) h Skip.
+
 (** alternatively...
 | SWhileT : forall e s,
   Step h (While e s) h (Seq (Cond e s) (While e s))
 *)
+
+Theorem Eval_101 :
+  Eval (add_binding "y" 4 empty) (Add (Add (Const 3) (Var "y")) (Const 5)) 12.
+Proof.
+  eapply EAdd.
+  eapply EAdd.
+  constructor.
+  constructor.
+  constructor.
+  constructor.
+  constructor.
+Qed.
+
+Print Eval_101.​
+
+
+
+
+
