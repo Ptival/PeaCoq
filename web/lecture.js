@@ -235,6 +235,7 @@ $(document).ready(function() {
 
 function loadFile() {
     var file = $("#filepicker")[0].files[0];
+    $("#save-local-link").attr("download", file.name);
     var reader = new FileReader();
     reader.onload = function(e) {
         onLoad(reader.result);
