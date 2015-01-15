@@ -1,4 +1,3 @@
-
 var processing = false;
 var prooftree = undefined;
 var nbsp = "&nbsp;";

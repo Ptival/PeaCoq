@@ -633,10 +633,14 @@ ProofTree.prototype.tryAllTactics = function() {
     var res = [];
     var unfocusedBefore;
 
+    /*
+      PeaCoq tries to not have multiple tactic nodes if they achieve the same
+      effect. In order to also eliminate all tactics that do nothing useful,
+      idtac is preemptively added. When duplicates are removed, all the useless
+      tactics but idtac will be removed. Finally, idtac is removed.
+     */
     syncQueryUndo('idtac.', function(response) {
         unfocusedBefore = response.rGoals.unfocused;
-        // preemptively put idtac so that it cancels tactics that do nothing by
-        // duplication. eventually it will be removed since it does nothing.
         res.push(mkTacticNode(self.curNode, 'idtac.', response.rGoals.focused));
     });
 
