@@ -1735,9 +1735,8 @@ ProofTree.prototype.shiftPrev = function(n) {
         return false;
     }
     if (n.solved) { return; }
-    if (isGoal(n)) {
-        tryShifting(n.children[n.focusIndex])
-            || tryShifting(n);
+    if (isGoal(n) && n.children.length > 0) {
+        tryShifting(n.children[n.focusIndex]) || tryShifting(n);
     } else {
         tryShifting(n);
     }
@@ -1756,9 +1755,8 @@ ProofTree.prototype.shiftNext = function(n) {
         return false;
     }
     if (n.solved) { return; }
-    if (isGoal(n)) {
-        tryShifting(n.children[n.focusIndex])
-            || tryShifting(n);
+    if (isGoal(n) && n.children.length > 0) {
+        tryShifting(n.children[n.focusIndex]) || tryShifting(n);
     } else {
         tryShifting(n);
     }
