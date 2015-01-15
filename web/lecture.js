@@ -1144,7 +1144,7 @@ function loadLocal() {
 
 function saveLocal() {
 
-    var text = $("#editor").text();
+    var text = pweSanitizeInput($("#editor").text());
     var blob = new Blob([text], {type:'text/plain;charset=UTF-8'});
     var url = window.URL.createObjectURL(blob);
     $("#save-local-link").attr("href", url);
