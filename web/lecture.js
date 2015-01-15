@@ -260,6 +260,8 @@ function resize() {
 
 function onLoad(text) {
 
+    text = pweSanitizeInput(text);
+
     syncLog("LOAD " + text);
 
     syncResetCoqNoImports();
