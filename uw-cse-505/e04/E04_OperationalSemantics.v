@@ -86,8 +86,3 @@ Proof.
 Qed.
 
 Print Eval_101.​
-
-
-
-
-
