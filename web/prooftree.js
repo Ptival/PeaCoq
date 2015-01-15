@@ -1,13 +1,10 @@
-
-"use strict";
+'use strict';
 
 /*
   Note: in strict mode, eval does not populate the global namespace with global
-  scope variables.
-  Therefore $.getScript will not see the global variables unless they are attached
-  to window manually.
-  Since I like strict mode, things to be exported have to be registered in the PT
-  namespace.
+  scope variables. Therefore $.getScript will not see the global variables
+  unless they are attached to window manually. Since I like strict mode, things
+  to be exported have to be registered in the PT namespace.
 */
 window.PT = {};
 
@@ -84,7 +81,9 @@ PT.tCompute = PT.tReflexivity.concat(['compute']);
 PT.allTactics = PT.tDiscriminate;
 
 PT.uwSet = [
-    "simpl", "simpl in *", "reflexivity", "intro", "rewrite", "destruct", "induction", "left", "right", "split", "discriminate", "firstorder", "f_equal", "apply", "eapply", "constructor", "subst", "inversion", "omega"
+    "simpl", "simpl in *", "reflexivity", "intro", "rewrite", "destruct",
+    "induction", "left", "right", "split", "discriminate", "firstorder",
+    "f_equal", "apply", "eapply", "constructor", "subst", "inversion", "omega"
 ];
 
 function getAllChildren(n) {
@@ -179,11 +178,13 @@ function ProofTree(anchor, width, height, qedCallback, onError) {
         .insert("svg", ":first-child")
         .classed("svg", true)
         .attr("id", "svg-" + this.svgId)
-        .attr("display", "block") // necessary for the height to be exactly what we set
+    // necessary for the height to be exactly what we set
+        .attr("display", "block")
         .style("width", this.width + "px")
         .style("height", this.height + "px")
         //.attr("focusable", true)
-        //.attr("tabindex", 0) // this creates a blue outline that changes the width weirdly
+    // this creates a blue outline that changes the width weirdly
+        //.attr("tabindex", 0)
         .on("click", function() {
             activeProofTree = self;
             self.usingKeyboard = false;
@@ -200,7 +201,8 @@ function ProofTree(anchor, width, height, qedCallback, onError) {
              )
     ;
 
-    // Note : the order of these influence the display: first = bottom, last = top
+    // Note : the order of these influence the display:
+    // first = bottom, last = top
     this.linkLayer = this.viewport.append("g").attr("id", "link-layer");
     this.rectLayer = this.viewport.append("g").attr("id", "rect-layer");
     this.diffLayer = this.viewport.append("g").attr("id", "diff-layer");
@@ -222,7 +224,9 @@ function ProofTree(anchor, width, height, qedCallback, onError) {
         .classed("svg", true)
         .style("background-color", "rgba(0, 0, 0, 0)")
         .style("font-family", "monospace")
-        .html('<div class="node" style="overflow: auto;"><p>No debug information</p></div>')
+        .html('<div class="node" style="overflow: auto;">'
+              + '<p>No debug information</p></div>'
+             )
         .each(function() {
             debugHeight = this.firstChild.getBoundingClientRect().height;
         })
@@ -355,12 +359,23 @@ function spotTheDifferences(before, after) {
 
 function sameNode(n1, n2) { return n1.id === n2.id; }
 
-// creates an empty rectangle in the same column as [node], at vertical position [currentY]
+/*
+  creates an empty rectangle in the same column as [node], at vertical position
+  [currentY]
+*/
 function emptyRect(node, currentY) {
     var delta = 1; // how big to make the empty rectangle
     return $.extend(
-        {"left": node.cX, "right": node.cX + node.width, "width": node.width},
-        {"top": currentY - delta, "bottom": currentY + delta, "height": 2 * delta}
+        {
+            "left": node.cX,
+            "right": node.cX + node.width,
+            "width": node.width
+        },
+        {
+            "top": currentY - delta,
+            "bottom": currentY + delta,
+            "height": 2 * delta,
+        }
     );
 }
 
@@ -389,16 +404,32 @@ var centerLeftOffset  = +10;
 
 var centerRightOffset = -10;
 
-function centerLeft0(d) { return {"x": d.cX0 + centerLeftOffset, "y": d.cY0 + d.height / 2}; }
-
-function centerRight0(d) {
-    return {"x": d.cX0 + d.width + centerRightOffset, "y": d.cY0 + d.height / 2};
+function centerLeft0(d) {
+    return {
+        "x": d.cX0 + centerLeftOffset,
+        "y": d.cY0 + d.height / 2
+    };
 }
 
-function centerLeft(d) { return {"x": d.cX + centerLeftOffset, "y": d.cY + d.height / 2}; }
+function centerRight0(d) {
+    return {
+        "x": d.cX0 + d.width + centerRightOffset,
+        "y": d.cY0 + d.height / 2
+    };
+}
+
+function centerLeft(d) {
+    return {
+        "x": d.cX + centerLeftOffset,
+        "y": d.cY + d.height / 2
+    };
+}
 
 function centerRight(d) {
-    return {"x": d.cX + d.width + centerRightOffset, "y": d.cY + d.height / 2};
+    return {
+        "x": d.cX + d.width + centerRightOffset,
+        "y": d.cY + d.height / 2
+    };
 }
 
 function swapXY(r) { return {"x": r.y, "y": r.x}; }
@@ -456,7 +487,8 @@ ProofTree.prototype.newTheorem = function(
     // hide previous proof result if any, show svg if hidden
     this.svg.style("display", "");
 
-    this.rootNode = undefined; // will be reset in hInit callback, prevents stale uses
+    // will be reset in hInit callback, prevents stale uses
+    this.rootNode = undefined;
 
     var success = false;
 
@@ -473,7 +505,8 @@ ProofTree.prototype.newTheorem = function(
 
 }
 
-ProofTree.prototype.newAlreadyStartedTheorem = function(theoremStatement, lastResponse, tactics)
+ProofTree.prototype.newAlreadyStartedTheorem =
+    function(theoremStatement, lastResponse, tactics)
 {
 
     var self = this;
@@ -485,7 +518,8 @@ ProofTree.prototype.newAlreadyStartedTheorem = function(theoremStatement, lastRe
     // hide previous proof result if any, show svg if hidden
     this.svg.style("display", "");
 
-    this.rootNode = undefined; // will be reset in hInit callback, prevents stale uses
+    // will be reset in hInit callback, prevents stale uses
+    this.rootNode = undefined;
 
     var success = false;
 
@@ -505,14 +539,17 @@ function mkNode(parent, name, pName, moreFields) {
             "allChildren": [],
             "name": name,
             "pName": pName, // for debugging purposes
-            // we preemptively fill the parent and depth fields because d3 will only fill
-            // them for the visible nodes of the tree, while some algorithms require it
-            // before a node has ever been visible
+            /*
+              we preemptively fill the parent and depth fields because d3 will
+              only fill them for the visible nodes of the tree, while some
+              algorithms require it before a node has ever been visible
+            */
             "parent": parent,
             "depth": parent.depth + 1,
             "focusIndex": 0,
             "solved": false,
-            "collapsed": false, // nodes need to be created uncollapsed so that D3 registers them
+            // nodes need to be created uncollapsed so that D3 registers them
+            "collapsed": false,
         },
         moreFields
     );
@@ -570,7 +607,11 @@ ProofTree.prototype.runTactic = function(t) {
         if (isGood(response)) {
             // if it did not solve the goal
             if (_.isEqual(response.rGoals.unfocused, unfocusedBefore)) {
-                newChild = mkTacticNode(self.curNode, t, response.rGoals.focused);
+                newChild = mkTacticNode(
+                    self.curNode,
+                    t,
+                    response.rGoals.focused
+                );
             } else {
                 newChild = mkTacticNode(self.curNode, t, []);
             }
@@ -604,7 +645,10 @@ ProofTree.prototype.tryAllTactics = function() {
             if (isGood(response)) {
                 // if the tactic did not finish the goal
                 if (_.isEqual(response.rGoals.unfocused, unfocusedBefore)) {
-                    res.push(mkTacticNode(self.curNode, t + '.', response.rGoals.focused));
+                    res.push(mkTacticNode(
+                        self.curNode, t + '.',
+                        response.rGoals.focused
+                    ));
                 } else { // this tactic proved that goal
                     res.push(mkTacticNode(self.curNode, t + '.', []));
                 }
@@ -791,7 +835,9 @@ ProofTree.prototype.curGoal = function() {
     return isGoal(this.curNode) ? this.curNode : this.curNode.parent;
 }
 
-ProofTree.prototype.isCurGoal = function(n) { return n.id === this.curGoal().id; }
+ProofTree.prototype.isCurGoal = function(n) {
+    return n.id === this.curGoal().id;
+}
 
 ProofTree.prototype.isCurGoalChild = function(n) {
     return hasParent(n) && this.isCurGoal(n.parent);
@@ -801,7 +847,9 @@ ProofTree.prototype.isCurGoalGrandChild = function(n) {
     return hasParent(n) && this.isCurGoalChild(n.parent);
 }
 
-ProofTree.prototype.isRootNode = function(n) { return n.id === this.rootNode.id; }
+ProofTree.prototype.isRootNode = function(n) {
+    return n.id === this.rootNode.id;
+}
 
 ProofTree.prototype.isCurNode = function(n) { return n.id === this.curNode.id; }
 
@@ -850,7 +898,9 @@ ProofTree.prototype.linkWidth = function(d) {
             if (this.isCurNode(src)) {
                 if (sameNode(tgt, this.hoveredNode)) { return thick; }
                 else if (!hasParent(this.hoveredNode)) { return thin; }
-                else if (sameNode(tgt, this.hoveredNode.parent)) { return thick; }
+                else if (sameNode(tgt, this.hoveredNode.parent)) {
+                    return thick;
+                }
                 else { return thin; }
             } else if (this.isCurNodeChild(src)) {
                 if (sameNode(tgt, this.hoveredNode)) { return thick; }
@@ -865,7 +915,8 @@ ProofTree.prototype.linkWidth = function(d) {
         var focusedChild = this.curNode.allChildren[this.curNode.focusIndex];
         if (focusedChild === undefined) { return thin; }
         if (this.isCurNode(src) && focusedChild.id === tgt.id) { return thick; }
-        if (src.id === focusedChild.id && src.allChildren[src.focusIndex].id === tgt.id) {
+        if (src.id === focusedChild.id
+            && src.allChildren[src.focusIndex].id === tgt.id) {
             return thick;
         }
         return thin;
@@ -904,7 +955,9 @@ ProofTree.prototype.update = function(callback) {
 
     // we build the foreignObject first, as its dimensions will guide the others
     var textSelection = this.textLayer
-        .selectAll(function() { return this.getElementsByTagName("foreignObject"); })
+        .selectAll(function() {
+            return this.getElementsByTagName("foreignObject");
+        })
         .data(nodes, function(d) { return d.id || (d.id = _.uniqueId()); })
     ;
 
@@ -983,7 +1036,9 @@ ProofTree.prototype.update = function(callback) {
     var visibleChildren = _(this.getVisibleChildren(curGoal));
     var visibleGrandChildren = _(this.getVisibleGrandChildren(curGoal));
     var visibleNodes = _([]);
-    if (hasParent(curGoal)) { visibleNodes = visibleNodes.concat([curGoal.parent]); }
+    if (hasParent(curGoal)) {
+        visibleNodes = visibleNodes.concat([curGoal.parent]);
+    }
     visibleNodes = visibleNodes.concat([curGoal]);
     visibleNodes = visibleNodes.concat(visibleChildren.value());
     visibleNodes = visibleNodes.concat(visibleGrandChildren.value());
@@ -1002,45 +1057,60 @@ ProofTree.prototype.update = function(callback) {
 
     /*
       we want all visible grand children to be apart from each other
-      i.e. ∀ a b, yFactor * | a.y - b.y | > a.height/2 + b.height/2 + nodeVSpacing
-      we also want all visible children to be apart from each other (especially when they
-      don't have their own children to separate them)
+      i.e.
+      ∀ a b, yFactor * | a.y - b.y | > a.height/2 + b.height/2 + nodeVSpacing
+      we also want all visible children to be apart from each other (especially
+      when they don't have their own children to separate them)
     */
-    var gcSiblings = _.zip(visibleGrandChildren.value(), visibleGrandChildren.rest().value());
+    var gcSiblings = _.zip(
+        visibleGrandChildren.value(),
+        visibleGrandChildren.rest().value()
+    );
     gcSiblings.pop(); // removes the [last, undefined] pair at the end
-    var cSiblings = _.zip(visibleChildren.value(), visibleChildren.rest().value());
+    var cSiblings = _.zip(
+        visibleChildren.value(),
+        visibleChildren.rest().value()
+    );
     cSiblings.pop();
     // also, the current node should not overlap its siblings
     var currentSiblings = [];
     if (isGoal(this.curNode) && hasParent(this.curNode)) {
         var curNodeSiblings = _(this.getVisibleChildren(this.curNode.parent));
-        currentSiblings = _.zip(curNodeSiblings.value(), curNodeSiblings.rest().value());
+        currentSiblings = _.zip(
+            curNodeSiblings.value(),
+            curNodeSiblings.rest().value()
+        );
         currentSiblings.pop();
     }
     var siblings = _(gcSiblings.concat(cSiblings, currentSiblings));
     var yFactors = siblings
         .map(function(e) {
             var a = e[0], b = e[1];
-            return (((a.height + b.height) / 2) + nodeVSpacing) / (nodeY(b) - nodeY(a));
+            var yDistance = nodeY(b) - nodeY(a);
+            var wantedSpacing = (a.height + b.height / 2) + nodeVSpacing;
+            return wantedSpacing / yDistance;
         })
         .value()
     ;
     this.yFactor = _.isEmpty(yFactors) ? this.height : _.max(yFactors);
 
     var topMostDescendant = undefined;
-    // when we are focused on a tactic, it becomes the 0-th child of its current goal
+    // when we are focused on a tactic, it becomes the 0-th child of its current
+    // goal
     var topMostTacticIndex = isGoal(this.curNode) ? curGoal.focusIndex : 0;
     var topMostTactic = this.getVisibleChildren(curGoal)[topMostTacticIndex];
     if (topMostTactic !== undefined) {
         topMostDescendant = topMostTactic;
-        var topMostGoal = this.getVisibleChildren(topMostTactic)[topMostTactic.focusIndex];
+        var topMostGoal =
+            this.getVisibleChildren(topMostTactic)[topMostTactic.focusIndex];
         if (topMostGoal !== undefined) {
             topMostDescendant = topMostGoal;
         }
     }
     if (topMostDescendant !== undefined) {
         if (isGoal(this.curNode) && isGoal(topMostDescendant)) {
-            // computing the difference in height between the <hr> is not obvious...
+            // computing the difference in height between the <hr> is not
+            // obvious...
             var hrDelta =
                 this.curNode.goalSpan[0].offsetTop
                 - topMostDescendant.goalSpan[0].offsetTop
@@ -1260,12 +1330,16 @@ ProofTree.prototype.update = function(callback) {
     this.viewport
         .transition()
         .duration(animationDuration)
-        .attr("transform", "translate(" + self.viewportX + ", " + self.viewportY + ")")
+        .attr("transform",
+              "translate(" + self.viewportX + ", " + self.viewportY + ")"
+             )
     ;
 
     var diffSelection = this.diffLayer.selectAll("g.node-diff").data(
         // only goal nodes with a grandparent give rise to a diff
-        _(nodes).filter(function(d) { return isGoal(d) && hasGrandParent(d); }).value(),
+        _(nodes).filter(function(d) {
+            return isGoal(d) && hasGrandParent(d);
+        }).value(),
         byNodeId
     );
 
@@ -1342,7 +1416,10 @@ ProofTree.prototype.update = function(callback) {
             });
 
             d.diffListSelection =
-                d3.select(this).selectAll("g.diff-item").data(diffList, byDiffId);
+                d3.select(this)
+                .selectAll("g.diff-item")
+                .data(diffList, byDiffId)
+            ;
 
             d.diffListSelection.enter()
                 .append("g")
@@ -1377,7 +1454,8 @@ ProofTree.prototype.update = function(callback) {
 
                         var oldHyp = diff.oldHyp;
                         var newHyp = diff.newHyp;
-                        if (JSON.stringify(oldHyp.hType) !== JSON.stringify(newHyp.hType)) {
+                        if (JSON.stringify(oldHyp.hType)
+                            !== JSON.stringify(newHyp.hType)) {
                             d3this
                                 .append("path")
                                 .attr("fill", diffBlue)
@@ -1385,7 +1463,10 @@ ProofTree.prototype.update = function(callback) {
                                 .attr("opacity", diffOpacity)
                             ;
 
-                            var subdiff = spotTheDifferences(oldHyp.div, newHyp.div);
+                            var subdiff = spotTheDifferences(
+                                oldHyp.div,
+                                newHyp.div
+                            );
 
                             diff.removedSelection =
                                 d3this.selectAll("rect.removed").data(subdiff.removed);
