@@ -220,12 +220,14 @@ $(document).ready(function() {
     $("body")
         .on("keydown", globalKeyHandler)
     ;
+
     $("#editor")
         .keypress(keypressHandler)
         .keydown(keydownHandler)
         .on("cut", pweCutHandler)
         .on("paste", pwePasteHandler)
     ;
+
     PT.handleKeyboard();
 
     $("#editor").focus();
