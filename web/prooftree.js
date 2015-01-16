@@ -16,6 +16,8 @@ var rectMargin = {top: 2, right: 8, bottom: 2, left: 8};
 var animationDuration = 360;
 var tacticNodeRounding = 10;
 var goalNodeRounding = 0;
+var keyboardDelay = 100;
+var keyboardPaused = false;
 
 $(document).ready(function() {
 
@@ -148,7 +150,6 @@ function ProofTree(anchor, width, height, qedCallback, onError) {
     this.qedCallback = qedCallback;
     this.onError = onError;
 
-    this.animationRunning = false;
     this.paused = false;
     this.svgId = _.uniqueId();
     this.xFactor = this.width;
@@ -470,19 +471,16 @@ function evenFloor(x) {
     return (r % 2 === 0) ? r : r - 1;
 }
 
-ProofTree.prototype.newTheorem = function(
-    theorem,
-    tactics,    // function from prooftree to set of tactics allowed
-    afterUpdate, // callback after every update
-    afterFirstUpdate // callback after the first update ends
-)
-{
+/*
+  [theorem] : string
+  [tactics] : ProofTree -> [string]
+*/
+ProofTree.prototype.newTheorem = function(theorem, tactics) {
 
     var self = this;
 
     this.theorem = theorem;
     this.tactics = tactics;
-    this.afterUpdate = afterUpdate === undefined ? function(){} : afterUpdate;
 
     // hide previous proof result if any, show svg if hidden
     this.svg.style("display", "");
@@ -493,7 +491,7 @@ ProofTree.prototype.newTheorem = function(
     var success = false;
 
     syncQuery(theorem, function(response) {
-        success = self.hInit(response, afterFirstUpdate);
+        success = self.hInit(response);
     });
 
     syncLog("THEOREM " + theorem);
@@ -513,7 +511,6 @@ ProofTree.prototype.newAlreadyStartedTheorem =
 
     this.theorem = theoremStatement;
     this.tactics = tactics;
-    this.afterUpdate = function(){};
 
     // hide previous proof result if any, show svg if hidden
     this.svg.style("display", "");
@@ -523,7 +520,7 @@ ProofTree.prototype.newAlreadyStartedTheorem =
 
     var success = false;
 
-    self.hInit(lastResponse, function() {});
+    self.hInit(lastResponse);
 
     $(this.svg[0]).focus();
     this.svg.on("click")();
@@ -783,7 +780,7 @@ function extractHypothesis(gHyp) {
 
 }
 
-ProofTree.prototype.hInit = function(response, afterUpdate) {
+ProofTree.prototype.hInit = function(response) {
 
     var self = this;
 
@@ -818,7 +815,7 @@ ProofTree.prototype.hInit = function(response, afterUpdate) {
 
     this.rootNode.allChildren = this.tryAllTactics();
 
-    this.update(afterUpdate);
+    this.update();
 
     return true;
 
@@ -1669,15 +1666,6 @@ ProofTree.prototype.update = function(callback) {
 
     this.updateDebug();
 
-    this.animationRunning = true;
-    window.setTimeout(function() {
-        self.animationRunning = false;
-        if (callback !== undefined) {
-            callback();
-        }
-        self.afterUpdate(self);
-    }, animationDuration);
-
 }
 
 function byDiffId(d) {
@@ -1752,7 +1740,7 @@ ProofTree.prototype.shiftNext = function(n) {
     function tryShifting(n) {
         if (n.focusIndex + 1 < self.getVisibleChildren(n).length) {
             n.focusIndex++;
-            syncLog("DOWN " + nodeString(n.allChildren[n.focusIndex]));
+            asyncLog("DOWN " + nodeString(n.allChildren[n.focusIndex]));
             self.update();
             return true;
         }
@@ -1768,7 +1756,7 @@ ProofTree.prototype.shiftNext = function(n) {
 
 ProofTree.prototype.click = function(d, remember, callback) {
 
-    if (this.animationRunning || this.paused) { return; }
+    if (this.paused) { return; }
 
     if (d.solved) {
         if (hasParent(d)) {
@@ -1819,11 +1807,9 @@ ProofTree.prototype.solved = function(n) {
     collapse(n);
     if (hasParent(n)) {
         this.navigateTo(n.parent);
-        this.animationRunning = true;
         window.setTimeout(function () {
             self.childSolved(n.parent);
             self.update();
-            self.animationRunning = false;
         }, animationDuration);
     } else {
         window.setTimeout(function () {
@@ -2069,9 +2055,12 @@ ProofTree.prototype.makeContextDiv = function(goal) {
 }
 
 function keydownDispatcher() {
+    if (keyboardPaused) { return; }
     if (activeProofTree !== undefined) {
         activeProofTree.keydownHandler.call(activeProofTree);
     }
+    keyboardPaused = true;
+    window.setTimeout(function() { keyboardPaused = false; }, keyboardDelay);
 }
 
 ProofTree.prototype.keydownHandler = function() {
@@ -2083,18 +2072,13 @@ ProofTree.prototype.keydownHandler = function() {
 
     var children = this.getVisibleChildren(curNode);
 
-    if (this.animationRunning) {
-        // all keys are frozen during animation
-        d3.event.preventDefault();
-        return;
-    }
-
     this.usingKeyboard = true;
 
     switch (d3.event.keyCode) {
 
     case 37: // Left
     case 65: // a
+        d3.event.preventDefault();
         if (hasParent(curNode)) {
             syncLog("LEFT " + nodeString(curNode.parent));
             this.click(curNode.parent);
@@ -2103,18 +2087,23 @@ ProofTree.prototype.keydownHandler = function() {
 
     case 39: // Right
     case 68: // d
+        d3.event.preventDefault();
         var dest = children[curNode.focusIndex];
-        syncLog("RIGHT " + nodeString(dest));
-        this.click(dest);
+        if (dest !== undefined) {
+            syncLog("RIGHT " + nodeString(dest));
+            this.click(dest);
+        }
         break;
 
     case 38: // Up
     case 87: // w
+        d3.event.preventDefault();
         this.shiftPrev(curNode);
         break;
 
     case 40: // Down
     case 83: // s
+        d3.event.preventDefault();
         this.shiftNext(curNode);
         break;
 

@@ -1,4 +1,3 @@
-
 function syncRequest(r, q, h) {
     if (r === 'query') { console.log(q); }
     $.ajax({
@@ -79,3 +78,7 @@ function asyncRequest(r, q, h) {
 function asyncQuery(q, h)        { asyncRequest('query', q, h); }
 function asyncQueryAndUndo(q, h) { asyncRequest('queryundo', q, h); }
 function asyncUndo(h)            { asyncRequest('undo', undefined, h); }
+function asyncLog(s) {
+    var time = "[" + new Date().toLocaleString() + "] ";
+    asyncRequest("log", time + s, function() {});
+}
