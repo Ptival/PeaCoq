@@ -1052,7 +1052,8 @@ function onQed(labelBeforeProofTree, prooftree) {
     var proof = PT.pprint(prooftree.proof(), 1, " ", "\n");
     textToAppend += proof;
     textToAppend += "\nQed."; // invariant: #proved ends on a period
-    $("#proved").append(textToAppend);
+    proved += textToAppend;
+    pweSetLockedPart("proved", proved);
 
     switchToEditorUI();
 
