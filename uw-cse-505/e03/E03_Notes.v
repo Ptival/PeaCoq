@@ -1,20 +1,45 @@
 (** * Episode 03: Lists and Syntax *)
 
-(** Ask Coq to infer type arguments. *)
+(** This command asks Coq to infer ``easy'' type arguments. *)
 Set Implicit Arguments.
+(** As a result of running [Set Implicit Arguments], sometimes we will apply functions or constructors to fewer arguments than they are defined to take.  When you see that, it simply indicates that Coq was able to automatically infer the missing arguments. *)
 
 (* Question: What are some of the tradeoffs of inference? *)
 
-(** List is a parameterized, recursive type: *)
-Inductive llist (T: Set) :=
+(** A parameterized, recursive type: *)
+Inductive llist (T: Type) :=
 | lnil : llist T
 | lcons : T -> llist T -> llist T.
 
-(** By default, Coq will not try to infer the type argument for [nil], even if it is obvious from context. *)
-Print llist.
-Check (lcons 1 (lcons 2 (lcons 3 (@lnil nat)))).
+(** Above we define [list] to be a type parameterized by some other type [T].  Furthermore, we say that there are _exactly_ two ways to build a [llist]: (1) using the [lnil] constructor or (2) using the [lcons] constructor.  When the [lnil] constructor is applied to a _type_ [T], it yields a value of type [llist T]:
+ *)
+Check lnil.
+(**
+<<
+lnil
+     : forall T : Type, llist T
+>>
+We'll talk a lot more about [forall] throughout the course, but in this case you can think of it as just a fancy [->].  When the [lcons] constructor is applied to a _type_ [T], a _value of type_ [T], and a value of type [llist T], it yields a value of type [llist T]:
+ *)
+Check lcons.
+(**
+<<
+lcons
+     : forall T : Type, T -> llist T -> llist T
+>>
+*)
 
-(** But we can tell Coq to always try: *)
+(** Coq will infer the type argument [T] for [lcons], but it will not try to infer the type argument [T] for [lnil], even if it is obvious from context. *)
+Print llist.
+(**  So this will break, even though context forces [T] to be [nat]:
+<<
+Check (lcons 1 (lcons 2 (lcons 3 lnil))).
+>>
+But this works:
+*)
+Check (lcons 1 (lcons 2 (lcons 3 (lnil nat)))).
+
+(** However, we can tell Coq to always try to infer the type argument [T] of [lnil] from context: *)
 Arguments lnil [T].
 Print llist.
 Check (lcons 1 (lcons 2 (lcons 3 lnil))).
@@ -59,7 +84,7 @@ Fixpoint length (A: Type) (l: list A) :=
 Eval cbv in (length (1 :: 2 :: 3 :: nil)).
 Eval cbv in (length (countdown 5)).
 
-(** In lecture, we noticed a simple relationship between [length] and [countdown]: *)
+(** In lecture, we noticed a simple relationship between [length] and [countdown]: *)
 Lemma length_countdown:
   forall n, length (countdown n) = n.
 Proof.
@@ -69,7 +94,7 @@ Proof.
   (** We can prove property for arbitrary (S n) if we know property is true for n, so use [induction]. *)
   induction n.
 
-  (** Base case: [n = O] *)
+  (** Base case: [n = O] *)
   (** Need to prove [length (countdown O) = O], which reflexivity solves by crunching down [countdown 0] to [nil], then [length nil] to [O], which leaves the goal [O = O]. *)
   { reflexivity. }
 
@@ -264,37 +289,83 @@ Proof.
   { simpl. rewrite -> map'_unroll. rewrite -> IHl. reflexivity. }
 Qed.
 
+(** ** Syntax *)
+Require Import List.
 
+(*
 
+BNF : Backus Naur Form
 
+A BNF is a concise way of describing a set of objects.
 
+  bit ::= 0 | 1
 
+  binary_string ::= bit | binary_string bit
 
+  (* in class *)
+  parens ::= () | ( parens ) | parens parens
 
+BNF is a metalanguage.
 
+Normally write in concrete syntax.
 
+Can be ambiguous.
 
+Converting concrete syntax to abstract syntax is parsing.
 
+*)
 
+Definition name := nat.
 
+(* why expr first? *)
+Inductive expr : Set :=
+| const : nat -> expr
+| var : name -> expr
+| add : expr -> expr -> expr
+| mul : expr -> expr -> expr.
 
+Inductive stmt : Set :=
+| skip : stmt
+| updt : name -> expr -> stmt
+| seq : stmt -> stmt -> stmt
+| branch : expr -> stmt -> stmt -> stmt
+| loop : expr -> stmt -> stmt.
 
+Fixpoint nconsts (e: expr) : nat :=
+  match e with
+    | const n => 1
+    | var v => 0
+    | add l r => nconsts l + nconsts r
+    | mul l r => nconsts l + nconsts r
+  end.
 
+Lemma has_3_consts:
+  exists e, nconsts e = 3.
+Proof.
+  exists (add (const 1) (add (const 1) (const 1))). reflexivity.
+Qed.
 
+Check orb.
 
+(*
 
+Fixpoint has_const (e: expr) : bool :=
+  match e with
+    | const _ => true
+    | var _ => false
+    | add l r => orb (has_const l) (has_const r)
+    | mul l r => orb (has_const l) (has_const r)
+  end.
 
+Fixpoint has_var (e: expr) : bool :=
+  match e with
+    | const _ => false
+    | var _ => true
+    | add l r => orb (has_const l) (has_const r)
+    | mul l r => orb (has_const l) (has_const r)
+  end.
 
+Lemma bottoms_out:
+  forall e, has_const e = true \/ has_var e = true.
 
-
-
-
-
-
-
-
-
-
-
-
-
+*)
