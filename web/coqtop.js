@@ -1,73 +1,10 @@
-function syncRequest(r, q, h) {
-    if (r === 'query') { console.log(q); }
-    $.ajax({
-        type: 'POST',
-        url: r,
-        data: {query : q},
-        async: false,
-        success: function(response) {
-            //console.log("response", response);
-            h(response);
-        }
-    });
-}
-
-function syncQuery(q, h)       { syncRequest('query', q, h); }
-
-/*
-function syncQueryUndo(q, h)   { syncRequest('queryundo', q, h); }
-function syncUndo(h)           { syncRequest('undo', undefined, h); }
-function syncParse(q, h)       { syncRequest('parse', q, h); }
-function syncParseEval(q, h)   { syncRequest('parseEval', q, h); }
-function syncParseCheck(q, h)  { syncRequest('parseCheck', q, h); }
-function syncListLectures(h)   { syncRequest("listLectures", "", h); }
-function syncLoadLecture(q, h) { syncRequest("loadLecture", q, h); }
-function syncLog(s) {
-    var time = "[" + new Date().toLocaleString() + "] ";
-    syncRequest("log", time + s, function() {});
-}
-
-function syncStatus() {
-    var result;
-    syncRequest("status", "", function(response) {
-        var msg = response.rResponse.contents[0];
-        var r = msg.match("^\\\((.*),(.*),(.*),\"(.*)\",\"(.*)\"\\\)$");
-        result = {
-            "sections": r[1],
-            "current": (r[2] === "Nothing") ? null : r[2].substring(5).replace(/"/g, ""),
-            "currents": r[3],
-            "label": + r[4],
-            "proving": (r[5] === "1"),
-            "response": response,
-        };
-    });
-    return result;
-}
-
-function syncCurrentLabel() {
-    return syncStatus().label;
-}
-
-function syncResetCoq() {
-    var label = syncCurrentLabel();
-    if (label > 0) {
-        syncRequest("rewind", label - 1, function(){});
-        syncQuery("Require Import Unicode.Utf8 Bool Arith List.", function(){});
-        syncQuery("Open ListNotations.", function(){});
-    }
-}
-
-function syncResetCoqNoImports() {
-    var label = syncCurrentLabel();
-    if (label > 0) {
-        syncRequest("rewind", label - 1, function(){});
-    }
-}
-*/
-
-var processingAsync = false;
+var processingAsync = false; // TODO: scope this
 var asyncRequests = [];
 
+/*
+  This is the only function which does not return a promise. It is not to be
+  called directly, use one of the async* methods below.
+*/
 function processAsyncRequests() {
     if (processingAsync || _(asyncRequests).isEmpty()) { return; }
     var request = asyncRequests.shift();
@@ -91,65 +28,98 @@ function processAsyncRequests() {
     });
 }
 
-function asyncRequest(r, q, h) {
-    asyncRequests.push({
-        "url": r,
-        "query": q,
-        "callback": h,
+/*
+ *  @return {Promise}
+ */
+function asyncRequest(r, q) {
+    return new Promise(function(onFulfilled, onRejected) {
+        asyncRequests.push({
+            "url": r,
+            "query": q,
+            "callback": onFulfilled,
+        });
+        processAsyncRequests();
     });
-    processAsyncRequests();
 }
 
-function asyncQuery(q, h)        { asyncRequest('query', q, h); }
-function asyncQueryAndUndo(q, h) { asyncRequest('queryundo', q, h); }
-function asyncUndo(h)            { asyncRequest('undo', undefined, h); }
+/*
+ *  @return {Promise}
+ */
+function asyncQuery(q)        { return asyncRequest('query', q); }
+function asyncQueryAndUndo(q) { return asyncRequest('queryundo', q); }
+function asyncUndo()          { return asyncRequest('undo', undefined); }
 function asyncLog(s) {
     var time = "[" + new Date().toLocaleString() + "] ";
-    asyncRequest("log", time + s, function() {});
+    return asyncRequest("log", time + s);
 }
+/*
+function asyncParse(q)       { return asyncRequest('parse', q); }
+function asyncParseEval(q)   { return asyncRequest('parseEval', q); }
+function asyncParseCheck(q)  { return asyncRequest('parseCheck', q); }
+function asyncListLectures() { return asyncRequest("listLectures", ""); }
+function asyncLoadLecture(q) { return asyncRequest("loadLecture", q); }
+*/
 
-function asyncStatus(callback) {
-    asyncRequest("status", "", function(response) {
+/*
+ *  @return {Promise}
+ */
+function asyncStatus() {
+    return asyncRequest("status", "").then(function(response) {
         var msg = response.rResponse.contents[0];
         var r = msg.match("^\\\((.*),(.*),(.*),\"(.*)\",\"(.*)\"\\\)$");
         var result = {
             "sections": r[1],
-            "current": (r[2] === "Nothing") ? null : r[2].substring(5).replace(/"/g, ""),
+            "current": (r[2] === "Nothing")
+                ? null
+                : r[2].substring(5).replace(/"/g, ""),
             "currents": r[3],
             "label": + r[4],
             "proving": (r[5] === "1"),
             "response": response,
         };
-        callback(result);
+        return result;
     });
 }
 
-function asyncCurrentLabel(callback) {
-    asyncStatus(function(result) {
-        callback(result.label);
-    });
+/*
+ *  @return {Promise}
+ */
+function asyncCurrentLabel() {
+    return asyncStatus()
+        .then(function(status) { return status.label; })
+    ;
 }
 
-function asyncResetCoq(callback) {
-    asyncCurrentLabel(function(label) {
-        if (label > 0) {
-            asyncRequest("rewind", label - 1, function(){
-                asyncQuery("Require Import Unicode.Utf8 Bool Arith List.", function(){
-                    asyncQuery("Open ListNotations.", callback);
-                });
-            });
-        } else {
-            callback();
-        }
-    });
+/*
+ *  @return {Promise}
+ */
+function asyncResetCoqWithImports() {
+    return asyncCurrentLabel()
+        .then(function(label) {
+            if (label > 0) {
+                return asyncRequest("rewind", label - 1)
+                    .then(asyncQuery(
+                        "Require Import Unicode.Utf8 Bool Arith List."
+                    ))
+                    .then(asyncQuery("Open ListNotations."))
+                ;
+            } else {
+                return Promise.resolve();
+            }
+        })
+    ;
 }
 
-function asyncResetCoqNoImports(callback) {
-    asyncCurrentLabel(function(label) {
-        if (label > 0) {
-            asyncRequest("rewind", label - 1, callback);
-        } else {
-            callback();
-        }
-    });
+/*
+ *  @return {Promise}
+ */
+function asyncResetCoq() {
+    return asyncCurrentLabel()
+        .then(function(label) {
+            if (label > 0) {
+                return asyncRequest("rewind", label - 1);
+            } else {
+                return Promise.resolve();
+            }
+        });
 }

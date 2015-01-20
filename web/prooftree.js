@@ -486,11 +486,13 @@ ProofTree.prototype.newTheorem = function(theorem, tactics) {
 
     asyncLog("THEOREM " + theorem);
 
-    asyncQuery(theorem, function(response) {
-        success = self.hInit(response);
-        $(this.svg[0]).focus();
-        this.svg.on("click")();
-    });
+    asyncQuery(theorem)
+        .then(function(response) {
+            success = self.hInit(response);
+            $(this.svg[0]).focus();
+            this.svg.on("click")();
+        })
+    ;
 
 }
 
@@ -624,16 +626,15 @@ ProofTree.prototype.runTactic = function(t, addToTheFront, callback) {
 
     // need to get the status before so that we figure out whether the goal was
     // solved, if only coqtop would tell us...
-    asyncQueryAndUndo('idtac.', function(idtacResponse) {
-
-        var unfocusedBefore = getResponseUnfocused(idtacResponse);
-
-        asyncQueryAndUndo(t, function(response) {
-
+    var unfocusedBefore;
+    asyncQueryAndUndo('idtac.')
+        .then(function(idtacResponse) {
+            unfocusedBefore = getResponseUnfocused(idtacResponse);
+            return asyncQueryAndUndo(t);
+        })
+        .then(function(response) {
             if (isGood(response)) {
-
                 var unfocusedAfter = getResponseUnfocused(response);
-
                 var newChild = mkTacticNode(
                     nodeToAttachTo,
                     t,
@@ -682,9 +683,8 @@ ProofTree.prototype.runTactic = function(t, addToTheFront, callback) {
                 callback();
             }
 
-        });
-
-    });
+        })
+    ;
 
 }
 
@@ -705,7 +705,7 @@ ProofTree.prototype.processTactics = function() {
         // some artificial delay so that things stay visually pleasant
         window.setTimeout(
             function() { self.processTactics(); },
-            animationDuration / 2
+            0 //animationDuration / 2
         );
     });
 
@@ -714,13 +714,17 @@ ProofTree.prototype.processTactics = function() {
 ProofTree.prototype.refreshTactics = function() {
     var self = this;
     var allTactics = this.tactics(this);
-    var missingTactics = _(allTactics).filter(function(t) {
-        // for now, only consider missing tactics
-        // TODO: refresh existential tactics according to unification variables
-        return ! _(self.curNode.allChildren).some(function(c) {
-            return (c.name === t);
-        });
-    });
+    var missingTactics = _(allTactics)
+        .filter(function(t) {
+            // for now, only consider missing tactics
+            // TODO: refresh existential tactics according to unification
+            // variables
+            return ! _(self.curNode.allChildren).some(function(c) {
+                return (c.name === t);
+            });
+        })
+        .value()
+    ;
     this.tacticsWorklist = missingTactics;
     this.processTactics();
 }
@@ -1887,6 +1891,10 @@ function depthSolved(tacNode) {
     }
 }
 
+function sequencePromises(accumulatedPromises, newPromise) {
+    return accumulatedPromises.then(newPromise);
+}
+
 ProofTree.prototype.navigateTo = function(dest, remember) {
 
     var self = this;
@@ -1896,14 +1904,73 @@ ProofTree.prototype.navigateTo = function(dest, remember) {
         this.tacticsWorklist = [];
     }
 
-    var a = this.commonAncestor(this.curNode, dest);
-
     var p = path(this.curNode, dest);
 
     // morally, q = [ [p0, p1], [p1, p2], ... ]
     var q = _.zip(p, _(p).rest().value());
     q.pop(); // remove the extra [p_last, undefined] at the end
 
+    _(q)
+    // building a list of functions return a promise
+        .map(function(elt) {
+            var src = elt[0];
+            var dst = elt[1];
+            var goingUp = src.depth > dst.depth;
+
+            // this function must return a Promise
+            return function() {
+                if (goingUp) {
+                    if (remember) { src.partial = dst; }
+                    else { delete src["partial"]; }
+                    collapseChildren(src);
+                    if (isGoal(src)) {
+                        collapse(src);
+                        /*
+'Back.' does not work in -ideslave, and takes one step to undo 'Show.'
+'Undo.' works in -ideslave, and does not care about 'Show.' commands
+'Undo.' can undo the 'Focus.' command. 'Unfocus.' is undone by 'Undo.'
+Conclusion: always 'Undo.', even for unfocusing.
+                        */
+                        return asyncQuery('Undo.');
+                    } else { // isTactic(src)
+                        // need to Undo as many times as the focus depth
+                        // difference between before and after the terminating
+                        // tactic + 1
+                        var howManyUndoes =
+                            (src.terminating)
+                            ? depthSolved(src) + 1
+                            : 1
+                        ;
+                        return _(_.range(howManyUndoes))
+                            .map(function() {
+                                return function() {
+                                    return asyncQuery('Undo.');
+                                }
+                            })
+                            .reduce(sequencePromises, Promise.resolve())
+                        ;
+                    }
+                } else { // going down
+                    // hide sibling tactic nodes
+                    if (isGoal(src)) { collapse(src); }
+                    if (isTactic(dst)) {
+                        return asyncQuery(dst.name);
+                    } else {
+                        return asyncQuery('Focus ' + dst.ndx + '.');
+                    }
+                }
+            };
+        })
+    // process the promises in sequential order
+        .reduce(sequencePromises, Promise.resolve())
+    ;
+
+    // this needs to happen before returning from navigateTo
+    // so do not move it in the promise!
+    // TODO: use navigateTo as a Promise, so that we can move this?
+    this.curNode = dest;
+
+    /*
     _(q)
         .each(function(elt) {
             var src = elt[0];
@@ -1957,8 +2024,7 @@ ProofTree.prototype.navigateTo = function(dest, remember) {
             }
         })
     ;
-
-    this.curNode = dest;
+    */
 
 }
 
@@ -2346,26 +2412,47 @@ function contents(response) {
     return response.rResponse.contents;
 }
 
+/*
+ * @return <Promise>
+ */
 ProofTree.prototype.replayThisProof = function(proof) {
 
     var self = this;
 
-    if (!_.isEmpty(proof)) {
+    if (_.isEmpty(proof)) {
+        return Promise.resolve();
+    } else {
         var fst = proof[0];
         var snd = proof[1];
-        syncQuery(fst, function(response) {
-            if (isGood(response)) {
-                var needToFocus = snd.length > 1;
-                _(snd).each(function(n) {
-                    if (needToFocus) { syncQuery(" { ", function(){}); }
-                    self.replayThisProof(n);
-                    if (needToFocus) { syncQuery(" } ", function(){}); }
-                });
-            } else {
-                console.log("Replay failed on applying " + fst);
-                console.log("Error: " + contents(response));
-            }
-        });
+        return asyncQuery(fst)
+            .then(function(response) {
+                if (isGood(response)) {
+                    // we want to replay the proof as we typeset it, so that the
+                    // proof process stays in sync with the text produced
+                    // therefore, we need to focus when the text would focus
+                    var needToFocus = snd.length > 1;
+                    return _(snd)
+                        .map(function(n) {
+                            return function() {
+                                if (needToFocus) {
+                                    return asyncQuery(" { ")
+                                        .then(function() { self.replayThisProof(n); })
+                                        .then(function() { return asyncQuery(" } "); })
+                                    ;
+                                } else {
+                                    return self.replayThisProof(n);
+                                }
+                            };
+                        })
+                        .reduce(sequencePromises, Promise.resolve())
+                    ;
+                } else {
+                    console.log("Replay failed on applying " + fst);
+                    console.log("Error: " + contents(response));
+                    throw new Error("Replay failed, see log");
+                }
+            })
+        ;
     }
 
 }
@@ -2374,16 +2461,21 @@ ProofTree.prototype.proof = function() {
     return PT.proofFrom(this.rootNode);
 }
 
+/*
+ * @return <Promise>
+ */
 ProofTree.prototype.replay = function() {
-    this.replayThisProof(PT.proofFrom(this.rootNode));
+    return this.replayThisProof(PT.proofFrom(this.rootNode));
 }
 
 ProofTree.prototype.qed = function() {
-    asyncQuery("Qed.", function(response) {
-        if (isBad(response)) {
-            console.log("Qed failed, error:" + contents(response));
-        }
-    });
+    asyncQuery("Qed.")
+        .then(function(response) {
+            if (isBad(response)) {
+                console.log("Qed failed, error:" + contents(response));
+            }
+        })
+    ;
 }
 
 ProofTree.prototype.displayThisProof = function(proof) {

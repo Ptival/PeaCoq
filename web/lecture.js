@@ -228,9 +228,11 @@ $(document).ready(function() {
 
     PT.handleKeyboard();
 
-    asyncResetCoqNoImports(function() {
-        $("#editor").focus();
-    });
+    asyncResetCoq()
+        .then(function() {
+            $("#editor").focus();
+        })
+    ;
 
 });
 
@@ -273,7 +275,7 @@ function onLoad(text) {
 
     highlight();
 
-    asyncResetCoqNoImports(function() {
+    asyncResetCoq(function() {
         $("#editor").focus();
     });
 
@@ -653,35 +655,37 @@ function updateCoqtopPane(direction, response) {
     };
 
     // also, enable/disable the button depending on whether we are in proof mode
-    asyncStatus(function(status) {
+    asyncStatus()
+        .then(function(status) {
 
-        // while at it, let's gather names of definitions for proof purposes
-        // TODO: should this be done by prooftree.js?
-        if (status.current !== null && !_(namesPossiblyInScope).contains(status.current)) {
-            namesPossiblyInScope.push(status.current);
-        }
-
-        $("#prooftree-button").attr("disabled", !status.proving);
-        if (status.proving) {
-            // automatically enter proof mode if not in the process of proving more things
-            var lastCommand = getLastProved();
-            if (_(lastCommand).contains("(* notree *)")) {
-                asyncLog("NOTREE");
+            // while at it, let's gather names of definitions for proof purposes
+            // TODO: should this be done by prooftree.js?
+            if (status.current !== null && !_(namesPossiblyInScope).contains(status.current)) {
+                namesPossiblyInScope.push(status.current);
             }
-            if (direction === goingDown
-                && ! lastCommand.endsWith("Proof.")
-                && !_(lastCommand).contains("(* notree *)")
-                && $("#provwill").text().length === 0) {
-                asyncLog("AUTOENTERPROOFTREE");
-                enterProofTree();
+
+            $("#prooftree-button").attr("disabled", !status.proving);
+            if (status.proving) {
+                // automatically enter proof mode if not in the process of proving more things
+                var lastCommand = getLastProved();
+                if (_(lastCommand).contains("(* notree *)")) {
+                    asyncLog("NOTREE");
+                }
+                if (direction === goingDown
+                    && ! lastCommand.endsWith("Proof.")
+                    && !_(lastCommand).contains("(* notree *)")
+                    && $("#provwill").text().length === 0) {
+                    asyncLog("AUTOENTERPROOFTREE");
+                    enterProofTree();
+                } else {
+                    highlight();
+                }
             } else {
                 highlight();
             }
-        } else {
-            highlight();
-        }
 
-    });
+        })
+    ;
 
 }
 
@@ -742,7 +746,7 @@ function tryProcessing() {
     asyncLog("PROVERDOWN " + proving);
     // process this piece, then process the rest
     processing = true;
-    asyncQuery(proving, function(response) {
+    asyncQuery(proving).then(function(response) {
         processing = false;
         switch(response.rResponse.tag) {
         case "Good":
@@ -846,7 +850,9 @@ function proverUp () {
         pweSetUnlocked(pieceToUnprocess + unlocked);
         asyncLog("PROVERUP " + pieceToUnprocess);
         repositionCaret();
-        asyncUndo(undoCallback);
+        asyncUndo()
+            .then(undoCallback)
+        ;
     }
 }
 
@@ -955,51 +961,54 @@ function switchToEditorUI() {
 
 function enterProofTree() {
 
-    asyncStatus(function(status) {
+    asyncStatus()
+        .then(function(status) {
 
-        var labelBeforeProofTree = status.label;
+            var labelBeforeProofTree = status.label;
 
-        switchToProofUI();
+            switchToProofUI();
 
-        $("#noprooftree-button")
-            .unbind("click")
-            .on("click", function() { exitProofTree(labelBeforeProofTree); })
-        ;
+            $("#noprooftree-button")
+                .unbind("click")
+                .on("click", function() { exitProofTree(labelBeforeProofTree); })
+            ;
 
-        prooftree = new ProofTree(
-            $("#prooftree")[0],
-            $(window).width(),
-            $(window).height() - $("#toolbar").height(),
-            _.partial(onQed, labelBeforeProofTree)
-        );
+            prooftree = new ProofTree(
+                $("#prooftree")[0],
+                $(window).width(),
+                $(window).height() - $("#toolbar").height(),
+                _.partial(onQed, labelBeforeProofTree)
+            );
 
-        /*
-          need to figure out what the statement of the theorem is, and there
-          seems to be no way to ask that with status, so look it up in the
-          proved region as the last statement
-        */
-        var proved = $("#proved").text();
-        var assertionKeywords = [
-            "Theorem", "Lemma", "Remark", "Fact", "Corollary", "Proposition"
-        ];
-        // lookup the last time an assertion keyword was proved
-        var position = _(assertionKeywords)
-            .map(function(keyword) {
-                return proved.lastIndexOf(keyword);
-            })
-            .max()
-            .value()
-        ;
-        var theoremStatement = proved.substring(position);
-        // get rid of anything after the statement, like "Proof."
-        theoremStatement = theoremStatement.substring(0, next(theoremStatement));
-        prooftree.newAlreadyStartedTheorem(
-            theoremStatement,
-            status.response,
-            lectureTactics
-        );
+            /*
+              need to figure out what the statement of the theorem is, and
+              there seems to be no way to ask that with status, so look it up in
+              the proved region as the last statement
+            */
+            var proved = $("#proved").text();
+            var assertionKeywords = [
+                "Theorem", "Lemma", "Remark", "Fact", "Corollary", "Proposition"
+            ];
+            // lookup the last time an assertion keyword was proved
+            var position = _(assertionKeywords)
+                .map(function(keyword) {
+                    return proved.lastIndexOf(keyword);
+                })
+                .max()
+                .value()
+            ;
+            var theoremStatement = proved.substring(position);
+            // get rid of anything after the statement, like "Proof."
+            theoremStatement = theoremStatement.substring(0, next(theoremStatement));
+            prooftree.newAlreadyStartedTheorem(
+                theoremStatement,
+                status.response,
+                lectureTactics
+            );
 
-    });
+        })
+    ;
+
 }
 
 function exitProofTree(labelBeforeProofTree) {
@@ -1011,15 +1020,17 @@ function exitProofTree(labelBeforeProofTree) {
     asyncLog("EXITPROOFTREE");
 
     // revert all the steps done in proof mode, to keep the labels clean
-    asyncStatus(function(newStatus) {
-        asyncRequest(
-            "rewind",
-            newStatus.label - labelBeforeProofTree,
-            function(){
-                repositionCaret();
-            }
-        );
-    });
+    asyncStatus()
+        .then(function(newStatus) {
+            asyncRequest(
+                "rewind",
+                newStatus.label - labelBeforeProofTree,
+                function(){
+                    repositionCaret();
+                }
+            );
+        })
+    ;
 
 }
 
@@ -1040,30 +1051,34 @@ function onQed(labelBeforeProofTree, prooftree) {
 
     switchToEditorUI();
 
-    // TODO: use Promises
     // first, revert all the steps done in proof mode, to keep the labels clean
-    asyncStatus(function(newStatus) {
-        asyncRequest(
-            "rewind",
-            newStatus.label - labelBeforeProofTree,
-            function(){
-                // since we are going to write Proof., we must actually send it
-                if (lastCommand !== "Proof.") {
-                    syncQuery("Proof.", function(){});
-                }
-                // now we can replay the actuall proof and conclude
-                prooftree.replay();
-                syncQuery("Qed.", function(response) {
-                    updateCoqtopPane(goingDown, response);
-                });
-
-                // is this enough to eventually allow garbage-collection of the proof tree?
-                $("#prooftree").empty();
-                activeProofTree = undefined;
-
-                repositionCaret();
-            });
-    });
+    asyncStatus()
+        .then(function(newStatus) {
+            return asyncRequest(
+                "rewind",
+                newStatus.label - labelBeforeProofTree
+            );
+        })
+        .then(function(){
+            // since we are going to write Proof., we must make sure it is sent
+            return (lastCommand !== "Proof.")
+                ? asyncQuery("Proof.")
+                : Promise.resolve()
+            ;
+        })
+    // now we can replay the actuall proof and conclude
+        .then(function() { return prooftree.replay(); })
+        .then(function() { return asyncQuery("Qed.") })
+        .then(function(response) {
+            updateCoqtopPane(goingDown, response);
+            $("#prooftree").empty();
+            activeProofTree = undefined; // bad attempt at GC?
+            repositionCaret();
+        })
+        .catch(function(error) {
+            console.log(error);
+        })
+    ;
 
 }
 
