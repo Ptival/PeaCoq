@@ -492,7 +492,7 @@ ProofTree.prototype.newTheorem = function(theorem, tactics) {
             $(this.svg[0]).focus();
             this.svg.on("click")();
         })
-    ;
+        .catch(outputError);
 
 }
 
@@ -601,20 +601,14 @@ function tacticNodeUnicityRepresentation(node) {
 }
 
 function getResponseUnfocused(response) {
-    // sometimes unfocused is empty, somethings it's filled with empty lists
-    // this makes emptiness more canonical
-    if (_(response.rGoals.unfocused).isEqual([])) {
-        return [[[], []]];
-    } else {
-        return response.rGoals.unfocused;
-    }
+    return response.rGoals.unfocused;
 }
 
 /*
   try to run the tactic [t] and add its result to the [this.curNode] at
   call-time. calls [callback] after the node has been added or failure.
  */
-ProofTree.prototype.runTactic = function(t, addToTheFront, callback) {
+ProofTree.prototype.runTactic = function(t, addToTheFront) {
 
     var self = this;
 
@@ -626,14 +620,15 @@ ProofTree.prototype.runTactic = function(t, addToTheFront, callback) {
 
     // need to get the status before so that we figure out whether the goal was
     // solved, if only coqtop would tell us...
-    var unfocusedBefore;
-    asyncQueryAndUndo('idtac.')
-        .then(function(idtacResponse) {
-            unfocusedBefore = getResponseUnfocused(idtacResponse);
+    var beforeResponse;
+    return asyncStatus()
+        .then(function(status) {
+            beforeResponse = status.response;
             return asyncQueryAndUndo(t);
         })
         .then(function(response) {
             if (isGood(response)) {
+                var unfocusedBefore = getResponseUnfocused(beforeResponse);
                 var unfocusedAfter = getResponseUnfocused(response);
                 var newChild = mkTacticNode(
                     nodeToAttachTo,
@@ -679,35 +674,33 @@ ProofTree.prototype.runTactic = function(t, addToTheFront, callback) {
 
             }
 
-            if (callback !== undefined) {
-                callback();
-            }
-
         })
-    ;
+        .catch(outputError);
 
 }
 
 /*
-  every time curNode is changed, the tacticsWorklist should be
-  flushed, so that [runTactic] can reliably add the results of running
-  the tactic to the current node
-*/
+ * @ return <Promise>
+ */
 ProofTree.prototype.processTactics = function() {
+
+    /*
+      every time curNode is changed, the tacticsWorklist should be
+      flushed, so that [runTactic] can reliably add the results of running
+      the tactic to the current node
+    */
 
     var self = this;
 
-    if (_(this.tacticsWorklist).isEmpty()) { return; }
+    if (_(this.tacticsWorklist).isEmpty()) { return Promise.resolve(); }
 
     var tactic = this.tacticsWorklist.shift();
 
-    this.runTactic(tactic, false, function() {
-        // some artificial delay so that things stay visually pleasant
-        window.setTimeout(
-            function() { self.processTactics(); },
-            0 //animationDuration / 2
-        );
-    });
+    return this.runTactic(tactic, false)
+        .then(function() {
+            self.processTactics();
+        })
+        .catch(outputError);
 
 }
 
@@ -1754,6 +1747,8 @@ ProofTree.prototype.shiftNext = function(n) {
 
 ProofTree.prototype.click = function(d, remember, callback) {
 
+    var self = this;
+
     if (this.paused) { return; }
 
     if (d.solved) {
@@ -1781,19 +1776,19 @@ ProofTree.prototype.click = function(d, remember, callback) {
         return;
     }
 
-    this.navigateTo(d, remember);
-
-    if (isGoal(d)) {
-        this.refreshTactics();
-    } else {
-        if (_.isEmpty(d.allChildren)) {
-            this.solved(d);
-        }
-    }
-
-    expand(d);
-
-    this.update(callback);
+    this.navigateTo(d, remember)
+        .then(function() {
+            if (isGoal(d)) {
+                self.refreshTactics();
+            } else {
+                if (_.isEmpty(d.allChildren)) {
+                    self.solved(d);
+                }
+            }
+            expand(d);
+            self.update(callback);
+        })
+        .catch(outputError);
 
 }
 
@@ -1803,11 +1798,14 @@ ProofTree.prototype.solved = function(n) {
     n.solved = true;
     collapse(n);
     if (hasParent(n)) {
-        this.navigateTo(n.parent);
-        window.setTimeout(function () {
-            self.childSolved(n.parent);
-            self.update();
-        }, animationDuration);
+        this.navigateTo(n.parent)
+            .then(function() {
+                window.setTimeout(function () {
+                    self.childSolved(n.parent);
+                    self.update();
+                }, animationDuration);
+            })
+            .catch(outputError);
     } else {
         window.setTimeout(function () {
             asyncLog("QED " + JSON.stringify(PT.proofFrom(self.rootNode)));
@@ -1895,6 +1893,9 @@ function sequencePromises(accumulatedPromises, newPromise) {
     return accumulatedPromises.then(newPromise);
 }
 
+/*
+ * @return <Promise>
+ */
 ProofTree.prototype.navigateTo = function(dest, remember) {
 
     var self = this;
@@ -1910,7 +1911,8 @@ ProofTree.prototype.navigateTo = function(dest, remember) {
     var q = _.zip(p, _(p).rest().value());
     q.pop(); // remove the extra [p_last, undefined] at the end
 
-    _(q)
+    // this will build a promise, trust me, I promise ;D
+    return _(q)
     // building a list of functions return a promise
         .map(function(elt) {
             var src = elt[0];
@@ -1963,68 +1965,14 @@ Conclusion: always 'Undo.', even for unfocusing.
         })
     // process the promises in sequential order
         .reduce(sequencePromises, Promise.resolve())
-    ;
-
-    // this needs to happen before returning from navigateTo
-    // so do not move it in the promise!
-    // TODO: use navigateTo as a Promise, so that we can move this?
-    this.curNode = dest;
-
-    /*
-    _(q)
-        .each(function(elt) {
-            var src = elt[0];
-            var dst = elt[1];
-
-            var goingUp = src.depth > dst.depth;
-
-            if (goingUp) {
-
-                if (remember) {
-                    src.partial = dst;
-                } else {
-                    delete src["partial"];
-                }
-
-                collapseChildren(src);
-                if (isGoal(src)) { collapse(src); }
-
-                if (isTactic(src)) {
-                    // need to Undo as many times as the focus depth difference
-                    // between before and after the terminating tactic + 1
-                    if (src.terminating) {
-                        _(_.range(depthSolved(src))).each(function() {
-                            syncQuery('Undo.', hIgnore);
-                        });
-                    }
-                    syncQuery('Undo.', hIgnore);
-                } else {
-                    // 'Back.' does not work in -ideslave
-                    // 'Back.' takes one step to undo 'Show.'
-                    // 'Undo.' works in -ideslave
-                    // 'Undo.' does not care about 'Show.' commands
-                    // Undo the 'Focus.' command.
-                    // Do not use 'Unfocus.' as it is itself undone by 'Undo.'
-                    syncQuery('Undo.', hIgnore);
-                }
-
-            } else { // going down
-
-                // hide sibling tactic nodes
-                if (isGoal(src)) {
-                    collapse(src);
-                }
-
-                if (isTactic(dst)) {
-                    syncQuery(dst.name, hIgnore);
-                } else {
-                    syncQuery('Focus ' + dst.ndx + '.', hIgnore);
-                }
-
-            }
+        .then(function() {
+            self.curNode = dest;
+            return Promise.resolve();
+        })
+        .catch(function(error) {
+            console.log(error);
         })
     ;
-    */
 
 }
 
@@ -3014,4 +2962,18 @@ function updateNodeHeight(selector, maxHeight) {
         );
     }
 
+}
+
+/*
+ * @return <Promise>
+ */
+function debugStatus() {
+    return asyncStatus()
+        .then(function(status) { console.log(status); })
+    ;
+}
+
+// specialized version of console.log, because JS is stupid
+function outputError(error) {
+    console.log(error);
 }
