@@ -1,4 +1,4 @@
-(** * Episode 03: Lists and Syntax *)
+(** * Episode 03: Lists *)
 
 (** This command asks Coq to infer ``easy'' type arguments. *)
 Set Implicit Arguments.
@@ -44,6 +44,13 @@ Arguments lnil [T].
 Print llist.
 Check (lcons 1 (lcons 2 (lcons 3 lnil))).
 
+(* won't work
+Check (lcons 1 (lnil bool)).
+*)
+(* also won't work
+Check (lcons 1 (@lnil bool)).
+*)
+
 (** The list type Coq provides is isomorphic to our [llist]. *)
 Print list.
 
@@ -83,6 +90,8 @@ Fixpoint length (A: Type) (l: list A) :=
 
 Eval cbv in (length (1 :: 2 :: 3 :: nil)).
 Eval cbv in (length (countdown 5)).
+Eval cbv in (length (countdown 3)).
+Eval cbv in (length (countdown 1)).
 
 (** In lecture, we noticed a simple relationship between [length] and [countdown]: *)
 Lemma length_countdown:
@@ -266,6 +275,13 @@ Fixpoint fold A B (f: A -> B -> B) (l: list A) (b: B) :=
     | x::xs => f x (fold f xs b)
   end.
 
+(* fold f l b takes a list of
+     x1 :: x2 :: x3 :: ... :: xN :: nil
+     cons x1 (cons x2 ( ... (cons xN nil) ...)))
+   and computes
+     f x1 (f x2 (f x3 (... (f xN b) ...)))
+*)
+
 (* in class *)
 Definition map' A B (f: A -> B) (l: list A) :=
   fold (fun x fxs => f x :: fxs) l nil.
@@ -288,84 +304,3 @@ Proof.
   { reflexivity. }
   { simpl. rewrite -> map'_unroll. rewrite -> IHl. reflexivity. }
 Qed.
-
-(** ** Syntax *)
-Require Import List.
-
-(*
-
-BNF : Backus Naur Form
-
-A BNF is a concise way of describing a set of objects.
-
-  bit ::= 0 | 1
-
-  binary_string ::= bit | binary_string bit
-
-  (* in class *)
-  parens ::= () | ( parens ) | parens parens
-
-BNF is a metalanguage.
-
-Normally write in concrete syntax.
-
-Can be ambiguous.
-
-Converting concrete syntax to abstract syntax is parsing.
-
-*)
-
-Definition name := nat.
-
-(* why expr first? *)
-Inductive expr : Set :=
-| const : nat -> expr
-| var : name -> expr
-| add : expr -> expr -> expr
-| mul : expr -> expr -> expr.
-
-Inductive stmt : Set :=
-| skip : stmt
-| updt : name -> expr -> stmt
-| seq : stmt -> stmt -> stmt
-| branch : expr -> stmt -> stmt -> stmt
-| loop : expr -> stmt -> stmt.
-
-Fixpoint nconsts (e: expr) : nat :=
-  match e with
-    | const n => 1
-    | var v => 0
-    | add l r => nconsts l + nconsts r
-    | mul l r => nconsts l + nconsts r
-  end.
-
-Lemma has_3_consts:
-  exists e, nconsts e = 3.
-Proof.
-  exists (add (const 1) (add (const 1) (const 1))). reflexivity.
-Qed.
-
-Check orb.
-
-(*
-
-Fixpoint has_const (e: expr) : bool :=
-  match e with
-    | const _ => true
-    | var _ => false
-    | add l r => orb (has_const l) (has_const r)
-    | mul l r => orb (has_const l) (has_const r)
-  end.
-
-Fixpoint has_var (e: expr) : bool :=
-  match e with
-    | const _ => false
-    | var _ => true
-    | add l r => orb (has_const l) (has_const r)
-    | mul l r => orb (has_const l) (has_const r)
-  end.
-
-Lemma bottoms_out:
-  forall e, has_const e = true \/ has_var e = true.
-
-*)
