@@ -273,6 +273,8 @@ function onLoad(text) {
 
     resetEditorWith(text);
 
+    switchToEditorUI();
+
     highlight();
 
     asyncResetCoq(function() {
