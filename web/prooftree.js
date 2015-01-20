@@ -13,7 +13,7 @@ var svgPanEnabled = false;
 var nodeVSpacing = 10;
 var nodeStroke = 2;
 var rectMargin = {top: 2, right: 8, bottom: 2, left: 8};
-var animationDuration = 360;
+var animationDuration = 300;
 var tacticNodeRounding = 10;
 var goalNodeRounding = 0;
 var keyboardDelay = 100;
@@ -81,12 +81,6 @@ PT.tDiscriminate = PT.tSet.slice(0, 1 + PT.tSet.indexOf('discriminate'));
 // These ones are more specific
 PT.tCompute = PT.tReflexivity.concat(['compute']);
 PT.allTactics = PT.tDiscriminate;
-
-PT.uwSet = [
-    "simpl", "simpl in *", "reflexivity", "intro", "rewrite", "destruct",
-    "induction", "left", "right", "split", "discriminate", "firstorder",
-    "f_equal", "apply", "eapply", "constructor", "subst", "inversion", "omega"
-];
 
 function getAllChildren(n) {
     return n.allChildren;
@@ -490,16 +484,13 @@ ProofTree.prototype.newTheorem = function(theorem, tactics) {
 
     var success = false;
 
-    syncQuery(theorem, function(response) {
+    asyncLog("THEOREM " + theorem);
+
+    asyncQuery(theorem, function(response) {
         success = self.hInit(response);
+        $(this.svg[0]).focus();
+        this.svg.on("click")();
     });
-
-    syncLog("THEOREM " + theorem);
-
-    $(this.svg[0]).focus();
-    this.svg.on("click")();
-
-    return success;
 
 }
 
@@ -524,8 +515,6 @@ ProofTree.prototype.newAlreadyStartedTheorem =
 
     $(this.svg[0]).focus();
     this.svg.on("click")();
-
-    return success;
 
 }
 
@@ -588,150 +577,152 @@ function mkTacticNode(depth, tactic, goals) {
 
 }
 
-ProofTree.prototype.runTactic = function(t) {
+function goalNodeUnicityRepresentation(node) {
+    return JSON.stringify({
+        "name": node.name,
+        "hyps": _(node.hyps).map(function(h) {
+            return {
+                "hName": h.hName,
+                "hValue": h.hValue,
+                "hType": h.hType,
+            };
+        }),
+    });
+}
+
+function tacticNodeUnicityRepresentation(node) {
+    return JSON.stringify(
+        _(node.allChildren)
+            .map(goalNodeUnicityRepresentation)
+            .value()
+    );
+}
+
+function getResponseUnfocused(response) {
+    // sometimes unfocused is empty, somethings it's filled with empty lists
+    // this makes emptiness more canonical
+    if (_(response.rGoals.unfocused).isEqual([])) {
+        return [[[], []]];
+    } else {
+        return response.rGoals.unfocused;
+    }
+}
+
+/*
+  try to run the tactic [t] and add its result to the [this.curNode] at
+  call-time. calls [callback] after the node has been added or failure.
+ */
+ProofTree.prototype.runTactic = function(t, addToTheFront, callback) {
 
     var self = this;
 
-    var unfocusedBefore;
+    if (addToTheFront === undefined) { addToTheFront = true; }
 
-    syncQueryUndo('idtac.', function(response) {
-        unfocusedBefore = response.rGoals.unfocused;
-    });
+    var nodeToAttachTo = this.curNode;
 
-    var newChild;
+    var nodeToAttachToRepresentation = goalNodeUnicityRepresentation(nodeToAttachTo);
 
-    syncQueryUndo(t, function(response) {
-        if (isGood(response)) {
-            // if it did not solve the goal
-            if (_.isEqual(response.rGoals.unfocused, unfocusedBefore)) {
-                newChild = mkTacticNode(
-                    self.curNode,
+    // need to get the status before so that we figure out whether the goal was
+    // solved, if only coqtop would tell us...
+    asyncQueryAndUndo('idtac.', function(idtacResponse) {
+
+        var unfocusedBefore = getResponseUnfocused(idtacResponse);
+
+        asyncQueryAndUndo(t, function(response) {
+
+            if (isGood(response)) {
+
+                var unfocusedAfter = getResponseUnfocused(response);
+
+                var newChild = mkTacticNode(
+                    nodeToAttachTo,
                     t,
-                    response.rGoals.focused
+                    (_.isEqual(unfocusedAfter, unfocusedBefore))
+                        ? response.rGoals.focused
+                        : []
                 );
+
+                // only attach the newChild if it produces something
+                // unique from existing children
+                var newChildRepresentation = tacticNodeUnicityRepresentation(newChild);
+
+                var resultAlreadyExists =
+                    _(nodeToAttachTo.allChildren).some(function(t) {
+                        return tacticNodeUnicityRepresentation(t)
+                            === newChildRepresentation;
+                    })
+                ;
+
+                var tacticIsUseless =
+                    (newChild.allChildren.length === 1)
+                    && (goalNodeUnicityRepresentation(newChild.allChildren[0])
+                        === nodeToAttachToRepresentation)
+                ;
+
+                if (!resultAlreadyExists && !tacticIsUseless) {
+
+                    if (addToTheFront) {
+                        nodeToAttachTo.allChildren.unshift(newChild);
+                        nodeToAttachTo.focusIndex = 0;
+                    } else {
+                        nodeToAttachTo.allChildren.push(newChild);
+                    }
+
+                    self.update();
+
+                }
+
             } else {
-                newChild = mkTacticNode(self.curNode, t, []);
+
+                //console.log("Bad response for tactic", t, response);
+
             }
-        }
+
+            if (callback !== undefined) {
+                callback();
+            }
+
+        });
+
     });
-
-    if (newChild !== undefined) {
-        self.curNode.allChildren.unshift(newChild);
-    }
-
-    return newChild;
 
 }
 
-ProofTree.prototype.tryAllTactics = function() {
+/*
+  every time curNode is changed, the tacticsWorklist should be
+  flushed, so that [runTactic] can reliably add the results of running
+  the tactic to the current node
+*/
+ProofTree.prototype.processTactics = function() {
 
     var self = this;
 
-    var res = [];
-    var unfocusedBefore;
+    if (_(this.tacticsWorklist).isEmpty()) { return; }
 
-    /*
-      PeaCoq tries to not have multiple tactic nodes if they achieve the same
-      effect. In order to also eliminate all tactics that do nothing useful,
-      idtac is preemptively added. When duplicates are removed, all the useless
-      tactics but idtac will be removed. Finally, idtac is removed.
-     */
-    syncQueryUndo('idtac.', function(response) {
-        unfocusedBefore = response.rGoals.unfocused;
-        res.push(mkTacticNode(self.curNode, 'idtac.', response.rGoals.focused));
+    var tactic = this.tacticsWorklist.shift();
+
+    this.runTactic(tactic, false, function() {
+        // some artificial delay so that things stay visually pleasant
+        window.setTimeout(
+            function() { self.processTactics(); },
+            animationDuration / 2
+        );
     });
 
-    var run = function(t) {
-        syncQueryUndo(t + '.', function(response) {
-            if (isGood(response)) {
-                // if the tactic did not finish the goal
-                if (_.isEqual(response.rGoals.unfocused, unfocusedBefore)) {
-                    res.push(mkTacticNode(
-                        self.curNode, t + '.',
-                        response.rGoals.focused
-                    ));
-                } else { // this tactic proved that goal
-                    res.push(mkTacticNode(self.curNode, t + '.', []));
-                }
-            }
-/*
-            else {
-                console.log(
-                    'Bad response for tactic ' + t + ': ',
-                    response.rResponse.contents,
-                    response
-                );
-            }
-*/
+}
+
+ProofTree.prototype.refreshTactics = function() {
+    var self = this;
+    var allTactics = this.tactics(this);
+    var missingTactics = _(allTactics).filter(function(t) {
+        // for now, only consider missing tactics
+        // TODO: refresh existential tactics according to unification variables
+        return ! _(self.curNode.allChildren).some(function(c) {
+            return (c.name === t);
         });
-    }
-
-    var curHyps = [];
-    var curGoal = (isGoal(this.curNode)) ? this.curNode : this.curNode.parent;
-    curHyps = curGoal.hyps;
-
-    _(this.tactics(this)).each(function(t) {
-
-        switch (t) {
-        case "destruct":
-            _(curHyps).each(function(h) {
-                run('destruct ' + h.hName);
-            });
-            break;
-        case "induction":
-            _(curHyps).each(function(h) {
-                run('induction ' + h.hName);
-            });
-            break;
-        case "inversion":
-            _(curHyps).each(function(h) {
-                run('inversion ' + h.hName);
-            });
-            break;
-        case "intro":
-            run('intro');
-            run('intros');
-            break;
-        case "rewrite":
-            _(curHyps).each(function(h) {
-                run('rewrite -> ' + h.hName);
-                run('rewrite <- ' + h.hName);
-            });
-            break;
-        case "apply":
-            _(curHyps).each(function(h) {
-                run('apply ' + h.hName);
-            });
-            break;
-        case "eapply":
-            _(curHyps).each(function(h) {
-                run('eapply ' + h.hName);
-            });
-            break;
-        default:
-            run(t);
-            break;
-        }
     });
-
-    res =
-        _(res)
-        .uniq(false, function(e) {
-            return JSON.stringify(
-                _(e.allChildren)
-                    .map(function(c) {
-                        return {"name": c.name, "hyps": c.hyps};
-                    })
-                .value()
-            );
-        })
-        .rest() // remove idtac
-        .sortBy(function(e) { return e.allChildren.length; })
-        .value()
-    ;
-
-    return res;
-
+    this.tacticsWorklist = missingTactics;
+    this.processTactics();
 }
 
 function extractGoal(gGoal) {
@@ -813,7 +804,7 @@ ProofTree.prototype.hInit = function(response) {
 
     this.curNode = this.rootNode;
 
-    this.rootNode.allChildren = this.tryAllTactics();
+    this.refreshTactics();
 
     this.update();
 
@@ -1168,6 +1159,7 @@ ProofTree.prototype.update = function(callback) {
         .attr("height", function(d) { return d.height; })
         .transition()
         .duration(animationDuration)
+        .style("opacity", "1")
         .attr("x", function(d) { return d.cX; })
         .attr("y", function(d) { return d.cY; })
         .each("end", function() {
@@ -1213,7 +1205,7 @@ ProofTree.prototype.update = function(callback) {
                 })
                 .on("click", function(d) {
 
-                    syncLog("CLICK " + nodeString(d));
+                    asyncLog("CLICK " + nodeString(d));
 
                     self.click(d);
 
@@ -1263,6 +1255,7 @@ ProofTree.prototype.update = function(callback) {
         .classed("solved", function(d) { return d.solved; })
         .transition()
         .duration(animationDuration)
+        .style("opacity", "1")
         .attr("width", function(d) { return d.width; })
         .attr("height", function(d) { return d.height; })
         .attr("x", function(d) { return d.cX; })
@@ -1293,6 +1286,7 @@ ProofTree.prototype.update = function(callback) {
     linkSelection
         .transition()
         .duration(animationDuration)
+        .style("opacity", 1)
         .attr("d", function(d) {
             var src = swapXY(centerRight(d.source));
             var tgt = swapXY(centerLeft(d.target));
@@ -1720,15 +1714,15 @@ ProofTree.prototype.shiftPrev = function(n) {
     function tryShifting(n) {
         if (n.focusIndex> 0) {
             n.focusIndex--;
-            syncLog("UP " + nodeString(n.allChildren[n.focusIndex]));
+            asyncLog("UP " + nodeString(n.allChildren[n.focusIndex]));
             self.update();
             return true;
         }
         return false;
     }
     if (n.solved) { return; }
-    if (isGoal(n) && n.children.length > 0) {
-        tryShifting(n.children[n.focusIndex]) || tryShifting(n);
+    if (isGoal(n) && n.allChildren.length > 0) {
+        tryShifting(n.allChildren[n.focusIndex]) || tryShifting(n);
     } else {
         tryShifting(n);
     }
@@ -1747,8 +1741,8 @@ ProofTree.prototype.shiftNext = function(n) {
         return false;
     }
     if (n.solved) { return; }
-    if (isGoal(n) && n.children.length > 0) {
-        tryShifting(n.children[n.focusIndex]) || tryShifting(n);
+    if (isGoal(n) && n.allChildren.length > 0) {
+        tryShifting(n.allChildren[n.focusIndex]) || tryShifting(n);
     } else {
         tryShifting(n);
     }
@@ -1785,17 +1779,16 @@ ProofTree.prototype.click = function(d, remember, callback) {
 
     this.navigateTo(d, remember);
 
-    if (_.isEmpty(d.allChildren)) {
-        if (isGoal(d)) {
-            d.allChildren = this.tryAllTactics();
-        }
-        // otherwise, this is a terminating tactic for this goal!
-        else {
+    if (isGoal(d)) {
+        this.refreshTactics();
+    } else {
+        if (_.isEmpty(d.allChildren)) {
             this.solved(d);
         }
     }
 
     expand(d);
+
     this.update(callback);
 
 }
@@ -1813,7 +1806,7 @@ ProofTree.prototype.solved = function(n) {
         }, animationDuration);
     } else {
         window.setTimeout(function () {
-            syncLog("QED " + JSON.stringify(PT.proofFrom(self.rootNode)));
+            asyncLog("QED " + JSON.stringify(PT.proofFrom(self.rootNode)));
             self.qedCallback(self);
         }, animationDuration);
     }
@@ -1897,6 +1890,11 @@ function depthSolved(tacNode) {
 ProofTree.prototype.navigateTo = function(dest, remember) {
 
     var self = this;
+
+    // if we are going to move, flush the worklist before anything happens
+    if (this.curNode.id !== dest.id) {
+        this.tacticsWorklist = [];
+    }
 
     var a = this.commonAncestor(this.curNode, dest);
 
@@ -2080,7 +2078,7 @@ ProofTree.prototype.keydownHandler = function() {
     case 65: // a
         d3.event.preventDefault();
         if (hasParent(curNode)) {
-            syncLog("LEFT " + nodeString(curNode.parent));
+            asyncLog("LEFT " + nodeString(curNode.parent));
             this.click(curNode.parent);
         }
         break;
@@ -2090,7 +2088,7 @@ ProofTree.prototype.keydownHandler = function() {
         d3.event.preventDefault();
         var dest = children[curNode.focusIndex];
         if (dest !== undefined) {
-            syncLog("RIGHT " + nodeString(dest));
+            asyncLog("RIGHT " + nodeString(dest));
             this.click(dest);
         }
         break;
@@ -2381,7 +2379,7 @@ ProofTree.prototype.replay = function() {
 }
 
 ProofTree.prototype.qed = function() {
-    syncQuery("Qed.", function(response) {
+    asyncQuery("Qed.", function(response) {
         if (isBad(response)) {
             console.log("Qed failed, error:" + contents(response));
         }
