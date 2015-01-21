@@ -2384,7 +2384,7 @@ ProofTree.prototype.replayThisProof = function(proof) {
                             return function() {
                                 if (needToFocus) {
                                     return asyncQuery(" { ")
-                                        .then(function() { self.replayThisProof(n); })
+                                        .then(function() { return self.replayThisProof(n); })
                                         .then(function() { return asyncQuery(" } "); })
                                     ;
                                 } else {
