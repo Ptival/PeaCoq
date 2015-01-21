@@ -401,16 +401,13 @@ function keydownHandler(ev) {
 
     //console.log(ev.keyCode)
 
-    // Mac users would like these to work
     var ctrlWhitelist = [
         65, // a
+        66, // b
         69, // e
+        70, // f
         78, // n
         80, // p
-    ];
-    var ctrlWhitelistIfUnlocked = [
-        68, // d
-        75, // k
     ];
 
     if (ev.ctrlKey) {
@@ -434,12 +431,12 @@ function keydownHandler(ev) {
             proverToCaret();
             ev.preventDefault();
             ev.stopPropagation();
-        } else if (_(ctrlWhitelist).contains(ev.keyCode)) {
+        } else if (
+            !pweSelectionLocked()
+                || _(ctrlWhitelist).contains(ev.keyCode)) {
+            // in the locked area, only whitelisted commands are allowed
             return;
-        } else if (_(ctrlWhitelistIfUnlocked).contains(ev.keyCode)
-                   && !pweSelectionLocked()) {
-            return;
-        } else {
+        } else { // selection is locked and command is not whitelisted
             ev.preventDefault();
             ev.stopPropagation();
         }
