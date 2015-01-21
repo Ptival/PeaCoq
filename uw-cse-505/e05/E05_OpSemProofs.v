@@ -1,7 +1,9 @@
-(** * Episode 04: Operational Semantics *)
+(** * Episode 05: Proofs About Operational Semantics *)
 
 Require Import String.
 Open Scope string.
+
+(** AST *)
 
 Definition var := string.
 Definition val := nat.
@@ -18,6 +20,8 @@ Inductive stmt : Type :=
 | Seq : stmt -> stmt -> stmt
 | Cond : expr -> stmt -> stmt -> stmt
 | While : expr -> stmt -> stmt.
+
+(** Small Step Operational Semantics *)
 
 Definition heap := var -> val.
 
@@ -37,37 +41,11 @@ Inductive Eval (h: heap) : expr -> val -> Prop :=
   Eval h e2 c2 ->
   c3 = c1 + c2 ->
   Eval h (Add e1 e2) c3
-(**
-was:
-
-| EAdd : forall e1 e2 c1 c2,
+| EMul : forall e1 e2 c1 c2 c3,
   Eval h e1 c1 ->
   Eval h e2 c2 ->
-  Eval h (Add e1 e2) (c1 + c2)
-
-but this forces Coq to guess [c1] and [c2] from [(c1 + c2)] which can be
-impossible, so it helps to introduce another variable [c3] and add an
-equality that can be delayed until [c1] and [c2] have been figured out in
-other parts of the proof.
- *)
-| EMul : forall e1 e2 c1 c2,
-  Eval h e1 c1 ->
-  Eval h e2 c2 ->
-  Eval h (Mul e1 e2) (c1 * c2).
-
-Theorem Eval_101 :
-  Eval (add_binding "y" 4 empty) (Add (Add (Const 3) (Var "y")) (Const 5)) 12.
-Proof.
-  eapply EAdd.
-  eapply EAdd.
-  constructor.
-  constructor.
-  constructor.
-  constructor.
-  constructor.
-Qed.
-
-Print Eval_101.
+  c3 = c1 * c2 ->
+  Eval h (Mul e1 e2) c3.
 
 Inductive Step (h : heap) : stmt -> heap -> stmt -> Prop :=
 | SAssign : forall e c x,
@@ -95,7 +73,6 @@ Inductive Step (h : heap) : stmt -> heap -> stmt -> Prop :=
   c <= 0 ->
   Step h (While e s) h Skip.
 
-(** alternatively...
-| SWhileT : forall e s,
-  Step h (While e s) h (Seq (Cond e s) (While e s))
-*)
+(** Divergance *)
+
+(** No Negatives *)
