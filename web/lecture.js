@@ -1692,7 +1692,7 @@ function lectureTactics(pt) {
     var curHyps = curGoal.hyps;
 
     var prefixes = [
-        "destruct", "induction",
+        "destruct", "induction", "inversion",
         "rewrite ->", "rewrite <-", "apply", "eapply",
     ];
     _(curHyps).each(function(h) {
