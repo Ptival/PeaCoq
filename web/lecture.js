@@ -399,29 +399,21 @@ function keydownHandler(ev) {
     pweRestoreFinalBR();
     pweOptAdjustSelection();
 
-    //console.log(evt.keyCode)
+    //console.log(ev.keyCode)
 
-    // Delete tends to delete these nodes, add them back if that is the case
-    /*
-    if ($("#proving").length === 0) {
-        $("<span>", { "id": "proving" }).insertAfter($("#proved"));
-    }
-    if ($("#provwill").length === 0) {
-        $("<span>", { "id": "provwill" }).insertAfter($("#proving"));
-    }
-    if ($("#unlocked").length === 0) {
-        $("<span>", { "id": "unlocked" }).insertAfter($("#provwill"));
-        repositionCaret();
-    }
-    */
+    // Mac users would like these to work
+    var ctrlWhitelist = [
+        65, // a
+        69, // e
+        78, // n
+        80, // p
+    ];
 
     if (ev.ctrlKey) {
         if (ev.keyCode == 40 || ev.keyCode == 10) { //DOWN_ARROW
             proverDown();
-            try {
-                ev.preventDefault();
-                ev.stopPropagation();
-            } catch (e) {}
+            ev.preventDefault();
+            ev.stopPropagation();
         } else if (ev.keyCode == 38) { //UP_ARROW
             proverUp();
             ev.preventDefault();
@@ -436,6 +428,12 @@ function keydownHandler(ev) {
             ev.stopPropagation();
         } else if (ev.keyCode == 13) { //ENTER
             proverToCaret();
+            ev.preventDefault();
+            ev.stopPropagation();
+        } else if (_(ctrlWhitelist).contains(ev.keyCode)) {
+            // whitelisted commands should propagate
+            return;
+        } else {
             ev.preventDefault();
             ev.stopPropagation();
         }
@@ -481,88 +479,6 @@ function keydownHandler(ev) {
         ev.preventDefault();
         ev.stopPropagation();
     }
-
-    /*
-    if (evt.ctrlKey && evt.altKey) {
-
-        switch(evt.keyCode) {
-        case 13: // Enter
-            proverToCaret();
-            evt.preventDefault();
-            break;
-        case 33: // PageUp
-            break;
-        case 34: // PageDown
-            break;
-        case 38: // Up
-            proverUp();
-            evt.preventDefault();
-            break;
-        case 40: case 10: // Down
-            proverDown();
-            evt.preventDefault();
-            break;
-        case 76: // Ctrl + Alt + L
-            $("#load-local-button").click();
-            break;
-        case 83: // Ctrl + Alt + S
-            // TODO: find a way to programatically save
-            break;
-        default:
-            break;
-        };
-
-    } else if (!evt.ctrlKey && !evt.altKey) {
-
-        // arrow keycodes
-        if (37 <= evt.keyCode && evt.keyCode <= 40) {
-            return;
-        }
-
-        switch (evt.keyCode) {
-        case 8: // Backspace
-            adjustSelection();
-            var s = peacoqGetSelection();
-            if (isSelectionLocked()
-                // or if the backspace action would delete something before #unlocked
-                || (s.startSpan.id === "unlocked" && s.startOffset === 0)) {
-                evt.preventDefault();
-            }
-            break;
-        case 9: // Tab
-            evt.preventDefault();
-            if (isSelectionLocked()) { return; }
-            insertAtSelection("  ");
-            break;
-        case 13: // Enter
-            evt.preventDefault();
-            if (isSelectionLocked()) { return; }
-            insertAtSelection("\n");
-            scrollViewToCaret();
-            break;
-        case 46: // Delete
-            if (isSelectionLocked()) { evt.preventDefault(); }
-            break;
-        default:
-            break;
-        };
-
-    } else if (evt.ctrlKey) {
-
-        switch (evt.keyCode) {
-        case 68: // Ctrl + d deletes the next character for some systems
-            if (isSelectionLocked()) { evt.preventDefault(); return; }
-            break;
-        case 75: // Ctrl + k kills the line for some systems
-            if (isSelectionLocked()) { evt.preventDefault(); return; }
-            break;
-        default:
-            break;
-        };
-
-    }
-
-    */
 
 }
 
