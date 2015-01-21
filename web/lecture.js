@@ -940,6 +940,16 @@ function exitProofTree(labelBeforeProofTree) {
 
     switchToEditorUI();
 
+    var pt = activeProofTree;
+    var partialProof = pt.partialProofFrom(pt.rootNode, 1);
+    // post-process so that text looks rad
+    partialProof.find("div").prepend("\n");
+    partialProof.find("textarea").replaceWith("admit.");
+    partialProof.find("button").remove();
+
+    repositionCaret();
+    insertAtSelection("\n(*\n" + partialProof.text() + "\n*)\n");
+
     activeProofTree = undefined;
 
     asyncLog("EXITPROOFTREE");
@@ -947,12 +957,9 @@ function exitProofTree(labelBeforeProofTree) {
     // revert all the steps done in proof mode, to keep the labels clean
     asyncStatus()
         .then(function(newStatus) {
-            asyncRequest(
+            return asyncRequest(
                 "rewind",
-                newStatus.label - labelBeforeProofTree,
-                function(){
-                    repositionCaret();
-                }
+                newStatus.label - labelBeforeProofTree
             );
         })
     ;
