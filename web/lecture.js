@@ -467,6 +467,10 @@ function keydownHandler(ev) {
                     ev.stopPropagation();
                 }
             }
+        } else if (ev.keyCode == 9) { // Tab
+            insertAtSelection("  ");
+            ev.preventDefault();
+            ev.stopPropagation();
         } else if (ev.keyCode == 13 && !ev.ctrlKey) { // Enter
             // there is no way around emulating this: the browser adds a new <div>...
             pweEmulateReturn();
