@@ -604,9 +604,48 @@ function getResponseUnfocused(response) {
     return response.rGoals.unfocused;
 }
 
+// TODO: I believe there is a danger of race with runTactic
 /*
-  try to run the tactic [t] and add its result to the [this.curNode] at
-  call-time. calls [callback] after the node has been added or failure.
+ * @return <Promise>
+ */
+ProofTree.prototype.runUserTactic = function(t) {
+    var self = this;
+    var nodeToAttachTo = this.curNode;
+    // need to get the status before so that we figure out whether the goal was
+    // solved, if only coqtop would tell us...
+    var beforeResponse;
+    return asyncStatus()
+        .then(function(status) {
+            beforeResponse = status.response;
+            return asyncQueryAndUndo(t);
+        })
+        .then(function(response) {
+            if (isGood(response)) {
+                var unfocusedBefore = getResponseUnfocused(beforeResponse);
+                var unfocusedAfter = getResponseUnfocused(response);
+                var newChild = mkTacticNode(
+                    nodeToAttachTo,
+                    t,
+                    (_.isEqual(unfocusedAfter, unfocusedBefore))
+                        ? response.rGoals.focused
+                        : []
+                );
+
+                nodeToAttachTo.allChildren.unshift(newChild);
+                nodeToAttachTo.focusIndex = 0;
+                self.update();
+                return newChild;
+            } else {
+                throw response;
+                //console.log("Bad response for tactic", t, response);
+            }
+        })
+    ;
+
+}
+
+/*
+ * @return <Promise>
  */
 ProofTree.prototype.runTactic = function(t, addToTheFront) {
 
@@ -1657,6 +1696,8 @@ ProofTree.prototype.update = function(callback) {
 
     this.updateDebug();
 
+    if (callback !== undefined) { callback(); }
+
 }
 
 function byDiffId(d) {
@@ -2209,23 +2250,24 @@ ProofTree.prototype.partialProofFrom = function(t, indentation) {
                         var tactic = ta.val();
 
                         // if the tactic is already here, just click it
-                        var existingTactic = _(self.curNode.allChildren).find(function(elt) {
-                            return elt.name === tactic;
-                        });
-
+                        var existingTactic = _(self.curNode.allChildren)
+                            .find(function(elt) {
+                                return elt.name === tactic;
+                            })
+                        ;
                         if (existingTactic !== undefined) {
                             self.click(existingTactic);
                             return;
-                        }
-
-                        // this adds the node but does not update the display
-                        var newNode = self.runTactic(tactic);
-
-                        // now we can update and click on the node once it has appeared
-                        if (newNode !== undefined) {
-                            self.update(function() {
-                                self.click(newNode);
-                            });
+                        } else {
+                            // otherwise, need to run the tactic
+                            self.runUserTactic(tactic)
+                                .then(function(newNode) {
+                                    self.click(newNode);
+                                })
+                                .catch(function(error) {
+                                    // TODO: not use alert
+                                    alert(error.rResponse.contents);
+                                });
                         }
 
                     })
