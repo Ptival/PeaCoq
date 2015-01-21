@@ -408,6 +408,10 @@ function keydownHandler(ev) {
         78, // n
         80, // p
     ];
+    var ctrlWhitelistIfUnlocked = [
+        68, // d
+        75, // k
+    ];
 
     if (ev.ctrlKey) {
         if (ev.keyCode == 40 || ev.keyCode == 10) { //DOWN_ARROW
@@ -431,7 +435,9 @@ function keydownHandler(ev) {
             ev.preventDefault();
             ev.stopPropagation();
         } else if (_(ctrlWhitelist).contains(ev.keyCode)) {
-            // whitelisted commands should propagate
+            return;
+        } else if (_(ctrlWhitelistUnlocked).contains(ev.keyCode)
+                   && !pweSelectionLocked()) {
             return;
         } else {
             ev.preventDefault();
