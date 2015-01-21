@@ -436,7 +436,7 @@ function keydownHandler(ev) {
             ev.stopPropagation();
         } else if (_(ctrlWhitelist).contains(ev.keyCode)) {
             return;
-        } else if (_(ctrlWhitelistUnlocked).contains(ev.keyCode)
+        } else if (_(ctrlWhitelistIfUnlocked).contains(ev.keyCode)
                    && !pweSelectionLocked()) {
             return;
         } else {
