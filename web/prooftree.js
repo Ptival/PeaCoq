@@ -382,13 +382,27 @@ function nodeX(d) { return d.y; }
 
 function nodeY(d) { return d.x; }
 
+ProofTree.prototype.isFocusedTactic = function(d) {
+    if (isGoal(d)) { return false; }
+    if (d.id === this.curNode.id) { return true; }
+    // else, d is focused if it is at focus index
+    var focusedChild = this.curNode.allChildren[this.curNode.focusIndex];
+    if (focusedChild === undefined) { return false; }
+    return ( // parentheses mandatory here :) <3 JS
+        isGoal(this.curNode)
+            && this.isCurNodeChild(d)
+            && (d.id === focusedChild.id)
+    );
+}
+
 ProofTree.prototype.xOffset = function(d) {
     return - d.width / 2; // position the center
 }
 
 ProofTree.prototype.yOffset = function(d) {
     var offset = - d.height / 2; // for the center
-    if (this.isCurGoalChild(d) || this.isCurGoalGrandChild(d)) {
+    if (!this.isFocusedTactic(d)
+        && (this.isCurGoalChild(d) || this.isCurGoalGrandChild(d))) {
         return offset + this.descendantsOffset;
     } else {
         return offset;
@@ -1178,7 +1192,14 @@ ProofTree.prototype.update = function(callback) {
     textSelection
         .each(function(d) {
             d.cX = nodeX(d) * self.xFactor + self.xOffset(d);
-            d.cY = nodeY(d) * self.yFactor + self.yOffset(d);
+            // it is nicer if a tactic node stays in front of its parent node
+            // for as long as one of its children goal is focused upon
+            var focusedChild = self.curNode.allChildren[self.curNode.focusIndex];
+            if (self.isFocusedTactic(d)) {
+                d.cY = nodeY(d.parent) * self.yFactor + self.yOffset(d);
+            } else {
+                d.cY = nodeY(d) * self.yFactor + self.yOffset(d);
+            }
         })
         // preset the width to update measures correctly
 /*
