@@ -948,7 +948,12 @@ function exitProofTree(labelBeforeProofTree) {
     partialProof.find("button").remove();
 
     repositionCaret();
-    insertAtSelection("\n(*\n" + partialProof.text() + "\n*)\n");
+    pweMoveRight(); // so that we are past the zwsp
+    var partialProofText = partialProof.text();
+    // if the partial proof has anything interesting, save it in a comment
+    if (partialProofText !== "admit.") {
+        insertAtSelection("\n(*\n" + partialProof.text() + "\n*)\n");
+    }
 
     activeProofTree = undefined;
 
