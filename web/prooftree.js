@@ -2270,6 +2270,8 @@ ProofTree.prototype.partialProofFrom = function(t, indentation) {
 
                         var tactic = ta.val();
 
+                        asyncLog("MANUALTACTIC " + tactic);
+
                         // if the tactic is already here, just click it
                         var existingTactic = _(self.curNode.allChildren)
                             .find(function(elt) {
