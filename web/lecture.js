@@ -1707,24 +1707,44 @@ function lectureTactics(pt) {
     });
 
     var curGoal = (isGoal(this.curNode)) ? this.curNode : this.curNode.parent;
-    var curHyps = curGoal.hyps;
+    var curHyps = _(curGoal.hyps).map(function(h) { return h.hName; });
+    var curNames = _(curHyps).union(namesPossiblyInScope).value();
 
     var prefixes = [
-        "destruct", "induction", "inversion",
-        "rewrite ->", "rewrite <-", "apply", "eapply",
+        "destruct", "induction", "inversion", "apply", "eapply",
     ];
     _(curHyps).each(function(h) {
         res = res.concat(
             _(prefixes)
-                .map(function(prefix) { return prefix + " " + h.hName; })
+                .map(function(prefix) { return prefix + " " + h; })
                 .value()
         );
     });
 
+    _(curNames)
+        .each(function(h1) {
+            res = res.concat(
+                [
+                    "rewrite -> " + h1,
+                    "rewrite <- " + h1,
+                ]
+            );
+            /*
+            _(curHyps).each(function(h2) {
+                res = res.concat(
+                    [
+                        "rewrite -> " + h1 + " in " + h2,
+                        "rewrite <- " + h1 + " in " + h2,
+                    ]
+                );
+            });
+            */
+        });
+
     // more stuff that might be less important
     res = res.concat([
         "simpl in *", "left", "right", "split",
-        "f_equal", "constructor", "subst",
+        "eexists", "f_equal", "constructor", "subst",
     ]);
 
     return _(res).map(function(s) { return s + "."; }).value();
