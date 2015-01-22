@@ -401,9 +401,12 @@ function keydownHandler(ev) {
 
     //console.log(ev.keyCode)
 
+    // Ctrl+C is copy
+    // Ctrl+A/B/E/F/N/P move the cursor under Mac
     var ctrlWhitelist = [
         65, // a
         66, // b
+        67, // c
         69, // e
         70, // f
         78, // n
