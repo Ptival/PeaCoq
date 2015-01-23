@@ -16,7 +16,10 @@
 #prooftree {
     border: 0;
 }
-#revision { float: right; }
+#revision {
+    float: right;
+    text-align: right;
+}
 #toolbar {
     display: table;
     border: 0;

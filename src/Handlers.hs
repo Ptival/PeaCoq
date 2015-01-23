@@ -6,6 +6,7 @@ import           Control.Applicative ((<$>))
 import           Control.Monad.IO.Class (liftIO)
 import           Data.ByteString.UTF8 (toString)
 import qualified Data.IntMap as IM
+import           Data.String.Utils
 import qualified Data.Text as T
 import           Snap.Core
 import           Snap.Extras.JSON
@@ -15,6 +16,7 @@ import           Snap.Snaplet.Session.SessionManager ()
 import           System.FilePath.Find ((==?), always, extension, find)
 import           System.IO
 import           System.Log.Logger
+import           System.Process
 import           System.Random
 
 import           CoqTypes
@@ -38,6 +40,9 @@ logAction hash message = infoM rootLoggerName (hash ++ " " ++ message)
 
 keyField :: T.Text
 keyField = "key"
+
+getGitCommitHash :: IO String
+getGitCommitHash = strip <$> readProcess "git" ["rev-parse", "HEAD"] ""
 
 getSessionKey :: Handler PeaCoq PeaCoq IM.Key
 getSessionKey = with lSession $ do
@@ -163,8 +168,9 @@ logHandler input@(HandlerInput _ _ hash) = do
       respond (Good ["OK"]) input
 
 revisionHandler :: HandlerInput -> PeaCoqHandler
-revisionHandler input@(HandlerInput _ _ hash) = do
-  respond (Good [hash]) input
+revisionHandler input@(HandlerInput _ _ serverHash) = do
+  clientHash <- liftIO $ getGitCommitHash
+  respond (Good [serverHash, clientHash]) input
 
 listLecturesHandler :: HandlerInput -> PeaCoqHandler
 listLecturesHandler input = do

@@ -10,7 +10,6 @@ import           Data.ByteString (ByteString, append)
 import qualified Data.HashMap.Strict as HM (map)
 import           Data.IORef
 import qualified Data.IntMap as IM
-import           Data.String.Utils
 import           Data.Time.Format
 import           Data.Time.LocalTime
 import           Network.Socket
@@ -80,7 +79,7 @@ For running the UW study, each participant will run their own instance of the se
 -}
 mainUW :: IO ()
 mainUW = do
-  hash <- strip <$> readProcess "git" ["rev-parse", "HEAD"] ""
+  hash <- getGitCommitHash
   homeDir <- getHomeDirectory
   PeaCoqConfig mUserId logPath <- read <$> readFile (homeDir ++ "/" ++ configFile)
   now <- getZonedTime

@@ -225,8 +225,9 @@ $(document).ready(function() {
 
     asyncRevision()
         .then(function(response) {
-            $("#revision").text(
-                "Revision: " + response.rResponse.contents[0].trim()
+            $("#revision").html(
+                "Server revision: " + response.rResponse.contents[0]
+                    + "<br/>Client revision: " + response.rResponse.contents[1]
             );
             return asyncResetCoq();
         })
