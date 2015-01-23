@@ -1,3 +1,7 @@
+.btn-group {
+    display: table-cell;
+    vertical-align: top;
+}
 #coqtop {
     border: 0;
     float: left;
@@ -26,8 +30,4 @@
     margin: 0;
     padding: 0;
     width: 100%;
-}
-.btn-group {
-    display: table-cell;
-    vertical-align: top;
 }
