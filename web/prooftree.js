@@ -2163,6 +2163,10 @@ ProofTree.prototype.keydownHandler = function() {
     case 68: // d
         d3.event.preventDefault();
         var dest = children[curNode.focusIndex];
+        if (isGoal(curNode) && dest.allChildren.length > 0) {
+            // try to actually reach the focused subgoal
+            dest = dest.allChildren[dest.focusIndex];
+        }
         if (dest !== undefined) {
             asyncLog("RIGHT " + nodeString(dest));
             this.click(dest);
