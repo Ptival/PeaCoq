@@ -726,12 +726,15 @@ function proverDown() {
     if (index == 0) { return; }
     var pieceToProcess = unlocked.substring(0, index);
     unlocked = unlocked.substring(index);
-    // if there is no space between the previous and next command, add one!
-    var characterBefore = provwill[provwill.length - 1];
-    var characterAfter = pieceToProcess[0];
-    if (characterBefore !== ' ' && characterBefore !== '\n'
-        && characterAfter !== ' ' && characterAfter !== '\n') {
-        provwill += ' ';
+    // if there is no spacing before the command to be inserted, add one!
+    var stringBefore = proved + proving + provwill;
+    if (stringBefore !== '') {
+        var characterBefore = stringBefore[stringBefore.length - 1];
+        var characterAfter = pieceToProcess[0];
+        if (characterBefore !== ' ' && characterBefore !== '\n'
+            && characterAfter !== ' ' && characterAfter !== '\n') {
+            provwill += ' ';
+        }
     }
     provwill += pieceToProcess;
     pweSetLockedPart("provwill", provwill);
