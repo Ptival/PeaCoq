@@ -705,8 +705,8 @@ function tryProcessing() {
 }
 
 /*
-  Returns the position of the caret w.r.t. the editor: this includes all the characters in
-  #proved, #proving, #provwill and #unlocked
+  Returns the position of the caret w.r.t. the editor: this includes all the
+  characters in #proved, #proving, #provwill and #unlocked
 */
 function getCaretPos() {
     var sel = rangy.getSelection();
@@ -717,8 +717,8 @@ function getCaretPos() {
 }
 
 /*
-  This should simply move the next line from the #unlocked area to the #provwill area,
-  then trigger a processing.
+  This should simply move the next line from the #unlocked area to the #provwill
+  area, then trigger a processing.
 */
 function proverDown() {
     var unlocked = pweGetUnlocked();
@@ -774,9 +774,9 @@ function proverToCaret () {
 }
 
 /*
-  Assuming the system is done processing, #proving and #provwill should be empty, we
-  should therefore be able to just undo the last step. Undo might undo more steps than
-  that though, in which case we want to mark them undone too.
+  Assuming the system is done processing, #proving and #provwill should be
+  empty, we should therefore be able to just undo the last step. Undo might undo
+  more steps than that though, in which case we want to mark them undone too.
 */
 function proverUp () {
     if (processing) { return; } // TODO: could prevent more processing?
@@ -1343,17 +1343,17 @@ function subrange(r1, r2) {
 
 function intersectRanges(r1,r2) {
     if (r1.intersectsOrTouchesRange(r2)) {
-	var startComparison = rangy.dom.comparePoints(r1.startContainer, r1.startOffset, r2.startContainer, r2.startOffset),
-	    endComparison = rangy.dom.comparePoints(r1.endContainer, r1.endOffset, r2.endContainer, r2.endOffset);
+        var startComparison = rangy.dom.comparePoints(r1.startContainer, r1.startOffset, r2.startContainer, r2.startOffset),
+            endComparison = rangy.dom.comparePoints(r1.endContainer, r1.endOffset, r2.endContainer, r2.endOffset);
 
-	var intersectionRange = r1.cloneRange();
-	if (startComparison == -1) {
-	    intersectionRange.setStart(r2.startContainer, r2.startOffset);
-	}
-	if (endComparison == 1) {
-	    intersectionRange.setEnd(r2.endContainer, r2.endOffset);
-	}
-	return intersectionRange;
+        var intersectionRange = r1.cloneRange();
+        if (startComparison == -1) {
+            intersectionRange.setStart(r2.startContainer, r2.startOffset);
+        }
+        if (endComparison == 1) {
+            intersectionRange.setEnd(r2.endContainer, r2.endOffset);
+        }
+        return intersectionRange;
     }
     return null;
 }
