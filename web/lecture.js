@@ -718,6 +718,13 @@ function proverDown() {
     if (index == 0) { return; }
     var pieceToProcess = unlocked.substring(0, index);
     unlocked = unlocked.substring(index);
+    // if there is no space between the previous and next command, add one!
+    var characterBefore = provwill[provwill.length - 1];
+    var characterAfter = pieceToProcess[0];
+    if (characterBefore !== ' ' && characterBefore !== '\n'
+        && characterAfter !== ' ' && characterAfter !== '\n') {
+        provwill += ' ';
+    }
     provwill += pieceToProcess;
     pweSetLockedPart("provwill", provwill);
     pweSetUnlocked(unlocked);
