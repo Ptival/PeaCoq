@@ -21,6 +21,10 @@ var unicodeList = [
 
 $(document).ready(function() {
 
+    $(window).bind('beforeunload', function(){
+        return '⚠⚠⚠ unsaved progress wil be lost ⚠⚠⚠';
+    });
+
     if (!rangy.initialized) {rangy.init();}
 
     // Range.textContent : String.
