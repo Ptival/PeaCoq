@@ -376,6 +376,7 @@ function globalKeyHandler(evt) {
 }
 
 function keypressHandler(ev) {
+    //console.log("KEYPRESS", ev.keyCode)
     pweRestoreFinalBR();
     pweOptAdjustSelection();
     if (!(ev.keyCode >= 33 && ev.keyCode <= 40) && pweSelectionLocked()) {
@@ -397,7 +398,7 @@ function keydownHandler(ev) {
     pweRestoreFinalBR();
     pweOptAdjustSelection();
 
-    //console.log(ev.keyCode)
+    //console.log("KEYDOWN", ev.keyCode)
 
     // Ctrl+C is copy
     // Ctrl+A/B/E/F/N/P move the cursor under Mac
@@ -416,22 +417,25 @@ function keydownHandler(ev) {
             proverDown();
             ev.preventDefault();
             ev.stopPropagation();
-        } else if (ev.keyCode == 38) { //UP_ARROW
+        } else if (ev.keyCode == 38) { // Up
             proverUp();
             ev.preventDefault();
             ev.stopPropagation();
-        } else if (ev.keyCode == 34) { //PGDN
+        } else if (ev.keyCode == 34) { // PgDn
             //prover_bottom();
             ev.preventDefault();
             ev.stopPropagation();
-        } else if (ev.keyCode == 33) { //PGUP
+        } else if (ev.keyCode == 33) { // PgUp
             //prover_top();
             ev.preventDefault();
             ev.stopPropagation();
-        } else if (ev.keyCode == 13) { //ENTER
+        } else if (ev.keyCode == 13) { // Enter
             proverToCaret();
             ev.preventDefault();
             ev.stopPropagation();
+        } else if (ev.keyCode == 8) { // Backspace
+            // tricky, for now just backspace
+            pweEmulateBackspace(ev, true);
         } else if (
             !pweSelectionLocked()
                 || _(ctrlWhitelist).contains(ev.keyCode)) {
@@ -460,15 +464,7 @@ function keydownHandler(ev) {
         }
     } else if (!pweSelectionLocked()) {
         if (ev.keyCode == 8) { // Backspace
-            if (pweSelectionLocked()) {
-                ev.preventDefault();
-                ev.stopPropagation();
-            } else {
-                if (pweEmulateBackspace()) {
-                    ev.preventDefault();
-                    ev.stopPropagation();
-                }
-            }
+            pweEmulateBackspace(ev, false);
         } else if (ev.keyCode == 9) { // Tab
             insertAtSelection("  ");
             ev.preventDefault();
@@ -1589,14 +1585,20 @@ function pweInsertText(txt,inrange) {
     return range;
 }
 
-function pweEmulateBackspace() {
+/*
+ * decides whether we need to emulate Backspace because we are close to our
+ * special character, or whether we can let the original [ev] go through
+ * if [forceEmulation] is true, will definitely emulate
+ */
+function pweEmulateBackspace(ev, forceEmulation) {
     var range, sel;
 
     sel = rangy.getSelection();
 
     // do not emulate if not needed, so that Ctrl-Z will work
-    if (sel.anchorOffset > 1 && sel.focusOffset > 1) {
-        return false;
+    if (!forceEmulation && sel.anchorOffset > 1 && sel.focusOffset > 1) {
+        // ev will propagate and do the default
+        return;
     }
 
     if (sel.isCollapsed) {
@@ -1612,7 +1614,9 @@ function pweEmulateBackspace() {
         }
     }
 
-    return true;
+    ev.preventDefault();
+    ev.stopPropagation();
+
 }
 
 function pweRangeLocked(range) {
