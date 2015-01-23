@@ -1,7 +1,7 @@
 var processing = false;
 var prooftree = undefined;
-var nbsp = "&nbsp;";
-var zwsp = "\u200b";
+var nbsp = "\u00A0";
+var zwsp = "\u200B";
 var namesPossiblyInScope = [];
 var electric = false;
 var workaround_no_focusing = false;
@@ -964,10 +964,14 @@ function exitProofTree(labelBeforeProofTree) {
 
     repositionCaret();
     pweMoveRight(); // so that we are past the zwsp
-    var partialProofText = partialProof.text();
+    var partialProofText = pweSanitizeInput(partialProof.text());
     // if the partial proof has anything interesting, save it in a comment
     if (partialProofText !== "admit.") {
-        insertAtSelection("\n(*\n" + partialProof.text() + "\n*)\n");
+        insertAtSelection(
+            "\n(*\n"
+                + partialProofText
+                + "\n*)\n"
+        );
     }
 
     activeProofTree = undefined;
@@ -1694,7 +1698,8 @@ function pweSanitizeInput(txt) {
     return txt
         .replace(/\r\n/g,"\n")
         .replace(/\r/g,"\n")
-        .replace(new RegExp(zwsp, 'g'), "")
+        .replace(new RegExp(nbsp, 'g'), ' ')
+        .replace(new RegExp(zwsp, 'g'), '')
     ;
 }
 
