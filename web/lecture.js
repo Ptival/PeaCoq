@@ -240,7 +240,11 @@ $(document).ready(function() {
 
 function loadFile() {
     var file = $("#filepicker")[0].files[0];
-    $("#save-local-link").attr("download", file.name);
+    $("#save-local-link").attr(
+        "download",
+        // remove versioning number
+        file.name.replace(/ \(\d+\)/g, '')
+    );
     var reader = new FileReader();
     reader.onload = function(e) {
         onLoad(reader.result);
