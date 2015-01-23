@@ -1,8 +1,6 @@
 #!/usr/bin/env python
-
-import sys
-import smtplib
-
+from __future__ import print_function
+import os, sys, smtplib
 from email.mime.text import MIMEText
 
 def usage():
