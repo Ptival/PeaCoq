@@ -167,6 +167,32 @@ $(document).ready(function() {
         .on("click", saveLocal)
     ;
 
+    var feedbackButton = $("<button>", {
+        "class": "btn btn-info",
+        "data-target": "feedback",
+        "data-toggle": "modal",
+        "id": "feedback-button",
+        "html": $("<span>")
+            .append(mkGlyph("bullhorn"))
+            .append(nbsp + nbsp + "Feedback"),
+    })
+        .appendTo(buttonGroup)
+        .on("click", function() {
+            $("#feedback").modal();
+        })
+    ;
+
+    $("#feedback").on('shown.bs.modal', function () {
+        $("#feedback-form").focus();
+    });
+
+    $("#submit-feedback").on("click", function() {
+        var feedback = $("#feedback-form").text();
+        $("#feedback-form").text("");
+        asyncLog("FEEDBACK " + feedback);
+        $("#cancel-feedback").click();
+    });
+
     $("<a>", {
         "download": "output.v",
         "id": "save-local-link",

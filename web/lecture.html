@@ -30,6 +30,31 @@
       <pre id="editor" contenteditable="true" spellcheck="false"></pre>
       <pre id="coqtop" contenteditable="false" class="alert"></pre>
     </div>
+    <div class="modal fade" id="feedback" tabindex="-1" role="dialog"
+         aria-labelledby="myModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal"
+                    aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+            <h4 class="modal-title">Feedback</h4>
+          </div>
+          <div class="modal-body">
+            <p>Type your feedback below, then hit Submit:</p>
+            <pre id="feedback-form" contenteditable="true"></pre>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" id="cancel-feedback"
+                    data-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" id="submit-feedback">
+              Submit feedback
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
     <div id="prooftree"></div>
   </body>
 </html>
