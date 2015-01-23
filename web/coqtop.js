@@ -48,6 +48,7 @@ function asyncRequest(r, q) {
 function asyncQuery(q)        { return asyncRequest('query', q); }
 function asyncQueryAndUndo(q) { return asyncRequest('queryundo', q); }
 function asyncUndo()          { return asyncRequest('undo', undefined); }
+function asyncRevision()      { return asyncRequest('revision', undefined); }
 function asyncLog(s) {
     var time = "[" + new Date().toLocaleString() + "] ";
     return asyncRequest("log", time + s);

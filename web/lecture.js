@@ -48,19 +48,7 @@ $(document).ready(function() {
         return res;
     }
 
-    var toolBar =
-        $("#toolbar")
-        .css("display", "table")
-        .css("border", 0)
-        .css("margin", 0)
-        .css("padding", 0)
-    ;
-
-    var buttonGroup =
-        $(".btn-group")
-        .css("display", "table-cell")
-        .css("vertical-align", "top")
-    ;
+    var buttonGroup = $(".btn-group");
 
     $("<button>", {
         "class": "btn btn-default",
@@ -187,30 +175,7 @@ $(document).ready(function() {
         .appendTo(buttonGroup)
     ;
 
-    $("#main")
-        .css("font-family", "monospace")
-        .css("border", 0)
-    ;
-
-    $("#editor")
-        .css("margin", 0)
-        .css("float", "left")
-        .css("width", "50%")
-    ;
-
     resetEditorWith("(* Your code here *)");
-
-    $("#coqtop")
-        .css("margin", 0)
-        .css("float", "left")
-        .css("width", "50%")
-        .css("border", 0)
-    ;
-
-    $("#prooftree")
-        .css("border", 0)
-        .css("display", "none")
-    ;
 
     resize();
     $(window).resize(resize);
@@ -228,10 +193,17 @@ $(document).ready(function() {
 
     PT.handleKeyboard();
 
-    asyncResetCoq()
+    asyncRevision()
+        .then(function(response) {
+            $("#revision").text(
+                "Revision: " + response.rResponse.contents[0].trim()
+            );
+            return asyncResetCoq();
+        })
         .then(function() {
             $("#editor").focus();
         })
+        .catch(outputError)
     ;
 
 });

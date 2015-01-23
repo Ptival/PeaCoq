@@ -1,15 +1,6 @@
-
 module Session where
 
-import System.IO
-import System.Process
-
-data SessionState
-  = SessionState
-    Int              -- an identifier for the session
-    Bool             -- True while the session is alive
-    (Handle, Handle) -- I/O handles
-    ProcessHandle    -- useful to kill the process
+import PeaCoq
 
 isAlive :: SessionState -> Bool
 isAlive (SessionState _ alive _ _) = alive
