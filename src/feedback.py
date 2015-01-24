@@ -24,7 +24,7 @@ def main():
     msg['From'] = addr
     msg['To'] = addr
 
-    s = smtplib.SMTP('smtp.gmail.com')
+    s = smtplib.SMTP('localhost')
     s.sendmail(addr, [addr], msg.as_string())
     s.quit()
 
