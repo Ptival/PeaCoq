@@ -58,8 +58,44 @@ def main():
 
     print(log)
 
-main()
-sys.exit(0)
+    # commands per day
+    cmdSum = {}
+    for l in log:
+        d = l.serverT.strftime('%y-%m-%d')
+        if not (d in cmdSum):
+            cmdSum[d] = 0
+        cmdSum[d] += 1
+
+    plot = Plot()
+    line = Line()
+    line.xValues = []
+    line.yValues = []
+    labs = []
+
+    n = 1
+    for d in sorted(cmdSum.keys()):
+        line.xValues.append(n)
+        line.yValues.append(cmdSum[d])
+        labs.append(d)
+        n += 1
+
+    labpos = [(i * n) / 10 for i in range(10)]
+    line.xTickLabels = [labs[i] for i in labpos]
+    line.xTickLabelPoints = labpos
+
+    line.xTickLabelProperties = {
+        "color" : "blue",
+        "rotation" : 30,
+        "fontsize" : 9
+    }
+    plot.yLabel = "Total Commands"
+    plot.add(line)
+    plot.setDimensions(9,6)
+    plot.save("cmds-by-day.png")
+
+
+if __name__ == '__main__':
+    main()
 
 x = '''
 
