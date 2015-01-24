@@ -1,26 +1,30 @@
 #!/usr/bin/env python
 from __future__ import print_function
 
-import csv, time, sys, os.path
+import csv, sys, os.path
+from datetime import datetime
 from boomslang import *
 
 def usage():
     print('Usage: graph.py data.csv')
 
 class Entry:
-    def __init__(self, row):
-        self.serverT = row[0]
-        self.clientT = row[1]
-        self.command = row[2]
-        self.payload = row[3]
+    def __init__(self, ver, stm, ctm, cmd, pay):
+        self.version = ver
+        self.serverT = stm
+        self.clientT = ctm
+        self.command = cmd
+        self.payload = pay
 
     def __repr__(self):
         return '''
-Entry( serverT: "%s"
-     , clientT: "%s"
-     , command: "%s"
+Entry( version: %s
+     , serverT: %s
+     , clientT: %s
+     , command: %s
      , payload: "%s"
-     )''' % ( self.serverT
+     )''' % ( self.version
+            , self.serverT
             , self.clientT
             , self.command
             , self.payload
@@ -28,7 +32,6 @@ Entry( serverT: "%s"
 
     def __str__(self):
         return self.repr()
-
 
 def main():
     if len(sys.argv) < 2:
@@ -43,9 +46,22 @@ def main():
     with open(path, 'rb') as f:
         log = []
         for row in csv.reader(f):
-            log.append(Entry(row))
+            ver = row[0]
+            stm = datetime.strptime(row[1], '%Y-%m-%d-%H-%M-%S-%f')
+            try:
+                ctm = datetime.strptime(row[2], '%Y-%m-%d-%H-%M-%S-%f')
+            except:
+                ctm = None
+            cmd = row[3]
+            pay = row[4]
+            log.append(Entry(ver, stm, ctm, cmd, pay))
 
     print(log)
+
+main()
+sys.exit(0)
+
+x = '''
 
     # commands per day
     plot = Plot()
@@ -78,9 +94,6 @@ def main():
 
 
 
-
-main()
-sys.exit(0)
 
 # commands per day
 plot = Plot()
@@ -167,3 +180,4 @@ plot.xLimits = (-1, 24)
 plot.yLabel = "Avg Diff Size"
 plot.add(bar)
 plot.setDimensions(9,4)
+'''
