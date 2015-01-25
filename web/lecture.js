@@ -1723,15 +1723,6 @@ function lectureTactics(pt) {
         "firstorder",
     ];
 
-    var prefixes = ["apply", "eapply", "rewrite ->", "rewrite <-", "unfold"];
-    _(namesPossiblyInScope).each(function(name) {
-        res.concat(
-            _(prefixes)
-                .map(function(prefix) { return prefix + " " + name; })
-                .value()
-        );
-    });
-
     var curGoal = (isGoal(this.curNode)) ? this.curNode : this.curNode.parent;
     var curHyps = _(curGoal.hyps).map(function(h) { return h.hName; });
     var curNames = _(curHyps).union(namesPossiblyInScope).value();
@@ -1766,6 +1757,15 @@ function lectureTactics(pt) {
             });
             */
         });
+
+    var prefixes = ["apply", "eapply", "unfold"];
+    _(namesPossiblyInScope).each(function(name) {
+        res = res.concat(
+            _(prefixes)
+                .map(function(prefix) { return prefix + " " + name; })
+                .value()
+        );
+    });
 
     // more stuff that might be less important
     res = res.concat([
