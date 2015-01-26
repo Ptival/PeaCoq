@@ -784,8 +784,7 @@ ProofTree.prototype.runUserTactic = function(t) {
                         ? response.rGoals.focused
                         : []
                 );
-
-                nodeToAttachTo.allChildren.unshift(newChild);
+                nodeToAttachTo.userTactics.unshift(newChild);
                 nodeToAttachTo.focusIndex = 0;
                 self.update();
                 return newChild;
@@ -2655,12 +2654,26 @@ ProofTree.prototype.partialProofFrom = function(t, indentation) {
                         asyncLog("MANUALTACTIC " + tactic);
 
                         // if the tactic is already here, just click it
-                        var existingTactic = _(self.curNode.allChildren)
+                        //var existingTactic = _(getAllTactics(self.curNode))
+                        var existingTactic = _(self.curNode.userTactics)
+                            .concat(self.curNode.otherTactics)
                             .find(function(elt) {
-                                return elt.name === tactic;
+                                return elt.tactic === tactic;
                             })
                         ;
                         if (existingTactic !== undefined) {
+                            /*
+                            if (isTacticGroup(existingTactic.parent)) {
+                                // move the group to the index of the tactic
+                                var index = _(existingTactic.parent.tactics)
+                                    .findIndex(function(elt) {
+                                        return elt.id === existingTactic.id;
+                                    })
+                                ;
+                                existingTactic.parent.tacticIndex = index;
+                                self.update();
+                            }
+                            */
                             self.click(existingTactic);
                             return;
                         } else {
