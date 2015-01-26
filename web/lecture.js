@@ -105,6 +105,32 @@ $(document).ready(function() {
     ;
 
     $("<button>", {
+        "class": "btn btn-default",
+        "html": $("<span>")
+            .append(mkGlyph("eye-open"))
+            .append(nbsp + "Peek at Editor")
+        ,
+        "id": "peek-button",
+    })
+        .appendTo(buttonGroup)
+        .css("display", "none")
+        .on("click", peekAtEditorUI)
+    ;
+
+    $("<button>", {
+        "class": "btn btn-default",
+        "html": $("<span>")
+            .append(mkGlyph("eye-close"))
+            .append(nbsp + "Return to Proof Tree")
+        ,
+        "id": "unpeek-button",
+    })
+        .appendTo(buttonGroup)
+        .css("display", "none")
+        .on("click", unpeekAtEditorUI)
+    ;
+
+    $("<button>", {
         "class": "btn btn-danger",
         "html": $("<span>")
             .append(mkGlyph("fire"))
@@ -197,6 +223,15 @@ $(document).ready(function() {
         $("#cancel-feedback").click();
     });
 
+    $("<button>", {
+        "class": "btn btn-default",
+        "html": mkGlyph("refresh").addClass("spinning"),
+        "id": "loading",
+    })
+        .appendTo(buttonGroup)
+        .css("display", "none")
+    ;
+
     $("<a>", {
         "download": "output.v",
         "id": "save-local-link",
@@ -221,7 +256,7 @@ $(document).ready(function() {
         .on("paste", pwePasteHandler)
     ;
 
-    PT.handleKeyboard();
+    //PT.handleKeyboard();
 
     asyncRevision()
         .then(function(response) {
@@ -570,7 +605,20 @@ function updateCoqtopPane(direction, response) {
         } else {
 
             $("#prooftree-button").attr("disabled", true);
-            $("#coqtop").text(stripWarning(contents));
+
+            contents = stripWarning(contents);
+
+            // postprocessing of Inductive
+            if (contents.startsWith("Inductive")) {
+                contents = contents
+                    .replace(/:=\s+/, ":=\n| ")
+                    .replace(/ \| /, "\n| ")
+                ;
+            }
+
+            contents = hljs.highlight("ocaml", contents, true).value;
+
+            $("#coqtop").html(contents);
 
         }
         break;
@@ -606,8 +654,10 @@ function updateCoqtopPane(direction, response) {
                     && ! lastCommand.endsWith("Proof.")
                     && !_(lastCommand).contains("(* notree *)")
                     && $("#provwill").text().length === 0) {
-                    asyncLog("AUTOENTERPROOFTREE");
-                    enterProofTree();
+                    if (!processing) {
+                        asyncLog("AUTOENTERPROOFTREE");
+                        enterProofTree();
+                    }
                 } else {
                     highlight();
                 }
@@ -655,6 +705,7 @@ function undoCallback(response) {
 }
 
 function tryProcessing() {
+
     if (processing) { return; }
 
     // grab the next piece to process, if any
@@ -873,41 +924,68 @@ function getCaretVerticalPosition() {
     return caretTop;
 }
 
-function switchToProofUI() {
+function peekAtEditorUI() {
+
+    $("#editor").css("display", "");
+    $("#coqtop").css("display", "");
+    $("#prooftree").css("display", "none");
+    $("#peek-button").css("display", "none");
+    $("#unpeek-button").css("display", "");
+    $("#editor").focus();
+
+}
+
+function unpeekAtEditorUI() {
 
     $("#editor").css("display", "none");
     $("#coqtop").css("display", "none");
+    $("#prooftree").css("display", "");
+    $("#peek-button").css("display", "");
+    $("#unpeek-button").css("display", "none");
+    $("#prooftree").focus();
+
+}
+
+function switchToProofUI() {
+
+    $("#editor").css("display", "none");
+    $("#coqtop").css("display", "none").text("CURRENTLY IN PROOF TREE MODE");
     $("#prooftree").css("display", "");
     $("#prover-down").attr("disabled", true);
     $("#prover-up").attr("disabled", true);
     $("#prover-caret").attr("disabled", true);
     $("#prooftree-button").css("display", "none");
     $("#noprooftree-button").css("display", "");
+    $("#peek-button").css("display", "");
+    $("#editor").attr("contenteditable", false);
 
 }
 
 function switchToEditorUI() {
 
     $("#editor").css("display", "");
-    $("#coqtop").css("display", "");
+    $("#coqtop").css("display", "").text("");
     $("#prooftree").css("display", "none");
     $("#prover-down").attr("disabled", false);
     $("#prover-up").attr("disabled", false);
     $("#prover-caret").attr("disabled", false);
     $("#prooftree-button").css("display", "");
     $("#noprooftree-button").css("display", "none");
-    $("#prooftree").empty();
+    $("#peek-button").css("display", "none");
+    $("#unpeek-button").css("display", "none");
+    $("#editor").attr("contenteditable", true);
 
 }
 
 function enterProofTree() {
 
+    // do this as early as possible to avoid races
+    switchToProofUI();
+
     asyncStatus()
         .then(function(status) {
 
             var labelBeforeProofTree = status.label;
-
-            switchToProofUI();
 
             $("#noprooftree-button")
                 .unbind("click")
@@ -918,7 +996,9 @@ function enterProofTree() {
                 $("#prooftree")[0],
                 $(window).width(),
                 $(window).height() - $("#toolbar").height(),
-                _.partial(onQed, labelBeforeProofTree)
+                _.partial(onQed, labelBeforeProofTree),
+                function() { $("#loading").css("display", ""); },
+                function() { $("#loading").css("display", "none"); }
             );
 
             /*
@@ -948,6 +1028,7 @@ function enterProofTree() {
             );
 
         })
+        .catch(outputError);
     ;
 
 }
@@ -969,12 +1050,13 @@ function exitProofTree(labelBeforeProofTree) {
     // if the partial proof has anything interesting, save it in a comment
     if (partialProofText !== "admit.") {
         insertAtSelection(
-            "\n(*\n"
+            "(*\n"
                 + partialProofText
                 + "\n*)\n"
         );
     }
 
+    $("#prooftree").empty();
     activeProofTree = undefined;
 
     asyncLog("EXITPROOFTREE");
@@ -1114,6 +1196,18 @@ function saveLocal() {
     $("#editor").focus();
     repositionCaret();
 
+}
+
+if (!String.prototype.startsWith) {
+    Object.defineProperty(String.prototype, 'startsWith', {
+        enumerable: false,
+        configurable: false,
+        writable: false,
+        value: function(searchString, position) {
+            position = position || 0;
+            return this.lastIndexOf(searchString, position) === position;
+        }
+    });
 }
 
 if (!String.prototype.endsWith) {
@@ -1661,7 +1755,7 @@ function pwePasteHandler(ev) {
             try { txt = cbd.getData("text/plain");  } catch (e) {}
             try { txt = txt || cbd.getData("Text"); } catch (e) {}
             txt = pweSanitizeInput(txt);
-            if (txt) pweInsertAtSelection(txt);
+            if (txt) { pweInsertAtSelection(txt); }
             pweScrollToCaret();
         } else {
             if (!st.workaround_native_paste) {
@@ -1712,67 +1806,108 @@ function pweCutHandler(ev) {
     }
 }
 
+function makeGroup(name, tactics) {
+    return {
+        "name": name,
+        "tactics": _(tactics).map(function(s) { return s + '.'; }).value(),
+    };
+}
+
 function lectureTactics(pt) {
+
+    var curGoal = (isGoal(this.curNode)) ? this.curNode : this.curNode.parent;
+    var curHyps = _(curGoal.hyps).map(function(h) { return h.hName; }).reverse();
+    var curNames = _(curHyps).union(namesPossiblyInScope.reverse());
 
     var res = [
         // first, some terminators
-        "reflexivity", "discriminate", "omega",
-        // more important things
-        "intro", "intros", "break_if", "simpl",
-        // this one after intro since it does it sometimes
-        "firstorder",
+        "reflexivity", "discriminate", "assumption", "eassumption",
+        "break_if", "f_equal", "subst",
+        makeGroup(
+            "introductions",
+            ["intro", "intros"]
+        ),
+        makeGroup(
+            "simplifications",
+            ["simpl", "simpl in *"].concat(
+                _(curHyps).map(function(h) { return "simpl in " + h; }).value()
+            )
+        ),
+        makeGroup(
+            "constructors",
+            ["left", "right", "split", "constructor", "econstructor", "eexists"]
+        ),
+        makeGroup(
+            "destructors",
+            _(curHyps).map(function(h) { return "destruct " + h; }).value()
+        ),
+        makeGroup(
+            "inductions",
+            _(curHyps).map(function(h) { return "induction " + h; }).value()
+        ),
+        makeGroup(
+            "inversions",
+            _(curHyps).map(function(h) { return "inversion " + h; }).value()
+        ),
+        makeGroup(
+            "solvers",
+            ["auto", "eauto", "congruence", "omega", "firstorder"]
+        ),
+        makeGroup(
+            "applications",
+            _(curNames).map(function(n) { return "apply " + n; }).value()
+                .concat(
+                    _(curNames).map(function(n) { return "eapply " + n; }).value()
+                )
+        ),
+        makeGroup(
+            "rewrites",
+            _(curNames).map(function(n) { return "rewrite -> " + n; }).value()
+                .concat(
+                    _(curNames).map(function(n) { return "rewrite <- " + n; }).value()
+                )
+        ),
+        makeGroup(
+            "applications in",
+            _(curNames).map(function(n) {
+                return _(curHyps)
+                    .map(function(h) {
+                        if (h === n) { return []; }
+                        return ([
+                            "apply " + n + " in " + h,
+                            "eapply " + n + " in " + h
+                        ]);
+                    })
+                    .flatten(true).value();
+            }).flatten(true).value()
+        ),
+        makeGroup(
+            "rewrites in",
+            _(curNames).map(function(n) {
+                return _(curHyps)
+                    .map(function(h) {
+                        if (h === n) { return []; }
+                        return ([
+                            ("rewrite -> " + n + " in " + h),
+                            ("rewrite <- " + n + " in " + h)
+                        ]);
+                    })
+                    .flatten(true).value()
+                ;
+            }).flatten(true).value()
+        ),
     ];
 
-    var curGoal = (isGoal(this.curNode)) ? this.curNode : this.curNode.parent;
-    var curHyps = _(curGoal.hyps).map(function(h) { return h.hName; });
-    var curNames = _(curHyps).union(namesPossiblyInScope).value();
-
-    var prefixes = [
-        "destruct", "induction", "inversion", "apply", "eapply",
-    ];
-    _(curHyps).each(function(h) {
-        res = res.concat(
-            _(prefixes)
-                .map(function(prefix) { return prefix + " " + h; })
-                .value()
-        );
-    });
-
-    _(curNames)
-        .each(function(h1) {
-            res = res.concat(
-                [
-                    "rewrite -> " + h1,
-                    "rewrite <- " + h1,
-                ]
-            );
-            /*
-            _(curHyps).each(function(h2) {
-                res = res.concat(
-                    [
-                        "rewrite -> " + h1 + " in " + h2,
-                        "rewrite <- " + h1 + " in " + h2,
-                    ]
-                );
-            });
-            */
-        });
-
-    var prefixes = ["apply", "eapply", "unfold"];
-    _(namesPossiblyInScope).each(function(name) {
-        res = res.concat(
-            _(prefixes)
-                .map(function(prefix) { return prefix + " " + name; })
-                .value()
-        );
-    });
-
-    // more stuff that might be less important
-    res = res.concat([
-        "simpl in *", "left", "right", "split",
-        "eexists", "f_equal", "constructor", "subst",
-    ]);
-
-    return _(res).map(function(s) { return s + "."; }).value();
+    return (
+        _(res)
+            .map(function(elt) {
+                if ($.type(elt) === "string") {
+                    return elt + ".";
+                } else {
+                    return elt;
+                }
+            })
+            .value()
+    );
 
 }
