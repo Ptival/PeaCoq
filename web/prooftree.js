@@ -2970,9 +2970,18 @@ function showPatterns(ps) {
     }
 }
 
+function showName(t) {
+    if (t === null) { // underscore
+        return ident('_');
+    } else {
+        return ident(t);
+    }
+}
+
 function showNames(t) {
     if (_.isEmpty(t)) { return ""; }
-    return ident(t[0]) + " " + showNames(_(t).rest().value());
+
+    return showName(t[0]) + " " + showNames(_(t).rest().value());
 }
 
 function showTerm(t) {
