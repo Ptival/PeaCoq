@@ -1824,6 +1824,10 @@ function lectureTactics(pt) {
         "reflexivity", "discriminate", "assumption", "eassumption",
         "break_if", "f_equal", "subst",
         makeGroup(
+            "autos",
+            ["auto", "eauto"]
+        ),
+        makeGroup(
             "introductions",
             ["intro", "intros"]
         ),
@@ -1851,7 +1855,7 @@ function lectureTactics(pt) {
         ),
         makeGroup(
             "solvers",
-            ["auto", "eauto", "congruence", "omega", "firstorder"]
+            ["congruence", "omega", "firstorder"]
         ),
         makeGroup(
             "applications",
