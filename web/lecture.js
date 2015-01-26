@@ -1823,40 +1823,49 @@ function lectureTactics(pt) {
         // first, some terminators
         "reflexivity", "discriminate", "assumption", "eassumption",
         "break_if", "f_equal", "subst",
+
         makeGroup(
             "autos",
             ["auto", "eauto"]
         ),
+
         makeGroup(
             "introductions",
             ["intro", "intros"]
         ),
+
         makeGroup(
             "simplifications",
             ["simpl", "simpl in *"].concat(
                 _(curHyps).map(function(h) { return "simpl in " + h; }).value()
             )
         ),
+
         makeGroup(
             "constructors",
             ["left", "right", "split", "constructor", "econstructor", "eexists"]
         ),
+
         makeGroup(
             "destructors",
             _(curHyps).map(function(h) { return "destruct " + h; }).value()
         ),
+
         makeGroup(
             "inductions",
             _(curHyps).map(function(h) { return "induction " + h; }).value()
         ),
+
         makeGroup(
             "inversions",
             _(curHyps).map(function(h) { return "inversion " + h; }).value()
         ),
+
         makeGroup(
             "solvers",
             ["congruence", "omega", "firstorder"]
         ),
+
         makeGroup(
             "applications",
             _(curNames).map(function(n) { return "apply " + n; }).value()
@@ -1864,6 +1873,7 @@ function lectureTactics(pt) {
                     _(curNames).map(function(n) { return "eapply " + n; }).value()
                 )
         ),
+
         makeGroup(
             "rewrites",
             _(curNames).map(function(n) { return "rewrite -> " + n; }).value()
@@ -1871,6 +1881,7 @@ function lectureTactics(pt) {
                     _(curNames).map(function(n) { return "rewrite <- " + n; }).value()
                 )
         ),
+
         makeGroup(
             "applications in",
             _(curNames).map(function(n) {
@@ -1885,6 +1896,7 @@ function lectureTactics(pt) {
                     .flatten(true).value();
             }).flatten(true).value()
         ),
+
         makeGroup(
             "rewrites in",
             _(curNames).map(function(n) {
