@@ -92,7 +92,7 @@ $(document).ready(function() {
         "class": "btn btn-success",
         "html": $("<span>")
             .append(mkGlyph("tree-deciduous"))
-            .append(nbsp + "Proof Tree")
+            //.append(nbsp + "Proof Tree")
         ,
         "id": "prooftree-button",
     })
@@ -108,7 +108,7 @@ $(document).ready(function() {
         "class": "btn btn-default",
         "html": $("<span>")
             .append(mkGlyph("eye-open"))
-            .append(nbsp + "Peek at Editor")
+            //.append(nbsp + "Peek at Editor")
         ,
         "id": "peek-button",
     })
@@ -121,7 +121,7 @@ $(document).ready(function() {
         "class": "btn btn-default",
         "html": $("<span>")
             .append(mkGlyph("eye-close"))
-            .append(nbsp + "Return to Proof Tree")
+            //.append(nbsp + "Return to Proof Tree")
         ,
         "id": "unpeek-button",
     })
@@ -134,7 +134,7 @@ $(document).ready(function() {
         "class": "btn btn-danger",
         "html": $("<span>")
             .append(mkGlyph("fire"))
-            .append(nbsp + "Abort Proof Tree")
+            //.append(nbsp + "Abort Proof Tree")
         ,
         "id": "noprooftree-button",
     })
@@ -204,7 +204,7 @@ $(document).ready(function() {
         "id": "feedback-button",
         "html": $("<span>")
             .append(mkGlyph("bullhorn"))
-            .append(nbsp + nbsp + "Feedback"),
+            //.append(nbsp + nbsp + "Feedback"),
     })
         .appendTo(buttonGroup)
         .on("click", function() {
