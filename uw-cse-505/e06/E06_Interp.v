@@ -33,13 +33,13 @@ Inductive Eval : Heap -> Expr -> Z -> Prop :=
 | EVar : forall h v,
   Eval h (Var v) (lkup v h)
 | EAdd : forall h e1 e2 c1 c2 c3,
-  Eval h e1 c1 -> 
-  Eval h e2 c2 -> 
+  Eval h e1 c1 ->
+  Eval h e2 c2 ->
   c3 = (c1 + c2)%Z ->
   Eval h (Add e1 e2) c3
 | EMul : forall h e1 e2 c1 c2 c3,
-  Eval h e1 c1 -> 
-  Eval h e2 c2 -> 
+  Eval h e1 c1 ->
+  Eval h e2 c2 ->
   c3 = (c1 * c2)%Z ->
   Eval h (Mul e1 e2) c3.
 
@@ -94,29 +94,29 @@ Admitted.
 
 Lemma diverges_take1:
   forall h n, exists h', exists s',
-  StepN h (While (Const 1) Skip) n h' s'.
+  StepN h (While (Int 1) Skip) n h' s'.
   (* stuck *)
 Admitted.
 
 Lemma diverges_take2:
   forall h n, exists h', exists s',
-  StepN h (While (Const 1) Skip) n h' s' /\ s' <> Skip.
+  StepN h (While (Int 1) Skip) n h' s' /\ s' <> Skip.
 Proof.
 Admitted.
 
 Lemma diverges_take3:
   forall h n,
-  StepN h (While (Const 1) Skip) n h (While (Const 1) Skip).
+  StepN h (While (Int 1) Skip) n h (While (Int 1) Skip).
 Proof.
 Admitted.
 
-Definition w1 := While (Const 1) Skip.
-Definition w2 := Cond (Const 1) (Seq Skip (While (Const 1) Skip)) Skip.
-Definition w3 := Seq Skip (While (Const 1) Skip).
+Definition w1 := While (Int 1) Skip.
+Definition w2 := Cond (Int 1) (Seq Skip (While (Int 1) Skip)) Skip.
+Definition w3 := Seq Skip (While (Int 1) Skip).
 
 Lemma diverges_take4:
   forall h n, exists s,
-  StepN h (While (Const 1) Skip) n h s /\
+  StepN h (While (Int 1) Skip) n h s /\
   (s = w1 \/ s = w2 \/ s = w3).
 Proof.
 Admitted.
@@ -412,7 +412,7 @@ Proof.
   intros. destruct n.
   { simpl. reflexivity. }
   { simpl. rewrite H. reflexivity. }
-Qed.  
+Qed.
 
 (* notree *)
 Lemma run_combine:
