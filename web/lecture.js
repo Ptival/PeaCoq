@@ -1912,6 +1912,12 @@ function lectureTactics(pt) {
                 ;
             }).flatten(true).value()
         ),
+
+        makeGroup(
+            "reverts",
+            _(curHyps).map(function(h) { return "revert " + h; }).value()
+        ),
+
     ];
 
     return (
