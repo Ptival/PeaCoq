@@ -3188,7 +3188,7 @@ function showTermAux(t, indentation, precParent, newline) {
     case "Lambda":
         return par(
             precForall,
-            syntax("λ") + nbsp + showBinders(c[0]) + syntax(",")
+            syntax("λ") + showBinders(c[0]) + syntax(",")
                 + (newline ? "<br/>" + getIndent(indentation + 1) : " ")
                 + showTermAux(c[1], indentation + 1, precParent, newline)
         );
@@ -3196,7 +3196,7 @@ function showTermAux(t, indentation, precParent, newline) {
     case "Exists":
         return par(
             precForall,
-            syntax("∃") + nbsp + showBinders(c[0]) + syntax(",")
+            syntax("∃") + showBinders(c[0]) + syntax(",")
                 + (newline ? "<br/>" + getIndent(indentation + 1) : " ")
                 + showTermAux(c[1], indentation + 1, precParent, newline)
         );
