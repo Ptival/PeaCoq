@@ -3418,18 +3418,18 @@ var lastDebugId = undefined;
 
 ProofTree.prototype.updateDebug = function() {
 
+    var debugWidth = this.width / 2;
+
+    this.debug
+        .selectAll(function() { return this.getElementsByTagName("foreignObject"); })
+        .attr("width", debugWidth + "px")
+    ;
+    this.debug.select("rect").attr("width", debugWidth + "px");
+
     // avoid recomputing debug when user has not moved
     if (this.curNode.id !== lastDebugId) {
 
         lastDebugId = this.curNode.id;
-
-        var debugWidth = this.width / 2;
-
-        this.debug
-            .selectAll(function() { return this.getElementsByTagName("foreignObject"); })
-            .attr("width", debugWidth + "px")
-        ;
-        this.debug.select("rect").attr("width", debugWidth + "px");
 
         var debugDiv = this.debug.select('div');
         var jDebugDiv = $(debugDiv[0]);
