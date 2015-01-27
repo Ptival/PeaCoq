@@ -211,7 +211,7 @@ Proof.
 Qed.
 
 (* [Problem 11] *)
-(* Prove that your step function is COMPLETE with respect to the step relation. *)
+(* Prove that your step function is COMPLETE with respect to the Step relation. *)
 Lemma Step_step:
   forall l h s l' h' s',
   Step l h s l' h' s' -> step l h s = Some (l', h', s').
@@ -335,7 +335,7 @@ Fixpoint nPushHeap (s: Stmt) : nat :=
   end.
 
 (*
-  [Problem 19] *)
+  [Problem 19]
   Prove that if we take a step from a statement without any whiles,
   then the resulting statement still has no whiles.
 *)
