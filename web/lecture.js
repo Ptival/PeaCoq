@@ -794,6 +794,14 @@ function proverDown() {
     tryProcessing();
 }
 
+function proverRewindToIndex(index) {
+    if (proved.length > index) {
+        return proverUp().then(function() { return proverRewindToIndex(index); });
+    } else {
+        return Promise.resolve();
+    }
+}
+
 function proverToCaret () {
     if (processing) { return; }
     var index = getCaretPos();
@@ -803,10 +811,7 @@ function proverToCaret () {
     var unlocked = pweGetUnlocked();
     // the caret is in the proved region, undo actions
     if (index < proved.length) {
-        // this assumes proverUp is synchronous
-        while (proved.length > index) {
-            proverUp();
-        }
+        proverRewindToIndex(index);
     } else {
         index -= proved.length + proving.length + provwill.length + 1;
         // if the caret is in the #proving or #provwill, do nothing
@@ -842,9 +847,11 @@ function proverUp () {
         pweSetUnlocked(pieceToUnprocess + unlocked);
         asyncLog("PROVERUP " + pieceToUnprocess);
         repositionCaret();
-        asyncUndo()
+        return asyncUndo()
             .then(undoCallback)
         ;
+    } else {
+        return Promise.resolve();
     }
 }
 
