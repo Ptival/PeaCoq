@@ -2694,6 +2694,8 @@ ProofTree.prototype.partialProofFrom = function(t, indentation) {
                 .addClass("resizeHeight")
                 .addClass("activeTextarea")
                 .css("background-color", "#CB99C9")
+                .css("min-height", "22px")
+                .css("min-width", "22px")
                 .css("resize", "none")
             ;
             PT.resizeTextarea.call(ta);
@@ -2705,6 +2707,7 @@ ProofTree.prototype.partialProofFrom = function(t, indentation) {
                     .css("border", 0)
                     .css("background-color", "#BB89B9")
                     .css("vertical-align", "top")
+                    .css("height", "22px")
                     .text("OK")
                     .click(function() {
 
@@ -3359,8 +3362,8 @@ function showTermInline(t) {
 }
 
 function setupTextareaResizing() {
-    var minimalWidth = 16;
-    var minimalHeight = 16;
+    var minimalWidth = 22;
+    var minimalHeight = 22;
     var duration = 0;
 
     var hiddenDiv = $("<div>")
@@ -3381,13 +3384,13 @@ function setupTextareaResizing() {
         );
         if ($(this).hasClass("resizeWidth")) {
             $(this).animate(
-                {'width': Math.max(hiddenDiv.width() + 2, minimalWidth)},
+                {'width': Math.max(hiddenDiv.width() + 2, minimalWidth) + 'px'},
                 duration
             );
         }
         if ($(this).hasClass("resizeHeight")) {
             $(this).animate(
-                {'height': Math.max(hiddenDiv.height() + 2, minimalHeight)},
+                {'height': Math.max(hiddenDiv.height() + 2, minimalHeight) + 'px'},
                 duration
             );
         }
