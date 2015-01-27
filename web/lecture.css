@@ -21,7 +21,7 @@
     border: 0;
 }
 #revision {
-    float: right;
+    font-family: monospace;
     text-align: right;
 }
 #toolbar {
