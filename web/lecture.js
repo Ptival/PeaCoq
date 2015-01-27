@@ -105,6 +105,18 @@ $(document).ready(function() {
     ;
 
     $("<button>", {
+        "class": "btn btn-danger",
+        "html": $("<span>")
+            .append(mkGlyph("fire"))
+            //.append(nbsp + "Abort Proof Tree")
+        ,
+        "id": "noprooftree-button",
+    })
+        .appendTo(buttonGroup)
+        .css("display", "none")
+    ;
+
+    $("<button>", {
         "class": "btn btn-default",
         "html": $("<span>")
             .append(mkGlyph("eye-open"))
@@ -128,18 +140,6 @@ $(document).ready(function() {
         .appendTo(buttonGroup)
         .css("display", "none")
         .on("click", unpeekAtEditorUI)
-    ;
-
-    $("<button>", {
-        "class": "btn btn-danger",
-        "html": $("<span>")
-            .append(mkGlyph("fire"))
-            //.append(nbsp + "Abort Proof Tree")
-        ,
-        "id": "noprooftree-button",
-    })
-        .appendTo(buttonGroup)
-        .css("display", "none")
     ;
 
     /* Temporarily disabled
