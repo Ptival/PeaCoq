@@ -1044,8 +1044,12 @@ function exitProofTree(labelBeforeProofTree) {
     partialProof.find("textarea").replaceWith("admit.");
     partialProof.find("button").remove();
 
+    // make sure there is a character to go right of
+    var unlocked = pweGetUnlocked();
+    if (unlocked === "") { pweSetUnlocked("\n"); }
     repositionCaret();
     pweMoveRight(); // so that we are past the zwsp
+
     var partialProofText = pweSanitizeInput(partialProof.text());
     // if the partial proof has anything interesting, save it in a comment
     if (partialProofText !== "admit.") {
