@@ -1280,6 +1280,9 @@ ProofTree.prototype.update = function(callback) {
             return isGoal(d) ? goalBodyPadding + "px" : "4px 0px";
         })
         .style("background-color", "rgba(0, 0, 0, 0)")
+    // should make it less painful on 800x600 videoprojector
+    // TODO: fix computing diffs so that zooming is possible
+        .style("font-size", (this.width < 1000) ? "12px" : "14px")
         .style("font-family", "monospace")
         .each(function(d) {
             var jqObject = $(d3.select(this).node());
