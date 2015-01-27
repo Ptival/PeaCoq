@@ -661,6 +661,57 @@ ProofTree.prototype.getViewGrandChildren = function(node) {
     );
 }
 
+function makeFocused(node) {
+    if (isGoal(node)) {
+        if (!hasParent(node)) { return; }
+        node.parent.goalIndex =
+            _(node.parent.goals)
+            .findIndex(function(e) { return e.id === node.id; })
+        ;
+        if(isTacticGroup(node.parent.parent)) {
+            makeFocused(node.parent.parent);
+        }
+    } else if (isTacticGroup(node)) {
+        var indexWithinGroups = _(node.parent.tacticGroups)
+            .filter(function(g) { return (g.tactics.length > 0); })
+            .findIndex(function(e) { return e.id === node.id; })
+        ;
+        node.parent.tacticIndex = node.parent.userTactics.length
+            + node.parent.otherTactics.length
+            + indexWithinGroups
+        ;
+    } else if (isTactic(node)) {
+        if (isGoal(node.parent)) {
+            node.parent.tacticIndex = _(getAllTactics(node.parent))
+                .findIndex(function(e) { return e.id === node.id; })
+            ;
+        } else if (isTacticGroup(node.parent)) {
+            node.parent.tacticIndex = _(node.parent.tactics)
+                .findIndex(function(e) { return e.id === node.id; })
+            ;
+        } else {
+            throw node;
+        }
+    } else {
+        throw node;
+    }
+}
+
+/*
+ * makes sure node is focused for its parent, and the same for its parent w.r.t.
+ * its grandparent, so that getViewChildren returns the correct nodes
+ */
+function makeFocusedTwoGenerations(node) {
+    makeFocused(node);
+    if (hasParent(node)) {
+        if (isGoal(node) && isTacticGroup(node.parent.parent)) {
+            makeFocused(node.parent.parent);
+        } else {
+            makeFocused(node.parent);
+        }
+    }
+}
+
 ProofTree.prototype.getFocusedChild = function(node) {
 
     if (node === undefined) {
@@ -2123,6 +2174,8 @@ ProofTree.prototype.click = function(d, remember, callback) {
 
     if (this.paused) { return; }
 
+    makeFocusedTwoGenerations(d);
+
     if (d.solved) {
         if (hasParent(d)) {
             this.click(d.parent, remember, callback);
@@ -2213,12 +2266,14 @@ ProofTree.prototype.childSolved = function(n) {
 
 function collapse(d) { d.collapsed = true; }
 
-function collapseChildren(d) { _(d.allChildren).forEach(collapse); }
+function collapseChildren(d) {
+    _(d.children).forEach(collapse);
+}
 
 function expand(d) {
     d.collapsed = false;
     if (isGoal(d)) {
-        _(d.allChildren).each(expand);
+        _(d.children).each(expand);
     }
 }
 
@@ -2654,26 +2709,12 @@ ProofTree.prototype.partialProofFrom = function(t, indentation) {
                         asyncLog("MANUALTACTIC " + tactic);
 
                         // if the tactic is already here, just click it
-                        //var existingTactic = _(getAllTactics(self.curNode))
-                        var existingTactic = _(self.curNode.userTactics)
-                            .concat(self.curNode.otherTactics)
+                        var existingTactic = _(getAllTactics(self.curNode))
                             .find(function(elt) {
                                 return elt.tactic === tactic;
                             })
                         ;
                         if (existingTactic !== undefined) {
-                            /*
-                            if (isTacticGroup(existingTactic.parent)) {
-                                // move the group to the index of the tactic
-                                var index = _(existingTactic.parent.tactics)
-                                    .findIndex(function(elt) {
-                                        return elt.id === existingTactic.id;
-                                    })
-                                ;
-                                existingTactic.parent.tacticIndex = index;
-                                self.update();
-                            }
-                            */
                             self.click(existingTactic);
                             return;
                         } else {
