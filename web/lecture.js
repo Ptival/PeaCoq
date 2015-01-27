@@ -334,9 +334,11 @@ function onLoad(text) {
 
     highlight();
 
-    asyncResetCoq(function() {
-        $("#editor").focus();
-    });
+    asyncResetCoq()
+        .then(function() {
+            $("#editor").focus();
+        })
+        .catch(outputError);
 
 }
 
