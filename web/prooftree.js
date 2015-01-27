@@ -3503,3 +3503,14 @@ function delayPromise(time) {
         });
     }
 }
+
+function showNode(n) {
+    var res = "{ type : " + n.type + ", contents: ";
+    if (isGoal(n)) {
+        res += n.goalString;
+    } else if (isTacticish(n)) {
+        res += getTacticFromTacticish(n).tactic;
+    }
+    res += " }";
+    return res;
+}
