@@ -124,7 +124,6 @@ Lemma eval_Eval:
   forall h e c,
   eval h e = c -> Eval h e c.
 Proof.
-  (* TODO redo w/ proof tree *)
   intro. intro. induction e.
   { intros. simpl in *. subst. constructor. }
   { intros. simpl in *. rewrite <- H. constructor. }
@@ -144,7 +143,6 @@ Lemma Eval_eval:
   forall h e c,
   Eval h e c -> eval h e = c.
 Proof.
-  (* TODO redo w/ proof tree *)
   intros. induction H.
   { reflexivity. }
   { reflexivity. }
@@ -156,7 +154,7 @@ Lemma Eval_eval':
   forall h e,
   Eval h e (eval h e).
 Proof.
-  (* TODO redo w/ proof tree *)  intros. remember (eval h e) as c. apply eval_Eval. omega.
+  intros. remember (eval h e) as c. apply eval_Eval. omega.
 Qed.
 
 
@@ -383,7 +381,7 @@ Definition equiv (s1 s2: Stmt) :=
   StepStar nil nil s1 l1' h1' Skip ->
   StepStar nil nil s2 l2' h2' Skip ->
   l1' = l2' /\ h1' = h2'.
-  
+
 (*
   [Problem 22]
   Prove the following equivalence.
