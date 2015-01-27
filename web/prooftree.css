@@ -1,9 +1,8 @@
-
-svg {
+.prooftree svg {
     font-size: 14px;
 }
 
-textarea {
+.prooftree textarea {
     margin: 0;
     padding: 0 0 0 2px;
     border: 0;
@@ -40,12 +39,12 @@ textarea {
     display: none;
 }
 
-hr {
+.prooftree hr {
     border-color: black;
     margin: 0;
 }
 
-div, p, textarea, .form-control {
+.prooftree div, .prooftree p, .prooftree textarea, .prooftree .form-control {
     line-height: normal;
 }
 

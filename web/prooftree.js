@@ -148,6 +148,7 @@ function ProofTree(anchor, width, height, qedCallback,
     this.div = this.anchor
         .insert("div", ":first-child")
         .attr("id", "pt-" + this.svgId)
+        .classed("prooftree", true)
     ;
 
     this.svg = this.div

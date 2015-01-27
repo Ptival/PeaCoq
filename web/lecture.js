@@ -197,7 +197,7 @@ $(document).ready(function() {
         .on("click", saveLocal)
     ;
 
-    var feedbackButton = $("<button>", {
+    $("<button>", {
         "class": "btn btn-info",
         "data-target": "feedback",
         "data-toggle": "modal",
@@ -222,6 +222,21 @@ $(document).ready(function() {
         asyncLog("FEEDBACK " + feedback);
         $("#cancel-feedback").click();
     });
+
+    $("<button>", {
+        "class": "btn btn-default",
+        "data-target": "help",
+        "data-toggle": "modal",
+        "id": "feedback-button",
+        "html": $("<span>")
+            .append(mkGlyph("question-sign"))
+            //.append(nbsp + nbsp + "Help"),
+    })
+        .appendTo(buttonGroup)
+        .on("click", function() {
+            $("#help").modal();
+        })
+    ;
 
     $("<button>", {
         "class": "btn btn-default",

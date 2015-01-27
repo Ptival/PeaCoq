@@ -21,16 +21,19 @@
     <script src="lecture.js"></script>
   </head>
   <body>
+
     <div id="toolbar">
       <div class="btn-group btn-group-lg"></div>
       <input id="filepicker" type="file" style="display: none;"/>
     </div>
+
     <div id="main">
       <pre id="editor" contenteditable="true" spellcheck="false"></pre>
       <pre id="coqtop" contenteditable="true" class="alert"></pre>
     </div>
+
     <div class="modal fade" id="feedback" tabindex="-1" role="dialog"
-         aria-labelledby="myModalLabel" aria-hidden="true">
+         aria-labelledby="feedbackLabel" aria-hidden="true">
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
@@ -55,6 +58,79 @@
         </div>
       </div>
     </div>
+
+    <div class="modal fade" id="help" tabindex="-1" role="dialog"
+         aria-labelledby="helpLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal"
+                    aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+            <h4 class="modal-title">Help and shortcuts</h4>
+          </div>
+          <div class="modal-body">
+            <p>
+              In all the following, <span class="badge">Mod</span> will stand for any combination of <span class="badge">Ctrl</span> and other keys, so pick whichever combination is not captured by your desktop environment (<span class="badge">Ctrl</span>, <span class="badge">Ctrl</span>+<span class="badge">Alt</span>, <span class="badge">Ctrl</span>+<span class="badge">Shift</span>, ...).
+            </p>
+            <hr>
+            <div class="row">
+              <div class="col-md-6">
+                <h5>Editor mode</h5>
+                <ul>
+                  <li>
+                    <span class="badge">Mod</span>
+                    +
+                    <span class="badge">↓</span>
+                    : Process next command
+                  </li>
+                  <li>
+                    <span class="badge">Mod</span>
+                    +
+                    <span class="badge">↑</span>
+                    : Unprocess last command
+                  </li>
+                  <li>
+                    <span class="badge">Mod</span>
+                    +
+                    <span class="badge">Enter</span>
+                    : Process or unprocess to caret
+                  </li>
+                </ul>
+              </div>
+              <div class="col-md-6">
+                <h5>Proof Tree mode</h5>
+                <ul>
+                  <li>
+                    <span class="badge">→</span>
+                    : Enter the focused subtree
+                  </li>
+                  <li>
+                    <span class="badge">←</span>
+                    : Backtrack to the parent goal
+                  </li>
+                  <li>
+                    <span class="badge">↓</span>/<span class="badge">↑</span>
+                    : Browse tactic groups, or browse remaining subgoals
+                  </li>
+                  <li>
+                    <span class="badge">[</span>/<span class="badge">]</span>
+                    : Browse tactics within a tactic group
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" id="cancel-feedback"
+                    data-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div id="prooftree"></div>
+
   </body>
 </html>
