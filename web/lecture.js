@@ -245,10 +245,11 @@ $(document).ready(function() {
 
     $("<button>", {
         "class": "btn btn-default",
-        "html": mkGlyph("refresh").addClass("spinning"),
+        "html": '<img src="media/ajax-loader.gif" />',
         "id": "loading",
     })
         .appendTo(buttonGroup)
+        .css("padding", "2px 10px")
         .css("display", "none")
     ;
 
