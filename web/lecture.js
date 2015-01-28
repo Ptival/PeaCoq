@@ -658,8 +658,10 @@ function updateCoqtopPane(direction, response) {
 
         }
 
-        $("#coqtop").html('<span id="coqtop-hljs">' + $("#coqtop").html() + '</span>');
-        hljs.highlightBlock($("#coqtop-hljs")[0]);
+        // if we use highlightBlock here, it fails, so use the core highlighting
+        var coqtopText = $("#coqtop").text();
+        var textHl = hljs.highlight('ocaml', coqtopText, true).value;
+        $("#coqtop").html(textHl);
 
         break;
     case "Fail":
@@ -721,9 +723,10 @@ function highlight() {
         "type",
     ];
     _(hljsClasses).each(function(className) {
-        $(".hljs-" + className).replaceWith(function() { return this.innerHTML; });
+        $("#editor .hljs-" + className).replaceWith(function() { return this.innerHTML; });
     });
     hljs.highlightBlock($("#editor")[0]);
+    $("#editor").removeClass("hljs"); // no thanks
     rangy.restoreSelection(sel);
 }
 

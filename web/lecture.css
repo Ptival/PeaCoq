@@ -2,10 +2,6 @@
     display: table-cell;
     vertical-align: top;
 }
-.hljs {
-    background-color: transparent;
-    padding: 2px;
-}
 #coqtop {
     border: 0;
     float: left;
