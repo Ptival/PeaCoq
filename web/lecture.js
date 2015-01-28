@@ -1,4 +1,4 @@
-var highlightingDelay = 500; // milliseconds
+var highlightingDelay = 2000; // milliseconds
 
 var processing = false;
 var prooftree = undefined;
