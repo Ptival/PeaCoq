@@ -86,6 +86,7 @@ Inductive Step : list Heap -> Heap -> Stmt ->
   Add the rules (constructors) for the small step semantics of
   our extended version of IMP.  I have 10 rules in my solution.
 
+  * NOTE *
   For statements that involve branching (Cond and While), the
   "then" / "enter loop" branch should be taken when the condition
   expression evaluates to something not equal to 0, and the
@@ -184,6 +185,7 @@ Qed.
 
 (* [Problem 8] *)
 (* Implement step as a function. *)
+(* Hint: Use your isSkip function in the Seq case. *)
 (* Hint: Z.eq_dec decides if a Z is equal to 0. *)
 Check Z.eq_dec.
 Fixpoint step (l: list Heap) (h: Heap) (s: Stmt) :
