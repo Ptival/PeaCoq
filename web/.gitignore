@@ -17,4 +17,5 @@ lodash/
 ocaml.js
 rangy-core.js
 rangy-textrange.js
+rangy-selectionsaverestore.js
 rangy/
