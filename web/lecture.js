@@ -1,8 +1,11 @@
+var highlightingDelay = 500; // milliseconds
+
 var processing = false;
 var prooftree = undefined;
 var nbsp = "\u00A0";
 var zwsp = "\u200B";
 var namesPossiblyInScope = [];
+
 var electric = false;
 var workaround_no_focusing = false;
 
@@ -26,6 +29,8 @@ $(document).ready(function() {
     });
 
     if (!rangy.initialized) {rangy.init();}
+
+    hljs.configure({'languages': ['ocaml']});
 
     // Range.textContent : String.
     // Returns the data content of all text nodes in the range, ignoring visibility.
@@ -456,6 +461,8 @@ function keyupHandler(evt) {
 
 function keydownHandler(ev) {
 
+    eventuallyHighlight();
+
     pweRestoreFinalBR();
     pweOptAdjustSelection();
 
@@ -541,6 +548,19 @@ function keydownHandler(ev) {
         ev.stopPropagation();
     }
 
+}
+
+var lastHighlight = Date.now();
+
+function eventuallyHighlight() {
+    lastHighlight = Date.now();
+    window.setTimeout(function() {
+        var now = Date.now();
+        var delta = now - lastHighlight;
+        if (delta > highlightingDelay) {
+            highlight();
+        }
+    }, highlightingDelay);
 }
 
 var goingDown = true, goingUp = false;
@@ -633,11 +653,13 @@ function updateCoqtopPane(direction, response) {
                 ;
             }
 
-            contents = hljs.highlight("ocaml", contents, true).value;
-
             $("#coqtop").html(contents);
 
         }
+
+        $("#coqtop").html('<span id="coqtop-hljs">' + $("#coqtop").html() + '</span>');
+        hljs.highlightBlock($("#coqtop-hljs")[0]);
+
         break;
     case "Fail":
         $("#coqtop")
@@ -675,11 +697,7 @@ function updateCoqtopPane(direction, response) {
                         asyncLog("AUTOENTERPROOFTREE");
                         enterProofTree();
                     }
-                } else {
-                    highlight();
                 }
-            } else {
-                highlight();
             }
 
         })
@@ -688,16 +706,14 @@ function updateCoqtopPane(direction, response) {
 }
 
 function highlight() {
-    pweSetLockedPart("proved", hljs.highlight("ocaml", proved, true).value);
-    var unlocked = pweGetUnlocked();
-    pweSetUnlocked(hljs.highlight("ocaml", unlocked, true).value);
-    /*
-    $("#proved").html(hljs.highlight("ocaml", $("#proved").text(), true).value);
-    $("#proving").html(hljs.highlight("ocaml", $("#proving").text(), true).value);
-    $("#provwill").html(hljs.highlight("ocaml", $("#provwill").text(), true).value);
-    $("#unlocked").html(hljs.highlight("ocaml", $("#unlocked").text(), true).value);
-    repositionCaret();
-    */
+    // need to undo previous highlightings because hljs is dumb
+    var hljsClasses = ["keyword", "string", "title", "params", "type", "literal"];
+    _(hljsClasses).each(function(className) {
+        $(".hljs-" + className).replaceWith(function() { return $(this).text(); });
+    });
+    var sel = rangy.saveSelection();
+    hljs.highlightBlock($("#editor")[0]);
+    rangy.restoreSelection(sel);
 }
 
 function undoCallback(response) {
@@ -713,28 +729,34 @@ function undoCallback(response) {
             proved = proved.substring(0, index);
             pweSetLockedPart("proved", proved);
             pweSetUnlocked(pieceUnproved + unlocked);
-            repositionCaret();
         }
+        repositionCaret();
         response.rResponse.contents[0] = ""; // don't show the user the steps number
         break;
     };
     updateCoqtopPane(goingUp, response);
 }
 
-function tryProcessing() {
+function tryProcessing(callback) {
 
     if (processing) { return; }
 
     // grab the next piece to process, if any
     var index = next(provwill);
-    if (index === 0) { return; }
+    if (index === 0) {
+        highlight();
+        if (callback !== undefined) {
+            callback();
+        }
+        return;
+    }
     // there is a piece to process, mark it as such
     proving = provwill.substring(0, index);
     provwill = provwill.substring(index);
 
     pweSetLockedPart("provwill", provwill);
     pweSetLockedPart("proving", proving);
-    highlight();
+    //highlight();
 
     // sometimes, a leftover \n stays in the #provwill area, remove it
     /*
@@ -755,8 +777,8 @@ function tryProcessing() {
             pweSetLockedPart("proving", proving);
             // TODO: might be bothersome to do that at every step?
             updateCoqtopPane(goingDown, response);
-            repositionCaret();
-            tryProcessing(); // if there is more to process
+            //repositionCaret();
+            tryProcessing(callback); // if there is more to process
             break;
         case "Fail":
             var unlocked = pweGetUnlocked();
@@ -808,7 +830,7 @@ function proverDown() {
     provwill += pieceToProcess;
     pweSetLockedPart("provwill", provwill);
     pweSetUnlocked(unlocked);
-    tryProcessing();
+    tryProcessing(repositionCaret);
 }
 
 function proverRewindToIndex(index) {
@@ -890,7 +912,6 @@ function repositionCaret(offset) {
 }
 
 function scrollViewToCaret() {
-
     // now let's scroll so that the cursor is visible
     var cursorMargin = 40; // about two lines
     var cursorTop = getCaretVerticalPosition();
@@ -910,7 +931,6 @@ function scrollViewToCaret() {
         var scroll = Math.max(0, editorScroll + cursorTop - editorTop - cursorMargin);
         $("#editor").scrollTop(scroll);
     }
-
 }
 
 function mkGlyph(name) {

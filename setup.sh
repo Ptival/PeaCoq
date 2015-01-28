@@ -39,9 +39,11 @@ $MKDIR rangy
 cd rangy/
 $GET http://rangy.googlecode.com/svn/trunk/dev/uncompressed/rangy-core.js > rangy-core.js
 $GET http://rangy.googlecode.com/svn/trunk/dev/uncompressed/rangy-textrange.js > rangy-textrange.js
+$GET http://rangy.googlecode.com/svn/trunk/dev/uncompressed/rangy-selectionsaverestore.js > rangy-selectionsaverestore.js
 cd ..
 $LN rangy/rangy-core.js rangy-core.js
 $LN rangy/rangy-textrange.js rangy-textrange.js
+$LN rangy/rangy-selectionsaverestore.js rangy-selectionsaverestore.js
 
 $MKDIR highlight
 cd highlight/

@@ -9,7 +9,7 @@
 window.PT = {};
 
 // CONFIGURATION
-var svgPanEnabled = false;
+var svgPanEnabled = true;
 var nodeVSpacing = 10;
 var nodeStroke = 2;
 var rectMargin = {top: 2, right: 8, bottom: 2, left: 8};
@@ -2743,6 +2743,8 @@ ProofTree.prototype.partialProofFrom = function(t, indentation) {
             var ta = $("<textarea>")
                 .addClass("resizeWidth")
                 .addClass("resizeHeight")
+                .css("min-height", "22px")
+                .css("min-width", "22px")
                 .val("admit.")
                 .css("resize", "none")
                 .focus(function() {
