@@ -2,6 +2,18 @@ Require Import List.
 Require Import String.
 Require Import ZArith.
 
+Ltac break_if :=
+  match goal with
+    | _ : context [ if ?cond then _ else _ ] |- _ =>
+     destruct cond as [] eqn:?
+    | |- context [ if ?cond then _ else _ ] =>
+      destruct cond as [] eqn:?
+    | _ : context [ match ?cond with _ => _ end ] |- _ =>
+     destruct cond as [] eqn:?
+    | |- context [ match ?cond with _ => _ end ] =>
+      destruct cond as [] eqn:?
+  end.
+
 (*
   We will extend IMP with the ability to push and pop heaps.
 
