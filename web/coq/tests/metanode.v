@@ -1,0 +1,1 @@
+Theorem t : forall m n, m + n = n + m.
