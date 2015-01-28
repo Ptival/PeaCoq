@@ -709,7 +709,17 @@ function updateCoqtopPane(direction, response) {
 function highlight() {
     var sel = rangy.saveSelection();
     // need to undo previous highlightings because hljs is dumb
-    var hljsClasses = ["keyword", "string", "title", "params", "type", "literal"];
+    var hljsClasses = [
+        "built_in",
+        "comment",
+        "keyword",
+        "literal",
+        "number",
+        "params",
+        "string",
+        "title",
+        "type",
+    ];
     _(hljsClasses).each(function(className) {
         $(".hljs-" + className).replaceWith(function() { return this.innerHTML; });
     });
