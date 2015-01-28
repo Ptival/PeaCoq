@@ -1,4 +1,4 @@
-var highlightingDelay = 2000; // milliseconds
+var highlightingDelay = 1000; // milliseconds
 
 var processing = false;
 var prooftree = undefined;
@@ -706,12 +706,12 @@ function updateCoqtopPane(direction, response) {
 }
 
 function highlight() {
+    var sel = rangy.saveSelection();
     // need to undo previous highlightings because hljs is dumb
     var hljsClasses = ["keyword", "string", "title", "params", "type", "literal"];
     _(hljsClasses).each(function(className) {
-        $(".hljs-" + className).replaceWith(function() { return $(this).text(); });
+        $(".hljs-" + className).replaceWith(function() { return this.innerHTML; });
     });
-    var sel = rangy.saveSelection();
     hljs.highlightBlock($("#editor")[0]);
     rangy.restoreSelection(sel);
 }
