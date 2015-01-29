@@ -2269,7 +2269,14 @@ ProofTree.prototype.childSolved = function(n) {
             _(this.getViewChildren(n))
             .every(function(n) { return n.solved === true; })
         ;
-        if (lastSubgoal) { this.solved(n); }
+        if (lastSubgoal) {
+            this.solved(n);
+        } else {
+            var t = getTacticFromTacticish(n);
+            t.goalIndex = _(t.goals)
+                .findIndex(function(g) { return !g.solved; })
+            ;
+        }
     }
 }
 
