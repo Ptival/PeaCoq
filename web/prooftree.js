@@ -2436,9 +2436,7 @@ Conclusion: always 'Undo.', even for unfocusing.
             self.curNode = dest;
             return Promise.resolve();
         })
-        .catch(function(error) {
-            console.log(error);
-        })
+        .catch(outputError)
     ;
 
 }
