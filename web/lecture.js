@@ -481,6 +481,11 @@ function keydownHandler(ev) {
         80, // p
     ];
 
+    // Meta+C is copy under Mac
+    if (ev.metaKey && evt.keyCode === 67) {
+        return;
+    }
+
     if (ev.ctrlKey) {
         if (ev.keyCode == 40 || ev.keyCode == 10) { //DOWN_ARROW
             proverDown();
