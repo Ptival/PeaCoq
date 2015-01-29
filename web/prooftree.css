@@ -1,3 +1,7 @@
+.prooftree body {
+    min-width: 0;
+}
+
 .prooftree svg {
     font-size: 14px;
 }
