@@ -2291,7 +2291,15 @@ function collapseChildren(d) {
 function expand(d) {
     d.collapsed = false;
     if (isGoal(d)) {
-        _(d.children).each(expand);
+        _(d.userTactics).each(expand);
+        _(d.otherTactics).each(expand);
+        _(d.tacticGroups).each(expand);
+    } else if (isTacticGroup(d)) {
+        _(d.tactics).each(expand);
+    } else if (isTactic(d)) {
+        // nothing
+    } else {
+        throw d;
     }
 }
 
