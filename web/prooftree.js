@@ -376,7 +376,11 @@ ProofTree.prototype.yOffset = function(d) {
     var offset = - d.height / 2; // for the center
     // for the focused tactic of the current goal, show it in front of its goal
     var focusedChild = this.getFocusedChild(this.curNode);
-    if (isGoal(this.curNode) && focusedChild !== undefined && d.id === focusedChild.id) {
+    if (
+        (isGoal(this.curNode) && focusedChild !== undefined && d.id === focusedChild.id)
+            ||
+            (isTacticish(d) && this.isCurNode(d))
+       ) {
         // return something such that cY === nodeY(d.parent) * yFactor + offset
         return offset + (nodeY(d.parent) - nodeY(d)) * this.yFactor;
     } else if (this.isCurGoalChild(d) || this.isCurGoalGrandChild(d)) {
