@@ -891,7 +891,7 @@ ProofTree.prototype.runTactic = function(t, nodeToAttachTo) {
                 var newChild = mkTacticNode(
                     nodeToAttachTo,
                     t,
-                    (_.isEqual(unfocusedAfter, unfocusedBefore))
+                    (beforeResponse.rGoals.unfocused.length === response.rGoals.unfocused.length)
                         ? response.rGoals.focused
                         : []
                 );
