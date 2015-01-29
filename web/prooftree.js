@@ -226,6 +226,8 @@ function ProofTree(anchor, width, height, qedCallback,
         ;
     }
 
+    activeProofTree = this;
+
 }
 
 var goalShare = 15 / 20;
