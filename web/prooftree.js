@@ -119,8 +119,8 @@ function ProofTree(anchor, width, height, qedCallback,
     this.yFactor = this.height;
     this.userState = {};
     this.usingKeyboard = false;
-    this.goalNodeWidth = Math.floor(this.width/3);
-    this.tacticNodeMaxWidth = Math.floor(this.width/6);
+    this.goalWidth = computeGoalWidth(this.width);
+    this.tacticWidth = computeTacticWidth(this.width);
 
     this.tree = d3.layout.tree()
         .children(self.getViewChildren.bind(self))
@@ -174,7 +174,7 @@ function ProofTree(anchor, width, height, qedCallback,
         .attr("id", "viewport") // for SVGPan.js
         .attr("class", "viewport")
         .attr("transform",
-              "translate(" + self.goalNodeWidth + ", " + 0 + ")"
+              "translate(" + self.goalWidth + ", " + 0 + ")"
              )
     ;
 
@@ -228,6 +228,17 @@ function ProofTree(anchor, width, height, qedCallback,
 
 }
 
+var goalShare = 15 / 20;
+var tacticShare = 4 / 20;
+
+function computeGoalWidth(width) {
+    return Math.floor(width * (goalShare / 2));
+}
+
+function computeTacticWidth(width) {
+    return Math.floor(width * (tacticShare / 2));
+}
+
 ProofTree.prototype.resize = function(width, height) {
     this.width = width;
     this.height = height;
@@ -235,9 +246,15 @@ ProofTree.prototype.resize = function(width, height) {
     this.div.style("height", this.height + "px");
     this.svg.style("width", this.width + "px");
     this.svg.style("height", this.height + "px");
-    this.goalNodeWidth = Math.floor(this.width/3);
-    this.tacticNodeMaxWidth = Math.floor(this.width/6);
+    this.goalWidth = computeGoalWidth(this.width);
+    this.tacticWidth = computeTacticWidth(this.width);
     this.update();
+}
+
+ProofTree.prototype.nodeWidth = function(d) {
+    if (isGoal(d)) { return this.goalWidth; }
+    if (isTacticish(d)) { return this.tacticWidth; }
+    throw d;
 }
 
 PT.ProofTree = ProofTree;
@@ -364,7 +381,7 @@ ProofTree.prototype.isFocusedChild = function(d) {
 }
 
 ProofTree.prototype.xOffset = function(d) {
-    return - d.width / 2; // position the center
+    return - this.nodeWidth(d) / 2; // position the center
 }
 
 ProofTree.prototype.yOffset = function(d) {
@@ -1221,7 +1238,7 @@ ProofTree.prototype.linkWidth = function(d) {
 }
 
 // [nodeDOM] is the DOM foreignObject, [d] is the node in the tree structure
-function updateNodeMeasures(nodeDOM, d) {
+ProofTree.prototype.updateNodeMeasures = function(nodeDOM, d) {
     var elementToMeasure =
         isGoal(d)
         ? nodeDOM // get the foreignObject itself
@@ -1229,7 +1246,7 @@ function updateNodeMeasures(nodeDOM, d) {
     ;
     // we save in the rect field the size of the text rectangle
     var rect = elementToMeasure.getBoundingClientRect();
-    d.width = Math.ceil(rect.width);
+    d.width = this.nodeWidth(d);
     d.height = Math.ceil(rect.height);
 }
 
@@ -1266,10 +1283,10 @@ ProofTree.prototype.update = function(callback) {
     var textEnter = textSelection.enter()
         .append("foreignObject")
         .classed("monospace", true)
-    // the goal nodes need to be rendered at fixed width goalNodeWidth
+    // the goal nodes need to be rendered at fixed width goalWidth
     // the tactic nodes will be resized to their actual width later
         .attr("width", function(d) {
-            return isGoal(d) ? self.goalNodeWidth : self.tacticNodeMaxWidth;
+            return isGoal(d) ? self.goalWidth : self.tacticWidth;
         })
     ;
 
@@ -1277,7 +1294,7 @@ ProofTree.prototype.update = function(callback) {
         .append("xhtml:body")
         //.classed("svg", true)
         .style("padding", function(d) {
-            return isGoal(d) ? goalBodyPadding + "px" : "4px 0px";
+            return isGoal(d) ? goalBodyPadding + "px" : "0px 0px";
         })
         .style("background-color", "rgba(0, 0, 0, 0)")
     // should make it less painful on 800x600 videoprojector
@@ -1288,7 +1305,7 @@ ProofTree.prototype.update = function(callback) {
             var jqObject = $(d3.select(this).node());
             var jQContents;
             if (isTactic(d)) {
-                d.span = $("<span>")
+                d.span = $("<div>")
                     .addClass("tacticNode")
                     .css("padding", "4px")
                     .text(d.tactic);
@@ -1325,13 +1342,13 @@ ProofTree.prototype.update = function(callback) {
                 var nbTactics = d.tactics.length;
                 var counterPrefix = (
                     (nbTactics > 1)
-                        ? '[' + (d.tacticIndex + 1) + '/' + d.tactics.length + '] '
+                        ? '[' + (d.tacticIndex + 1) + '/' + d.tactics.length + ']<br/>'
                         : ''
                 );
-                d.span = $("<span>")
+                d.span = $("<div>")
                     .addClass("tacticNode")
                     .css("padding", "4px")
-                    .text(
+                    .html(
                         (self.isCurNodeChild(d))
                             ? counterPrefix + focusedTactic.tactic
                             : focusedTactic.tactic
@@ -1343,16 +1360,16 @@ ProofTree.prototype.update = function(callback) {
         })
         .each(function(d) {
             var nodeDOM = d3.select(this).node();
-            updateNodeMeasures(nodeDOM, d);
+            self.updateNodeMeasures(nodeDOM, d);
         })
         // preset the width to update measures correctly
         .attr("width", function(d) {
-            return isGoal(d) ? self.goalNodeWidth : self.tacticNodeMaxWidth;
+            return isGoal(d) ? self.goalWidth : self.tacticWidth;
         })
         .attr("height", 0)
         .each(function(d) {
             var nodeDOM = d3.select(this).node().firstChild;
-            updateNodeMeasures(nodeDOM, d);
+            self.updateNodeMeasures(nodeDOM, d);
         })
     ;
 
@@ -1374,7 +1391,7 @@ ProofTree.prototype.update = function(callback) {
     var dX = maxX - minX;
 
     /*
-      we want: width = goalNodeWidth/2 + xFactor * dX + goalNodeWidth/2
+      we want: width = goalWidth/2 + xFactor * dX + goalWidth/2
     */
     this.xFactor = dX === 0
         ? this.width
@@ -1498,16 +1515,6 @@ ProofTree.prototype.update = function(callback) {
             d.cY = nodeY(d) * self.yFactor + self.yOffset(d);
         })
         // preset the width to update measures correctly
-/*
-        .attr("width", function(d) {
-            return isGoal(d) ? self.goalNodeWidth : self.tacticNodeMaxWidth;
-        })
-        .attr("height", "")
-        .each(function(d) {
-            var nodeDOM = d3.select(this).node().firstChild;
-            updateNodeMeasures(nodeDOM, d);
-        })
-*/
         .attr("width", function(d) { return d.width; })
         .attr("height", function(d) { return d.height; })
         .transition()

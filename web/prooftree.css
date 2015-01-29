@@ -26,6 +26,8 @@
     stroke-width: 4px;
 }
 
+.tacticNode { text-align: center; }
+
 .monospace {
     font-family: DejaVu Sans Mono, monospace;
     word-break: break-all;
