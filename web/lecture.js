@@ -1898,9 +1898,9 @@ function lectureTactics(pt) {
 
         makeGroup(
             "simplifications",
-            ["simpl", "simpl in *"].concat(
+            ["simpl"].concat(
                 _(curHyps).map(function(h) { return "simpl in " + h; }).value()
-            )
+            ).concat(["simpl in *"])
         ),
 
         makeGroup(
