@@ -596,54 +596,55 @@ function updateCoqtopPane(direction, response) {
             .toggleClass("alert-success", true)
             .toggleClass("alert-danger", false)
         ;
-        $("#coqtop").text("");
+        $("#coqtop").empty();
+        var contextDiv = $("<div>", { "id": "context" }).appendTo("#coqtop");
+        var subgoalsDiv = $("<div>", {
+            "id": "subgoals",
+        })
+            .css("margin-top", "10px")
+            .appendTo("#coqtop")
+        ;
+        var contentsDiv = $("<div>", {
+            "id": "contents",
+        })
+            .css("margin-top", "10px")
+            .appendTo("#coqtop")
+        ;
 
         var nbFocused = response.rGoals.focused.length;
         var unfocused = response.rGoals.unfocused[0];
 
         if (nbFocused > 0) {
             _(response.rGoals.focused[0].gHyps).each(function(h) {
-                $("#coqtop").append(PT.showHypothesis(extractHypothesis(h)) + "\n");
+                contextDiv.append(PT.showHypothesis(extractHypothesis(h)) + "\n");
             });
-            $("#coqtop").append($("<hr>").css("border", "1px solid black"));
-            $("#coqtop").append(showTerm(extractGoal(response.rGoals.focused[0].gGoal)));
+            contextDiv.append($("<hr>").css("border", "1px solid black"));
+            contextDiv.append(showTerm(extractGoal(response.rGoals.focused[0].gGoal)));
 
-            var goalsDiv = $("<div>")
-                .css("margin-top", "10px")
-                .appendTo("#coqtop")
-            ;
             var nbUnfocused = (unfocused === undefined)
                 ? 0
                 : unfocused[0].length + unfocused[1].length
             ;
             if (nbUnfocused === 0) {
-                goalsDiv.text(
+                subgoalsDiv.text(
                     nbFocused + " subgoal" + (nbFocused <= 1 ? "" : "s")
                 );
             } else {
-                goalsDiv.text(
+                subgoalsDiv.text(
                     nbFocused + " focused subgoal" + (nbFocused <= 1 ? "" : "s")
                         + ", " + nbUnfocused + " unfocused"
                 );
             }
 
-            if (contents !== "") {
-                $("<div>", { "text": contents })
-                    .css("margin-top", "10px")
-                    .appendTo("#coqtop")
-                ;
-            }
+            contentsDiv.text(contents);
 
         } else if (unfocused !== undefined) {
 
             var nbRemaining = unfocused[0].length + unfocused[1].length;
 
-            var goalsDiv = $("<div>", {
-                "text": nbRemaining + " remaining subgoal" + (nbRemaining <= 1 ? "" : "s")
-            })
-                .css("margin-top", "10px")
-                .appendTo("#coqtop")
-            ;
+            subgoalsDiv.text(
+                nbRemaining + " remaining subgoal" + (nbRemaining <= 1 ? "" : "s")
+            );
 
         } else {
 
@@ -659,14 +660,14 @@ function updateCoqtopPane(direction, response) {
                 ;
             }
 
-            $("#coqtop").html(contents);
+            contentsDiv.html(contents);
 
         }
 
         // if we use highlightBlock here, it fails, so use the core highlighting
-        var coqtopText = $("#coqtop").text();
-        var textHl = hljs.highlight('ocaml', coqtopText, true).value;
-        $("#coqtop").html(textHl);
+        var contentsText = $("#contents").text();
+        var textHl = hljs.highlight('ocaml', contentsText, true).value;
+        $("#contents").html(textHl);
 
         break;
     case "Fail":
@@ -676,7 +677,7 @@ function updateCoqtopPane(direction, response) {
         ;
         // maybe still display the goal?
         //console.log("Fail", response);
-        $("#coqtop").text(stripWarning(contents));
+        $("#coqtop").empty().text(stripWarning(contents));
         break;
     };
 
