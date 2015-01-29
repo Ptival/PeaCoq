@@ -254,8 +254,15 @@ function mkDot(x, y) { return {"x": x, "y": y}; }
 
 function showDot(d) { return d.x + " " + d.y; }
 
+/*
+
+  a_____b     c_____d
+  |     |     |     |
+  h_____g     f_____e
+
+*/
 function connectRects(r1, r2, rightsLeft) {
-//console.log("rect1", r1, "rect2", r2);
+    //console.log("rect1", r1, "rect2", r2);
     if (rightsLeft === undefined) { rightsLeft = r2.left; }
     var a = mkDot(r1.left, r1.top);
     var b = mkDot(r1.right, r1.top);
@@ -271,19 +278,7 @@ function connectRects(r1, r2, rightsLeft) {
     var cp3 = mkDot(avg(f.x, g.x), f.y);
     var cp4 = mkDot(avg(f.x, g.x), g.y);
 
-    /*
-console.log("M", a,
-    (
-        "M" + showDot(a)
-            + "L" + showDot(b)
-            + "C" + showDot(cp1) + "," + showDot(cp2) + "," + showDot(c)
-            + "L" + showDot(d) + "," + showDot(e) + "," + showDot(f)
-            + "C" + showDot(cp3) + "," + showDot(cp4) + "," + showDot(g)
-            + "L" + showDot(h)
-            + "Z"
-    )
-);
-    */
+    //console.log("M", a, b, c, d, e, f, g, h);
 
     return (
         "M" + showDot(a)
@@ -1893,7 +1888,6 @@ ProofTree.prototype.update = function(callback) {
                 .each(function(diff) {
 
                     if (diff.oldHyp === undefined) {
-
                         var newHyp = diff.newHyp;
                         d3.select(this).select("path")
                             .transition()
