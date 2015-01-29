@@ -1007,6 +1007,7 @@ function unpeekAtEditorUI() {
     $("#peek-button").css("display", "");
     $("#unpeek-button").css("display", "none");
     $("#prooftree").focus();
+    activeProofTree.update();
 
 }
 
