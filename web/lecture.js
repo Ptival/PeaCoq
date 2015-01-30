@@ -1891,7 +1891,6 @@ function lectureTactics(pt) {
     var res = [
         // first, some terminators
         "reflexivity", "discriminate", "assumption", "eassumption",
-        "break_if", "f_equal", "subst",
 
         makeGroup(
             "autos",
@@ -1901,6 +1900,11 @@ function lectureTactics(pt) {
         makeGroup(
             "introductions",
             ["intro", "intros"]
+        ),
+
+        makeGroup(
+            "break_if, f_equal, subst",
+            ["break_if", "f_equal", "subst"]
         ),
 
         makeGroup(
