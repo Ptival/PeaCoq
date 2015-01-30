@@ -39,7 +39,7 @@ $(document).ready(function() {
 var diffRed   = "#EE8888";
 var diffGreen = "#88EE88";
 var diffBlue  = "#8888EE";
-var diffOpacity = 0.90;
+var diffOpacity = 0.8;
 var redStroke   = diffRed;
 var greenStroke = diffGreen;
 var blueStroke  = diffBlue;
