@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os, io, re, csv
+import os, sys, io, re, csv
 
 from os.path import basename, splitext
 from glob import glob
@@ -39,10 +39,13 @@ if __name__ == '__main__':
         if 'access' in file: continue
         (root, ext) = splitext(file)
         userFilename = basename(file).split('-')[0]
-        with io.open(root + '.csv', 'w', newline='') as csvfile:
+        mode = 'w'
+        if sys.version_info.major < 3:
+            mode += 'b'
+        with io.open(root + '.csv', mode) as csvfile:
             writer = csv.writer(csvfile)
             with open(file) as handle:
-              filetext = h.read()
+              filetext = handle.read()
               items = rItem.split(filetext)
               for item in items:
                   if item == "":
