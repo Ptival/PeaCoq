@@ -1448,18 +1448,15 @@ ProofTree.prototype.update = function(callback) {
     visibleNodes = visibleNodes.concat([curGoal]);
     visibleNodes = visibleNodes.concat(visibleChildren.value());
     visibleNodes = visibleNodes.concat(visibleGrandChildren.value());
-    var minXNode = _(visibleNodes).min(nodeX).value();
-    var maxXNode = _(visibleNodes).max(nodeX).value();
-    var minX = nodeX(minXNode), maxX = nodeX(maxXNode);
-    var dX = maxX - minX;
 
-    /*
-      we want: width = goalWidth/2 + xFactor * dX + goalWidth/2
-    */
-    this.xFactor = dX === 0
-        ? this.width
-        : (this.width - minXNode.width / 2 - maxXNode.width / 2) / dX
-    ;
+    // xFactor is now fixed, so that the user experience is more stable
+    if (this.rootNode.children.length === 0) {
+        this.xFactor = this.width;
+    } else {
+        var xDistance = nodeX(this.rootNode.children[0]) - nodeX(this.rootNode);
+        /* width = 4 * xDistance * xFactor */
+        this.xFactor = this.width / (4 * xDistance);
+    }
 
     /*
       we want all visible grand children to be apart from each other
@@ -1730,20 +1727,19 @@ ProofTree.prototype.update = function(callback) {
         .remove()
     ;
 
-    this.viewportX = - (hasParent(curNode) ? curNode.parent.cX : curNode.cX);
+    this.viewportX = - (
+        hasParent(curNode)
+            ? curNode.parent.cX
+            : curNode.cX // TODO: could do some math to align it the same way
+    );
+
     this.viewportY =
         - (
-            (isGoal(curNode))
+            isGoal(curNode)
                 ? (curNode.cY + curNode.height / 2 - this.height / 2)
                 : (curNode.parent.cY + curNode.parent.height / 2 - this.height / 2)
         )
     ;
-    /* was:
-       - (hasParent(curGoal)
-       ? Math.min(curGoal.cY, curGoal.parent.cY)
-       : curGoal.cY
-       );
-    */
 
     this.viewport
         .transition()
