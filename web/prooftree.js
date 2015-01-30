@@ -123,7 +123,16 @@ function ProofTree(anchor, width, height, qedCallback,
     this.tacticWidth = computeTacticWidth(this.width);
 
     this.tree = d3.layout.tree()
-        .children(self.getViewChildren.bind(self))
+        .children(function(node) {
+            if (node.type === 'fake') { return []; }
+            var viewChildren = self.getViewChildren(node);
+            // in order to trick d3 into displaying tactics better add fake
+            // children to tactic nodes that solve their goal
+            if (isTacticish(node) && getTacticFromTacticish(node).goals.length === 0) {
+                return [{ 'id' : _.uniqueId(), 'type': 'fake' }];
+            }
+            return viewChildren;
+        })
         .separation(function(d) {
             // TODO: this just won't work, need invisible children
             // for tactics without children
@@ -1291,6 +1300,16 @@ ProofTree.prototype.update = function(callback) {
     this.resetSVGTransform();
 
     var nodes = this.tree.nodes(this.rootNode);
+    // now get rid of the fake nodes used for layout
+    nodes = _(nodes)
+        .each(function(node) {
+            if (isTacticish(node) && getTacticFromTacticish(node).goals.length === 0) {
+                getTacticFromTacticish(node).children = [];
+            }
+        })
+        .filter(function(node) { return node.type !== 'fake'; })
+        .value()
+    ;
     var links = this.tree.links(nodes);
 
     // we build the foreignObject first, as its dimensions will guide the others
