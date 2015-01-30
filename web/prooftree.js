@@ -1450,7 +1450,7 @@ ProofTree.prototype.update = function(callback) {
     visibleNodes = visibleNodes.concat(visibleGrandChildren.value());
 
     // xFactor is now fixed, so that the user experience is more stable
-    if (this.rootNode.children.length === 0) {
+    if (this.rootNode.children === undefined || this.rootNode.children.length === 0) {
         this.xFactor = this.width;
     } else {
         var xDistance = nodeX(this.rootNode.children[0]) - nodeX(this.rootNode);
