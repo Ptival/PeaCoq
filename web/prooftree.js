@@ -2670,6 +2670,7 @@ ProofTree.prototype.keydownHandler = function() {
         if (isTacticGroup(focusedChild)) {
             if (focusedChild.tacticIndex > 0) {
                 focusedChild.tacticIndex--;
+                asyncLog("PREVGROUPFOCUS " + nodeString(focusedChild.tactics[focusedChild.tacticIndex]));
                 this.update();
             }
         }
@@ -2680,6 +2681,7 @@ ProofTree.prototype.keydownHandler = function() {
         if (isTacticGroup(focusedChild)) {
             if (focusedChild.tacticIndex < focusedChild.tactics.length - 1) {
                 focusedChild.tacticIndex++;
+                asyncLog("NEXTGROUPFOCUS " + nodeString(focusedChild.tactics[focusedChild.tacticIndex]));
                 this.update();
             }
         }
@@ -3474,19 +3476,38 @@ function setupTextareaResizing() {
 }
 
 function nodeString(d) {
-    return JSON.stringify(
-        {
-            "id": d.id,
-            "depth": d.depth,
-            "pName": d.pName,
-            "hyps": _(d.hyps).map(function(h) { return {
-                "hName": h.hName,
-                "hType": h.hType,
-                "hValue": h.hValue,
-            }; }).value(),
-            "name": d.name,
-        }
-    );
+    if (isGoal(d)) {
+        return JSON.stringify(
+            {
+                "id": d.id,
+                "name": d.name,
+                "depth": d.depth,
+                "hyps": _(d.hyps).map(function(h) {
+                    return {
+                        "hName": h.hName,
+                        "hType": h.hType,
+                        "hValue": h.hValue,
+                    };
+                }).value(),
+            }
+        );
+    } else if (isTactic(d)) {
+        return JSON.stringify(
+            {
+                "id": d.id,
+                "tactic": d.tactic,
+                "depth": d.depth,
+            }
+        );
+    } else if (isTacticGroup(d)) {
+        return JSON.stringify(
+            {
+                "id": d.id,
+                "depth": d.depth,
+                "name": d.name,
+            }
+        );
+    }
 }
 
 var lastDebugId = undefined;
