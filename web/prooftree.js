@@ -651,6 +651,10 @@ ProofTree.prototype.getViewChildren = function(node) {
       even reach the current node!
      */
     if (isCollapsed(node)) {
+        // no need to have a child for non-ancestors of the current node
+        if (!this.isCurNodeAncestor(node)) { return []; }
+        // ancestors of the current node need to have a child for the current
+        // node to be reachable by D3
         // the simplest way is to uncollapse, get all the children, and filter
         node.collapsed = false;
         var viewChildren = this.getViewChildren(node);
