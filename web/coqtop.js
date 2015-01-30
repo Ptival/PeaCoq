@@ -49,6 +49,10 @@ function asyncQuery(q)        { return asyncRequest('query', q); }
 function asyncQueryAndUndo(q) { return asyncRequest('queryundo', q); }
 function asyncUndo()          { return asyncRequest('undo', undefined); }
 function asyncRevision()      { return asyncRequest('revision', undefined); }
+function asyncRewind(delta) {
+    console.log('Rewind', delta);
+    return asyncRequest('rewind', delta);
+}
 function asyncLog(s) {
     var time = "[" + new Date().toLocaleString() + "] ";
     return asyncRequest("log", time + s);
@@ -98,7 +102,7 @@ function asyncResetCoqWithImports() {
     return asyncCurrentLabel()
         .then(function(label) {
             if (label > 0) {
-                return asyncRequest("rewind", label - 1)
+                return asyncRewind(label - 1)
                     .then(asyncQuery(
                         "Require Import Unicode.Utf8 Bool Arith List."
                     ))
@@ -118,7 +122,7 @@ function asyncResetCoq() {
     return asyncCurrentLabel()
         .then(function(label) {
             if (label > 0) {
-                return asyncRequest("rewind", label - 1);
+                return asyncRewind(label - 1);
             } else {
                 return Promise.resolve();
             }
