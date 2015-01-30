@@ -1030,6 +1030,7 @@ ProofTree.prototype.refreshTactics = function() {
     this.tacticsWorklist = tacticSparks.concat(groupSparks);
 
     this.processTactics();
+
 }
 
 function findOrCreateGroup(goalNode, groupName) {
@@ -1304,7 +1305,7 @@ ProofTree.prototype.update = function(callback) {
         .style("font-size", (this.width < 1000) ? "12px" : "14px")
         .style("font-family", "monospace")
         .each(function(d) {
-            var jqObject = $(d3.select(this).node());
+            var jqBody = $(d3.select(this).node());
             var jQContents;
             if (isTactic(d)) {
                 d.span = $("<div>")
@@ -1330,7 +1331,7 @@ ProofTree.prototype.update = function(callback) {
             } else {
                 throw d;
             }
-            jqObject.append(jQContents);
+            jqBody.append(jQContents);
         })
     ;
 
