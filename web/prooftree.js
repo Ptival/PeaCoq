@@ -2198,48 +2198,6 @@ ProofTree.prototype.shiftNextGoal = function(n) {
     }
 }
 
-/*
-ProofTree.prototype.shiftPrevBySubgoal = function(n) {
-    if (this.paused) { return; }
-    var self = this;
-    function tryShifting(n) {
-        if (n.focusIndex> 0) {
-            n.focusIndex--;
-            asyncLog("UP " + nodeString(n.allChildren[n.focusIndex]));
-            self.update();
-            return true;
-        }
-        return false;
-    }
-    if (n.solved) { return; }
-    if (isGoal(n) && n.allChildren.length > 0) {
-        tryShifting(n.allChildren[n.focusIndex]) || tryShifting(n);
-    } else {
-        tryShifting(n);
-    }
-}
-
-ProofTree.prototype.shiftNextBySubgoal = function(n) {
-    if (this.paused) { return; }
-    var self = this;
-    function tryShifting(n) {
-        if (n.focusIndex + 1 < self.getViewChildren(n).length) {
-            n.focusIndex++;
-            asyncLog("DOWN " + nodeString(n.allChildren[n.focusIndex]));
-            self.update();
-            return true;
-        }
-        return false;
-    }
-    if (n.solved) { return; }
-    if (isGoal(n) && n.allChildren.length > 0) {
-        tryShifting(n.allChildren[n.focusIndex]) || tryShifting(n);
-    } else {
-        tryShifting(n);
-    }
-}
-*/
-
 ProofTree.prototype.click = function(d, remember, callback) {
 
     var self = this;
@@ -2254,31 +2212,6 @@ ProofTree.prototype.click = function(d, remember, callback) {
         }
         return;
     }
-
-    // when the user clicks on a tactic node below
-    // bring them to the first unsolved goal instead
-    /*
-    var viewChildren = this.getViewChildren(d);
-    if (isTacticish(d)
-        && d.depth > this.curNode.depth
-        && viewChildren.length > 0) {
-        expand(d);
-        var firstUnsolved = _(viewChildren)
-            .find(function(e) { return !e.solved; });
-        if (firstUnsolved !== undefined) {
-            this.click(firstUnsolved, remember, callback);
-            return;
-        }
-    }
-    */
-    // when the user clicks on the parent tactic, bring them back to its parent
-    // DO NOT WANT ANYMORE! This will discard things! :(
-    /*
-    if (isTacticish(d) && d.depth < this.curNode.depth) {
-        this.click(d.parent, remember, callback);
-        return;
-    }
-    */
 
     // when the user goes back to a parent tactic, if it only has one subgoal,
     // it must probably mean the user wants to cancel the tactic altogether, so
@@ -2541,7 +2474,6 @@ When arriving to a goal from a tactic or tacticgroup, the tactic's goals should 
                         return asyncQuery('Focus ' + indexToFocus + '.')
                             .then(asyncStatus)
                             .then(function(status) {
-                                console.log("Focused goal, now at label", status.label);
                                 dst.label = status.label;
                             });
                     } else if (isTactic(dst)) {
