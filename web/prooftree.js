@@ -2261,6 +2261,16 @@ ProofTree.prototype.click = function(d, remember, callback) {
     }
     */
 
+    // when the user goes back to a parent tactic, if it only has one subgoal,
+    // it must probably mean the user wants to cancel the tactic altogether, so
+    // backtrack once more to the previous goal
+    if (isTacticish(d)
+        && d.depth < this.curNode.depth
+        && getTacticFromTacticish(d).goals.length === 1) {
+        this.click(d.parent, remember, callback);
+        return;
+    }
+
     this.navigateTo(d, false)
         .then(function() {
             if (isGoal(d)) {
