@@ -1908,7 +1908,7 @@ function lectureTactics(pt) {
 
         makeGroup(
             "break_if, f_equal, subst",
-            ["break_if", "f_equal", "subst"]
+            ["break_if", "f_equal", "repeat f_equal", "subst"]
         ),
 
         makeGroup(
