@@ -1301,12 +1301,13 @@ ProofTree.prototype.update = function(callback) {
 
     var nodes = this.tree.nodes(this.rootNode);
     // now get rid of the fake nodes used for layout
-    nodes = _(nodes)
+    _(nodes)
         .each(function(node) {
             if (isTacticish(node) && getTacticFromTacticish(node).goals.length === 0) {
-                getTacticFromTacticish(node).children = [];
+                node.children = [];
             }
-        })
+        });
+    nodes = _(nodes)
         .filter(function(node) { return node.type !== 'fake'; })
         .value()
     ;
