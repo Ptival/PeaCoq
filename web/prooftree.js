@@ -79,7 +79,7 @@ function ProofTree(anchor, width, height, qedCallback,
     this.xFactor = this.width;
     this.yFactor = this.height;
     this.userState = {};
-    this.usingKeyboard = false;
+    this.usingKeyboard = true; // true until the user moves their mouse
     this.goalWidth = computeGoalWidth(this.width);
     this.tacticWidth = computeTacticWidth(this.width);
 
@@ -131,11 +131,13 @@ function ProofTree(anchor, width, height, qedCallback,
         .style("height", this.height + "px")
         //.attr("focusable", true)
     // this creates a blue outline that changes the width weirdly
-        //.attr("tabindex", 0)
+    //.attr("tabindex", 0)
+    /*
         .on("click", function() {
             activeProofTree = self;
             self.usingKeyboard = false;
         })
+    */
     ;
 
     this.viewport =
@@ -347,6 +349,24 @@ function byLinkId(d) { return d.source.id + "," + d.target.id; }
 function nodeX(d) { return d.y; }
 function nodeY(d) { return d.x; }
 
+ProofTree.prototype.isFocusedGoal = function(d) {
+    var focusedGoal = this.getFocusedGoal();
+    if (focusedGoal === undefined) { return false; }
+    return d.id === focusedGoal.id;
+}
+
+ProofTree.prototype.getFocusedGoal = function() {
+    var focusedChild = this.getFocusedChild(this.curNode);
+    if (focusedChild !== undefined) {
+        if (isGoal(focusedChild)) { return focusedChild; }
+        focusedChild = this.getFocusedChild(focusedChild);
+        if (focusedChild !== undefined) {
+            return focusedChild;
+        }
+    }
+    return undefined;
+}
+
 ProofTree.prototype.isFocusedChild = function(d) {
     var focusedChild = this.getFocusedChild(this.curNode);
     return (focusedChild !== undefined && d.id === focusedChild.id);
@@ -495,7 +515,7 @@ ProofTree.prototype.newAlreadyStartedTheorem =
     self.hInit(lastResponse);
 
     $(this.svg[0]).focus();
-    this.svg.on("click")();
+    //this.svg.on("click")();
 
 }
 
@@ -1193,6 +1213,7 @@ ProofTree.prototype.linkWidth = function(d) {
     var thin = "2px";
     var thick = "5px";
     // if the user uses his mouse, highlight the path under hover
+    /*
     if (!this.usingKeyboard) {
         if (this.hoveredNode === undefined) {
             return thin;
@@ -1212,6 +1233,7 @@ ProofTree.prototype.linkWidth = function(d) {
             }
         }
     }
+    */
     // if the user uses his keyboard, highlight the focused path
     if (isGoal(this.curNode)) {
         var focusedChild = this.getFocusedChild(this.curNode);
@@ -1546,44 +1568,6 @@ ProofTree.prototype.update = function(callback) {
         .each("end", function() {
             // this is in "end" so that it does not trigger before nodes are positioned
             d3.select(this)
-                .on("mouseover", function(d1) {
-                    self.usingKeyboard = false;
-                    self.hoveredNode = d1;
-                    // update links width
-                    self.linkLayer.selectAll("path").data(links, byLinkId)
-                        .attr("stroke-width", self.linkWidth.bind(self))
-                    ;
-                    self.diffLayer.selectAll("g.diff")
-                        .style("opacity", 0);
-                    self.diffLayer.selectAll("g.diff")
-                        .filter(function(d2) {
-                            // the first condition makes sure diffs don't show up for
-                            // nodes whose grandparents are off-screen
-                            return self.isCurGoalGrandChild(d2) && d1.id === d2.id;
-                        })
-                        .style("opacity", 1);
-                })
-                .on("mouseout", function(d1) {
-                    self.usingKeyboard = false;
-                    self.hoveredNode = undefined;
-                    // update links width
-                    self.linkLayer.selectAll("path").data(links, byLinkId)
-                        .attr("stroke-width", self.linkWidth.bind(self))
-                    ;
-                    self.diffLayer.selectAll("g.diff")
-                        .style("opacity", 0);
-                    /* actually this is annoying because diffs won't go away
-                    var focusChild = getAllChildren(curNode)[curNode.focusIndex];
-                    if (focusChild !== undefined) {
-                        var focusGrandChild = getAllChildren(focusChild)[focusChild.focusIndex];
-                        if (focusGrandChild !== undefined) {
-                            self.diffLayer.selectAll("g.diff")
-                                .filter(function(d) { return d.id === focusGrandChild.id; })
-                                .style("opacity", 1);
-                        }
-                    }
-                    */
-                })
                 .on("click", function(d) {
 
                     asyncLog("CLICK " + nodeString(d));
@@ -1591,6 +1575,53 @@ ProofTree.prototype.update = function(callback) {
                     self.click(d);
 
                 })
+            // // disactivating this because it flickers when updating...
+            //     .on("mouseover", function(d1) {
+            //         self.usingKeyboard = false;
+            //         self.hoveredNode = d1;
+            //         console.log("hovered node");
+            //         /*
+            //         // update links width
+            //         self.linkLayer.selectAll("path").data(links, byLinkId)
+            //             .attr("stroke-width", self.linkWidth.bind(self))
+            //         ;
+            //         self.diffLayer.selectAll("g.diff")
+            //             .style("opacity", 0);
+            //         self.diffLayer.selectAll("g.diff")
+            //             .filter(function(d2) {
+            //                 // the first condition makes sure diffs don't show up for
+            //                 // nodes whose grandparents are off-screen
+            //                 return self.isCurGoalGrandChild(d2) && d1.id === d2.id;
+            //             })
+            //             .style("opacity", 1);
+            //         */
+            //         self.update();
+            //     })
+            //     .on("mouseout", function(d1) {
+            //         self.usingKeyboard = false;
+            //         self.hoveredNode = undefined;
+            //         console.log("unhovered node");
+            //         /*
+            //         // update links width
+            //         self.linkLayer.selectAll("path").data(links, byLinkId)
+            //             .attr("stroke-width", self.linkWidth.bind(self))
+            //         ;
+            //         self.diffLayer.selectAll("g.diff")
+            //             .style("opacity", 0);
+            //         /* actually this is annoying because diffs won't go away
+            //         var focusChild = getAllChildren(curNode)[curNode.focusIndex];
+            //         if (focusChild !== undefined) {
+            //             var focusGrandChild = getAllChildren(focusChild)[focusChild.focusIndex];
+            //             if (focusGrandChild !== undefined) {
+            //                 self.diffLayer.selectAll("g.diff")
+            //                     .filter(function(d) { return d.id === focusGrandChild.id; })
+            //                     .style("opacity", 1);
+            //             }
+            //         }
+            //         */
+            //         self.update();
+            //     })
+            ;
         })
     ;
 
@@ -1710,11 +1741,10 @@ ProofTree.prototype.update = function(callback) {
              )
     ;
 
+    var focusedGoal = this.getFocusedGoal();
+    var diffData = (focusedGoal === undefined) ? [] : [focusedGoal];
     var diffSelection = this.diffLayer.selectAll("g.node-diff").data(
-        // only goal nodes with a grandparent give rise to a diff
-        _(nodes).filter(function(d) {
-            return isGoal(d) && hasGrandParent(d);
-        }).value(),
+        diffData,
         byNodeId
     );
 
@@ -1871,6 +1901,10 @@ ProofTree.prototype.update = function(callback) {
                 })
             ;
 
+            d.diffListSelection.exit()
+                .remove()
+            ;
+
         })
     ;
 
@@ -2010,6 +2044,8 @@ ProofTree.prototype.update = function(callback) {
             ;
 
         })
+        .style("opacity", 1)
+        /*
         .style("opacity", 0)
         .transition()
         .duration(animationDuration)
@@ -2023,6 +2059,7 @@ ProofTree.prototype.update = function(callback) {
             ;
             return (focusGrandChild !== undefined && d.id === focusGrandChild.id) ? 1 : 0;
         })
+        */
     ;
 
     diffSelection.exit()
