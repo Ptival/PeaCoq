@@ -1147,6 +1147,10 @@ function getLastProved() {
     return proved.substring(prev(proved)).trim();
 }
 
+/*
+ * TODO: now that ProofTree does not undo, no need to backtract and redo.
+ * However, we now need to insert the 'Proof.' keyword.
+ */
 function onQed(labelBeforeProofTree, prooftree) {
 
     var lastCommand = getLastProved();
