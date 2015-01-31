@@ -401,9 +401,9 @@ Definition equiv (s1 s2: Stmt) :=
   Prove the following equivalence.
 *)
 Lemma progs_equiv:
-  forall s x,
+  ~ (forall s x,
   equiv (Seq s (Assign x (Int 0%Z))
-        (Seq PushHeap (Seq s (PopHeap x))).
+        (Seq PushHeap (Seq s (PopHeap x)))).
 Proof.
   (* TODO *)
   admit.
