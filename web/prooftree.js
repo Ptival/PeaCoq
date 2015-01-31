@@ -720,12 +720,11 @@ function makeFocusedTwoGenerations(node) {
     }
 }
 
+/*
+ * Returns the child under focus within the view.
+ * Always return a goal or a tactic node.
+ */
 ProofTree.prototype.getFocusedChild = function(node) {
-
-    if (node === undefined) {
-        console.log('break');
-    }
-
     var viewChildren = this.getViewChildren(node);
     if (viewChildren.length === 0) {
         return undefined;
@@ -2086,6 +2085,11 @@ function computeDiff(oldHyps, newHyps) {
 
 }
 
+/*
+ * Returns a rect of the absolute position of [elmt] within the canvas. It needs
+ * [node] in order to return absolute values, where [node] is the node element
+ * within which [elmt] lives.
+ */
 function elmtRect(node, elmt) {
     var rect = elmt.getBoundingClientRect();
     var containerRect = $(elmt).parents("foreignObject")[0].getBoundingClientRect();
