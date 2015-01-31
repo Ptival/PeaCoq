@@ -20,19 +20,6 @@ var keyboardDelay = 100;
 var keyboardPaused = false;
 
 $(document).ready(function() {
-
-    /* DISABLED for lecture.js, this should be opt-in
-
-    $(window).click(function(event) {
-        // TODO: this is kinda clunky, but at least we can mark tutorial windows
-        // as non-disactivating
-        // if the click did not originate in a SVG, disactivate proof trees
-        if ($(event.target).closest(".svg").length === 0) {
-            activeProofTree = undefined;
-        }
-    });
-    */
-
     setupTextareaResizing();
 });
 
@@ -55,32 +42,6 @@ function assert(condition, message) {
 
 // COMPUTED GLOBALS
 var activeProofTree;
-
-// These tactic sets each build on top of the previous one
-PT.tSet = [
-    'simpl',
-    'simpl in *',
-    'reflexivity',
-    'intro',
-    'rewrite',
-    'destruct',
-    'induction',
-    'inversion',
-    'left',
-    'right',
-    'split',
-    'discriminate',
-];
-PT.tReflexivity  = PT.tSet.slice(0, 1 + PT.tSet.indexOf('reflexivity'));
-PT.tIntro        = PT.tSet.slice(0, 1 + PT.tSet.indexOf('intro'));
-PT.tRewrite      = PT.tSet.slice(0, 1 + PT.tSet.indexOf('rewrite'));
-PT.tDestruct     = PT.tSet.slice(0, 1 + PT.tSet.indexOf('destruct'));
-PT.tInduction    = PT.tSet.slice(0, 1 + PT.tSet.indexOf('induction'));
-PT.tInversion    = PT.tSet.slice(0, 1 + PT.tSet.indexOf('inversion'));
-PT.tDiscriminate = PT.tSet.slice(0, 1 + PT.tSet.indexOf('discriminate'));
-// These ones are more specific
-PT.tCompute = PT.tReflexivity.concat(['compute']);
-PT.allTactics = PT.tDiscriminate;
 
 /*
   The following DOM is constructed from the given anchor:
