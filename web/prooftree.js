@@ -2645,24 +2645,44 @@ ProofTree.prototype.keydownHandler = function() {
     case 38: // Up
     //case 87: // w
         d3.event.preventDefault();
-        if (isGoal(curNode)) {
-            this.shiftPrevByTacticGroup(curNode);
-        } else if (isTacticish(curNode)) {
-            this.shiftPrevGoal(curNode);
+        if (d3.event.shiftKey) {
+            if (isGoal(curNode)) {
+                this.shiftPrevGoal(this.getFocusedChild(curNode));
+            } else if (isTacticish(curNode)) { // do the same as without Shift
+                this.shiftPrevGoal(curNode);
+            } else {
+                throw curNode;
+            }
         } else {
-            throw curNode;
+            if (isGoal(curNode)) {
+                this.shiftPrevByTacticGroup(curNode);
+            } else if (isTacticish(curNode)) {
+                this.shiftPrevGoal(curNode);
+            } else {
+                throw curNode;
+            }
         }
         break;
 
     case 40: // Down
     //case 83: // s
         d3.event.preventDefault();
-        if (isGoal(curNode)) {
-            this.shiftNextByTacticGroup(curNode);
-        } else if (isTacticish(curNode)) {
-            this.shiftNextGoal(curNode);
+        if (d3.event.shiftKey) {
+            if (isGoal(curNode)) {
+                this.shiftNextGoal(this.getFocusedChild(curNode));
+            } else if (isTacticish(curNode)) { // do the same as without Shift
+                this.shiftNextGoal(curNode);
+            } else {
+                throw curNode;
+            }
         } else {
-            throw curNode;
+            if (isGoal(curNode)) {
+                this.shiftNextByTacticGroup(curNode);
+            } else if (isTacticish(curNode)) {
+                this.shiftNextGoal(curNode);
+            } else {
+                throw curNode;
+            }
         }
         break;
 
