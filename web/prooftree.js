@@ -507,18 +507,6 @@ ProofTree.prototype.newAlreadyStartedTheorem =
 
 }
 
-function updateGoalNode(node, newGoal) {
-    var goalTerm = extractGoal(newGoal.gGoal);
-    node.hyps = _(newGoal.gHyps).map(extractHypothesis).value();
-    node.gid = newGoal.gId;
-    node.goalTerm = goalTerm;
-    node.goalString = showTermText(goalTerm);
-    node.userTactics = [];
-    node.otherTactics = [];
-    node.tacticGroups = [];
-    node.tacticIndex = 0;
-}
-
 function getTacticFromTacticish(d) {
     if (isTactic(d)) {
         return d;
@@ -526,26 +514,6 @@ function getTacticFromTacticish(d) {
         return d.getFocusedTactic();
     } else {
         throw d;
-    }
-}
-
-/*
- * if [parent] is a goal, adds to [otherTactics]. To add to [userTactics], use
- * [addUserTactic]
- */
-function addChild(parent, node) {
-    if (isGoal(parent)) {
-        // prevent the node addition from changing focus
-        if (parent.tacticIndex > 0
-            && parent.tacticIndex >=
-            parent.userTactics.length + parent.otherTactics.length) {
-            parent.tacticIndex++;
-        }
-        parent.otherTactics.push(node);
-    } else if (isTacticGroup(parent)) {
-        parent.tactics.push(node);
-    } else {
-        throw parent;
     }
 }
 
@@ -595,6 +563,8 @@ function getResponseUnfocused(response) {
  * @return <Promise>
  */
 ProofTree.prototype.runUserTactic = function(t) {
+    alert("TODO: fix runUserTactic");
+    /*
     var self = this;
     var nodeToAttachTo = this.curNode;
     // need to get the status before so that we figure out whether the goal was
@@ -627,16 +597,17 @@ ProofTree.prototype.runUserTactic = function(t) {
             }
         })
         .catch(outputError);
+    */
 }
 
 /*
  * @return <Promise>
  */
-ProofTree.prototype.runTactic = function(t, nodeToAttachTo) {
+ProofTree.prototype.runTactic = function(t, groupToAttachTo) {
 
     var self = this;
 
-    var parentGoal = getClosestGoal(nodeToAttachTo);
+    var parentGoal = getClosestGoal(groupToAttachTo);
     var parentGoalRepr = goalNodeUnicityRepr(parentGoal);
 
     // need to get the status before so that we figure out whether the goal was
@@ -653,7 +624,7 @@ ProofTree.prototype.runTactic = function(t, nodeToAttachTo) {
                 var unfocusedAfter = getResponseUnfocused(response);
                 var newChild = new TacticNode(
                     self,
-                    nodeToAttachTo,
+                    groupToAttachTo,
                     t,
                     (beforeResponse.rGoals.unfocused.length === response.rGoals.unfocused.length)
                         ? response.rGoals.focused
@@ -677,7 +648,7 @@ ProofTree.prototype.runTactic = function(t, nodeToAttachTo) {
                 ;
 
                 if (!resultAlreadyExists && !tacticIsUseless) {
-                    addChild(nodeToAttachTo, newChild);
+                    groupToAttachTo.addTactic(newChild);
                     self.update();
                 }
 
@@ -741,26 +712,7 @@ ProofTree.prototype.refreshTactics = function() {
         .value()
     ;
 
-    var tactics = tacticsAndGroups.tactics;
-
-    var tacticSparks = _(tactics)
-        .filter(function(t) {
-            // TODO: refresh for existential variables
-            return (
-                !_(self.curNode.userTactics)
-                    .concat(self.curNode.otherTactics)
-                    .some(function(c) {
-                        return (c.tactic === t);
-                    })
-            );
-        })
-        .map(function(tactic) {
-            return (function() {
-                return self.runTactic(tactic, curNode);
-            });
-        })
-        .value()
-    ;
+    // TODO: there should be no tactics!
 
     var groups = tacticsAndGroups.groups;
 
@@ -791,7 +743,7 @@ ProofTree.prototype.refreshTactics = function() {
     ;
 
     // flushes the worklist and add the new sparks
-    this.tacticsWorklist = tacticSparks.concat(groupSparks);
+    this.tacticsWorklist = groupSparks;
 
     this.processTactics();
 
@@ -1988,8 +1940,6 @@ function collapseChildren(d) {
 function expand(d) {
     d.collapsed = false;
     if (isGoal(d)) {
-        _(d.userTactics).each(expand);
-        _(d.otherTactics).each(expand);
         _(d.tacticGroups).each(expand);
     } else if (isTacticGroup(d)) {
         _(d.tactics).each(expand);
@@ -2129,15 +2079,15 @@ When arriving to a goal from a tactic or tacticgroup, the tactic's goals should 
                         return asyncStatus()
                             .then(function(status) {
                                 var response = status.response;
-                                // Here, we update the goal nodes, because
-                                // existential variables might have been
+                                // Here, we update the unsolved goal nodes,
+                                // because existential variables might have been
                                 // resolved
                                 _(getTacticFromTacticish(dst).goals)
                                     .filter(function(goal) {
                                         return !goal.solved;
                                     })
                                     .each(function(goal, index) {
-                                        updateGoalNode(goal, response.rGoals.focused[index]);
+                                        goal.resetWith(response.rGoals.focused[index]);
                                     });
                             })
                         ;
@@ -3341,19 +3291,25 @@ Node.prototype.getViewGrandChildren = function() {
     );
 }
 
-function GoalNode(proofTree, parent, goal, index) {
-    Node.call(this, proofTree, parent);
+var userTacticsGroupName = 'PeaCoq User Tactics';
+
+function GoalNode(proofTree, parentTactic, goal, index) {
+    Node.call(
+        this,
+        proofTree,
+        (parentTactic === undefined) ? undefined : parentTactic.parent
+    );
     var goalTerm = extractGoal(goal.gGoal);
     this.hyps = _(goal.gHyps).map(extractHypothesis).value();
     this.ndx = index + 1; // used in Focus, Coq uses 1-index
     this.gid = goal.gId;
     this.goalTerm = goalTerm;
     this.goalString = showTermText(goalTerm);
-    this.userTactics = [];
-    this.otherTactics = [];
-    this.tacticGroups = [];
+    this.tacticGroups = [
+        new TacticGroupNode(proofTree, this, userTacticsGroupName)
+    ];
     this.tacticIndex = 0;
-    this.parentTactic = parent;
+    this.parentTactic = parentTactic;
 
     // TO REMOVE
     this.type = 'goal';
@@ -3426,19 +3382,15 @@ GoalNode.prototype.getViewChildren = function() {
         .filter(function(group) { return (group.tactics.length > 0); })
         .value()
     ;
-    var uncollapsedViewChildren = this.userTactics
-        .concat(this.otherTactics)
-        .concat(nonEmptyTacticGroups)
-    ;
-    if (uncollapsedViewChildren === []) { return []; }
+    if (nonEmptyTacticGroups === []) { return []; }
     if (this.isCollapsed()) {
         return (
             this.isCurNodeAncestor()
-                ? [uncollapsedViewChildren[this.tacticIndex]]
+                ? [nonEmptyTacticGroups[this.tacticIndex]]
                 : []
         );
     }
-    return uncollapsedViewChildren;
+    return nonEmptyTacticGroups;
 }
 
 TacticNode.prototype.getViewChildren = function() {
@@ -3499,11 +3451,10 @@ TacticGroupNode.prototype.getFocusedChild = function() {
  */
 
 GoalNode.prototype.setFocusedChild = function(child) {
-    this.tacticIndex = _(this.userTactics)
-        .concat(this.otherTactics)
-        .concat(this.tacticGroups.filter(function(g) {
+    this.tacticIndex = _(this.tacticGroups)
+        .filter(function(g) {
             return (g.tactics.length > 0);
-        }))
+        })
         .findIndex(function(node) { return node.id === child.id; })
     ;
     if (this.tacticIndex === -1) {
@@ -3574,16 +3525,11 @@ TacticGroupNode.prototype.getFocusedTactic = function() {
  */
 
 GoalNode.prototype.getTactics = function() {
-    var groupTactics = _(this.tacticGroups)
+    return _(this.tacticGroups)
         .map(function(g) { return g.getTactics(); })
         .flatten(true)
         .value()
     ;
-    return (
-        this.userTactics
-            .concat(this.otherTactics)
-            .concat(groupTactics)
-    );
 }
 
 TacticGroupNode.prototype.getTactics = function() {
@@ -3608,4 +3554,28 @@ TacticNode.prototype.getProof = function() {
 TacticGroupNode.prototype.getProof = function() {
     // assuming the solved tactic is focused
     return this.getFocusedTactic().getProof();
+}
+
+/*
+ * [addTactic] adds [tacticNode] to a tactic group.
+ */
+
+TacticGroupNode.prototype.addTactic = function(tacticNode) {
+    this.tactics.push(tacticNode);
+}
+
+/*
+ * [resetWith] resets a goal node with an original goal response.
+ */
+
+GoalNode.prototype.resetWith = function(newGoal) {
+    var goalTerm = extractGoal(newGoal.gGoal);
+    this.hyps = _(newGoal.gHyps).map(extractHypothesis).value();
+    this.gid = newGoal.gId;
+    this.goalTerm = goalTerm;
+    this.goalString = showTermText(goalTerm);
+    this.tacticGroups =
+        [new TacticGroupNode(this.proofTree, this, userTacticsGroupName)]
+    ;
+    this.tacticIndex = 0;
 }

@@ -1893,8 +1893,11 @@ function lectureTactics(pt) {
     var curNames = _(curHyps).union(namesPossiblyInScope.reverse());
 
     var res = [
-        // first, some terminators
-        "reflexivity", "discriminate", "assumption", "eassumption",
+
+        makeGroup(
+            "terminators",
+            ["reflexivity", "discriminate", "assumption", "eassumption",]
+        ),
 
         makeGroup(
             "autos",
