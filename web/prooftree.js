@@ -89,7 +89,7 @@ function ProofTree(anchor, width, height, qedCallback,
             var viewChildren = node.getViewChildren();
             // in order to trick d3 into displaying tactics better add fake
             // children to tactic nodes that solve their goal
-            if (isTacticish(node) && node.getViewChildren() === []) {
+            if (isTacticish(node) && node.getViewChildren().length === 0) {
                 return [{ 'id' : _.uniqueId(), 'type': 'fake' }];
             }
             return viewChildren;
@@ -978,7 +978,7 @@ ProofTree.prototype.update = function(callback) {
     // now get rid of the fake nodes used for layout
     _(nodes)
         .each(function(node) {
-            if (isTacticish(node) && node.getViewChildren() === []) {
+            if (isTacticish(node) && node.getViewChildren().length === 0) {
                 node.children = [];
             }
         });
@@ -3378,7 +3378,7 @@ GoalNode.prototype.getViewChildren = function() {
         .filter(function(group) { return (group.tactics.length > 0); })
         .value()
     ;
-    if (nonEmptyTacticGroups === []) { return []; }
+    if (nonEmptyTacticGroups.length === 0) { return []; }
     if (this.isCollapsed()) {
         return (
             this.isCurNodeAncestor()
@@ -3391,7 +3391,7 @@ GoalNode.prototype.getViewChildren = function() {
 
 TacticNode.prototype.getViewChildren = function() {
     if (this.isSolved()) { return []; }
-    if (this.goals === []) { return []; }
+    if (this.goals.length === 0) { return []; }
     if (this.isCollapsed()) {
         return (
             this.isCurNodeAncestor()
@@ -3404,10 +3404,10 @@ TacticNode.prototype.getViewChildren = function() {
 
 TacticGroupNode.prototype.getViewChildren = function() {
     if (this.isSolved()) { return []; }
-    if (this.tactics === []) { return []; }
+    if (this.tactics.length === 0) { return []; }
     var focusedTactic = this.tactics[this.tacticIndex];
     var uncollapsedViewChildren = focusedTactic.getViewChildren();
-    if (uncollapsedViewChildren === []) { return []; }
+    if (uncollapsedViewChildren.length === 0) { return []; }
     if (this.isCollapsed()) {
         return (
             this.isCurNodeAncestor()
@@ -3425,19 +3425,19 @@ TacticGroupNode.prototype.getViewChildren = function() {
 
 GoalNode.prototype.getFocusedChild = function() {
     var viewChildren = this.getViewChildren();
-    if (viewChildren === []) { return undefined; }
+    if (viewChildren.length === 0) { return undefined; }
     return viewChildren[this.tacticIndex];
 }
 
 TacticNode.prototype.getFocusedChild = function() {
     var viewChildren = this.getViewChildren();
-    if (viewChildren === []) { return undefined; }
+    if (viewChildren.length === 0) { return undefined; }
     return viewChildren[this.goalIndex];
 }
 
 TacticGroupNode.prototype.getFocusedChild = function() {
     var viewChildren = this.getViewChildren();
-    if (viewChildren === []) { return undefined; }
+    if (viewChildren.length === 0) { return undefined; }
     return viewChildren[this.tactics[this.tacticIndex].goalIndex];
 }
 
@@ -3510,7 +3510,7 @@ Node.prototype.makeFocusedTwoGenerations = function() {
  */
 
 TacticGroupNode.prototype.getFocusedTactic = function() {
-    if (this.tactics === []) { return undefined; }
+    if (this.tactics.length === 0) { return undefined; }
     return this.tactics[this.tacticIndex];
 }
 
