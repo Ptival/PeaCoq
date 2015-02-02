@@ -563,10 +563,8 @@ function getResponseUnfocused(response) {
  * @return <Promise>
  */
 ProofTree.prototype.runUserTactic = function(t) {
-    alert("TODO: fix runUserTactic");
-    /*
     var self = this;
-    var nodeToAttachTo = this.curNode;
+    var groupToAttachTo = this.curNode.getUserTacticsGroup();
     // need to get the status before so that we figure out whether the goal was
     // solved, if only coqtop would tell us...
     var beforeResponse;
@@ -581,23 +579,22 @@ ProofTree.prototype.runUserTactic = function(t) {
                 var unfocusedAfter = getResponseUnfocused(response);
                 var newChild = new TacticNode(
                     self,
-                    nodeToAttachTo,
+                    groupToAttachTo,
                     t,
                     (_.isEqual(unfocusedAfter, unfocusedBefore))
                         ? response.rGoals.focused
                         : []
                 );
-                nodeToAttachTo.userTactics.unshift(newChild);
-                nodeToAttachTo.focusIndex = 0;
+                groupToAttachTo.tactics.unshift(newChild);
+                groupToAttachTo.tacticIndex = 0;
                 self.update();
-                return newChild;
+                self.click(groupToAttachTo);
             } else {
-                throw response;
-                //console.log("Bad response for tactic", t, response);
+                // TODO: not use alert
+                alert(response.rResponse.contents);
             }
         })
         .catch(outputError);
-    */
 }
 
 /*
@@ -1839,7 +1836,12 @@ ProofTree.prototype.shiftNextGoal = function(n) {
     }
 }
 
+// TODO: make this a method of [GoalNode] and [TacticGroupNode] only!
 ProofTree.prototype.click = function(d, remember, callback) {
+
+    if (isTactic(d)) {
+        throw d;
+    }
 
     var self = this;
 
@@ -2093,7 +2095,7 @@ When arriving to a goal from a tactic or tacticgroup, the tactic's goals should 
                         ;
                     }
 
-                    throw dst;
+                    throw ['navigateTo', dst];
 
                 } else { // going down
                     // hide sibling tactic nodes
@@ -2117,7 +2119,7 @@ When arriving to a goal from a tactic or tacticgroup, the tactic's goals should 
                         var tactic = dst.getFocusedTactic();
                         return asyncQuery(tactic.tactic);
                     } else {
-                        throw dst;
+                        throw ['navigateTo', dst];
                     }
                 }
             };
@@ -2135,7 +2137,7 @@ When arriving to a goal from a tactic or tacticgroup, the tactic's goals should 
 
 function isGoal(node) {
     if (node === undefined) {
-        throw node;
+        throw ['isGoal', node];
     }
     return node.type === "goal";
 }
@@ -2285,7 +2287,7 @@ ProofTree.prototype.keydownHandler = function() {
             } else if (isTacticish(curNode)) { // do the same as without Shift
                 this.shiftPrevGoal(curNode);
             } else {
-                throw curNode;
+                throw ['keydownHandler', curNode];
             }
         } else {
             if (isGoal(curNode)) {
@@ -2293,7 +2295,7 @@ ProofTree.prototype.keydownHandler = function() {
             } else if (isTacticish(curNode)) {
                 this.shiftPrevGoal(curNode);
             } else {
-                throw curNode;
+                throw ['keydownHandler', curNode];
             }
         }
         break;
@@ -2307,7 +2309,7 @@ ProofTree.prototype.keydownHandler = function() {
             } else if (isTacticish(curNode)) { // do the same as without Shift
                 this.shiftNextGoal(curNode);
             } else {
-                throw curNode;
+                throw ['keydownHandler', curNode];
             }
         } else {
             if (isGoal(curNode)) {
@@ -2315,7 +2317,7 @@ ProofTree.prototype.keydownHandler = function() {
             } else if (isTacticish(curNode)) {
                 this.shiftNextGoal(curNode);
             } else {
-                throw curNode;
+                throw ['keydownHandler', curNode];
             }
         }
         break;
@@ -2448,18 +2450,12 @@ ProofTree.prototype.partialProofFrom = function(t, indentation) {
                             })
                         ;
                         if (existingTactic !== undefined) {
-                            self.click(existingTactic);
+                            existingTactic.makeFocused();
+                            self.click(existingTactic.parent);
                             return;
                         } else {
                             // otherwise, need to run the tactic
-                            self.runUserTactic(tactic)
-                                .then(function(newNode) {
-                                    self.click(newNode);
-                                })
-                                .catch(function(error) {
-                                    // TODO: not use alert
-                                    alert(error.rResponse.contents);
-                                });
+                            self.runUserTactic(tactic);
                         }
 
                     })
@@ -3232,7 +3228,7 @@ function debugStatus() {
 
 // specialized version of console.log, because JS is stupid
 function outputError(error) {
-    console.log(error.stack);
+    console.log(error, error.stack);
 }
 
 function delayPromise(time) {
@@ -3452,13 +3448,11 @@ TacticGroupNode.prototype.getFocusedChild = function() {
 
 GoalNode.prototype.setFocusedChild = function(child) {
     this.tacticIndex = _(this.tacticGroups)
-        .filter(function(g) {
-            return (g.tactics.length > 0);
-        })
+        .filter(function(group) { return (group.tactics.length > 0); })
         .findIndex(function(node) { return node.id === child.id; })
     ;
     if (this.tacticIndex === -1) {
-        throw this;
+        throw ['GoalNode.setFocusedChild', this];
     }
 }
 
@@ -3477,10 +3471,10 @@ TacticGroupNode.prototype.setFocusedChild = function(child) {
             .findIndex(function(tactic) { return tactic.id === child.id; })
         ;
         if (this.tacticIndex === -1) {
-            throw this;
+            throw ['TacticGroupNode.setFocusedChild', this];
         }
     } else {
-        throw child;
+        throw ['TacticGroupNode.setFocusedChild', child];
     }
 }
 
@@ -3578,4 +3572,17 @@ GoalNode.prototype.resetWith = function(newGoal) {
         [new TacticGroupNode(this.proofTree, this, userTacticsGroupName)]
     ;
     this.tacticIndex = 0;
+}
+
+/*
+ * [getUserTacticsGroup] returns the user tactics group of a [GoalNode].
+ */
+
+GoalNode.prototype.getUserTacticsGroup = function() {
+    // for now, it should always be at position 0
+    var userTacticsGroup = this.tacticGroups[0];
+    if (userTacticsGroup.name !== userTacticsGroupName) {
+        throw ['getUserTacticsGroup', this];
+    }
+    return userTacticsGroup;
 }
