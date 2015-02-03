@@ -1,7 +1,6 @@
 var highlightingDelay = 1000; // milliseconds
 
 var processing = false;
-var prooftree = undefined;
 var nbsp = "\u00A0";
 var zwsp = "\u200B";
 var namesPossiblyInScope = [];
@@ -314,6 +313,7 @@ function resize() {
     // careful, there are many <body> when using proof tree!
     $("html > body").height(windowHeight);
     var height = windowHeight - $("#toolbar").height();
+    height = Math.floor(height / 2);
     $("#editor").css("height", height);
     $("#coqtop").css("height", height);
     $("#prooftree").css("height", height);
@@ -321,7 +321,9 @@ function resize() {
     $("svg").css("height", height);
     // TODO: fix height bug
     var width = $(window).width();
-    if (prooftree !== undefined) { prooftree.resize($(window).width(), height); }
+    if (activeProofTree !== undefined) {
+        activeProofTree.resize($(window).width(), height);
+    }
 }
 
 function onLoad(text) {
@@ -330,9 +332,10 @@ function onLoad(text) {
 
     asyncLog("LOAD " + text);
 
-    $("#editor").empty().css("display", "");
-    $("#coqtop").empty().css("display", "");
-    $("#prooftree").empty().css("display", "none");
+    $("#editor").empty();//.css("display", "");
+    $("#coqtop").empty();//.css("display", "");
+    $("#prooftree").empty();//.css("display", "none");
+    activeProofTree = undefined;
 
     resetEditorWith(text);
 
@@ -681,6 +684,7 @@ function updateCoqtopPane(direction, response) {
         break;
     };
 
+    /*
     // also, enable/disable the button depending on whether we are in proof mode
     asyncStatus()
         .then(function(status) {
@@ -711,6 +715,7 @@ function updateCoqtopPane(direction, response) {
 
         })
     ;
+    */
 
 }
 
@@ -736,9 +741,12 @@ function highlight() {
     rangy.restoreSelection(sel);
 }
 
-function undoCallback(response) {
+function undoCallback(undone, response) {
     switch(response.rResponse.tag) {
     case "Good":
+        if (activeProofTree !== undefined) {
+            activeProofTree.onUndo(undone, response);
+        }
         var stepsToRewind = + response.rResponse.contents[0];
         //console.log("Rewinding additional " + stepsToRewind + " steps");
         while (stepsToRewind-- > 0) {
@@ -757,6 +765,7 @@ function undoCallback(response) {
     updateCoqtopPane(goingUp, response);
 }
 
+/*
 function tryProcessing(callback) {
 
     if (processing) { return; }
@@ -778,42 +787,16 @@ function tryProcessing(callback) {
     pweSetLockedPart("proving", proving);
     //highlight();
 
-    // sometimes, a leftover \n stays in the #provwill area, remove it
-    /*
-    if($("#provwill").text().trim === "") {
-        $("#provwill").text("");
-    }
-    */
     asyncLog("PROVERDOWN " + proving);
     // process this piece, then process the rest
     processing = true;
     asyncQuery(proving).then(function(response) {
-        processing = false;
-        switch(response.rResponse.tag) {
-        case "Good":
-            proved = proved + proving;
-            proving = "";
-            pweSetLockedPart("proved", proved);
-            pweSetLockedPart("proving", proving);
-            // TODO: might be bothersome to do that at every step?
-            updateCoqtopPane(goingDown, response);
-            //repositionCaret();
-            tryProcessing(callback); // if there is more to process
-            break;
-        case "Fail":
-            var unlocked = pweGetUnlocked();
-            pweSetUnlocked(proving + provwill + unlocked);
-            proving = "";
-            pweSetLockedPart("proving", proving);
-            provwill = "";
-            pweSetLockedPart("provwill", provwill);
-            repositionCaret();
-            updateCoqtopPane(goingDown, response);
-            break;
-        };
+        alert("TODO");
+        throw "TODO";
     });
 
 }
+*/
 
 /*
   Returns the position of the caret w.r.t. the editor: this includes all the
@@ -828,8 +811,38 @@ function getCaretPos() {
 }
 
 /*
-  This should simply move the next line from the #unlocked area to the #provwill
-  area, then trigger a processing.
+ * Adds [command] to [provwill], making sure that it is separated from the
+ * previous text. Returns how many characters were added for safety.
+ */
+function safeAddToProvwill(command) {
+    var returnValue = 0;
+    // if the command does not start with a space, and the last thing did not
+    // end with a newline or space, let's make some room
+    var stringBefore = proved + proving + provwill;
+    if (stringBefore !== '') {
+        var characterBefore = stringBefore[stringBefore.length - 1];
+        var characterAfter = command[0];
+        if (characterBefore !== ' ' && characterBefore !== '\n'
+            && characterAfter !== ' ' && characterAfter !== '\n') {
+            provwill += ' ';
+            returnValue = 1;
+        }
+    }
+    provwill += command;
+    pweSetLockedPart('provwill', provwill);
+    return returnValue;
+}
+
+/*
+ * [proverDown] should trigger the processing of the next command in the buffer.
+ * An invariant of the editor should be that text present in the buffer should
+ * not disappear as it is being processed. Therefore, we cannot have the text be
+ * put in the [provwill] area on callback, and have to move it here. This also
+ * means that when the proof tree wants to run a command, it needs to put the
+ * command in the [provwill] area as the callback should not do it.
+ * [proverDown] returns the number of characters it added to the command
+ * processed, so that [proverToCaret] can correctly adjust the destination index
+ * when [proverDown] decides to add a space in front of a command.
 */
 function proverDown() {
     var unlocked = pweGetUnlocked();
@@ -837,20 +850,10 @@ function proverDown() {
     if (index == 0) { return; }
     var pieceToProcess = unlocked.substring(0, index);
     unlocked = unlocked.substring(index);
-    // if there is no spacing before the command to be inserted, add one!
-    var stringBefore = proved + proving + provwill;
-    if (stringBefore !== '') {
-        var characterBefore = stringBefore[stringBefore.length - 1];
-        var characterAfter = pieceToProcess[0];
-        if (characterBefore !== ' ' && characterBefore !== '\n'
-            && characterAfter !== ' ' && characterAfter !== '\n') {
-            provwill += ' ';
-        }
-    }
-    provwill += pieceToProcess;
-    pweSetLockedPart("provwill", provwill);
     pweSetUnlocked(unlocked);
-    tryProcessing(repositionCaret);
+    var returnValue = safeAddToProvwill(pieceToProcess);
+    asyncQuery(pieceToProcess);
+    return returnValue;
 }
 
 function proverRewindToIndex(index) {
@@ -862,30 +865,32 @@ function proverRewindToIndex(index) {
 }
 
 function proverToCaret () {
-    if (processing) { return; }
-    var index = getCaretPos();
-    //var proved = $("#proved").text();
-    //var processing = $("#proving").text();
-    //var provwill = $("#provwill").text();
+    var caretIndex = getCaretPos();
+
+    var locked = proved + proving + provwill;
     var unlocked = pweGetUnlocked();
+
     // the caret is in the proved region, undo actions
-    if (index < proved.length) {
-        proverRewindToIndex(index);
-    } else {
-        index -= proved.length + proving.length + provwill.length + 1;
-        // if the caret is in the #proving or #provwill, do nothing
-        if (index <= 0) { return; }
-        // if the character at index is not a delimiter, process to the next one
-        if (!_(delimiters).contains(unlocked[index-1])) {
-            index += next(unlocked.substring(index));
+    if (caretIndex < proved.length) {
+        proverRewindToIndex(caretIndex);
+    } else if (locked.length <= caretIndex) { // can't jump in proving/provwill
+
+        // if the user jumped some spaces after a period, we want to jump to
+        // that period, unless the thing has already been processed, to mimic
+        // ProofGeneral
+        var editorText = locked + zwsp + unlocked;
+        while (_([' ', '\n']).contains(editorText[caretIndex-1])) {
+            caretIndex--;
         }
-        var pieceToProcess = unlocked.substring(0, index);
-        provwill = provwill + pieceToProcess;
-        pweSetLockedPart("provwill", provwill);
-        pweSetUnlocked(unlocked.substring(index));
-        asyncLog("PROVERDOWN " + pieceToProcess);
-        repositionCaret();
-        tryProcessing();
+
+        var currentIndex;
+        do {
+            // bump the index if [proverDown] adds characters to the buffer
+            caretIndex += proverDown();
+            // + 1 because of zwsp
+            currentIndex = proved.length + proving.length + provwill.length + 1;
+        } while (currentIndex < caretIndex);
+
     }
 }
 
@@ -895,7 +900,6 @@ function proverToCaret () {
   more steps than that though, in which case we want to mark them undone too.
 */
 function proverUp () {
-    if (processing) { return; } // TODO: could prevent more processing?
     var index = 0;
     var unlocked = pweGetUnlocked();
     if (proved != "") { index = prev(proved); }
@@ -907,7 +911,7 @@ function proverUp () {
         asyncLog("PROVERUP " + pieceToUnprocess);
         repositionCaret();
         return asyncUndo()
-            .then(undoCallback)
+            .then(_.partial(undoCallback, pieceToUnprocess))
         ;
     } else {
         return Promise.resolve();
@@ -990,9 +994,9 @@ function getCaretVerticalPosition() {
 
 function peekAtEditorUI() {
 
-    $("#editor").css("display", "");
-    $("#coqtop").css("display", "");
-    $("#prooftree").css("display", "none");
+    // $("#editor").css("display", "");
+    // $("#coqtop").css("display", "");
+    // $("#prooftree").css("display", "none");
     $("#peek-button").css("display", "none");
     $("#unpeek-button").css("display", "");
     $("#editor").focus();
@@ -1001,9 +1005,9 @@ function peekAtEditorUI() {
 
 function unpeekAtEditorUI() {
 
-    $("#editor").css("display", "none");
-    $("#coqtop").css("display", "none");
-    $("#prooftree").css("display", "");
+    // $("#editor").css("display", "none");
+    // $("#coqtop").css("display", "none");
+    // $("#prooftree").css("display", "");
     $("#peek-button").css("display", "");
     $("#unpeek-button").css("display", "none");
     $("#prooftree").focus();
@@ -1013,24 +1017,24 @@ function unpeekAtEditorUI() {
 
 function switchToProofUI() {
 
-    $("#editor").css("display", "none");
-    $("#coqtop").css("display", "none").text("CURRENTLY IN PROOF TREE MODE");
-    $("#prooftree").css("display", "");
+    // $("#editor").css("display", "none");
+    // $("#coqtop").css("display", "none").text("CURRENTLY IN PROOF TREE MODE");
+    // $("#prooftree").css("display", "");
     $("#prover-down").attr("disabled", true);
     $("#prover-up").attr("disabled", true);
     $("#prover-caret").attr("disabled", true);
     $("#prooftree-button").css("display", "none");
     $("#noprooftree-button").css("display", "");
     $("#peek-button").css("display", "");
-    $("#editor").attr("contenteditable", false);
+    //$("#editor").attr("contenteditable", false);
 
 }
 
 function switchToEditorUI() {
 
-    $("#editor").css("display", "");
-    $("#coqtop").css("display", "").text("");
-    $("#prooftree").css("display", "none");
+    // $("#editor").css("display", "");
+    // $("#coqtop").css("display", "").text("");
+    // $("#prooftree").css("display", "none");
     $("#prover-down").attr("disabled", false);
     $("#prover-up").attr("disabled", false);
     $("#prover-caret").attr("disabled", false);
@@ -1038,7 +1042,7 @@ function switchToEditorUI() {
     $("#noprooftree-button").css("display", "none");
     $("#peek-button").css("display", "none");
     $("#unpeek-button").css("display", "none");
-    $("#editor").attr("contenteditable", true);
+    //$("#editor").attr("contenteditable", true);
 
 }
 
@@ -1047,21 +1051,17 @@ function enterProofTree() {
     // do this as early as possible to avoid races
     switchToProofUI();
 
-    asyncStatus()
-        .then(function(status) {
+    onProofTreeQuery('Proof.');
+    asyncQuery('Proof.')
+        .then(function() { onProofTreeQuery('{'); })
+        .then(function() { return asyncQuery('{') })
+        .then(function(response) {
 
-            var labelBeforeProofTree = status.label;
-
-            $("#noprooftree-button")
-                .unbind("click")
-                .on("click", function() { exitProofTree(labelBeforeProofTree); })
-            ;
-
-            prooftree = new ProofTree(
+            activeProofTree = new ProofTree(
                 $("#prooftree")[0],
                 $(window).width(),
-                $(window).height() - $("#toolbar").height(),
-                _.partial(onQed, labelBeforeProofTree),
+                Math.floor(($(window).height() - $("#toolbar").height()) / 2),
+                onQed,
                 function() { $("#loading").css("display", ""); },
                 function() { $("#loading").css("display", "none"); }
             );
@@ -1086,9 +1086,10 @@ function enterProofTree() {
             var theoremStatement = proved.substring(position);
             // get rid of anything after the statement, like "Proof."
             theoremStatement = theoremStatement.substring(0, next(theoremStatement));
-            prooftree.newAlreadyStartedTheorem(
+
+            activeProofTree.newAlreadyStartedTheorem(
                 theoremStatement,
-                status.response,
+                response,
                 lectureTactics
             );
 
@@ -1098,47 +1099,14 @@ function enterProofTree() {
 
 }
 
-function exitProofTree(labelBeforeProofTree) {
+function exitProofTree() {
 
     switchToEditorUI();
-
-    var pt = activeProofTree;
-    var partialProof = pt.partialProofFrom(pt.rootNode, 1);
-    // post-process so that text looks rad
-    partialProof.find("div").prepend("\n");
-    partialProof.find("textarea").replaceWith("admit.");
-    partialProof.find("button").remove();
-
-    // make sure there is a character to go right of
-    var unlocked = pweGetUnlocked();
-    if (unlocked === "") { pweSetUnlocked("\n"); }
-    repositionCaret();
-    pweMoveRight(); // so that we are past the zwsp
-
-    var partialProofText = pweSanitizeInput(partialProof.text());
-    // if the partial proof has anything interesting, save it in a comment
-    if (partialProofText !== "admit.") {
-        insertAtSelection(
-            "(*\n"
-                + partialProofText
-                + "\n*)\n"
-        );
-    }
 
     $("#prooftree").empty();
     activeProofTree = undefined;
 
     asyncLog("EXITPROOFTREE");
-
-    // revert all the steps done in proof mode, to keep the labels clean
-    asyncStatus()
-        .then(function(newStatus) {
-            return asyncRequest(
-                "rewind",
-                newStatus.label - labelBeforeProofTree
-            );
-        })
-    ;
 
 }
 
@@ -1151,46 +1119,17 @@ function getLastProved() {
  * TODO: now that ProofTree does not undo, no need to backtract and redo.
  * However, we now need to insert the 'Proof.' keyword.
  */
-function onQed(labelBeforeProofTree, prooftree) {
-
-    var lastCommand = getLastProved();
-    var textToAppend = (lastCommand === "Proof.") ? "\n" : "\nProof.\n";
-    var proof = PT.pprint(prooftree.proof(), 1, " ", "\n");
-    textToAppend += proof;
-    textToAppend += "\nQed."; // invariant: #proved ends on a period
-    proved += textToAppend;
-    pweSetLockedPart("proved", proved);
+function onQed(prooftree) {
 
     switchToEditorUI();
 
-    // first, revert all the steps done in proof mode, to keep the labels clean
-    asyncStatus()
-        .then(function(newStatus) {
-            return asyncRequest(
-                "rewind",
-                newStatus.label - labelBeforeProofTree
-            );
-        })
-        .then(function(){
-            // since we are going to write Proof., we must make sure it is sent
-            return (lastCommand !== "Proof.")
-                ? asyncQuery("Proof.")
-                : Promise.resolve()
-            ;
-        })
-    // now we can replay the actuall proof and conclude
-        .then(function() { return prooftree.replay(); })
-        .then(function() { return asyncQuery("Qed.") })
-        .then(function(response) {
-            updateCoqtopPane(goingDown, response);
-            $("#prooftree").empty();
-            activeProofTree = undefined; // bad attempt at GC?
-            repositionCaret();
-        })
-        .catch(function(error) {
-            console.log(error);
-        })
-    ;
+    var unlocked = pweGetUnlocked();
+    pweSetUnlocked('\nQed.' + unlocked);
+    proverDown();
+
+    $("#prooftree").empty();
+    activeProofTree = undefined; // bad attempt at GC?
+    repositionCaret();
 
 }
 
@@ -2011,5 +1950,162 @@ function lectureTactics(pt) {
             })
             .value()
     );
+
+}
+
+/*
+ * For the following callbacks, the assumption is that they may be triggered
+ * either as a response from the editor asking for some request to be performed,
+ * or from the proof tree asking for some request to be performed. As a result,
+ * things that should happen only in one of these cases should be done before
+ * the request is sent. For instance:
+ * - when the editor asks for a command to be performed, it should clear it from
+ *   the unlocked area, as this does not happen for commands sent from the proof
+ *   tree mode ;
+ * - that's all I can think of right now...
+ */
+
+function editorOnRequestTriggered(requestType, request) {
+    switch (requestType) {
+    case 'query':
+        var index = next(provwill);
+        proving = provwill.substring(0, index);
+        provwill = provwill.substring(index);
+        if (proving.trim() !== request.trim()) {
+            console.log(
+                'request triggered was', request,
+                'but was expecting', proving
+            );
+        }
+        pweSetLockedPart('provwill', provwill);
+        pweSetLockedPart("proving", proving);
+        break;
+    }
+}
+
+function editorOnResponse(requestType, request, response) {
+    switch (requestType) {
+    case 'query':
+        switch(response.rResponse.tag) {
+
+        case 'Good':
+            if (proving.trim() !== request.trim()) {
+                console.log(
+                    'request response was for', request,
+                    'but was expecting for', proving
+                );
+                return;
+            }
+            proved += proving;
+            proving = '';
+            pweSetLockedPart('proved', proved);
+            pweSetLockedPart('proving', proving);
+            updateCoqtopPane(goingDown, response);
+            asyncStatus()
+                .then(function(status) {
+                    if (status.proving && request !== 'Proof.') {
+                        enterProofTree();
+                    }
+                });
+            break;
+
+        case 'Fail':
+            // here, if the request originated from the proof tree, it sucks to
+            // dump it back in the editor, but this will be optimization for
+            // later...
+            var unlocked = pweGetUnlocked();
+            pweSetUnlocked(proving + provwill + unlocked);
+            proving = '';
+            pweSetLockedPart('proving', proving);
+            provwill = "";
+            pweSetLockedPart('provwill', provwill);
+            repositionCaret();
+            updateCoqtopPane(goingDown, response);
+            break;
+        };
+        break;
+
+    }
+}
+
+/*
+ * If [request] is the next thing in the unlocked region, instead of adding the
+ * [request] to [provwill], we will add the next thing instead. Returns [true]
+ * if it did that.
+ */
+function removeRequestFromUnlocked(request) {
+    var unlocked = pweGetUnlocked();
+    var nextIndex = next(unlocked);
+    var nextUnlocked = unlocked.substring(0, nextIndex);
+    if (nextUnlocked.trim() !== request.trim()) { return false; }
+    var unlocked = unlocked.substring(nextIndex);
+    pweSetUnlocked(unlocked);
+    safeAddToProvwill(nextUnlocked);
+    return true;
+}
+
+/*
+ * Adds [request] to the buffer so that [editorOnRequestTriggered] and
+ * [editorOnResponse] see the right text.
+ */
+function onProofTreeQuery(request) {
+
+    /*
+      At this point, the proof tree wants the request to be ran immediately. A
+      few things can happen:
+
+      - the proof tree wants to run a focusing command, and the provwill section
+      is not empty and does not start with that command
+      -> add the request to the beginning of provwill
+
+      - the proof tree wants to run a focusing command, and the provwill section
+      is not empty and starts with that command
+      -> do nothing
+
+      - the proof tree wants to run a focusing command, and the provwill section
+      is empty, but the unlocked section does not start with that command
+      -> add the request to the provwill section
+
+      - the proof tree wants to run a focusing command, and the provwill section
+      is empty, but the unlocked section starts with that command
+      -> move the request from the unlocked to the provwill section
+     */
+
+    var requestWasPresent = removeRequestFromUnlocked(request)
+
+    if (!requestWasPresent) {
+        switch (request) {
+        case '{':
+        case '}':
+            provwill += ' ' + request;
+            break;
+        default:
+            provwill += '\n' + request;
+            break;
+        }
+        pweSetLockedPart('provwill', provwill);
+    }
+
+    // TODO: if the request is a focus/unfocus, and the next thing in the
+    // unlocked region is that same token, just use the token as the thing to
+    // provwill
+
+    /*
+    var unlocked = pweGetUnlocked();
+
+    if (!requestWasPresent) {
+        switch (request) {
+        case 'Qed.':
+            pweSetUnlocked('\n' + unlocked);
+            break;
+        default:
+            pweSetUnlocked(' ' + unlocked);
+            break;
+        }
+    }
+    */
+
+    repositionCaret();
+    scrollViewToCaret();
 
 }

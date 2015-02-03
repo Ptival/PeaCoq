@@ -1,29 +1,86 @@
 var processingAsync = false; // TODO: scope this
 var asyncRequests = [];
 
+function delayPromise(time) {
+    return function(result) {
+        return new Promise(function(onFulfilled, onRejected) {
+            window.setTimeout(function() { onFulfilled(result); }, time);
+        });
+    }
+}
+
 /*
   This is the only function which does not return a promise. It is not to be
   called directly, use one of the async* methods below.
 */
 function processAsyncRequests() {
-    if (processingAsync || _(asyncRequests).isEmpty()) { return; }
+
+    //console.log("------------------------------------------------------");
+    //console.log("TRYING TO PROCESS");
+
+    if (processingAsync) {
+        //console.log("NOT PROCESSING BECAUSE WE ARE ALREADY PROCESSING");
+        return;
+    }
+
+    if (_(asyncRequests).isEmpty()) {
+        //console.log("NO MORE REQUESTS TO PROCESS");
+        return;
+    }
+
     var request = asyncRequests.shift();
     var r = request.url;
     var q = request.query;
     var h = request.callback;
     if (r === 'query') { console.log(q); }
     processingAsync = true;
+    //console.log("+ LOCKING");
+    //console.log("TRIGGERING", r, q);
+    editorOnRequestTriggered(r, q);
+    if (activeProofTree !== undefined) {
+        activeProofTree.onRequestTriggered(r, q);
+    }
     var beforeTime = Date.now();
     $.ajax({
         type: 'POST',
         url: r,
         data: {query : q},
         async: true,
+        error: function() {
+            processingAsync = false;
+            alert("Server did not respond!");
+        },
         success: function(response) {
             var afterTime = Date.now();
             processingAsync = false;
+            //console.log("- UNLOCKING");
+            //console.log("RESPONDING", r, q, response);
+            editorOnResponse(r, q, response);
+            if (activeProofTree !== undefined) {
+                activeProofTree.onResponse(r, q, response);
+            }
+
+            // looks like we should keep processing regardless
             processAsyncRequests();
+
+            /*
+            switch (response.rResponse.tag) {
+            case 'Good':
+                // start processing the next request
+                processAsyncRequests();
+                break;
+            case 'Fail':
+                // THIS SEEMS LIKE A BAD IDEA AS IT FLUSHES VALID COMMANDS WHEN
+                // QUERYUNDOES FAIL
+                // flush all further requests
+                // console.log(r, q, "failed, flushing async requests");
+                // asyncRequests = [];
+                break;
+            }
+            */
+
             h(response);
+
         }
     });
 }
@@ -32,7 +89,10 @@ function processAsyncRequests() {
  *  @return {Promise}
  */
 function asyncRequest(r, q) {
+    //console.log("ASYNCREQUEST", r, q);
+    // so far, no need for activeProofTree.onRequest
     return new Promise(function(onFulfilled, onRejected) {
+        //console.log("QUEUEING", r, q);
         asyncRequests.push({
             "url": r,
             "query": q,
@@ -47,8 +107,8 @@ function asyncRequest(r, q) {
  */
 function asyncQuery(q)        { return asyncRequest('query', q); }
 function asyncQueryAndUndo(q) { return asyncRequest('queryundo', q); }
-function asyncUndo()          { return asyncRequest('undo', undefined); }
-function asyncRevision()      { return asyncRequest('revision', undefined); }
+function asyncUndo()          { return asyncRequest('undo', ''); }
+function asyncRevision()      { return asyncRequest('revision', ''); }
 function asyncRewind(delta) {
     console.log('Rewind', delta);
     return asyncRequest('rewind', delta);

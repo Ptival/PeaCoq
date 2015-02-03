@@ -26,7 +26,7 @@ $(document).ready(function() {
 var diffRed   = "#EE8888";
 var diffGreen = "#88EE88";
 var diffBlue  = "#8888EE";
-var diffOpacity = 0.8;
+var diffOpacity = 0.75;
 var redStroke   = diffRed;
 var greenStroke = diffGreen;
 var blueStroke  = diffBlue;
@@ -87,9 +87,12 @@ function ProofTree(anchor, width, height, qedCallback,
         .children(function(node) {
             if (node.type === 'fake') { return []; }
             var viewChildren = node.getViewChildren();
+            if (viewChildren === undefined) {
+                throw node;
+            }
             // in order to trick d3 into displaying tactics better add fake
             // children to tactic nodes that solve their goal
-            if (isTacticish(node) && node.getViewChildren().length === 0) {
+            if (isTacticish(node) && viewChildren.length === 0) {
                 return [{ 'id' : _.uniqueId(), 'type': 'fake' }];
             }
             return viewChildren;
@@ -109,7 +112,7 @@ function ProofTree(anchor, width, height, qedCallback,
     d3.select("body")
         .on("keydown", function() {
             // capture events only if we are in proof mode
-            if ($("#prooftree").css("display") !== "none") {
+            if ($(":focus").size() === 0) {
                 self.keydownHandler();
             }
         })
@@ -565,25 +568,14 @@ function getResponseUnfocused(response) {
 ProofTree.prototype.runUserTactic = function(t) {
     var self = this;
     var groupToAttachTo = this.curNode.getUserTacticsGroup();
-    // need to get the status before so that we figure out whether the goal was
-    // solved, if only coqtop would tell us...
-    var beforeResponse;
-    return asyncStatus()
-        .then(function(status) {
-            beforeResponse = status.response;
-            return asyncQueryAndUndo(t);
-        })
+    return asyncQueryAndUndo(t)
         .then(function(response) {
             if (isGood(response)) {
-                var unfocusedBefore = getResponseUnfocused(beforeResponse);
-                var unfocusedAfter = getResponseUnfocused(response);
                 var newChild = new TacticNode(
                     self,
                     groupToAttachTo,
                     t,
-                    (_.isEqual(unfocusedAfter, unfocusedBefore))
-                        ? response.rGoals.focused
-                        : []
+                    response
                 );
                 groupToAttachTo.tactics.unshift(newChild);
                 groupToAttachTo.tacticIndex = 0;
@@ -607,14 +599,10 @@ ProofTree.prototype.runTactic = function(t, groupToAttachTo) {
     var parentGoal = getClosestGoal(groupToAttachTo);
     var parentGoalRepr = goalNodeUnicityRepr(parentGoal);
 
-    // need to get the status before so that we figure out whether the goal was
-    // solved, if only coqtop would tell us...
-    var beforeResponse;
-    return asyncStatus()
-        .then(function(status) {
-            beforeResponse = status.response;
-            return asyncQueryAndUndo(t);
-        })
+    // if we correctly stored the last response in [parentGoal], we don't need
+    // to query for status at this moment
+    var beforeResponse = parentGoal.response;
+    return asyncQueryAndUndo(t)
         .then(function(response) {
             if (isGood(response)) {
                 var unfocusedBefore = getResponseUnfocused(beforeResponse);
@@ -623,9 +611,7 @@ ProofTree.prototype.runTactic = function(t, groupToAttachTo) {
                     self,
                     groupToAttachTo,
                     t,
-                    (beforeResponse.rGoals.unfocused.length === response.rGoals.unfocused.length)
-                        ? response.rGoals.focused
-                        : []
+                    response
                 );
 
                 // only attach the newChild if it produces something
@@ -657,6 +643,55 @@ ProofTree.prototype.runTactic = function(t, groupToAttachTo) {
 
         })
         .catch(outputError);
+
+    // // need to get the status before so that we figure out whether the goal was
+    // // solved, if only coqtop would tell us...
+    // var beforeResponse;
+    // return asyncStatus()
+    //     .then(function(status) {
+    //         beforeResponse = status.response;
+    //         return asyncQueryAndUndo(t);
+    //     })
+    //     .then(function(response) {
+    //         if (isGood(response)) {
+    //             var unfocusedBefore = getResponseUnfocused(beforeResponse);
+    //             var unfocusedAfter = getResponseUnfocused(response);
+    //             var newChild = new TacticNode(
+    //                 self,
+    //                 groupToAttachTo,
+    //                 t,
+    //                 response
+    //             );
+
+    //             // only attach the newChild if it produces something
+    //             // unique from existing children
+    //             var newChildRepr = tacticNodeUnicityRepr(newChild);
+
+    //             var resultAlreadyExists =
+    //                 _(parentGoal.getTactics()).some(function(t) {
+    //                     return (tacticNodeUnicityRepr(t) === newChildRepr);
+    //                 })
+    //             ;
+
+    //             var tacticIsUseless =
+    //                 (newChild.goals.length === 1)
+    //                 && (goalNodeUnicityRepr(newChild.goals[0])
+    //                     === parentGoalRepr)
+    //             ;
+
+    //             if (!resultAlreadyExists && !tacticIsUseless) {
+    //                 groupToAttachTo.addTactic(newChild);
+    //                 self.update();
+    //             }
+
+    //         } else {
+
+    //             //console.log("Bad response for tactic", t, response);
+
+    //         }
+
+    //     })
+    //     .catch(outputError);
 
 }
 
@@ -819,10 +854,8 @@ ProofTree.prototype.hInit = function(response) {
         return false;
     }
 
-    var goal = response.rGoals.focused[0];
-
     // There should only be one goal at that point
-    this.rootNode = new GoalNode(this, undefined, goal, 0);
+    this.rootNode = new GoalNode(this, undefined, response, 0);
 
     // doesn't matter much when this is done, so no chaining
     asyncStatus()
@@ -969,6 +1002,10 @@ ProofTree.prototype.update = function(callback) {
 
     // shorter name, expected to stay constant throughout
     var curNode = this.curNode;
+
+    if (isTactic(curNode)) {
+        throw curNode;
+    }
 
     // if the viewpoint has been zoomed, cancel the zoom so that the computed
     // sizes are correct
@@ -1265,7 +1302,7 @@ ProofTree.prototype.update = function(callback) {
 
                     asyncLog("CLICK " + nodeString(d));
 
-                    self.click(d);
+                    d.click();
 
                 })
             ;
@@ -1423,6 +1460,7 @@ ProofTree.prototype.update = function(callback) {
                 .append("rect")
                 .classed("removed", true)
                 .attr("fill", diffRed)
+                .attr("opacity", diffOpacity)
             ;
 
             d.addedSelection =
@@ -1432,6 +1470,7 @@ ProofTree.prototype.update = function(callback) {
                 .append("rect")
                 .classed("added", true)
                 .attr("fill", diffGreen)
+                .attr("opacity", diffOpacity)
             ;
 
             // adding diffs for the hypotheses
@@ -1496,7 +1535,6 @@ ProofTree.prototype.update = function(callback) {
                             .append("path")
                             .attr("fill", diffGreen)
                             .attr("opacity", diffOpacity)
-                            .attr("stroke", "black")
                             .attr("stroke-width", 0)
                         ;
 
@@ -1506,8 +1544,8 @@ ProofTree.prototype.update = function(callback) {
                         d3this
                             .append("path")
                             .attr("fill", diffRed)
-                            .attr("stroke", redStroke)
                             .attr("opacity", diffOpacity)
+                            .attr("stroke-width", 0)
                         ;
 
                     } else {
@@ -1519,8 +1557,8 @@ ProofTree.prototype.update = function(callback) {
                             d3this
                                 .append("path")
                                 .attr("fill", diffBlue)
-                                .attr("stroke", blueStroke)
                                 .attr("opacity", diffOpacity)
+                                .attr("stroke-width", 0)
                             ;
 
                             var subdiff = spotTheDifferences(
@@ -1535,6 +1573,7 @@ ProofTree.prototype.update = function(callback) {
                                 .append("rect")
                                 .classed("removed", true)
                                 .attr("fill", diffRed)
+                                .attr("opacity", diffOpacity)
                             ;
 
                             diff.addedSelection =
@@ -1544,6 +1583,7 @@ ProofTree.prototype.update = function(callback) {
                                 .append("rect")
                                 .classed("added", true)
                                 .attr("fill", diffGreen)
+                                .attr("opacity", diffOpacity)
                             ;
 
                         }
@@ -1880,7 +1920,6 @@ ProofTree.prototype.click = function(d, remember, callback) {
                     self.solved(tactic);
                 }
             }
-            expand(d);
             self.update(callback);
         })
         .catch(outputError);
@@ -1894,7 +1933,6 @@ ProofTree.prototype.solved = function(n) {
     if (isTacticGroup(n)) {
         n.getFocusedTactic().solved = true;
     }
-    collapse(n);
     if (hasParent(n)) {
         this.navigateTo(n.parent, true)
             .then(function() {
@@ -1933,25 +1971,6 @@ ProofTree.prototype.childSolved = function(n) {
     }
 }
 
-function collapse(d) { d.collapsed = true; }
-
-function collapseChildren(d) {
-    _(d.children).forEach(collapse);
-}
-
-function expand(d) {
-    d.collapsed = false;
-    if (isGoal(d)) {
-        _(d.tacticGroups).each(expand);
-    } else if (isTacticGroup(d)) {
-        _(d.tactics).each(expand);
-    } else if (isTactic(d)) {
-        // nothing
-    } else {
-        throw d;
-    }
-}
-
 ProofTree.prototype.commonAncestor = function(n1, n2) {
     if (n1.id === this.rootNode.id || n2.id === this.rootNode.id) { return this.rootNode; }
     if (n1.id === n2.id) { return n1; }
@@ -1965,7 +1984,8 @@ ProofTree.prototype.commonAncestor = function(n1, n2) {
 }
 
 /*
-  Returns an array [n1, a, b, ..., z, n2] such that n1 -> a -> b -> ... -> z -> n2
+  Returns an array [n1, a, b, ..., z, n2]
+  such that n1 -> a -> b -> ... -> z -> n2
   is the shortest path from a to b in the tree
 */
 function path(n1, n2) {
@@ -2011,129 +2031,147 @@ function isTerminating(tactic) {
     return _.isEmpty(tactic.goals);
 }
 
+var navigateDefaultStrategy = {
+    "onGoingDownTacticGroup": function(dst) {
+        var tactic = dst.getFocusedTactic().tactic;
+        onProofTreeQuery(tactic);
+        return asyncQuery(tactic);
+    },
+};
+
 /*
  * @return <Promise>
  */
-ProofTree.prototype.navigateTo = function(dest, bubblingFromSolved) {
+// ProofTree.prototype.navigateTo = function(dest, bubblingFromSolved, strategy) {
 
-    var self = this;
+//     var self = this;
 
-    // if we are going to move, flush the worklist before anything happens
-    if (this.curNode.id !== dest.id) {
-        this.tacticsWorklist = [];
-    }
+//     if (strategy === undefined) { strategy = navigateDefaultStrategy; }
 
-    var p = path(this.curNode, dest);
-    // morally, q = [ [p0, p1], [p1, p2], ... ]
-    var q = _.zip(p, _(p).rest().value());
-    q.pop(); // remove the extra [p_last, undefined] at the end
+//     // if we are going to move, flush the worklist before anything happens
+//     if (this.curNode.id !== dest.id) {
+//         this.tacticsWorklist = [];
+//     }
 
-    // this will build a promise, trust me, I promise ;D
-    return _(q)
-    // building a list of functions return a promise
-        .map(function(elt) {
-            var src = elt[0];
-            var dst = elt[1];
-            var goingUp = src.depth > dst.depth;
+//     var p = path(this.curNode, dest);
+//     // morally, q = [ [p0, p1], [p1, p2], ... ]
+//     var q = _.zip(p, _(p).rest().value());
+//     q.pop(); // remove the extra [p_last, undefined] at the end
 
-            // this function must return a Promise
-            return function() {
-                if (goingUp) {
-                    collapseChildren(src);
-                    // when leaving a goal, hide its tactics
-                    if (isGoal(src)) { collapse(src); }
-                    /*
-  Here are the different cases:
-  tactic <- goal
-  tacticgroup <- goal
-  goal <- tactic
-  tacticgroup <- tactic
-  goal <- tacticgroup
+//     // this will build a promise, trust me, I promise ;D
+//     return _(q)
+//     // building a list of functions return a promise
+//         .map(function(elt) {
+//             var src = elt[0];
+//             var dst = elt[1];
+//             var goingUp = src.depth > dst.depth;
 
-When leaving a goal, it should be collapsed.
-When arriving to a tactic, it should be refreshed.
-When arriving to a goal from a tactic or tacticgroup, the tactic's goals should be reset.
-                    */
+//             // this function must return a Promise
+//             return function() {
+//                 if (goingUp) {
+//                     collapseChildren(src);
+//                     // when leaving a goal, hide its tactics
+//                     if (isGoal(src)) { collapse(src); }
+//                     /*
+//   Here are the different cases:
+//   tactic <- goal
+//   tacticgroup <- goal
+//   goal <- tactic
+//   tacticgroup <- tactic
+//   goal <- tacticgroup
 
-                    if (isGoal(dst)) {
-                        // if we are going up because a subgoal was proved, no backtracking
-                        if (bubblingFromSolved) {
-                            return Promise.resolve();
-                        }
+// When leaving a goal, it should be collapsed.
+// When arriving to a tactic, it should be refreshed.
+// When arriving to a goal from a tactic or tacticgroup, the tactic's goals should be reset.
+//                     */
 
-                        // otherwise, user abandoned a tactic, restore its original state
-                        var t = getTacticFromTacticish(src);
-                        t.refreshGoals();
+//                     if (isGoal(dst)) {
+//                         // if we are going up because a subgoal was proved, no backtracking
+//                         if (bubblingFromSolved) {
+//                             return Promise.resolve();
+//                         }
 
-                        // and backtrack
-                        return asyncStatus()
-                            .then(function(response) {
-                                return asyncRewind(response.label - dst.label);
-                            })
-                        ;
-                    }
+//                         // otherwise, user abandoned a tactic, restore its original state
+//                         var t = getTacticFromTacticish(src);
+//                         t.refreshGoals();
 
-                    if (isTacticish(dst)) {
-                        if (!bubblingFromSolved) {
-                            return Promise.resolve();
-                        }
+//                         // and backtrack
+//                         return asyncStatus()
+//                             .then(function(response) {
+//                                 return asyncRewind(response.label - dst.label);
+//                             })
+//                         ;
+//                     }
 
-                        return asyncStatus()
-                            .then(function(status) {
-                                var response = status.response;
-                                // Here, we update the unsolved goal nodes,
-                                // because existential variables might have been
-                                // resolved
-                                _(getTacticFromTacticish(dst).goals)
-                                    .filter(function(goal) {
-                                        return !goal.solved;
-                                    })
-                                    .each(function(goal, index) {
-                                        goal.resetWith(response.rGoals.focused[index]);
-                                    });
-                            })
-                        ;
-                    }
+//                     if (isTacticish(dst)) {
+//                         if (!bubblingFromSolved) {
+//                             return Promise.resolve();
+//                         }
 
-                    throw ['navigateTo', dst];
+//                         return asyncStatus()
+//                             .then(function(status) {
+//                                 var response = status.response;
+//                                 // Here, we update the unsolved goal nodes,
+//                                 // because existential variables might have been
+//                                 // resolved
+//                                 _(getTacticFromTacticish(dst).goals)
+//                                     .filter(function(goal) {
+//                                         return !goal.solved;
+//                                     })
+//                                     .each(function(goal, index) {
+//                                         goal.resetWith(response.rGoals.focused[index]);
+//                                     });
+//                             })
+//                         ;
+//                     }
 
-                } else { // going down
-                    // hide sibling tactic nodes
-                    if (isGoal(src)) { collapse(src); }
-                    if (isGoal(dst)) {
-                        // need to focus on the subgoal index according to how
-                        // many subgoals are left...
-                        var nbSubgoalsDone = _(getTacticFromTacticish(src).goals)
-                            .filter(function(g) { return g.solved; })
-                            .size()
-                        ;
-                        var indexToFocus = dst.ndx - nbSubgoalsDone;
-                        return asyncQuery('Focus ' + indexToFocus + '.')
-                            .then(asyncStatus)
-                            .then(function(status) {
-                                dst.label = status.label;
-                            });
-                    } else if (isTactic(dst)) {
-                        return asyncQuery(dst.tactic);
-                    } else if (isTacticGroup(dst)) {
-                        var tactic = dst.getFocusedTactic();
-                        return asyncQuery(tactic.tactic);
-                    } else {
-                        throw ['navigateTo', dst];
-                    }
-                }
-            };
-        })
-    // process the promises in sequential order
-        .reduce(sequencePromises, Promise.resolve())
-        .then(function() {
-            self.curNode = dest;
-            return Promise.resolve();
-        })
-        .catch(outputError)
-    ;
+//                     throw ['navigateTo', dst];
 
-}
+//                 } else { // going down
+//                     // hide sibling tactic nodes
+//                     if (isGoal(src)) { collapse(src); }
+//                     if (isGoal(dst)) {
+//                         // need to focus on the subgoal index according to how
+//                         // many subgoals are left...
+//                         var nbSubgoalsDone = _(getTacticFromTacticish(src).goals)
+//                             .filter(function(g) { return g.solved; })
+//                             .size()
+//                         ;
+//                         var indexToFocus = dst.ndx - nbSubgoalsDone;
+//                         // temporarily disabled
+//                         //onProofTreeQuery('Focus ' + indexToFocus + '.');
+//                         /*
+//                         return asyncQuery('Focus ' + indexToFocus + '.')
+//                             .then(function(response) {
+//                                 dst.response = response;
+//                             })
+//                             .then(asyncStatus)
+//                             .then(function(status) {
+//                                 dst.label = status.label;
+//                             });
+//                         */
+//                     } else if (isTactic(dst)) {
+//                         alert('This should not be reachable');
+//                         throw dst;
+//                         //return asyncQuery(dst.tactic);
+//                     } else if (isTacticGroup(dst)) {
+//                         return strategy.onGoingDownTacticGroup(dst);
+//                     } else {
+//                         throw ['navigateTo', dst];
+//                     }
+//                 }
+//             };
+//         })
+//     // process the promises in sequential order
+//         .reduce(sequencePromises, Promise.resolve())
+//         .then(function() {
+//             self.curNode = dest;
+//             return Promise.resolve();
+//         })
+//         .catch(outputError)
+//     ;
+
+// }
 
 function isGoal(node) {
     if (node === undefined) {
@@ -2373,10 +2411,6 @@ ProofTree.prototype.keydownHandler = function() {
     // if we haven't returned, we don't want the normal key behavior
     //d3.event.preventDefault();
 
-}
-
-function makeActive(prooftree) {
-    activeProofTree = prooftree;
 }
 
 function span(t) {
@@ -2639,7 +2673,8 @@ ProofTree.prototype.replay = function() {
 }
 
 ProofTree.prototype.qed = function() {
-    asyncQuery("Qed.")
+    onProofTreeQuery('Qed.');
+    asyncQuery('Qed.')
         .then(function(response) {
             if (isBad(response)) {
                 console.log("Qed failed, error:" + contents(response));
@@ -3231,14 +3266,6 @@ function outputError(error) {
     console.log(error, error.stack);
 }
 
-function delayPromise(time) {
-    return function(result) {
-        return new Promise(function(onFulfilled, onRejected) {
-            window.setTimeout(function() { onFulfilled(result); }, time);
-        });
-    }
-}
-
 function showNode(n) {
     var res = "{ type : " + n.type + ", contents: ";
     if (isGoal(n)) {
@@ -3261,11 +3288,9 @@ function Node(proofTree, parent) {
     this.parent = parent;
     this.depth = (parent === undefined) ? 0 : parent.depth + 1;
     this.solved = false;
-    this.collapsed = false;
 }
 
 Node.prototype.isSolved = function() { return this.solved; }
-Node.prototype.isCollapsed = function() { return this.collapsed; }
 Node.prototype.hasParent = function() { return this.parent !== undefined; }
 
 Node.prototype.isCurNodeAncestor = function() {
@@ -3289,7 +3314,14 @@ Node.prototype.getViewGrandChildren = function() {
 
 var userTacticsGroupName = 'PeaCoq User Tactics';
 
-function GoalNode(proofTree, parentTactic, goal, index) {
+/*
+ * [proofTree] is the proof tree the node belongs to
+ * [parentTactic] is a self-explanatory [TacticNode]
+ * [response] ...
+ * [index] should be the index of the goal within its tactic [rGoals]
+ */
+function GoalNode(proofTree, parentTactic, response, index) {
+    var goal = response.rGoals.focused[index];
     Node.call(
         this,
         proofTree,
@@ -3306,6 +3338,11 @@ function GoalNode(proofTree, parentTactic, goal, index) {
     ];
     this.tacticIndex = 0;
     this.parentTactic = parentTactic;
+    /*
+     * This field will be populated every time this [GoalNode] is visited, and
+     * will contain the response obtained upon last visiting it.
+     */
+    this.response = response;
 
     // TO REMOVE
     this.type = 'goal';
@@ -3314,13 +3351,25 @@ function GoalNode(proofTree, parentTactic, goal, index) {
 GoalNode.prototype = Object.create(Node.prototype);
 GoalNode.prototype.constructor = GoalNode;
 
-function TacticNode(proofTree, parent, tactic, goals) {
+/*
+ * [proofTree] is the proof tree to which this node belongs
+ * [parent] should be a [TacticGroupNode]
+ * [tactic] is the name of the tactic
+ * [response] is the response obtained after running the tactic
+ */
+function TacticNode(proofTree, parent, tactic, response) {
     var self = this;
     Node.call(this, proofTree, parent);
     this.tactic = tactic;
-    this.originalGoals = goals;
+    var unfocusedBefore = getResponseUnfocused(parent.parent.response);
+    var unfocusedAfter = getResponseUnfocused(response);
+    var goals = (
+        _.isEqual(unfocusedAfter, unfocusedBefore)
+            ? response.rGoals.focused
+            : []
+    );
     this.goals = _(goals).map(function(goal, index) {
-        return new GoalNode(proofTree, self, goal, index);
+        return new GoalNode(proofTree, self, response, index);
     }).value();
     this.goalIndex = 0;
 
@@ -3367,6 +3416,20 @@ TacticGroupNode.prototype.nodeWidth = function() {
 }
 
 /*
+ * [getFocusedTacticGroup] is self-explanatory. It may return undefined if all
+ * groups are empty.
+ */
+
+GoalNode.prototype.getFocusedTacticGroup = function() {
+    var nonEmptyTacticGroups = _(this.tacticGroups)
+        .filter(function(group) { return (group.tactics.length > 0); })
+        .value()
+    ;
+    if (nonEmptyTacticGroups.length === 0) { return []; }
+    return nonEmptyTacticGroups[this.tacticIndex];
+}
+
+/*
  * [getViewChildren] returns the children of the considered node in the current
  * view. If the node is collapsed, it needs to have one child if it is an
  * ancestor of the current node, so that the current node is reachable.
@@ -3379,26 +3442,19 @@ GoalNode.prototype.getViewChildren = function() {
         .value()
     ;
     if (nonEmptyTacticGroups.length === 0) { return []; }
-    if (this.isCollapsed()) {
-        return (
-            this.isCurNodeAncestor()
-                ? [nonEmptyTacticGroups[this.tacticIndex]]
-                : []
-        );
+    if (this.proofTree.isCurNode(this)) {
+        return nonEmptyTacticGroups;
+    } else if (this.isCurNodeAncestor()) {
+        return [nonEmptyTacticGroups[this.tacticIndex]];
+    } else {
+        return [];
     }
-    return nonEmptyTacticGroups;
 }
 
 TacticNode.prototype.getViewChildren = function() {
     if (this.isSolved()) { return []; }
     if (this.goals.length === 0) { return []; }
-    if (this.isCollapsed()) {
-        return (
-            this.isCurNodeAncestor()
-                ? [this.goals[this.goalIndex]]
-                : []
-        );
-    }
+    // Note: This SHOULD NOT be the current node!
     return this.goals;
 }
 
@@ -3406,16 +3462,7 @@ TacticGroupNode.prototype.getViewChildren = function() {
     if (this.isSolved()) { return []; }
     if (this.tactics.length === 0) { return []; }
     var focusedTactic = this.tactics[this.tacticIndex];
-    var uncollapsedViewChildren = focusedTactic.getViewChildren();
-    if (uncollapsedViewChildren.length === 0) { return []; }
-    if (this.isCollapsed()) {
-        return (
-            this.isCurNodeAncestor()
-                ? uncollapsedViewChildren[focusedTactic.tacticIndex]
-                : []
-        );
-    }
-    return uncollapsedViewChildren;
+    return focusedTactic.getViewChildren();
 }
 
 /*
@@ -3585,4 +3632,255 @@ GoalNode.prototype.getUserTacticsGroup = function() {
         throw ['getUserTacticsGroup', this];
     }
     return userTacticsGroup;
+}
+
+var navigateSimulateStrategy = {
+    'onGoingDownTacticGroup': function(dst) {
+        return Promise.resolve();
+    },
+};
+
+/*
+ProofTree.prototype.reactToResponse = function(t, response) {
+
+    if (this.curNode.constructor === TacticGroupNode) {
+        // fake move to the first unsolved goal
+        this.curNode = this.curNode.getFocusedTactic().goals
+            .find(function(elt) {
+                return !elt.isSolved();
+            })
+        ;
+    }
+
+    var existingTactic = _(this.curNode.getTactics())
+        .find(function(elt) {
+            return elt.tactic === t;
+        })
+    ;
+
+    if (existingTactic !== undefined) {
+
+        existingTactic.makeFocused();
+        return this.navigateTo(
+            existingTactic.parent,
+            false,
+            navigateSimulateStrategy
+        );
+
+    } else {
+
+        var groupToAttachTo = this.curNode.getUserTacticsGroup();
+        var newChild = new TacticNode(
+            this,
+            groupToAttachTo,
+            t,
+            response
+        );
+        groupToAttachTo.tactics.unshift(newChild);
+        groupToAttachTo.tacticIndex = 0;
+        this.update();
+        return this.navigateTo(
+            groupToAttachTo,
+            false,
+            navigateSimulateStrategy
+        );
+
+    }
+
+}
+*/
+
+ProofTree.prototype.onUndo = function(undone, response) {
+    var undone = undone.trim();
+    switch (undone) {
+    case '{':
+        if (this.curNode.proofTree.isRootNode(this.curNode)) {
+            // unfocusing the root node should exit the proof
+            proverUp();
+        } else {
+            this.curNode.parent.makeCurrentNode();
+            this.update();
+        }
+        break;
+
+    case '}':
+        var focusedTactic = this.curNode.getFocusedTactic();
+        var lastSolvedGoal = _(focusedTactic.goals)
+            .findLast(function(elt) { return elt.isSolved(); })
+        ;
+        lastSolvedGoal.solved = false;
+        var lastSolvedGoalTacticGroup = lastSolvedGoal.getFocusedTacticGroup();
+        lastSolvedGoalTacticGroup.solved = false;
+        lastSolvedGoalTacticGroup.getFocusedTactic().solved = false;
+        lastSolvedGoalTacticGroup.makeCurrentNode();
+
+        this.update();
+        // we want to trigger one more undo
+        proverUp();
+        break;
+
+    case 'Proof.':
+        // undo the Theorem and kill self!
+        proverUp();
+        exitProofTree();
+
+    default:
+        // if the thing undone matches the current tactic, undo that tactic
+        if (isTacticGroup(this.curNode)
+            && this.curNode.getFocusedTactic().tactic === undone) {
+            this.curNode.solved = false;
+            this.curNode.getFocusedTactic().solved = false;
+            this.curNode.parent.makeCurrentNode();
+            this.update();
+        }
+
+        break;
+    }
+}
+
+ProofTree.prototype.onRequestTriggered = function(queryType, query) {
+}
+
+ProofTree.prototype.onResponse = function(queryType, query, response) {
+    var self = this;
+    switch (queryType) {
+    case 'query':
+        // if a query succeeded, we don't want to keep refreshing tactics
+        this.tacticsWorklist = [];
+        switch (response.rResponse.tag) {
+        case 'Good':
+            this.curNode.reactTo(query.trim(), response);
+            break;
+        case 'Fail':
+            console.log('Query failed', query, response);
+            break;
+        }
+    }
+}
+
+/*
+ * [autoFocus] is called after moving to a [TacticGroupNode]. It should either
+ * focus or solve and unfocus depending on the children count.
+ */
+ProofTree.prototype.autoFocus = function() {
+    var focusedTactic = this.curNode.getFocusedTactic();
+    var unsolvedGoal = _(focusedTactic.goals)
+        .find(function(elt) { return !elt.isSolved(); })
+    ;
+    if (unsolvedGoal === undefined) {
+        onProofTreeQuery('}');
+        asyncQuery('}');
+    } else {
+        onProofTreeQuery('{');
+        asyncQuery('{')
+            .then(this.refreshTactics.bind(this))
+        ;
+    }
+}
+
+/*
+ * [GoalNode] and [TacticGroupNode] can react to clicks, and to responses. These
+ * assume that [this] is the current node.
+ */
+
+GoalNode.prototype.reactTo = function(query, response) {
+    var proofTree = this.proofTree;
+    if (query === 'Qed.') {
+        exitProofTree();
+        return;
+    }
+    var existingTactic = _(this.getTactics())
+        .find(function(elt) { return elt.tactic === query; })
+    ;
+    if (existingTactic !== undefined) {
+        existingTactic.makeFocused();
+        proofTree.update(function() {
+            existingTactic.parent.makeCurrentNode();;
+            proofTree.update(proofTree.autoFocus.bind(proofTree));
+        });
+    } else {
+        var groupToAttachTo = this.getUserTacticsGroup();
+        var newChild = new TacticNode(
+            proofTree,
+            groupToAttachTo,
+            query,
+            response
+        );
+        groupToAttachTo.tactics.unshift(newChild);
+        groupToAttachTo.tacticIndex = 0;
+        proofTree.update(function() {
+            // IMPORTANT: curNode must not be a TacticNode!
+            newChild.parent.makeCurrentNode();
+            proofTree.update(proofTree.autoFocus.bind(proofTree));
+        });
+    }
+}
+
+TacticGroupNode.prototype.reactTo = function(query, response) {
+
+    var proofTree = this.proofTree;
+    switch (query.trim()) {
+
+    case '{':
+        var goalToFocus = _(this.getFocusedTactic().goals)
+            .find(function(elt) { return !elt.isSolved(); })
+        ;
+        goalToFocus.response = response;
+        goalToFocus.makeCurrentNode();
+        proofTree.update();
+        break;
+
+    case '}':
+        this.getFocusedTactic().solved = true;
+        this.solved = true;
+        this.parent.makeCurrentNode();
+        proofTree.update(function() {
+            proofTree.curNode.solved = true;
+            if (hasParent(proofTree.curNode)) {
+                proofTree.curNode.parent.makeCurrentNode();
+                proofTree.update(proofTree.autoFocus.bind(proofTree));
+            } else {
+                // Qed!
+                proofTree.update(function() {
+                    onProofTreeQuery('Qed.');
+                    asyncQuery('Qed.');
+                });
+            }
+        });
+        break;
+
+    default:
+        alert('TacticGroupNode cannot react to query: ' + query);
+        break;
+    }
+
+}
+
+/*
+ * [makeCurrentNode] should be the only way to set the current node from now on!
+ */
+
+Node.prototype.makeCurrentNode = function() {
+    this.proofTree.curNode = this;
+    this.makeFocused();
+}
+
+/*
+ * [click] should react to the node being clicked. The only nodes which should
+ * be clicked are the current node's parent, the current node and:
+ *
+ * - if the current node is a tactic, its children
+ *
+ * - if the current node is a goal, its first child and this child's children
+ *
+ * A [TacticNode] can NOT be clicked as it does not appear visually. If it is
+ * clicked programmatically, that is a mistake!
+ */
+
+GoalNode.prototype.click = function() {
+    console.log('TODO: GoalNode.click');
+}
+
+TacticGroupNode.prototype.click = function() {
+    console.log('TODO: TacticGroupNode.click');
 }
