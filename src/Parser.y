@@ -78,7 +78,7 @@ comment { TokComment $$ }
 
 -- low precedence
 %right '→'
-%left '∧' '∨'
+%right '∧' '∨'
 %nonassoc '¬'
 %nonassoc '=' '≠'
 %right "++"
