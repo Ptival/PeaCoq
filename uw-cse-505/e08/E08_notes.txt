@@ -1,0 +1,269 @@
+Episode 08 : Lambda Calculus
+
+IMP has served us well so far:
+  - syntax, semantics, structural induction
+
+What is IMP missing:
+  - lots! but in particular
+  - data structure, functions, scope
+  - strings, exceptions, I/O, threads, ...
+
+* Data + Code
+
+  First note that we can get both scope and data
+  structures with higher order functions:
+
+  Scope: not all memory available to all code:
+
+    Definition x := 1.
+
+    Definition add3 (y: nat) :=
+      let z := 2 in
+      x + y + z.
+
+    Definition seven := add3 4.
+
+ Data: closures store data, e.g. alist (association list) as funcs:
+
+    Definition empty : nat -> nat := fun _ => 0.
+
+    Definition add k v l :=
+      fun k' => if nat_eq k' k then
+                  v
+                else
+                  l k'.
+
+    Definition lkup k l := l k.
+
+* Data Structures for IMP
+
+  Let's consider expanding IMP.
+
+  Adding pairs isn't so bad!
+
+  e ::= i | x | e + e | e * e
+     |  (e, e) | e.1 | e.2
+
+  s ::= skip | x = e | s; s
+     |  if e s s | while e s
+
+  v ::= i | (v, v)
+
+  H; e => v :
+
+    (eval no longer just goes to int!)
+
+
+    H; e1 => v1       He; e2 => v2
+    ------------------------------
+        H; (e1, e2) => (v1, v2)
+
+
+           H; e => (v1, v2)
+    ------------------------------
+           H; e.1 => v1
+
+
+           H; e => (v1, v2)
+    ------------------------------
+           H; e.2 => v2
+
+
+  H, s -> H', s' :
+
+    (no changes needed)
+
+  This gives us pairs of values, not just ints!
+    - can build tuples, lists, trees, etc.
+
+  However, eval can now get "stuck" :\
+    - consider (1 + 2).3
+    - division could also have caused stuckness
+
+* Functions for IMP
+
+  e ::= i | x | e + e | e * e
+     |  (e, e) | e.1 | e.2
+     |  fun x { s }
+
+  s ::= skip | x = e | s; s
+     |  if e s s | while e s
+     |  e(e)
+
+  v ::= i | (v, v), fun x { s }
+
+  Eek: now e and s are mutually inductive :\
+    - is that even OK?
+
+  H; e => v :
+
+
+    ----------------------------------
+     H; fun x { s } => H; fun x { s }
+
+
+  H, s -> H', s' :
+
+     H, e1 => fun x { s }
+     H, e1 => v
+    ----------------------------------
+     H; e1(e2) => H; (x = v; s)
+
+  Does this match intuition? No.
+
+  Consider:
+
+    x = 1;
+    (fun x { y = x})(2);
+    ans = x
+
+  Yields 2?!  We want 1!
+
+  We care about scope, not variable name:
+    - locals should be "local"
+    - choice of local name should not escape function
+    - shape of computation is all that should matter, not name
+
+  Maybe we can fix with fresh vars:
+
+     H, e1 => fun x { s }
+     H, e1 => v
+     fresh "y"
+    ------------------------------------------
+     H; e1(e2) => H; (y = x; x = v; s; x = y)
+
+  Still no dice!
+
+  What if "f" calls another func?
+
+    f = fun x {
+          g = fun z {
+                ans = x + z
+          }
+        };
+    f(2);
+    x = 3;
+    g(4)
+
+  Expect ans = 6
+    - f(2) should make g a function which adds 2 to
+      its arg and stores result in ans
+
+  Reality ans = 7
+    - f(2) sets g to a func which adds current value
+      of x to its arg and stores result in ans
+
+* Punchline
+
+  Can't properly model local scope w/ just a global heap of ints.
+
+  Functions are more than just sugar for assignments to globals.
+
+  Next: let's take a step back and figure out this core idea.
+    - we can add IMP features back later
+
+  Ditch everything: mutation, conditions, loops (!), even ints (!!)
+
+  Folks thought of this long ago...
+
+* THE LAMBDA CALCULUS
+
+  e ::= x | \ x. e | e e
+
+  v ::= \ x . e
+
+  "Whatever the next 700 languages turn out to be, they will surely be
+  variants of the lambda calculus."  -- Landin '66
+
+  Apply a function by substituting the argument for the bound variable:
+
+      (\ x . e1) (e2)
+
+      x  : bound variable
+      e1 : body
+      e2 : argument
+
+  Examples:
+
+    (\x. x)(\y. y) -> (\y. y)
+    (\x. \y. y x)(\z. z) -> (\y. y (\z. z))
+    (\x. x x)(\x. x x) -> (\x. x x)(\x. x x)
+
+  Substitution was the key idea we were missing in IMP.
+
+  After subst, named variable is gone so name doesn't matter!
+
+* Semantics
+
+  Roughly "e1[e2/x]" means "replace x with e2 everywhere in e1"
+    - awkward notation, but standard
+    - don't think sed!
+
+  Operational Semantics
+
+        e1 -> e1'
+    ------------------
+     e1 e2 -> e1' e2
+
+
+    --------------------------
+     (\x. e1) e2 -> e1[e2/x]
+
+  small-step, call-by-name
+
+  That's it!
+
+  Conventions for concrete syntax:
+
+    \x. e1 e2 is (\x. e1 e2) not (\x. e1) e2
+
+    e1 e2 e3 is (e1 e2) e3 not e1 (e2 e3)
+      - application is not associative!
+      - "goes to the left"
+
+* Substitution
+
+  (\a. \b. a)(\c. \d. c)(\e. \f. f)
+
+  How does this eval?
+
+  Maybe:
+    -> (\a. \b. a)(\d. \e. \f. f)
+    -> (\b. \d. \e. \f. f)
+  No!
+
+  Actually:
+    -> (\b. \c. \d. c)(\e. \f. f)
+    -> (\c. \d. c)
+
+* Lambda Calc as Asm
+
+  This is the core, the heart of many languages:
+    Lisp, Racket, OCaml, Haskell, Coq, etc.
+
+  Implementations are more efficient that substitution,
+  but they are must behave equivalently to it!
+
+
+* Stuckness
+
+  We can still get stuck :\
+
+  No idea what do with a "free variable":
+
+      free (x)     = {x}
+      free (e1 e2) = free(e1) U free(e2)
+      free (\x. e) = free(e) - {x}
+
+  Unbound vars throw a wrench in the works (mess things up).
+
+  For simplicity, we will always assume no free(e) = nil.
+
+  This will be important in the Coq formalization.
+
+  Syntax feels really weird at first, but has stood test of time.
+    - eventually you don't even see the code...
+
+* WE CAN DO ANYTHING WITH LAMBDA CALCULUS!
+
+  
