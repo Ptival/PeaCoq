@@ -2075,7 +2075,7 @@ When arriving to a goal from a tactic or tacticgroup, the tactic's goals should 
 
                     if (isTacticish(dst)) {
                         if (!bubblingFromSolved) {
-                            return Promise.resolve();
+                            return asyncQuery('Unfocus.');
                         }
 
                         return asyncStatus()
