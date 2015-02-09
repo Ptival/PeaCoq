@@ -245,6 +245,29 @@ $(document).ready(function() {
 
     $("<button>", {
         "class": "btn btn-default",
+        "data-target": "help",
+        "data-toggle": "modal",
+        "id": "options-button",
+        "html": $("<span>")
+            .append(mkGlyph("th-list"))
+            //.append(nbsp + nbsp + ""),
+    })
+        .appendTo(buttonGroup)
+        .on("click", function() {
+            $("#options").modal();
+        })
+    ;
+
+    $("#set-printing-all").change(function() {
+        if($(this).is(":checked")) {
+            asyncRequest('setprintingall', undefined);
+        } else {
+            asyncRequest('unsetprintingall', undefined);
+        }
+    });
+
+    $("<button>", {
+        "class": "btn btn-default",
         "html": '<img src="media/ajax-loader.gif" />',
         "id": "loading",
     })
