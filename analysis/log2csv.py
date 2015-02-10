@@ -33,17 +33,17 @@ def adjust(hour, ampm):
 
 if __name__ == '__main__':
     home = os.getenv('HOME')
-    # long format to make sure we don't open status and error logs
-    for file in glob(home + '/PeaCoq/logs/*-*-*-*-*-*-*.log'):
-        if 'error' in file: continue
-        if 'access' in file: continue
-        (root, ext) = splitext(file)
-        userFilename = basename(file).split('-')[0]
-        mode = 'w'
-        if sys.version_info.major < 3:
-            mode += 'b'
-        with io.open(root + '.csv', mode) as csvfile:
-            writer = csv.writer(csvfile)
+    mode = 'w'
+    if sys.version_info.major < 3:
+        mode += 'b'
+    with io.open(home + '/PeaCoq/logs/data.csv', mode) as csvfile:
+        writer = csv.writer(csvfile)
+        # long format to make sure we don't open status and error logs
+        for file in glob(home + '/PeaCoq/logs/*-*-*-*-*-*-*.log'):
+            if 'error' in file: continue
+            if 'access' in file: continue
+            (root, ext) = splitext(file)
+            userFilename = basename(file).split('-')[0]
             with open(file) as handle:
               filetext = handle.read()
               items = rItem.split(filetext)
@@ -55,10 +55,10 @@ if __name__ == '__main__':
                   m = r4.match(item)
                   if m:
                       args = [ int(m.group(i)) for i in range(1, 7) ]
-                      serverdate = "{:04d}-{:02d}-{:02d}-{:02d}-{:02d}-{:02d}".format(*args)
+                      serverdate = "{:04d}-{:02d}-{:02d}-{:02d}-{:02d}-{:02d}-000".format(*args)
                       user = m.group(7)
                       args = list(map(lambda x: int(x), (m.group(10), m.group(8), m.group(9), adjust(m.group(11), m.group(14)), m.group(12), m.group(13))))
-                      clientdate = "{:04d}-{:02d}-{:02d}-{:02d}-{:02d}-{:02d}".format(*args)
+                      clientdate = "{:04d}-{:02d}-{:02d}-{:02d}-{:02d}-{:02d}-000".format(*args)
                       command = m.group(15)
                       payload = m.group(16)
                       print(serverdate, clientdate, command)
@@ -68,7 +68,7 @@ if __name__ == '__main__':
                   m = r3.match(item)
                   if m:
                       args = list(map(lambda x: int(x), (m.group(1), m.group(2), m.group(3), m.group(4), m.group(5), m.group(6))))
-                      serverdate = "{:04d}-{:02d}-{:02d}-{:02d}-{:02d}-{:02d}".format(*args)
+                      serverdate = "{:04d}-{:02d}-{:02d}-{:02d}-{:02d}-{:02d}-000".format(*args)
                       user = m.group(7)
                       clientdate = ""
                       command = m.group(8)
@@ -80,9 +80,9 @@ if __name__ == '__main__':
                   m = r2.match(item)
                   if m:
                       args = list(map(lambda x: int(x), (m.group(1), m.group(2), m.group(3), m.group(4), m.group(5), m.group(6))))
-                      serverdate = "{:04d}-{:02d}-{:02d}-{:02d}-{:02d}-{:02d}".format(*args)
+                      serverdate = "{:04d}-{:02d}-{:02d}-{:02d}-{:02d}-{:02d}-000".format(*args)
                       args = list(map(lambda x: int(x), (m.group(9), m.group(7), m.group(8), adjust(m.group(10), m.group(13)), m.group(11), m.group(12))))
-                      clientdate = "{:04d}-{:02d}-{:02d}-{:02d}-{:02d}-{:02d}".format(*args)
+                      clientdate = "{:04d}-{:02d}-{:02d}-{:02d}-{:02d}-{:02d}-000".format(*args)
                       command = m.group(14)
                       payload = m.group(15)
                       print(serverdate, clientdate, command)
@@ -92,7 +92,7 @@ if __name__ == '__main__':
                   m = r1.match(item)
                   if m:
                       args = list(map(lambda x: int(x), (m.group(1), m.group(2), m.group(3), m.group(4), m.group(5), m.group(6))))
-                      serverdate = "{:04d}-{:02d}-{:02d}-{:02d}-{:02d}-{:02d}".format(*args)
+                      serverdate = "{:04d}-{:02d}-{:02d}-{:02d}-{:02d}-{:02d}-000".format(*args)
                       clientdate = ""
                       command = m.group(7)
                       payload = m.group(8)
