@@ -6,7 +6,7 @@ from datetime import datetime
 from boomslang import *
 
 def usage():
-    print('Usage: graph.py data.csv')
+    print('Usage: plot.py data.csv')
 
 class Entry:
     def __init__(self, ver, stm, ctm, cmd, pay):
