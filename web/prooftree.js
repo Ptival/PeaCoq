@@ -455,37 +455,6 @@ function evenFloor(x) {
     return (r % 2 === 0) ? r : r - 1;
 }
 
-/*
-  [theorem] : string
-  [tactics] : ProofTree -> [string]
-*/
-ProofTree.prototype.newTheorem = function(theorem, tactics) {
-
-    var self = this;
-
-    this.theorem = theorem;
-    this.tactics = tactics;
-
-    // hide previous proof result if any, show svg if hidden
-    this.svg.style("display", "");
-
-    // will be reset in hInit callback, prevents stale uses
-    this.rootNode = undefined;
-
-    var success = false;
-
-    asyncLog("THEOREM " + theorem);
-
-    asyncQuery(theorem)
-        .then(function(response) {
-            success = self.hInit(response);
-            $(this.svg[0]).focus();
-            this.svg.on("click")();
-        })
-        .catch(outputError);
-
-}
-
 ProofTree.prototype.newAlreadyStartedTheorem =
     function(theoremStatement, lastResponse, tactics)
 {
@@ -643,55 +612,6 @@ ProofTree.prototype.runTactic = function(t, groupToAttachTo) {
 
         })
         .catch(outputError);
-
-    // // need to get the status before so that we figure out whether the goal was
-    // // solved, if only coqtop would tell us...
-    // var beforeResponse;
-    // return asyncStatus()
-    //     .then(function(status) {
-    //         beforeResponse = status.response;
-    //         return asyncQueryAndUndo(t);
-    //     })
-    //     .then(function(response) {
-    //         if (isGood(response)) {
-    //             var unfocusedBefore = getResponseUnfocused(beforeResponse);
-    //             var unfocusedAfter = getResponseUnfocused(response);
-    //             var newChild = new TacticNode(
-    //                 self,
-    //                 groupToAttachTo,
-    //                 t,
-    //                 response
-    //             );
-
-    //             // only attach the newChild if it produces something
-    //             // unique from existing children
-    //             var newChildRepr = tacticNodeUnicityRepr(newChild);
-
-    //             var resultAlreadyExists =
-    //                 _(parentGoal.getTactics()).some(function(t) {
-    //                     return (tacticNodeUnicityRepr(t) === newChildRepr);
-    //                 })
-    //             ;
-
-    //             var tacticIsUseless =
-    //                 (newChild.goals.length === 1)
-    //                 && (goalNodeUnicityRepr(newChild.goals[0])
-    //                     === parentGoalRepr)
-    //             ;
-
-    //             if (!resultAlreadyExists && !tacticIsUseless) {
-    //                 groupToAttachTo.addTactic(newChild);
-    //                 self.update();
-    //             }
-
-    //         } else {
-
-    //             //console.log("Bad response for tactic", t, response);
-
-    //         }
-
-    //     })
-    //     .catch(outputError);
 
 }
 
@@ -2031,148 +1951,6 @@ function isTerminating(tactic) {
     return _.isEmpty(tactic.goals);
 }
 
-var navigateDefaultStrategy = {
-    "onGoingDownTacticGroup": function(dst) {
-        var tactic = dst.getFocusedTactic().tactic;
-        onProofTreeQuery(tactic);
-        return asyncQuery(tactic);
-    },
-};
-
-/*
- * @return <Promise>
- */
-// ProofTree.prototype.navigateTo = function(dest, bubblingFromSolved, strategy) {
-
-//     var self = this;
-
-//     if (strategy === undefined) { strategy = navigateDefaultStrategy; }
-
-//     // if we are going to move, flush the worklist before anything happens
-//     if (this.curNode.id !== dest.id) {
-//         this.tacticsWorklist = [];
-//     }
-
-//     var p = path(this.curNode, dest);
-//     // morally, q = [ [p0, p1], [p1, p2], ... ]
-//     var q = _.zip(p, _(p).rest().value());
-//     q.pop(); // remove the extra [p_last, undefined] at the end
-
-//     // this will build a promise, trust me, I promise ;D
-//     return _(q)
-//     // building a list of functions return a promise
-//         .map(function(elt) {
-//             var src = elt[0];
-//             var dst = elt[1];
-//             var goingUp = src.depth > dst.depth;
-
-//             // this function must return a Promise
-//             return function() {
-//                 if (goingUp) {
-//                     collapseChildren(src);
-//                     // when leaving a goal, hide its tactics
-//                     if (isGoal(src)) { collapse(src); }
-//                     /*
-//   Here are the different cases:
-//   tactic <- goal
-//   tacticgroup <- goal
-//   goal <- tactic
-//   tacticgroup <- tactic
-//   goal <- tacticgroup
-
-// When leaving a goal, it should be collapsed.
-// When arriving to a tactic, it should be refreshed.
-// When arriving to a goal from a tactic or tacticgroup, the tactic's goals should be reset.
-//                     */
-
-//                     if (isGoal(dst)) {
-//                         // if we are going up because a subgoal was proved, no backtracking
-//                         if (bubblingFromSolved) {
-//                             return Promise.resolve();
-//                         }
-
-//                         // otherwise, user abandoned a tactic, restore its original state
-//                         var t = getTacticFromTacticish(src);
-//                         t.refreshGoals();
-
-//                         // and backtrack
-//                         return asyncStatus()
-//                             .then(function(response) {
-//                                 return asyncRewind(response.label - dst.label);
-//                             })
-//                         ;
-//                     }
-
-//                     if (isTacticish(dst)) {
-//                         if (!bubblingFromSolved) {
-//                             return Promise.resolve();
-//                         }
-
-//                         return asyncStatus()
-//                             .then(function(status) {
-//                                 var response = status.response;
-//                                 // Here, we update the unsolved goal nodes,
-//                                 // because existential variables might have been
-//                                 // resolved
-//                                 _(getTacticFromTacticish(dst).goals)
-//                                     .filter(function(goal) {
-//                                         return !goal.solved;
-//                                     })
-//                                     .each(function(goal, index) {
-//                                         goal.resetWith(response.rGoals.focused[index]);
-//                                     });
-//                             })
-//                         ;
-//                     }
-
-//                     throw ['navigateTo', dst];
-
-//                 } else { // going down
-//                     // hide sibling tactic nodes
-//                     if (isGoal(src)) { collapse(src); }
-//                     if (isGoal(dst)) {
-//                         // need to focus on the subgoal index according to how
-//                         // many subgoals are left...
-//                         var nbSubgoalsDone = _(getTacticFromTacticish(src).goals)
-//                             .filter(function(g) { return g.solved; })
-//                             .size()
-//                         ;
-//                         var indexToFocus = dst.ndx - nbSubgoalsDone;
-//                         // temporarily disabled
-//                         //onProofTreeQuery('Focus ' + indexToFocus + '.');
-//                         /*
-//                         return asyncQuery('Focus ' + indexToFocus + '.')
-//                             .then(function(response) {
-//                                 dst.response = response;
-//                             })
-//                             .then(asyncStatus)
-//                             .then(function(status) {
-//                                 dst.label = status.label;
-//                             });
-//                         */
-//                     } else if (isTactic(dst)) {
-//                         alert('This should not be reachable');
-//                         throw dst;
-//                         //return asyncQuery(dst.tactic);
-//                     } else if (isTacticGroup(dst)) {
-//                         return strategy.onGoingDownTacticGroup(dst);
-//                     } else {
-//                         throw ['navigateTo', dst];
-//                     }
-//                 }
-//             };
-//         })
-//     // process the promises in sequential order
-//         .reduce(sequencePromises, Promise.resolve())
-//         .then(function() {
-//             self.curNode = dest;
-//             return Promise.resolve();
-//         })
-//         .catch(outputError)
-//     ;
-
-// }
-
 function isGoal(node) {
     if (node === undefined) {
         throw ['isGoal', node];
@@ -2612,76 +2390,6 @@ function isGood(response) {
 
 function contents(response) {
     return response.rResponse.contents;
-}
-
-/*
- * @return <Promise>
- */
-ProofTree.prototype.replayThisProof = function(proof) {
-
-    var self = this;
-
-    if (_.isEmpty(proof)) {
-        return Promise.resolve();
-    } else {
-        var fst = proof[0];
-        var snd = proof[1];
-        return asyncQuery(fst)
-            .then(function(response) {
-                if (isGood(response)) {
-                    // we want to replay the proof as we typeset it, so that the
-                    // proof process stays in sync with the text produced
-                    // therefore, we need to focus when the text would focus
-                    var needToFocus = snd.length > 1;
-                    return _(snd)
-                        .map(function(n) {
-                            return function() {
-                                if (needToFocus) {
-                                    return asyncQuery(" { ")
-                                        .then(function() { return self.replayThisProof(n); })
-                                        .then(function() { return asyncQuery(" } "); })
-                                        .catch(outputError)
-                                    ;
-                                } else {
-                                    return self.replayThisProof(n);
-                                }
-                            };
-                        })
-                        .reduce(sequencePromises, Promise.resolve())
-                    ;
-                } else {
-                    console.log("Replay failed on applying " + fst);
-                    console.log("Error: " + contents(response));
-                    throw new Error("Replay failed, see log");
-                }
-            })
-            .catch(outputError)
-        ;
-    }
-
-}
-
-ProofTree.prototype.proof = function() {
-    return this.rootNode.getProof();
-}
-
-/*
- * @return <Promise>
- */
-ProofTree.prototype.replay = function() {
-    return this.replayThisProof(this.rootNode.getProof());
-}
-
-ProofTree.prototype.qed = function() {
-    onProofTreeQuery('Qed.');
-    asyncQuery('Qed.')
-        .then(function(response) {
-            if (isBad(response)) {
-                console.log("Qed failed, error:" + contents(response));
-            }
-        })
-        .catch(outputError)
-    ;
 }
 
 ProofTree.prototype.displayThisProof = function(proof) {
@@ -3738,7 +3446,25 @@ ProofTree.prototype.onUndo = function(undone, response) {
     }
 }
 
-ProofTree.prototype.onRequestTriggered = function(queryType, query) {
+ProofTree.prototype.beforeProvwillConsumption = function(queryType, query) {
+    var nextIndex = next(provwill);
+    var nextPieceProcessed = provwill.substring(0, index);
+    switch (nextPieceProcessed.trim()) {
+
+    case '{':
+    case '}':
+        // these are fine to proceed
+        break;
+
+    default:
+        // if a tactic is about to be pushed without focus, force it!
+        // first case: there is nothing to be done and we are unfocused
+        if (isTacticGroup(this.curNode)) {
+            safePrependToProvwill('{');
+        }
+        break;
+
+    }
 }
 
 ProofTree.prototype.onResponse = function(queryType, query, response) {
@@ -3768,13 +3494,9 @@ ProofTree.prototype.autoFocus = function() {
         .find(function(elt) { return !elt.isSolved(); })
     ;
     if (unsolvedGoal === undefined) {
-        onProofTreeQuery('}');
-        asyncQuery('}');
+        proofTreeQueryWish('}');
     } else {
-        onProofTreeQuery('{');
-        asyncQuery('{')
-            .then(this.refreshTactics.bind(this))
-        ;
+        proofTreeQueryWish('{');
     }
 }
 
@@ -3842,8 +3564,7 @@ TacticGroupNode.prototype.reactTo = function(query, response) {
             } else {
                 // Qed!
                 proofTree.update(function() {
-                    onProofTreeQuery('Qed.');
-                    asyncQuery('Qed.');
+                    proofTreeQueryWish('Qed.');
                 });
             }
         });

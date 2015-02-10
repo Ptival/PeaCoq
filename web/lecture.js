@@ -12,6 +12,61 @@ var proved = "";
 var proving = "";
 var provwill = "";
 
+function truncateProvedToIndex(index) {
+    proved = proved.substring(0, index);
+    pweSetLockedPart('proved', proved);
+}
+
+function appendToProved(text) {
+    proved += text;
+    pweSetLockedPart('proved', proved);
+}
+
+function setProving(text) {
+    if (proving !== '') {
+        throw text;
+    }
+    proving = text;
+    pweSetLockedPart('proving', proving);
+}
+
+function resetProving() {
+    proving = '';
+    pweSetLockedPart('proving', proving);
+}
+
+function prependToProvwill(text) {
+    provwill = text + provwill;
+    pweSetLockedPart('provwill', provwill);
+}
+
+function appendToProvwill(text) {
+    provwill += text;
+    pweSetLockedPart('provwill', provwill);
+}
+
+function truncateProvwillFromIndex(index) {
+    provwill = provwill.substring(index);
+    pweSetLockedPart('provwill', provwill);
+}
+
+function resetProvwill() {
+    provwill = '';
+    pweSetLockedPart('proving', provwill);
+}
+
+function prependToUnlocked(text) {
+    var unlocked = pweGetUnlocked();
+    unlocked = text + unlocked;
+    pweSetUnlocked(unlocked);
+}
+
+function truncateUnlockedFromIndex(index) {
+    var unlocked = pweGetUnlocked();
+    unlocked = unlocked.substring(index);
+    pweSetUnlocked(unlocked);
+}
+
 var delimiters = [".", "{", "}"];
 
 var unicodeList = [
@@ -92,59 +147,59 @@ $(document).ready(function() {
         .append(mkGlyph("italic"))
     ;
 
-    $("<button>", {
-        "class": "btn btn-success",
-        "html": $("<span>")
-            .append(mkGlyph("tree-deciduous"))
-            //.append(nbsp + "Proof Tree")
-        ,
-        "id": "prooftree-button",
-    })
-        .appendTo(buttonGroup)
-        .on("click", function() {
-            asyncLog("MANUALENTERPROOFTREE");
-            enterProofTree();
-        })
-        .attr("disabled", true)
-    ;
+    // $("<button>", {
+    //     "class": "btn btn-success",
+    //     "html": $("<span>")
+    //         .append(mkGlyph("tree-deciduous"))
+    //         //.append(nbsp + "Proof Tree")
+    //     ,
+    //     "id": "prooftree-button",
+    // })
+    //     .appendTo(buttonGroup)
+    //     .on("click", function() {
+    //         asyncLog("MANUALENTERPROOFTREE");
+    //         enterProofTree();
+    //     })
+    //     .attr("disabled", true)
+    // ;
 
-    $("<button>", {
-        "class": "btn btn-danger",
-        "html": $("<span>")
-            .append(mkGlyph("fire"))
-            //.append(nbsp + "Abort Proof Tree")
-        ,
-        "id": "noprooftree-button",
-    })
-        .appendTo(buttonGroup)
-        .css("display", "none")
-    ;
+    // $("<button>", {
+    //     "class": "btn btn-danger",
+    //     "html": $("<span>")
+    //         .append(mkGlyph("fire"))
+    //         //.append(nbsp + "Abort Proof Tree")
+    //     ,
+    //     "id": "noprooftree-button",
+    // })
+    //     .appendTo(buttonGroup)
+    //     .css("display", "none")
+    // ;
 
-    $("<button>", {
-        "class": "btn btn-default",
-        "html": $("<span>")
-            .append(mkGlyph("eye-open"))
-            //.append(nbsp + "Peek at Editor")
-        ,
-        "id": "peek-button",
-    })
-        .appendTo(buttonGroup)
-        .css("display", "none")
-        .on("click", peekAtEditorUI)
-    ;
+    // $("<button>", {
+    //     "class": "btn btn-default",
+    //     "html": $("<span>")
+    //         .append(mkGlyph("eye-open"))
+    //         //.append(nbsp + "Peek at Editor")
+    //     ,
+    //     "id": "peek-button",
+    // })
+    //     .appendTo(buttonGroup)
+    //     .css("display", "none")
+    //     .on("click", peekAtEditorUI)
+    // ;
 
-    $("<button>", {
-        "class": "btn btn-default",
-        "html": $("<span>")
-            .append(mkGlyph("eye-close"))
-            //.append(nbsp + "Return to Proof Tree")
-        ,
-        "id": "unpeek-button",
-    })
-        .appendTo(buttonGroup)
-        .css("display", "none")
-        .on("click", unpeekAtEditorUI)
-    ;
+    // $("<button>", {
+    //     "class": "btn btn-default",
+    //     "html": $("<span>")
+    //         .append(mkGlyph("eye-close"))
+    //         //.append(nbsp + "Return to Proof Tree")
+    //     ,
+    //     "id": "unpeek-button",
+    // })
+    //     .appendTo(buttonGroup)
+    //     .css("display", "none")
+    //     .on("click", unpeekAtEditorUI)
+    // ;
 
     /* Temporarily disabled
     $("<button>", {
@@ -751,12 +806,10 @@ function undoCallback(undone, response) {
         //console.log("Rewinding additional " + stepsToRewind + " steps");
         while (stepsToRewind-- > 0) {
             var index = 0;
-            var unlocked = pweGetUnlocked();
             if (proved != "") { index = prev(proved); }
             var pieceUnproved = proved.substring(index);
-            proved = proved.substring(0, index);
-            pweSetLockedPart("proved", proved);
-            pweSetUnlocked(pieceUnproved + unlocked);
+            truncateProvedToIndex(index);
+            prependToUnlocked(pieceUnproved);
         }
         repositionCaret();
         response.rResponse.contents[0] = ""; // don't show the user the steps number
@@ -810,11 +863,13 @@ function getCaretPos() {
     return rng.toString().length;
 }
 
+var safeDelimiters = [' ', '\n'];
+
 /*
  * Adds [command] to [provwill], making sure that it is separated from the
  * previous text. Returns how many characters were added for safety.
  */
-function safeAddToProvwill(command) {
+function safeAppendToProvwill(command) {
     var returnValue = 0;
     // if the command does not start with a space, and the last thing did not
     // end with a newline or space, let's make some room
@@ -822,14 +877,53 @@ function safeAddToProvwill(command) {
     if (stringBefore !== '') {
         var characterBefore = stringBefore[stringBefore.length - 1];
         var characterAfter = command[0];
-        if (characterBefore !== ' ' && characterBefore !== '\n'
-            && characterAfter !== ' ' && characterAfter !== '\n') {
-            provwill += ' ';
+        if (!_(safeDelimiters).contains(characterBefore)
+            && !_(safeDelimiters).contains(characterAfter)) {
+            appendToProvwill(' ');
             returnValue = 1;
         }
     }
-    provwill += command;
-    pweSetLockedPart('provwill', provwill);
+    appendToProvwill(command);
+    return returnValue;
+}
+
+/*
+ * Prepends [command] to [provwill], making sure that it is separated from the
+ * previous text and the next text. Returns how many characters were added for
+ * safety.
+ */
+function safePrependToProvwill(command) {
+
+    var returnValue = 0;
+
+    // if the command does not start with a space, and the last thing did not
+    // end with a newline or space, let's make some room
+    var stringBefore = proved + proving;
+    if (stringBefore !== '') {
+        var characterBefore = stringBefore[stringBefore.length - 1];
+        var characterAfter = command[0];
+        if (!_(safeDelimiters).contains(characterBefore)
+            && !_(safeDelimiters).contains(characterAfter)) {
+            command = ' ' + command;
+            returnValue++;
+        }
+    }
+
+    // if the command does not end with a space, and the next thing does not
+    // start with a newline or space, let's make some room
+    var stringAfter = provwill + pweGetUnlocked();
+    if (stringAfter !== '') {
+        var characterBefore = command[command.length - 1];
+        var characterAfter = stringAfter[0];
+        if (!_(safeDelimiters).contains(characterBefore)
+            && !_(safeDelimiters).contains(characterAfter)) {
+            prependToUnlocked(' ');
+            returnValue++;
+        }
+    }
+
+    prependToProvwill(command);
+
     return returnValue;
 }
 
@@ -849,9 +943,8 @@ function proverDown() {
     var index = next(unlocked);
     if (index == 0) { return; }
     var pieceToProcess = unlocked.substring(0, index);
-    unlocked = unlocked.substring(index);
-    pweSetUnlocked(unlocked);
-    var returnValue = safeAddToProvwill(pieceToProcess);
+    truncateUnlockedFromIndex(index);
+    var returnValue = safeAppendToProvwill(pieceToProcess);
     asyncQuery(pieceToProcess);
     return returnValue;
 }
@@ -901,13 +994,11 @@ function proverToCaret () {
 */
 function proverUp () {
     var index = 0;
-    var unlocked = pweGetUnlocked();
     if (proved != "") { index = prev(proved); }
     var pieceToUnprocess = proved.substring(index);
     if (pieceToUnprocess !== "") {
-        proved = proved.substring(0, index);
-        pweSetLockedPart("proved", proved);
-        pweSetUnlocked(pieceToUnprocess + unlocked);
+        truncateProvedToIndex(index);
+        prependToUnlocked(pieceToUnprocess);
         asyncLog("PROVERUP " + pieceToUnprocess);
         repositionCaret();
         return asyncUndo()
@@ -1047,55 +1138,49 @@ function switchToEditorUI() {
 }
 
 function enterProofTree() {
-
     // do this as early as possible to avoid races
     switchToProofUI();
+    proofTreeQueryWish('Proof.');
+}
 
-    onProofTreeQuery('Proof.');
-    asyncQuery('Proof.')
-        .then(function() { onProofTreeQuery('{'); })
-        .then(function() { return asyncQuery('{') })
-        .then(function(response) {
+function createProofTree(response) {
 
-            activeProofTree = new ProofTree(
-                $("#prooftree")[0],
-                $(window).width(),
-                Math.floor(($(window).height() - $("#toolbar").height()) / 2),
-                onQed,
-                function() { $("#loading").css("display", ""); },
-                function() { $("#loading").css("display", "none"); }
-            );
+    activeProofTree = new ProofTree(
+        $("#prooftree")[0],
+        $(window).width(),
+        Math.floor(($(window).height() - $("#toolbar").height()) / 2),
+        onQed,
+        function() { $("#loading").css("display", ""); },
+        function() { $("#loading").css("display", "none"); }
+    );
 
-            /*
-              need to figure out what the statement of the theorem is, and
-              there seems to be no way to ask that with status, so look it up in
-              the proved region as the last statement
-            */
-            var proved = $("#proved").text();
-            var assertionKeywords = [
-                "Theorem", "Lemma", "Remark", "Fact", "Corollary", "Proposition"
-            ];
-            // lookup the last time an assertion keyword was proved
-            var position = _(assertionKeywords)
-                .map(function(keyword) {
-                    return proved.lastIndexOf(keyword);
-                })
-                .max()
-                .value()
-            ;
-            var theoremStatement = proved.substring(position);
-            // get rid of anything after the statement, like "Proof."
-            theoremStatement = theoremStatement.substring(0, next(theoremStatement));
-
-            activeProofTree.newAlreadyStartedTheorem(
-                theoremStatement,
-                response,
-                lectureTactics
-            );
-
+    // TODO: this is so ugly, find a different way
+    /*
+      need to figure out what the statement of the theorem is, and
+      there seems to be no way to ask that with status, so look it up in
+      the proved region as the last statement
+    */
+    var proved = $("#proved").text();
+    var assertionKeywords = [
+        "Theorem", "Lemma", "Remark", "Fact", "Corollary", "Proposition"
+    ];
+    // lookup the last time an assertion keyword was proved
+    var position = _(assertionKeywords)
+        .map(function(keyword) {
+            return proved.lastIndexOf(keyword);
         })
-        .catch(outputError);
+        .max()
+        .value()
     ;
+    var theoremStatement = proved.substring(position);
+    // get rid of anything after the statement, like "Proof."
+    theoremStatement = theoremStatement.substring(0, next(theoremStatement));
+
+    activeProofTree.newAlreadyStartedTheorem(
+        theoremStatement,
+        response,
+        lectureTactics
+    );
 
 }
 
@@ -1968,18 +2053,22 @@ function lectureTactics(pt) {
 function editorOnRequestTriggered(requestType, request) {
     switch (requestType) {
     case 'query':
+/*
         var index = next(provwill);
-        proving = provwill.substring(0, index);
-        provwill = provwill.substring(index);
-        if (proving.trim() !== request.trim()) {
+        var nextProvwill = provwill.substring(0, index);
+        if (nextProvwill.trim() !== request.trim()) {
             console.log(
                 'request triggered was', request,
-                'but was expecting', proving
+                'but was expecting', nextProvwill
             );
         }
-        pweSetLockedPart('provwill', provwill);
-        pweSetLockedPart("proving", proving);
+        console.log('AND THERE');
+        setProving(nextProvwill);
+        console.log('AND THERE');
+        truncateProvwillFromIndex(index);
+        console.log('AND THERE');
         break;
+*/
     }
 }
 
@@ -1996,17 +2085,25 @@ function editorOnResponse(requestType, request, response) {
                 );
                 return;
             }
-            proved += proving;
-            proving = '';
-            pweSetLockedPart('proved', proved);
-            pweSetLockedPart('proving', proving);
+            appendToProved(proving);
+            resetProving();
             updateCoqtopPane(goingDown, response);
-            asyncStatus()
-                .then(function(status) {
-                    if (status.proving && request !== 'Proof.') {
-                        enterProofTree();
-                    }
-                });
+
+            if (activeProofTree === undefined) {
+                if (request === 'Proof.') {
+                    createProofTree(response);
+                } else {
+                    asyncStatus()
+                        .then(function(status) {
+                            if (status.proving && request !== 'Proof.') {
+                                enterProofTree();
+                            }
+                        });
+                }
+            } else {
+
+            }
+
             break;
 
         case 'Fail':
@@ -2014,11 +2111,10 @@ function editorOnResponse(requestType, request, response) {
             // dump it back in the editor, but this will be optimization for
             // later...
             var unlocked = pweGetUnlocked();
-            pweSetUnlocked(proving + provwill + unlocked);
-            proving = '';
-            pweSetLockedPart('proving', proving);
-            provwill = "";
-            pweSetLockedPart('provwill', provwill);
+            prependToUnlocked(provwill);
+            resetProvwill();
+            prependToUnlocked(proving);
+            resetProving();
             repositionCaret();
             updateCoqtopPane(goingDown, response);
             break;
@@ -2029,83 +2125,88 @@ function editorOnResponse(requestType, request, response) {
 }
 
 /*
- * If [request] is the next thing in the unlocked region, instead of adding the
- * [request] to [provwill], we will add the next thing instead. Returns [true]
- * if it did that.
+ * If [request] is the next thing in the provwill or unlocked region, instead of
+ * adding the [request] to [provwill], we will shift the incoming one instead.
+ * Returns [true] if it did that.
  */
-function removeRequestFromUnlocked(request) {
-    var unlocked = pweGetUnlocked();
-    var nextIndex = next(unlocked);
-    var nextUnlocked = unlocked.substring(0, nextIndex);
-    if (nextUnlocked.trim() !== request.trim()) { return false; }
-    var unlocked = unlocked.substring(nextIndex);
-    pweSetUnlocked(unlocked);
-    safeAddToProvwill(nextUnlocked);
-    return true;
+function lookupRequestInIncoming(request) {
+
+    if (proving !== '') {
+
+        console.log('TODO: does this every happen?');
+        return (proving.trim() === request.trim());
+
+    } else if (provwill !== '') {
+
+        var nextIndex = next(provwill);
+        var nextItem = provwill.substring(0, nextIndex);
+        return (nextItem.trim() === request.trim());
+
+    } else {
+
+        var unlocked = pweGetUnlocked();
+        var nextIndex = next(unlocked);
+        var nextUnlocked = unlocked.substring(0, nextIndex);
+        if (nextUnlocked.trim() !== request.trim()) { return false; }
+
+        truncateUnlockedFromIndex(nextIndex);
+        safeAppendToProvwill(nextUnlocked);
+        return true;
+
+    }
 }
 
-/*
- * Adds [request] to the buffer so that [editorOnRequestTriggered] and
- * [editorOnResponse] see the right text.
- */
-function onProofTreeQuery(request) {
+function proofTreeQueryWish(request) {
 
-    /*
-      At this point, the proof tree wants the request to be ran immediately. A
-      few things can happen:
+    //console.log("Looking up", request, "in", provwill + pweGetUnlocked());
 
-      - the proof tree wants to run a focusing command, and the provwill section
-      is not empty and does not start with that command
-      -> add the request to the beginning of provwill
+    var requestWasPresent = lookupRequestInIncoming(request);
 
-      - the proof tree wants to run a focusing command, and the provwill section
-      is not empty and starts with that command
-      -> do nothing
-
-      - the proof tree wants to run a focusing command, and the provwill section
-      is empty, but the unlocked section does not start with that command
-      -> add the request to the provwill section
-
-      - the proof tree wants to run a focusing command, and the provwill section
-      is empty, but the unlocked section starts with that command
-      -> move the request from the unlocked to the provwill section
-     */
-
-    var requestWasPresent = removeRequestFromUnlocked(request)
+    if (requestWasPresent) {
+        console.log("Found");
+    } else {
+        console.log("NOT Found");
+    }
 
     if (!requestWasPresent) {
         switch (request) {
         case '{':
         case '}':
-            provwill += ' ' + request;
+            safePrependToProvwill(request);
             break;
         default:
-            provwill += '\n' + request;
-            break;
-        }
-        pweSetLockedPart('provwill', provwill);
-    }
-
-    // TODO: if the request is a focus/unfocus, and the next thing in the
-    // unlocked region is that same token, just use the token as the thing to
-    // provwill
-
-    /*
-    var unlocked = pweGetUnlocked();
-
-    if (!requestWasPresent) {
-        switch (request) {
-        case 'Qed.':
-            pweSetUnlocked('\n' + unlocked);
-            break;
-        default:
-            pweSetUnlocked(' ' + unlocked);
+            safePrependToProvwill('\n' + request);
             break;
         }
     }
-    */
 
-    repositionCaret();
-    scrollViewToCaret();
+    processProvwill();
 
+    //repositionCaret();
+    //scrollViewToCaret();
+
+}
+
+var processingProvwill = false;
+
+function processProvwill() {
+    if (processingProvwill) { return; }
+    if (provwill === '') { return; }
+    // Here, the prooftree gets a chance to modify provwill
+    if (activeProofTree !== undefined) {
+        activeProofTree.beforeProvwillConsumption();
+    }
+    nextIndex = next(provwill);
+    pieceToProcess = provwill.substring(0, nextIndex);
+    setProving(pieceToProcess);
+    truncateProvwillFromIndex(nextIndex);
+    processingProvwill = true;
+    asyncQuery(pieceToProcess)
+        .then(function(response) {
+            console.log('response:', response);
+            processingProvwill = false;
+            processProvwill();
+        })
+        .catch(outputError)
+    ;
 }
