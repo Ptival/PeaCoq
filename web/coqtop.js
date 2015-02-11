@@ -15,16 +15,16 @@ function delayPromise(time) {
 */
 function processAsyncRequests() {
 
-    console.log("------------------------------------------------------");
-    console.log("TRYING TO PROCESS");
+    //console.log("------------------------------------------------------");
+    //console.log("TRYING TO PROCESS");
 
     if (processingAsync) {
-        console.log("NOT PROCESSING BECAUSE WE ARE ALREADY PROCESSING");
+        //console.log("NOT PROCESSING BECAUSE WE ARE ALREADY PROCESSING");
         return;
     }
 
     if (_(asyncRequests).isEmpty()) {
-        console.log("NO MORE REQUESTS TO PROCESS");
+        //console.log("NO MORE REQUESTS TO PROCESS");
         return;
     }
 
@@ -34,8 +34,8 @@ function processAsyncRequests() {
     var h = request.callback;
     if (r === 'query') { console.log(q); }
     processingAsync = true;
-    console.log("+ LOCKING");
-    console.log("TRIGGERING", r, q);
+    //console.log("+ LOCKING");
+    //console.log("TRIGGERING", r, q);
     editorOnRequestTriggered(r, q);
     var beforeTime = Date.now();
     $.ajax({
@@ -50,8 +50,8 @@ function processAsyncRequests() {
         success: function(response) {
             var afterTime = Date.now();
             processingAsync = false;
-            console.log("- UNLOCKING");
-            console.log("RESPONDING", r, q, response);
+            //console.log("- UNLOCKING");
+            //console.log("RESPONDING", r, q, response);
             editorOnResponse(r, q, response);
             if (activeProofTree !== undefined) {
                 activeProofTree.onResponse(r, q, response);
@@ -89,10 +89,6 @@ function asyncRequest(r, q) {
     //console.log("ASYNCREQUEST", r, q);
     // so far, no need for activeProofTree.onRequest
     return new Promise(function(onFulfilled, onRejected) {
-
-        if (activeProofTree !== undefined) {
-            activeProofTree.beforeRequestScheduling(r, q);
-        }
 
         //console.log("QUEUEING", r, q);
         asyncRequests.push({

@@ -945,7 +945,8 @@ function proverDown() {
     var pieceToProcess = unlocked.substring(0, index);
     truncateUnlockedFromIndex(index);
     var returnValue = safeAppendToProvwill(pieceToProcess);
-    asyncQuery(pieceToProcess);
+    //asyncQuery(pieceToProcess);
+    processProvwill();
     return returnValue;
 }
 
@@ -2090,12 +2091,12 @@ function editorOnResponse(requestType, request, response) {
             updateCoqtopPane(goingDown, response);
 
             if (activeProofTree === undefined) {
-                if (request === 'Proof.') {
+                if (request.trim() === 'Proof.') {
                     createProofTree(response);
                 } else {
                     asyncStatus()
                         .then(function(status) {
-                            if (status.proving && request !== 'Proof.') {
+                            if (status.proving && request.trim() !== 'Proof.') {
                                 enterProofTree();
                             }
                         });
@@ -2163,9 +2164,9 @@ function proofTreeQueryWish(request) {
     var requestWasPresent = lookupRequestInIncoming(request);
 
     if (requestWasPresent) {
-        console.log("Found");
+        //console.log("Found");
     } else {
-        console.log("NOT Found");
+        //console.log("NOT Found");
     }
 
     if (!requestWasPresent) {
@@ -2203,7 +2204,7 @@ function processProvwill() {
     processingProvwill = true;
     asyncQuery(pieceToProcess)
         .then(function(response) {
-            console.log('response:', response);
+            //console.log('response:', response);
             processingProvwill = false;
             processProvwill();
         })

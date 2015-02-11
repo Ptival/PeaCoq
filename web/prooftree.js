@@ -697,6 +697,8 @@ ProofTree.prototype.refreshTactics = function() {
     // flushes the worklist and add the new sparks
     this.tacticsWorklist = groupSparks;
 
+    //console.log("REPOPULATING TACTICS WORKLIST", this.tacticsWorklist);
+
     this.processTactics();
 
 }
@@ -786,7 +788,8 @@ ProofTree.prototype.hInit = function(response) {
 
     this.curNode = this.rootNode;
 
-    this.refreshTactics();
+    // this is now done later once 'Proof.' has been processed
+    //this.refreshTactics();
 
     this.update();
 
@@ -3448,7 +3451,7 @@ ProofTree.prototype.onUndo = function(undone, response) {
 
 ProofTree.prototype.beforeProvwillConsumption = function(queryType, query) {
     var nextIndex = next(provwill);
-    var nextPieceProcessed = provwill.substring(0, index);
+    var nextPieceProcessed = provwill.substring(0, nextIndex);
     switch (nextPieceProcessed.trim()) {
 
     case '{':
@@ -3472,6 +3475,7 @@ ProofTree.prototype.onResponse = function(queryType, query, response) {
     switch (queryType) {
     case 'query':
         // if a query succeeded, we don't want to keep refreshing tactics
+        //console.log('FLUSHING TACTICS WORKLIST');
         this.tacticsWorklist = [];
         switch (response.rResponse.tag) {
         case 'Good':
@@ -3507,8 +3511,17 @@ ProofTree.prototype.autoFocus = function() {
 
 GoalNode.prototype.reactTo = function(query, response) {
     var proofTree = this.proofTree;
-    if (query === 'Qed.') {
+    if (query.trim() === 'Qed.') {
         exitProofTree();
+        return;
+    }
+    if (query.trim() === 'Proof.') {
+        proofTreeQueryWish('{');
+        return;
+    }
+    if (query.trim() === '{') {
+        this.response = response;
+        this.proofTree.refreshTactics();
         return;
     }
     var existingTactic = _(this.getTactics())
@@ -3549,6 +3562,7 @@ TacticGroupNode.prototype.reactTo = function(query, response) {
         ;
         goalToFocus.response = response;
         goalToFocus.makeCurrentNode();
+        proofTree.refreshTactics();
         proofTree.update();
         break;
 
