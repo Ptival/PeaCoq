@@ -399,15 +399,13 @@ function count (str, pat) {
 
 // highlight dot that are terminators as opposed to the others
 function coq_undot(str) {
-    return str
-        .replace(/[.][.][.]/g, '__.')      // emphasize the last dot of ...
-        //.replace(/[.][.]/g, '__')
-        .replace(/[.][a-zA-Z1-9_]/g, '__') // hides qualified identifiers
+    str = str.replace(/[.][.][.]/g, '__.'); // emphasize the last dot of ...
+    str = str.replace(/[.][a-zA-Z1-9_]/g, '__'); // hides qualified identifiers
     // hide curly braces that are implicit arguments
-        .replace(/\{((?:[^\.\}]|\.(?!\ ))*)\}/g, "_$1_")
+    str = str.replace(/\{((?:[^\.\}]|\.(?!\s))*)\}/g, "_$1_");
     // make other bullets look like curly braces
-        .replace(/(\.\s*)[\-\+\*](?!\))/g, "$1{")
-    ;
+    str = str.replace(/(\.\s*|^\s*)[\-\+\*](?!\))/g, "$1{");
+    return str;
 }
 
 function coq_find_dot(str, toclose) {
