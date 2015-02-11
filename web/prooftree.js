@@ -9,7 +9,7 @@
 window.PT = {};
 
 // CONFIGURATION
-var svgPanEnabled = true;
+var svgPanEnabled = false;
 var nodeVSpacing = 10;
 var nodeStroke = 2;
 var rectMargin = {top: 2, right: 8, bottom: 2, left: 8};
@@ -1953,7 +1953,6 @@ function isTerminating(tactic) {
     var tactic = getTacticFromTacticish(tactic);
     return _.isEmpty(tactic.goals);
 }
-
 function isGoal(node) {
     if (node === undefined) {
         throw ['isGoal', node];
