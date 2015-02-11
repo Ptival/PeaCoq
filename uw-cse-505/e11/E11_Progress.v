@@ -82,175 +82,6 @@ Inductive SStep : Expr -> Expr -> Prop :=
 
 Notation "e1 --> e2" := (SStep e1 e2) (at level 51).
 
-Lemma sstep_test_1:
-  (\"x", V"x") @ V"z" --> V"z".
-Proof.
-  apply Ssubst.
-  apply SubstVar_same.
-Qed.
-
-Lemma Lam_nostep:
-  forall x e1 e2,
-  ~ (\x, e1 --> e2).
-Proof.
-  intros. intro. inversion H.
-Qed.
-
-(*
-
-Lemma Subst_det:
-  forall e1 e2 x e3 e3',
-  Subst e1 e2 x e3 ->
-  Subst e1 e2 x e3' ->
-  e3 = e3'.
-Proof.
-  intros. induction H.
-  - inversion H0; subst.
-    + reflexivity.
-    + congruence.
-  - inversion H0; subst.
-    + congruence.
-    + reflexivity.
-  - inversion H0; subst.
-    (* stuck, IH not strong enough... *)
-Abort.
-
-*)
-
-Lemma Subst_det:
-  forall e1 e2 x e3,
-  Subst e1 e2 x e3 ->
-  forall e3',
-  Subst e1 e2 x e3' ->
-  e3 = e3'.
-Proof.
-  induction 1; intros.
-  { inversion H; auto. }
-  { inversion H; auto. }
-  { inversion H; subst; auto.
-    congruence.
-  }
-  { inversion H0; subst; auto.
-    congruence.
-  }
-  { inversion H1; subst; auto.
-    f_equal; auto.
-  }
-  { inversion H; subst; auto.
-    congruence.
-  }
-  { inversion H1; subst; auto.
-    { congruence. }
-    { f_equal; auto. }
-  }
-Qed.
-
-Lemma SStep_det:
-  forall e e1,
-  e --> e1 ->
-  forall e2,
-  e --> e2 ->
-  e1 = e2.
-Proof.
-  intro. intro. intro. induction H.
-  { intros. inversion H0.
-    { subst. f_equal. auto. }
-    { subst. apply Lam_nostep in H. contradiction. }
-  }
-  { intros. inversion H0.
-    { subst. apply Lam_nostep in H4. contradiction. }
-    { subst. eapply Subst_det in H5.
-      { eassumption. }
-      { assumption. }
-    }
-  }
-Qed.
-
-(**
-Big Step:
-<<
-       
-  ---------------------
-    \x. e ==> \x. e
-
-    e1 ==> \x.e1'   e1'[e2/x] ==> v      
-  ------------------------------------
-            e1 e2 ==> v
->>
-*)
-
-Inductive BStep : Expr -> Expr -> Prop :=
-| BSval : forall x e,
-  BStep (\x, e) (\x, e)
-| BSsubst : forall e1 e2 x e1' e2' v,
-  BStep e1 (\x, e1') ->
-  Subst e1' e2 x e2' ->
-  BStep e2' v ->
-  BStep (e1 @ e2) v.
-
-Notation "e1 ==> e2" := (BStep e1 e2) (at level 51).
-
-Lemma bstep_test_1:
-  (\"x", V"x") @ (\"y", V"y") ==> (\"y", V"y").
-Proof.
-  econstructor.
-  { left. }
-  { constructor. }
-  { left. }
-Qed.
-
-Lemma bstep_test_2:
-  forall e,
-  ~ (V"x" ==> e).
-Proof.
-  intro. intro. inversion H.
-Qed.
-
-Lemma bstep_lam_inv:
-  forall x1 e1 x2 e2,
-  \x1, e1 ==> \x2, e2 ->
-  x1 = x2 /\ e1 = e2.
-Proof.
-  intros. inversion H. auto.
-Qed.
-
-Lemma bstep_test_3:
-  forall e1,
-  e1 = (\"x", V"x" @ V"x") @ (\"x", V"x" @ V"x") ->
-  forall e2,
-  ~ (e1 ==> e2).
-Proof.
-  intros. intro. induction H0.
-  { discriminate. }
-  { inversion H. subst. inversion H0_. subst. inversion H0. subst. inversion H3.
-    { subst. inversion H7.
-      { subst. auto. }
-      { auto. }
-    }
-    { auto. }
-  }
-Qed.
-
-Lemma bstep_det:
-  forall e e1,
-  e ==> e1 ->
-  forall e2,
-  e ==> e2 ->
-  e1 = e2.
-Proof.
-  intro. intro. intro. induction H.
-  { intros. inversion H. reflexivity. }
-  { intros. inversion H2. subst.
-    apply IHBStep1 in H5. inversion H5. subst.
-    replace e2'0 with e2' in *.
-    { auto. }
-    { eapply Subst_det.
-      { eassumption. }
-      { assumption. }
-    }
-  }
-Qed.
-
 Inductive SSstar : Expr -> Expr -> Prop :=
 | SSrefl : forall e,
   SSstar e e
@@ -260,50 +91,6 @@ Inductive SSstar : Expr -> Expr -> Prop :=
   SSstar e e''.
 
 Notation "e1 -->* e2" := (SSstar e1 e2) (at level 51).
-
-Lemma SStar_trans:
-  forall e1 e2 e3,
-  e1 -->* e2 ->
-  e2 -->* e3 ->
-  e1 -->* e3.
-Proof.
-  intros. induction H.
-  { assumption. }
-  { econstructor.
-    { eassumption. }
-    { auto. }
-  }
-Qed.
-
-Lemma SStar_crunch_left:
-  forall e1 e1',
-  e1 -->* e1' ->
-  forall e2,
-  e1 @ e2 -->* e1' @ e2.
-Proof.
-  intro. intro. intro. induction H.
-  { left. }
-  { intro. econstructor.
-    { left. eassumption. }
-    { auto. }
-  }
-Qed.
-
-Lemma BStep_SSstar:
-  forall e1 e2,
-  e1 ==> e2 ->
-  e1 -->* e2.
-Proof.
-  intros. induction H.
-  { left. }
-  { eapply SStar_trans with (e2 := (\x, e1') @ e2).
-    { apply SStar_crunch_left. assumption. }
-    { econstructor.
-      { right. eassumption. }
-      { assumption. }
-    }
-  }
-Qed.
 
 (* ----------- *)
 
@@ -383,11 +170,8 @@ Lemma canon_int:
   WellTyped Empty e TInt ->
   exists i, e = I i.
 Proof.
-  intros. inversion H.
-  { subst. inversion H0. }
-  { eauto. }
-  { subst. inversion H0. }
-Qed.
+Admitted.
+
 
 Lemma cannon_lam:
   forall e t1 t2,
@@ -395,11 +179,7 @@ Lemma cannon_lam:
   WellTyped Empty e (t1 ~> t2) ->
   exists x, exists e', e = \x, e'.
 Proof.
-  intros. inversion H.
-  { subst. inversion H0. }
-  { subst. inversion H0. }
-  { eauto. }
-Qed.
+Admitted.
 
 Lemma Subst_exists:
   forall e1 e2 x,
@@ -440,7 +220,9 @@ Proof.
     { reflexivity. }
     { destruct H. left. econstructor. left. eassumption. }
     { left. eapply cannon_lam in H.
-      { destruct H. destruct H. subst. destruct (Subst_exists x0 e2 x). econstructor. right. eassumption. }
+      { destruct H. destruct H. subst.
+        destruct (Subst_exists x0 e2 x).
+        econstructor. right. eassumption. }
       { eassumption. }
     }
   }
