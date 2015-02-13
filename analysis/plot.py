@@ -81,10 +81,10 @@ def main():
         labs.append(d)
         n += 1
 
-    if n > 10:
+    if len(labs) > 10:
         labpos = [(i * n) / 10 for i in range(10)]
     else:
-        labpos = range(n)
+        labpos = range(len(labs))
     line.xTickLabels = [labs[i] for i in labpos]
     line.xTickLabelPoints = labpos
 
