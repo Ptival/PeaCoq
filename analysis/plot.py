@@ -9,23 +9,26 @@ def usage():
     print('Usage: plot.py data.csv')
 
 class Entry:
-    def __init__(self, ver, stm, ctm, cmd, pay):
-        self.version = ver
+    def __init__(self, usr, stm, ctm, ver, cmd, pay):
+        self.username = usr
         self.serverT = stm
         self.clientT = ctm
+        self.version = ver
         self.command = cmd
         self.payload = pay
 
     def __repr__(self):
         return '''
-Entry( version: %s
+Entry( username: %s
      , serverT: %s
      , clientT: %s
+     , version: %s
      , command: %s
      , payload: "%s"
-     )''' % ( self.version
+     )''' % ( self.username
             , self.serverT
             , self.clientT
+            , self.version
             , self.command
             , self.payload
             )
@@ -46,17 +49,16 @@ def main():
     with open(path, 'rb') as f:
         log = []
         for row in csv.reader(f):
-            ver = row[0]
+            usr = row[0]
             stm = datetime.strptime(row[1], '%Y-%m-%d-%H-%M-%S-%f')
             try:
                 ctm = datetime.strptime(row[2], '%Y-%m-%d-%H-%M-%S-%f')
             except:
                 ctm = None
-            cmd = row[3]
-            pay = row[4]
-            log.append(Entry(ver, stm, ctm, cmd, pay))
-
-    print(log)
+            ver = row[3]
+            cmd = row[4]
+            pay = row[5]
+            log.append(Entry(usr, stm, ctm, ver, cmd, pay))
 
     # commands per day
     cmdSum = {}
@@ -78,6 +80,39 @@ def main():
         line.yValues.append(cmdSum[d])
         labs.append(d)
         n += 1
+
+    labpos = [(i * n) / 10 for i in range(10)]
+    line.xTickLabels = [labs[i] for i in labpos]
+    line.xTickLabelPoints = labpos
+
+    line.xTickLabelProperties = {
+        "color" : "blue",
+        "rotation" : 30,
+        "fontsize" : 9
+    }
+    plot.yLabel = "Total Commands"
+    plot.add(line)
+    plot.setDimensions(9,6)
+    plot.save("cmds-by-day.png")
+
+    # commands per user
+    cmdSum = {}
+    for l in log:
+        d = l.usr
+        if not (d in cmdSum):
+            cmdSum[d] = 0
+        cmdSum[d] += 1
+
+    plot = Plot()
+    line = Line()
+    line.xValues = []
+    line.yValues = []
+    labs = []
+
+    for d in sorted(cmdSum.keys()):
+        line.xValues.append(d)
+        line.yValues.append(cmdSum[d])
+        labs.append(d)
 
     labpos = [(i * n) / 10 for i in range(10)]
     line.xTickLabels = [labs[i] for i in labpos]
