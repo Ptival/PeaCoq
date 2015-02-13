@@ -438,7 +438,7 @@ Qed.
 
 (* [Problem 24] *)
 (* Prove type preservation over any sequence of steps *)
-(* The lemma should look almost identical to the problem 22 *)
+(* The lemma should look almost identical to the previous problem *)
 
 (* [Problem 25] *)
 (* Prove that our simple type system for lambda calculus is sound *)
