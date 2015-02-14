@@ -98,6 +98,146 @@ def main():
     plot.setDimensions(9,6)
     plot.save("cmds-by-day.png")
 
+    # I will use these buckets multiple times
+
+    userBuckets = {}
+    for l in log:
+      if not l.username in userBuckets:
+        userBuckets[l.username] = []
+      userBuckets[l.username].append(l)
+
+    # clickes per user
+
+    clicks = {}
+    for bucket in userBuckets:
+      for l in userBuckets[bucket]:
+        if l.command == "CLICK":
+          if not (l.username in clicks):
+            clicks[l.username] = 0
+          clicks[l.username] += 1
+
+    plot = Plot()
+    bar = Bar()
+    bar.xValues = []
+    bar.yValues = []
+    labs = []
+
+    n = 1
+    for d in sorted(clicks.keys()):
+        user = d[:5]
+        bar.xValues.append(n)
+        bar.yValues.append(clicks[d])
+        labs.append(user)
+        n += 1
+
+    bar.xTickLabels = labs
+
+    line.xTickLabelProperties = {
+        "color" : "blue",
+        "rotation" : 30,
+        "fontsize" : 9
+    }
+    plot.yLabel = "Clicks per user"
+    plot.add(bar)
+    plot.setDimensions(9,6)
+    plot.save("clicks-per-user.png")
+
+    # QEDs per user
+
+    qeds = {}
+    for bucket in userBuckets:
+      for l in userBuckets[bucket]:
+        if l.command == "QED":
+          if not (l.username in qeds):
+            qeds[l.username] = 0
+          qeds[l.username] += 1
+
+    plot = Plot()
+    bar = Bar()
+    bar.xValues = []
+    bar.yValues = []
+    labs = []
+
+    n = 1
+    for d in sorted(qeds.keys()):
+        user = d[:5]
+        bar.xValues.append(n)
+        bar.yValues.append(qeds[d])
+        labs.append(user)
+        n += 1
+
+    bar.xTickLabels = labs
+
+    line.xTickLabelProperties = {
+        "color" : "blue",
+        "rotation" : 30,
+        "fontsize" : 9
+    }
+    plot.yLabel = "QEDs per user"
+    plot.add(bar)
+    plot.setDimensions(9,6)
+    plot.save("qeds-per-user.png")
+
+    # Number of commands between AUTOENTERPROOFTREE and EXITPROOFTREE
+
+    counts = {}
+    for bucket in userBuckets:
+      counter = 0
+      counting = False
+      for l in userBuckets[bucket]:
+        if counting:
+          if l.command == "EXITPROOFTREE" or l.command == "LOAD" or l.command == "NEWSESSION" or l.command == "USERIDENTIFIED" or l.command == "REWIND":
+            if not counter in counts:
+              counts[counter] = 0
+            counts[counter] += 1
+            counting = False
+          elif l.command == "QUERY":
+            continue
+          else:
+            counter += 1
+        else:
+          if l.command == "AUTOENTERPROOFTREE":
+            counting = True
+            counter = 0
+          else:
+            continue
+
+    bucketSize = 50
+    bucketCounts = {}
+    del counts[0]
+    for count in counts:
+      bucketIndex = (count - 1) / bucketSize
+      if bucketIndex not in bucketCounts:
+        bucketCounts[bucketIndex] = 0
+      bucketCounts[bucketIndex] += counts[count]
+
+    plot = Plot()
+    bar = Bar()
+    bar.xValues = []
+    bar.yValues = []
+    labs = []
+
+    n = 1
+    for d in bucketCounts.keys():
+        bar.xValues.append(n)
+        bar.yValues.append(bucketCounts[d])
+        rangeEnd = ((d + 1) * bucketSize)
+        labs.append(str(rangeEnd))
+        n += 1
+
+    bar.xTickLabels = labs
+
+    line.xTickLabelProperties = {
+        "color" : "blue",
+        "rotation" : 30,
+        "fontsize" : 9
+    }
+    plot.xLabel = "Approximate number of actions"
+    plot.yLabel = "Number of proofs done in that many actions"
+    plot.add(bar)
+    plot.setDimensions(9,6)
+    plot.save("actions-per-proof.png")
+
 
 if __name__ == '__main__':
     main()
