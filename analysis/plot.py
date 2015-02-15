@@ -60,7 +60,23 @@ def main():
             pay = row[5]
             log.append(Entry(usr, ver, stm, ctm, cmd, pay))
 
-    # commands per day
+    # these buckets will be used in some functions
+
+    userBuckets = {}
+    for l in log:
+      if not l.username in userBuckets:
+        userBuckets[l.username] = []
+      userBuckets[l.username].append(l)
+
+    commandsPerDay(log)
+    clicksPerUser(userBuckets)
+    qedsPerUser(userBuckets)
+    nbCommands(userBuckets)
+    nbLefts(userBuckets)
+
+
+def commandsPerDay(log):
+
     cmdSum = {}
     for l in log:
         d = l.serverT.strftime('%y-%m-%d')
@@ -100,13 +116,8 @@ def main():
 
     # I will use these buckets multiple times
 
-    userBuckets = {}
-    for l in log:
-      if not l.username in userBuckets:
-        userBuckets[l.username] = []
-      userBuckets[l.username].append(l)
 
-    # clickes per user
+def clicksPerUser(userBuckets):
 
     clicks = {}
     for bucket in userBuckets:
@@ -132,7 +143,7 @@ def main():
 
     bar.xTickLabels = labs
 
-    line.xTickLabelProperties = {
+    bar.xTickLabelProperties = {
         "color" : "blue",
         "rotation" : 30,
         "fontsize" : 9
@@ -142,7 +153,8 @@ def main():
     plot.setDimensions(9,6)
     plot.save("clicks-per-user.png")
 
-    # QEDs per user
+
+def qedsPerUser(userBuckets):
 
     qeds = {}
     for bucket in userBuckets:
@@ -168,7 +180,7 @@ def main():
 
     bar.xTickLabels = labs
 
-    line.xTickLabelProperties = {
+    bar.xTickLabelProperties = {
         "color" : "blue",
         "rotation" : 30,
         "fontsize" : 9
@@ -178,7 +190,8 @@ def main():
     plot.setDimensions(9,6)
     plot.save("qeds-per-user.png")
 
-    # Number of commands between AUTOENTERPROOFTREE and EXITPROOFTREE
+
+def nbCommands(userBuckets):
 
     counts = {}
     for bucket in userBuckets:
@@ -227,16 +240,66 @@ def main():
 
     bar.xTickLabels = labs
 
-    line.xTickLabelProperties = {
+    bar.xTickLabelProperties = {
         "color" : "blue",
         "rotation" : 30,
         "fontsize" : 9
     }
     plot.xLabel = "Approximate number of actions"
-    plot.yLabel = "Number of proofs done in that many actions"
     plot.add(bar)
     plot.setDimensions(9,6)
     plot.save("actions-per-proof.png")
+
+
+def nbLefts(userBuckets):
+
+    counts = {}
+    for bucket in userBuckets:
+      counter = 0
+      counting = False
+      for l in userBuckets[bucket]:
+        if counting:
+          if l.command == "EXITPROOFTREE" or l.command == "LOAD" or l.command == "NEWSESSION" or l.command == "USERIDENTIFIED" or l.command == "REWIND":
+            if not counter in counts:
+              counts[counter] = 0
+            counts[counter] += 1
+            counting = False
+          elif l.command == "LEFT":
+            counter += 1
+          else:
+            continue
+        else:
+          if l.command == "AUTOENTERPROOFTREE":
+            counting = True
+            counter = 0
+          else:
+            continue
+
+    plot = Plot()
+    bar = Bar()
+    bar.xValues = []
+    bar.yValues = []
+    labs = []
+
+    n = 1
+    for d in sorted(counts.keys()):
+        bar.xValues.append(n)
+        bar.yValues.append(counts[d])
+        labs.append(str(d))
+        n += 1
+
+    bar.xTickLabels = labs
+
+    bar.xTickLabelProperties = {
+        "color" : "blue",
+        "rotation" : 90,
+        "fontsize" : 9
+    }
+    plot.xLabel = "Number of lefts"
+    plot.add(bar)
+    plot.setDimensions(9,6)
+    plot.save("lefts-per-proof.png")
+
 
 
 if __name__ == '__main__':
