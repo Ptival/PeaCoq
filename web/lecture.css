@@ -7,11 +7,15 @@
     float: left;
     margin: 0;
     width: 50%;
+    white-space: pre-wrap;
+    word-break: normal;
 }
 #editor {
     float: left;
     margin: 0;
     width: 50%;
+    white-space: pre-wrap;
+    word-break: normal;
 }
 #main {
     border: 0;

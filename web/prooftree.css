@@ -30,7 +30,6 @@
 
 .monospace {
     font-family: DejaVu Sans Mono, monospace;
-    word-break: break-all;
 }
 
 .debug {
