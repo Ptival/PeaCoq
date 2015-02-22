@@ -2196,8 +2196,12 @@ function proofTreeQueryWish(request) {
         case '}':
             safePrependToProvwill(request);
             break;
-        default:
+        case 'Proof.':
             safePrependToProvwill('\n' + request);
+            break;
+        default:
+            safePrependToProvwill(request);
+            //safePrependToProvwill('\n' + request);
             break;
         }
     }
