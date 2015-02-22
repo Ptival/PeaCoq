@@ -3411,7 +3411,7 @@ ProofTree.prototype.onUndo = function(undone, response) {
     case '{':
         if (this.curNode.proofTree.isRootNode(this.curNode)) {
             // unfocusing the root node should exit the proof
-            proverUp();
+            proverUp(true);
         } else {
             this.curNode.parent.makeCurrentNode();
             this.update();
@@ -3431,7 +3431,7 @@ ProofTree.prototype.onUndo = function(undone, response) {
 
         this.update();
         // we want to trigger at least one more undo
-        proverUp();
+        proverUp(true);
         break;
 
     case 'Proof.':
@@ -3618,7 +3618,7 @@ Node.prototype.makeCurrentNode = function() {
 
 ProofTree.prototype.undoUntilNode = function(dst) {
     var self = this;
-    return proverUp()
+    return proverUp(true)
         .then(function() {
             if (self.curNode.id === dst.id) {
                 return Promise.resolve();

@@ -817,7 +817,7 @@ function highlight() {
     rangy.restoreSelection(sel);
 }
 
-function undoCallback(undone, response) {
+function undoCallback(fromTree, undone, response) {
     switch(response.rResponse.tag) {
     case "Good":
         if (activeProofTree !== undefined) {
@@ -832,7 +832,7 @@ function undoCallback(undone, response) {
             truncateProvedToIndex(index);
             prependToUnlocked(pieceUnproved);
         }
-        repositionCaret();
+        if (!fromTree) { repositionCaret(); }
         response.rResponse.contents[0] = ""; // don't show the user the steps number
         break;
     };
@@ -1014,7 +1014,7 @@ function proverToCaret () {
   empty, we should therefore be able to just undo the last step. Undo might undo
   more steps than that though, in which case we want to mark them undone too.
 */
-function proverUp () {
+function proverUp (fromTree) {
     var index = 0;
     if (proved != "") { index = prev(proved); }
     var pieceToUnprocess = proved.substring(index);
@@ -1022,9 +1022,9 @@ function proverUp () {
         truncateProvedToIndex(index);
         prependToUnlocked(pieceToUnprocess);
         asyncLog("PROVERUP " + pieceToUnprocess);
-        repositionCaret();
+        if (!fromTree) { repositionCaret(); }
         return asyncUndo()
-            .then(_.partial(undoCallback, pieceToUnprocess))
+            .then(_.partial(undoCallback, fromTree, pieceToUnprocess))
         ;
     } else {
         return Promise.resolve();
@@ -1043,9 +1043,7 @@ function repositionCaret(offset) {
         offset
     );
     sel.setSingleRange(rng);
-
     scrollViewToCaret();
-
 }
 
 function scrollViewToCaret() {
@@ -1593,8 +1591,8 @@ function pweSetLockedPart(part,txt) {
 function pweSetUnlocked(txt) {
     $("#unlocked").html(zwsp + txt);
     pweRestoreFinalBR();
-    pweCaretAtStart();
-    pweFocusEditor();
+    //pweCaretAtStart();
+    //pweFocusEditor();
 }
 
 function pweCaretAtStart() {
