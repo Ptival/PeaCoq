@@ -2078,7 +2078,7 @@ ProofTree.prototype.keydownHandler = function() {
         d3.event.preventDefault();
         if (hasParent(curNode)) {
             asyncLog("LEFT " + nodeString(curNode.parent));
-            this.click(curNode.parent);
+            curNode.parent.click();
         }
         break;
 
@@ -2087,15 +2087,8 @@ ProofTree.prototype.keydownHandler = function() {
         d3.event.preventDefault();
         var dest = curNode.getFocusedChild();
         if (dest === undefined) { break; }
-        var viewChildren = dest.getViewChildren();
-        if (isGoal(curNode) && viewChildren.length > 0) {
-            // try to actually reach the focused subgoal
-            dest = dest.getFocusedChild();
-        }
-        if (dest !== undefined) {
-            asyncLog("RIGHT " + nodeString(dest));
-            this.click(dest);
-        }
+        asyncLog("RIGHT " + nodeString(dest));
+        dest.click();
         break;
 
     case 38: // Up
