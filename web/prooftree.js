@@ -13,7 +13,7 @@ var svgPanEnabled = false;
 var nodeVSpacing = 10;
 var nodeStroke = 2;
 var rectMargin = {top: 2, right: 8, bottom: 2, left: 8};
-var animationDuration = 150;
+var animationDuration = 0;
 var tacticNodeRounding = 10;
 var goalNodeRounding = 0;
 var keyboardDelay = 100;
@@ -3009,6 +3009,16 @@ Node.prototype.isCurNodeAncestor = function() {
     return this.id === common.id;
 }
 
+Node.prototype.isCurNodeChild = function() {
+    // this will do for now, TODO make these node methods
+    return this.proofTree.isCurNodeChild(this);
+}
+
+Node.prototype.isCurNodeParent = function() {
+    // this will do for now, TODO make these node methods
+    return this.proofTree.isCurNodeParent(this);
+}
+
 /*
  * This implementation is generic as long as children implement
  * [getViewChildren].
@@ -3425,7 +3435,7 @@ ProofTree.prototype.onUndo = function(undone, response) {
         lastSolvedGoalTacticGroup.makeCurrentNode();
 
         this.update();
-        // we want to trigger one more undo
+        // we want to trigger at least one more undo
         proverUp();
         break;
 
@@ -3611,10 +3621,33 @@ Node.prototype.makeCurrentNode = function() {
  * clicked programmatically, that is a mistake!
  */
 
+ProofTree.prototype.undoUntilNode = function(dst) {
+    var self = this;
+    return proverUp()
+        .then(function() {
+            if (self.curNode.id === dst.id) {
+                return Promise.resolve();
+            } else {
+                return self.undoUntilNode(dst);
+            }
+        });
+}
+
 GoalNode.prototype.click = function() {
-    console.log('TODO: GoalNode.click');
+    if (this.isCurNodeChild()) {
+        // TODO: if this is not the first unsolved child, add as many admits as
+        // necessary?
+        proofTreeQueryWish('{');
+    } else if (this.isCurNodeParent()) {
+        this.proofTree.undoUntilNode(this);
+    }
 }
 
 TacticGroupNode.prototype.click = function() {
-    console.log('TODO: TacticGroupNode.click');
+    if (this.isCurNodeChild()) {
+        var t = this.getFocusedTactic();
+        proofTreeQueryWish(t.tactic);
+    } else if (this.isCurNodeParent()) {
+        this.proofTree.undoUntilNode(this);
+    }
 }
