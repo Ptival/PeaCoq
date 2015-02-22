@@ -155,6 +155,7 @@ function ProofTree(anchor, width, height, qedCallback,
     this.textLayer = this.viewport.append("g").attr("id", "text-layer");
     this.tipsLayer = this.viewport.append("g").attr("id", "tips-layer");
 
+    /*
     this.debug = this.svg.append("g");
 
     var debugWidth = this.width / 2;
@@ -187,6 +188,7 @@ function ProofTree(anchor, width, height, qedCallback,
         .attr("fill", "#B2DBA1")
         .attr("opacity", "0.9")
     ;
+    */
 
     if (svgPanEnabled) {
         this.svg
@@ -1679,7 +1681,7 @@ ProofTree.prototype.update = function(callback) {
         d.cY0 = d.cY;
     });
 
-    this.updateDebug();
+    //this.updateDebug();
 
     if (callback !== undefined) { callback(); }
 
