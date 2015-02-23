@@ -966,8 +966,9 @@ function proverDown() {
     var pieceToProcess = unlocked.substring(0, index);
     truncateUnlockedFromIndex(index);
     var returnValue = safeAppendToProvwill(pieceToProcess);
-    //asyncQuery(pieceToProcess);
-    processProvwill();
+    processProvwill()
+        .then(scrollViewToCaret)
+    ;
     return returnValue;
 }
 
@@ -2214,8 +2215,8 @@ function proofTreeQueryWish(request) {
 var processingProvwill = false;
 
 function processProvwill() {
-    if (processingProvwill) { return; }
-    if (provwill === '') { return; }
+    if (processingProvwill) { return Promise.resolve(); }
+    if (provwill === '') { return Promise.resolve(); }
     // Here, the prooftree gets a chance to modify provwill
     if (activeProofTree !== undefined) {
         activeProofTree.beforeProvwillConsumption();
@@ -2225,7 +2226,7 @@ function processProvwill() {
     setProving(pieceToProcess);
     truncateProvwillFromIndex(nextIndex);
     processingProvwill = true;
-    asyncQuery(pieceToProcess)
+    return asyncQuery(pieceToProcess)
         .then(function(response) {
             //console.log('response:', response);
             processingProvwill = false;
