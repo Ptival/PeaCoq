@@ -67,8 +67,6 @@ function truncateUnlockedFromIndex(index) {
     pweSetUnlocked(unlocked);
 }
 
-var delimiters = [".", "{", "}"];
-
 var unicodeList = [
     ("forall", "∀"),
     ("\/", "∨"),
@@ -431,7 +429,7 @@ function onLoad(text) {
 
 // Some of this code has been borrowed from the ProofWeb project
 // Their license is unclear, TODO make sure we can borrow, oops!
-
+var delimiters = ['.'];
 function my_index(str) {
     var index = +Infinity;
     _(delimiters).each(function(delimiter) {
@@ -442,7 +440,15 @@ function my_index(str) {
     else { return -1; }
 }
 
+var bullets = ["{", "}", "+", "-", "*"];
+
 function next(str) {
+    // if the very next thing is one of {, }, +, -, *, it is the next
+    var trimmed = str.trimLeft();
+    if (_(bullets).contains(trimmed[0])) {
+        return str.length - trimmed.length + 1;
+    }
+    // otherwise, gotta find a dot
     return coq_find_dot(coq_undot(str), 0) + 1;
 }
 
@@ -460,9 +466,9 @@ function coq_undot(str) {
     str = str.replace(/[.][.][.]/g, '__.'); // emphasize the last dot of ...
     str = str.replace(/[.][a-zA-Z1-9_]/g, '__'); // hides qualified identifiers
     // hide curly braces that are implicit arguments
-    str = str.replace(/\{((?:[^\.\}]|\.(?!\s))*)\}/g, "_$1_");
+    //str = str.replace(/\{((?:[^\.\}]|\.(?!\s))*)\}/g, "_$1_");
     // make other bullets look like curly braces
-    str = str.replace(/(\.\s*|^\s*)[\-\+\*](?!\))/g, "$1{");
+    //str = str.replace(/(\.\s*|^\s*)[\-\+\*](?!\))/g, "$1{");
     return str;
 }
 
