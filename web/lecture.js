@@ -444,7 +444,7 @@ var bullets = ["{", "}", "+", "-", "*"];
 
 function next(str) {
     // if the very next thing is one of {, }, +, -, *, it is the next
-    var trimmed = str.trimLeft();
+    var trimmed = coqTrimLeft(str);
     if (_(bullets).contains(trimmed[0])) {
         return str.length - trimmed.length + 1;
     }
@@ -970,11 +970,11 @@ function proverDown() {
     var index = next(unlocked);
     if (index == 0) { return; }
     var pieceToProcess = unlocked.substring(0, index);
-    if (pieceToProcess.trim() === '+'
-        || pieceToProcess.trim() === '-'
-        || pieceToProcess.trim() === '*') {
-        alert('Bullets not supported, use PeaCoq braces');
-        return;
+    var trimmed = coqTrim(pieceToProcess);
+    if (_(['+', '-', '*']).contains(trimmed)) {
+        // eat and ignore bullets
+        truncateUnlockedFromIndex(index);
+        return proverDown();
     }
     truncateUnlockedFromIndex(index);
     var returnValue = safeAppendToProvwill(pieceToProcess);
@@ -1231,7 +1231,7 @@ function exitProofTree() {
 
 function getLastProved() {
     var proved = $("#proved").text();
-    return proved.substring(prev(proved)).trim();
+    return coqTrim(proved.substring(prev(proved)));
 }
 
 /*
@@ -2112,7 +2112,7 @@ function editorOnResponse(requestType, request, response) {
         switch(response.rResponse.tag) {
 
         case 'Good':
-            if (proving.trim() !== request.trim()) {
+            if (coqTrim(proving) !== coqTrim(request)) {
                 console.log(
                     'request response was for', request,
                     'but was expecting for', proving
@@ -2124,12 +2124,12 @@ function editorOnResponse(requestType, request, response) {
             updateCoqtopPane(goingDown, response);
 
             if (activeProofTree === undefined) {
-                if (request.trim() === 'Proof.') {
+                if (coqTrim(request) === 'Proof.') {
                     createProofTree(response);
                 } else {
                     asyncStatus()
                         .then(function(status) {
-                            if (status.proving && request.trim() !== 'Proof.') {
+                            if (status.proving && coqTrim(request) !== 'Proof.') {
                                 enterProofTree();
                             }
                         });
@@ -2167,21 +2167,21 @@ function lookupRequestInIncoming(request) {
 
     if (proving !== '') {
 
-        console.log('TODO: does this every happen?');
-        return (proving.trim() === request.trim());
+        // this branch happens when one processes a lot of commands
+        return sameTrimmed(proving, request);
 
     } else if (provwill !== '') {
 
         var nextIndex = next(provwill);
         var nextItem = provwill.substring(0, nextIndex);
-        return (nextItem.trim() === request.trim());
+        return sameTrimmed(nextItem, request);
 
     } else {
 
         var unlocked = pweGetUnlocked();
         var nextIndex = next(unlocked);
         var nextUnlocked = unlocked.substring(0, nextIndex);
-        if (nextUnlocked.trim() !== request.trim()) { return false; }
+        if (!sameTrimmed(nextUnlocked, request)) { return false; }
 
         truncateUnlockedFromIndex(nextIndex);
         safeAppendToProvwill(nextUnlocked);
@@ -2247,4 +2247,28 @@ function processProvwill() {
         })
         .catch(outputError)
     ;
+}
+
+// TODO: support nested comments?
+
+function coqTrim(s) {
+    return s
+    // remove comments first
+        .replace(/\(\*[\s\S]*?\*\)/g, '')
+    // then trim
+        .replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, '')
+    ;
+}
+
+function coqTrimLeft(s) {
+    return s
+    // remove one heading comment first
+        .replace(/^[\s\uFEFF\xA0]+\(\*[\s\S]*?\*\)/g, '')
+    // then trim left
+        .replace(/^[\s\uFEFF\xA0]+/g, '')
+    ;
+}
+
+function sameTrimmed(a, b) {
+    return (coqTrim(a) === coqTrim(b));
 }
