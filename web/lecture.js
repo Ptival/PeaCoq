@@ -973,6 +973,7 @@ function proverDown() {
     truncateUnlockedFromIndex(index);
     var returnValue = safeAppendToProvwill(pieceToProcess);
     processProvwill()
+        .then(repositionCaret)
         .then(scrollViewToCaret)
     ;
     return returnValue;
