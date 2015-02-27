@@ -87,6 +87,8 @@ Proof.
   intros. intro. inversion H.
 Qed.
 
+(*
+
 Lemma Subst_det:
   forall e1 e2 x e3 e3',
   Subst e1 e2 x e3 ->
@@ -103,6 +105,8 @@ Proof.
   - inversion H0; subst.
     (* stuck, IH not strong enough... *)
 Abort.
+
+*)
 
 Lemma Subst_det:
   forall e1 e2 x e3,
@@ -225,7 +229,9 @@ Lemma bstep_det:
 Proof.
   intro. intro. intro. induction H.
   { intros. inversion H. reflexivity. }
-  { intros. inversion H2. subst. apply IHBStep1 in H5. inversion H5. subst. replace e2'0 with e2' in *.
+  { intros. inversion H2. subst.
+    apply IHBStep1 in H5. inversion H5. subst.
+    replace e2'0 with e2' in *.
     { auto. }
     { eapply Subst_det.
       { eassumption. }
@@ -244,7 +250,7 @@ Inductive SSstar : Expr -> Expr -> Prop :=
 
 Notation "e1 -->* e2" := (SSstar e1 e2) (at level 51).
 
-Lemma SStar_app:
+Lemma SStar_trans:
   forall e1 e2 e3,
   e1 -->* e2 ->
   e2 -->* e3 ->
@@ -258,28 +264,33 @@ Proof.
   }
 Qed.
 
+Lemma SStar_crunch_left:
+  forall e1 e1',
+  e1 -->* e1' ->
+  forall e2,
+  e1 @ e2 -->* e1' @ e2.
+Proof.
+  intro. intro. intro. induction H.
+  { left. }
+  { intro. econstructor.
+    { left. eassumption. }
+    { auto. }
+  }
+Qed.
+
 Lemma BStep_SSstar:
   forall e1 e2,
   e1 ==> e2 ->
   e1 -->* e2.
-(*
-intros. induction H.
-  { left. }
-  { destruct e1.
-    { inversion H. }
-    { eapply SStar_app in IHBStep1.
-      { admit. }
-      { admit. } }
-    { admit. } }
-*)
-(*
-intros. induction H.
-  { left. }
-  { destruct e1.
-    { inversion H. }
-    { admit. }
-    { admit. } }
-*)
 Proof.
+  intros. induction H.
+  { left. }
+  { eapply SStar_trans with (e2 := (\x, e1') @ e2).
+    { apply SStar_crunch_left. assumption. }
+    { econstructor.
+      { right. eassumption. }
+      { assumption. }
+    }
+  }
+Qed.
 
-  

@@ -9,7 +9,8 @@ def usage():
     print('Usage: plot.py data.csv')
 
 class Entry:
-    def __init__(self, ver, stm, ctm, cmd, pay):
+    def __init__(self, usr, ver, stm, ctm, cmd, pay):
+        self.username = usr
         self.version = ver
         self.serverT = stm
         self.clientT = ctm
@@ -18,12 +19,14 @@ class Entry:
 
     def __repr__(self):
         return '''
-Entry( version: %s
+Entry( username: %s
+     , version: %s
      , serverT: %s
      , clientT: %s
      , command: %s
      , payload: "%s"
-     )''' % ( self.version
+     )''' % ( self.username
+            , self.version
             , self.serverT
             , self.clientT
             , self.command
@@ -46,19 +49,34 @@ def main():
     with open(path, 'rb') as f:
         log = []
         for row in csv.reader(f):
-            ver = row[0]
-            stm = datetime.strptime(row[1], '%Y-%m-%d-%H-%M-%S-%f')
+            usr = row[0]
+            ver = row[1]
+            stm = datetime.strptime(row[2], '%Y-%m-%d-%H-%M-%S-%f')
             try:
-                ctm = datetime.strptime(row[2], '%Y-%m-%d-%H-%M-%S-%f')
+                ctm = datetime.strptime(row[3], '%Y-%m-%d-%H-%M-%S-%f')
             except:
                 ctm = None
-            cmd = row[3]
-            pay = row[4]
-            log.append(Entry(ver, stm, ctm, cmd, pay))
+            cmd = row[4]
+            pay = row[5]
+            log.append(Entry(usr, ver, stm, ctm, cmd, pay))
 
-    print(log)
+    # these buckets will be used in some functions
 
-    # commands per day
+    userBuckets = {}
+    for l in log:
+      if not l.username in userBuckets:
+        userBuckets[l.username] = []
+      userBuckets[l.username].append(l)
+
+    commandsPerDay(log)
+    clicksPerUser(userBuckets)
+    qedsPerUser(userBuckets)
+    nbCommands(userBuckets)
+    nbLefts(userBuckets)
+
+
+def commandsPerDay(log):
+
     cmdSum = {}
     for l in log:
         d = l.serverT.strftime('%y-%m-%d')
@@ -79,7 +97,10 @@ def main():
         labs.append(d)
         n += 1
 
-    labpos = [(i * n) / 10 for i in range(10)]
+    if len(labs) > 10:
+        labpos = [(i * n) / 10 for i in range(10)]
+    else:
+        labpos = range(len(labs))
     line.xTickLabels = [labs[i] for i in labpos]
     line.xTickLabelPoints = labpos
 
@@ -92,6 +113,193 @@ def main():
     plot.add(line)
     plot.setDimensions(9,6)
     plot.save("cmds-by-day.png")
+
+    # I will use these buckets multiple times
+
+
+def clicksPerUser(userBuckets):
+
+    clicks = {}
+    for bucket in userBuckets:
+      for l in userBuckets[bucket]:
+        if l.command == "CLICK":
+          if not (l.username in clicks):
+            clicks[l.username] = 0
+          clicks[l.username] += 1
+
+    plot = Plot()
+    bar = Bar()
+    bar.xValues = []
+    bar.yValues = []
+    labs = []
+
+    n = 1
+    for d in sorted(clicks.keys()):
+        user = d[:5]
+        bar.xValues.append(n)
+        bar.yValues.append(clicks[d])
+        labs.append(user)
+        n += 1
+
+    bar.xTickLabels = labs
+
+    bar.xTickLabelProperties = {
+        "color" : "blue",
+        "rotation" : 30,
+        "fontsize" : 9
+    }
+    plot.yLabel = "Clicks per user"
+    plot.add(bar)
+    plot.setDimensions(9,6)
+    plot.save("clicks-per-user.png")
+
+
+def qedsPerUser(userBuckets):
+
+    qeds = {}
+    for bucket in userBuckets:
+      for l in userBuckets[bucket]:
+        if l.command == "QED":
+          if not (l.username in qeds):
+            qeds[l.username] = 0
+          qeds[l.username] += 1
+
+    plot = Plot()
+    bar = Bar()
+    bar.xValues = []
+    bar.yValues = []
+    labs = []
+
+    n = 1
+    for d in sorted(qeds.keys()):
+        user = d[:5]
+        bar.xValues.append(n)
+        bar.yValues.append(qeds[d])
+        labs.append(user)
+        n += 1
+
+    bar.xTickLabels = labs
+
+    bar.xTickLabelProperties = {
+        "color" : "blue",
+        "rotation" : 30,
+        "fontsize" : 9
+    }
+    plot.yLabel = "QEDs per user"
+    plot.add(bar)
+    plot.setDimensions(9,6)
+    plot.save("qeds-per-user.png")
+
+
+def nbCommands(userBuckets):
+
+    counts = {}
+    for bucket in userBuckets:
+      counter = 0
+      counting = False
+      for l in userBuckets[bucket]:
+        if counting:
+          if l.command == "EXITPROOFTREE" or l.command == "LOAD" or l.command == "NEWSESSION" or l.command == "USERIDENTIFIED" or l.command == "REWIND":
+            if not counter in counts:
+              counts[counter] = 0
+            counts[counter] += 1
+            counting = False
+          elif l.command == "QUERY":
+            continue
+          else:
+            counter += 1
+        else:
+          if l.command == "AUTOENTERPROOFTREE":
+            counting = True
+            counter = 0
+          else:
+            continue
+
+    bucketSize = 50
+    bucketCounts = {}
+    del counts[0]
+    for count in counts:
+      bucketIndex = (count - 1) / bucketSize
+      if bucketIndex not in bucketCounts:
+        bucketCounts[bucketIndex] = 0
+      bucketCounts[bucketIndex] += counts[count]
+
+    plot = Plot()
+    bar = Bar()
+    bar.xValues = []
+    bar.yValues = []
+    labs = []
+
+    n = 1
+    for d in bucketCounts.keys():
+        bar.xValues.append(n)
+        bar.yValues.append(bucketCounts[d])
+        rangeEnd = ((d + 1) * bucketSize)
+        labs.append(str(rangeEnd))
+        n += 1
+
+    bar.xTickLabels = labs
+
+    bar.xTickLabelProperties = {
+        "color" : "blue",
+        "rotation" : 30,
+        "fontsize" : 9
+    }
+    plot.xLabel = "Approximate number of actions"
+    plot.add(bar)
+    plot.setDimensions(9,6)
+    plot.save("actions-per-proof.png")
+
+
+def nbLefts(userBuckets):
+
+    counts = {}
+    for bucket in userBuckets:
+      counter = 0
+      counting = False
+      for l in userBuckets[bucket]:
+        if counting:
+          if l.command == "EXITPROOFTREE" or l.command == "LOAD" or l.command == "NEWSESSION" or l.command == "USERIDENTIFIED" or l.command == "REWIND":
+            if not counter in counts:
+              counts[counter] = 0
+            counts[counter] += 1
+            counting = False
+          elif l.command == "LEFT":
+            counter += 1
+          else:
+            continue
+        else:
+          if l.command == "AUTOENTERPROOFTREE":
+            counting = True
+            counter = 0
+          else:
+            continue
+
+    plot = Plot()
+    bar = Bar()
+    bar.xValues = []
+    bar.yValues = []
+    labs = []
+
+    n = 1
+    for d in sorted(counts.keys()):
+        bar.xValues.append(n)
+        bar.yValues.append(counts[d])
+        labs.append(str(d))
+        n += 1
+
+    bar.xTickLabels = labs
+
+    bar.xTickLabelProperties = {
+        "color" : "blue",
+        "rotation" : 90,
+        "fontsize" : 9
+    }
+    plot.xLabel = "Number of lefts"
+    plot.add(bar)
+    plot.setDimensions(9,6)
+    plot.save("lefts-per-proof.png")
+
 
 
 if __name__ == '__main__':

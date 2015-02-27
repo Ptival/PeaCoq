@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os, sys, io, re, csv
 
@@ -52,30 +52,36 @@ if __name__ == '__main__':
                       continue
                   # there has got to be a better way to do this :(
 
+                  print('.', end='')
+
+                  # we don't record this
+                  user = userFilename
+
                   m = r4.match(item)
                   if m:
                       args = [ int(m.group(i)) for i in range(1, 7) ]
                       serverdate = "{:04d}-{:02d}-{:02d}-{:02d}-{:02d}-{:02d}-000".format(*args)
-                      user = m.group(7)
+                      version = m.group(7)
                       args = list(map(lambda x: int(x), (m.group(10), m.group(8), m.group(9), adjust(m.group(11), m.group(14)), m.group(12), m.group(13))))
                       clientdate = "{:04d}-{:02d}-{:02d}-{:02d}-{:02d}-{:02d}-000".format(*args)
                       command = m.group(15)
                       payload = m.group(16)
-                      print(serverdate, clientdate, command)
-                      writer.writerow([user, serverdate, clientdate, command, payload])
+                      writer.writerow([user, version, serverdate, clientdate, command, payload])
                       continue
 
                   m = r3.match(item)
                   if m:
                       args = list(map(lambda x: int(x), (m.group(1), m.group(2), m.group(3), m.group(4), m.group(5), m.group(6))))
                       serverdate = "{:04d}-{:02d}-{:02d}-{:02d}-{:02d}-{:02d}-000".format(*args)
-                      user = m.group(7)
+                      version = m.group(7)
                       clientdate = ""
                       command = m.group(8)
                       payload = m.group(9)
-                      print(serverdate, clientdate, command)
-                      writer.writerow([userFilename, serverdate, clientdate, command, payload])
+                      writer.writerow([user, version, serverdate, clientdate, command, payload])
                       continue
+
+                  # we used not to record this
+                  version = "0000000000000000000000000000000000000000"
 
                   m = r2.match(item)
                   if m:
@@ -85,8 +91,7 @@ if __name__ == '__main__':
                       clientdate = "{:04d}-{:02d}-{:02d}-{:02d}-{:02d}-{:02d}-000".format(*args)
                       command = m.group(14)
                       payload = m.group(15)
-                      print(serverdate, clientdate, command)
-                      writer.writerow([userFilename, serverdate, clientdate, command, payload])
+                      writer.writerow([user, version, serverdate, clientdate, command, payload])
                       continue
 
                   m = r1.match(item)
@@ -96,8 +101,7 @@ if __name__ == '__main__':
                       clientdate = ""
                       command = m.group(7)
                       payload = m.group(8)
-                      print(serverdate, clientdate, command)
-                      writer.writerow([userFilename, serverdate, clientdate, command, payload])
+                      writer.writerow([user, version, serverdate, clientdate, command, payload])
                       continue
 
                   print('FAILED', item)
