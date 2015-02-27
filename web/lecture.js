@@ -970,6 +970,12 @@ function proverDown() {
     var index = next(unlocked);
     if (index == 0) { return; }
     var pieceToProcess = unlocked.substring(0, index);
+    if (pieceToProcess.trim() === '+'
+        || pieceToProcess.trim() === '-'
+        || pieceToProcess.trim() === '*') {
+        alert('Bullets not supported, use PeaCoq braces');
+        return;
+    }
     truncateUnlockedFromIndex(index);
     var returnValue = safeAppendToProvwill(pieceToProcess);
     processProvwill()
