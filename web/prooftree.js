@@ -3516,7 +3516,9 @@ ProofTree.prototype.autoFocus = function() {
 GoalNode.prototype.reactTo = function(query, response) {
     var proofTree = this.proofTree;
     if (query.trim() === 'Qed.'
-        || query.trim() === 'Admitted.') {
+        || query.trim() === 'Admitted.'
+        || query.trim() === 'Abort.'
+       ) {
         exitProofTree();
         return;
     }
