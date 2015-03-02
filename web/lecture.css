@@ -1,28 +1,49 @@
+html > body {
+    height: 100vh;
+}
 .btn-group {
     display: table-cell;
     vertical-align: top;
 }
-#coqtop {
-    border: 0;
-    float: left;
+pre {
     margin: 0;
-    width: 50%;
-    white-space: pre-wrap;
-    word-break: normal;
+    padding: 2px;
 }
-#editor {
-    float: left;
-    margin: 0;
-    width: 50%;
-    white-space: pre-wrap;
-    word-break: normal;
+#toolbar {
+    height: 45px;
+}
+#main-and-prooftree {
+    height: calc(100% - 45px);
 }
 #main {
     border: 0;
     font-family: monospace;
+    height: 50%;
+}
+#main-left, #main-right {
+    float: left;
+    height: 100%;
+    margin: 0;
+    width: 50%;
+}
+#main-left {
+    height: 100%;
+}
+#coqtop, #coqtop-error {
+    border: 0;
+    height: 50%;
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: normal;
+}
+#editor {
+    height: 100%;
+    white-space: pre-wrap;
+    word-break: normal;
 }
 #prooftree {
     border: 0;
+    height: 50%;
 }
 #revision {
     font-family: monospace;

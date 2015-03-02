@@ -387,14 +387,14 @@ function loadFile() {
 function resize() {
     var windowHeight = $(window).height();
     // careful, there are many <body> when using proof tree!
-    $("html > body").height(windowHeight);
+    //$("html > body").height(windowHeight);
     var height = windowHeight - $("#toolbar").height();
     height = Math.floor(height / 2);
-    $("#editor").css("height", height);
-    $("#coqtop").css("height", height);
-    $("#prooftree").css("height", height);
-    $("#pt-1").css("height", height);
-    $("svg").css("height", height);
+    //$("#editor").css("height", height);
+    //$("#coqtop").css("height", height);
+    //$("#prooftree").css("height", height);
+    //$("#pt-1").css("height", height);
+    //$("svg").css("height", height);
     // TODO: fix height bug
     var width = $(window).width();
     if (activeProofTree !== undefined) {

@@ -28,9 +28,22 @@
       <input id="filepicker" type="file" style="display: none;"/>
     </div>
 
-    <div id="main">
-      <pre id="editor" contenteditable="true" spellcheck="false"></pre>
-      <pre id="coqtop" contenteditable="true" spellcheck="false" class="alert"></pre>
+    <div id="main-and-prooftree">
+
+      <div id="main">
+        <div id="main-left">
+          <pre id="editor" contenteditable="true" spellcheck="false"></pre>
+        </div>
+        <div id="main-right">
+          <pre id="coqtop" contenteditable="true" spellcheck="false"
+               class="alert"></pre>
+          <pre id="coqtop-error" contenteditable="true" spellcheck="false"
+               class="alert alert-danger"></pre>
+        </div>
+      </div>
+
+      <div id="prooftree"></div>
+
     </div>
 
     <div class="modal fade" id="feedback" tabindex="-1" role="dialog"
@@ -156,8 +169,6 @@
         </div>
       </div>
     </div>
-
-    <div id="prooftree"></div>
 
   </body>
 </html>
