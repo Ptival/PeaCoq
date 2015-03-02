@@ -979,6 +979,7 @@ function proverDown() {
     }
     truncateUnlockedFromIndex(index);
     var returnValue = safeAppendToProvwill(pieceToProcess);
+    // TODO: this should not happen when calling proverDown from proverToCaret
     processProvwill()
         .then(repositionCaret)
         .then(scrollViewToCaret)

@@ -3549,7 +3549,7 @@ GoalNode.prototype.reactTo = function(query, response) {
         groupToAttachTo.tactics.unshift(newChild);
         groupToAttachTo.tacticIndex = 0;
         proofTree.update(function() {
-            // IMPORTANT: curNode must not be a TacticNode!
+            // IMPORTANT: curNode must never be a TacticNode!
             newChild.parent.makeCurrentNode();
             proofTree.update(proofTree.autoFocus.bind(proofTree));
         });
@@ -3603,6 +3603,10 @@ TacticGroupNode.prototype.reactTo = function(query, response) {
 Node.prototype.makeCurrentNode = function() {
     this.proofTree.curNode = this;
     this.makeFocused();
+}
+
+TacticNode.prototype.makeCurrentNode = function() {
+    throw 'Trying to make a tactic node the current node';
 }
 
 /*

@@ -52,6 +52,10 @@ function processAsyncRequests() {
             processingAsync = false;
             //console.log("- UNLOCKING");
             //console.log("RESPONDING", r, q, response);
+
+            //TODO: the next things should be then-chained so that they happen
+            //in the correct order, unless they are fully synchronous
+
             editorOnResponse(r, q, response);
             if (activeProofTree !== undefined) {
                 activeProofTree.onResponse(r, q, response);
