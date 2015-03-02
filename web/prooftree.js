@@ -3527,6 +3527,7 @@ GoalNode.prototype.reactTo = function(query, response) {
     if (query.trim() === '{') {
         this.response = response;
         this.proofTree.refreshTactics();
+        repositionCaret();
         return;
     }
     var existingTactic = _(this.getTactics())

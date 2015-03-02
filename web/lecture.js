@@ -2148,7 +2148,7 @@ function editorOnResponse(requestType, request, response) {
             resetProvwill();
             prependToUnlocked(proving);
             resetProving();
-            repositionCaret();
+            repositionCaret(); scrollViewToCaret();
             updateCoqtopPane(goingDown, response);
             break;
         };
