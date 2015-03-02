@@ -512,14 +512,11 @@ function coq_find_last_dot (str, toopen) {
 }
 
 function globalKeyHandler(evt) {
-    if (evt.ctrlKey && evt.altKey) {
+    //console.log(evt.keyCode);
+    if (evt.ctrlKey) {
         switch(evt.keyCode) {
-        case 84: // t
-            if (activeProofTree !== undefined) {
-                $("#noprooftree-button").click();
-            } else {
-                $("#prooftree-button").click();
-            }
+        case 76: // Ctrl-L
+            $("#load-local-button").click();
             evt.preventDefault();
             break;
         default:
