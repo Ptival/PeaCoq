@@ -2126,12 +2126,12 @@ function editorOnResponse(requestType, request, response) {
                 if (coqTrim(request) === 'Proof.') {
                     createProofTree(response);
                 } else {
-                    asyncStatus()
-                        .then(function(status) {
-                            if (status.proving && coqTrim(request) !== 'Proof.') {
-                                enterProofTree();
-                            }
-                        });
+                    // used to do asyncStatus here and check stauts.proving here
+                    // but I'd rather avoid a request...  if you do async
+                    // operations here, you need to fix [processingAsyncRequest]
+                    if (response.rGoals.focused.length === 1 ) {
+                        enterProofTree();
+                    }
                 }
             } else {
 
