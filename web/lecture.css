@@ -18,7 +18,7 @@ pre {
 #main {
     border: 0;
     font-family: monospace;
-    height: 50%;
+    height: 100%;
 }
 #main-left, #main-right {
     float: left;
@@ -49,7 +49,7 @@ pre {
 }
 #prooftree {
     border: 0;
-    height: 50%;
+    height: 0%;
 }
 #revision {
     font-family: monospace;
