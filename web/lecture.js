@@ -2243,7 +2243,9 @@ function proofTreeQueryWish(request) {
         case '}':
             safePrependToProvwill(request);
             break;
+            // for these, I want to put a newline
         case 'Proof.':
+        case 'Qed.':
             safePrependToProvwill('\n' + request);
             break;
         default:
