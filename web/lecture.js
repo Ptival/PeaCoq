@@ -1256,6 +1256,10 @@ function exitProofTree() {
     $("#prooftree").empty();
     activeProofTree = undefined;
 
+    $("#editor").focus();
+    repositionCaret();
+    scrollViewToCaret();
+
     asyncLog("EXITPROOFTREE");
 
 }
