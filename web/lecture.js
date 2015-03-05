@@ -453,7 +453,15 @@ function next(str) {
 }
 
 function prev(str) {
-  return coq_find_last_dot(coq_undot(str.substring(0, str.length - 1)), 0) + 1;
+    // remove the last delimiter, since we are looking for the previous one
+    var str = str.substring(0, str.length - 1);
+    // if the very last thing is one of {, }, +, -, *, it is the prev
+    var trimmed = coqTrimRight(str);
+    if (_(bullets).contains(trimmed[trimmed.length - 1])) {
+        return trimmed.length;
+    }
+    // otherwise, find the last dot
+    return coq_find_last_dot(coq_undot(str), 0) + 1;
 }
 
 function count (str, pat) {
@@ -467,9 +475,9 @@ function coq_undot(str) {
     str = str.replace(/[.][.]/g, '__'); // hides .. in notations
     str = str.replace(/[.][a-zA-Z1-9_]/g, '__'); // hides qualified identifiers
     // hide curly braces that are implicit arguments
-    //str = str.replace(/\{((?:[^\.\}]|\.(?!\s))*)\}/g, "_$1_");
-    // make other bullets look like curly braces
-    //str = str.replace(/(\.\s*|^\s*)[\-\+\*](?!\))/g, "$1{");
+    str = str.replace(/\{((?:[^\.\}]|\.(?!\s))*)\}/g, "_$1_");
+    // make other braces look like periods
+    str = str.replace(/[\{\}]/g, ".");
     return str;
 }
 
@@ -2265,6 +2273,12 @@ function coqTrimLeft(s) {
         .replace(/^[\s\uFEFF\xA0]+\(\*[\s\S]*?\*\)/g, '')
     // then trim left
         .replace(/^[\s\uFEFF\xA0]+/g, '')
+    ;
+}
+
+function coqTrimRight(s) {
+    return s
+        .replace(/[\s\uFEFF\xA0]+$/g, '')
     ;
 }
 
