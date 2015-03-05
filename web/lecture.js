@@ -173,31 +173,31 @@ $(document).ready(function() {
     //     .css("display", "none")
     // ;
 
-    // $("<button>", {
-    //     "class": "btn btn-default",
-    //     "html": $("<span>")
-    //         .append(mkGlyph("eye-open"))
-    //         //.append(nbsp + "Peek at Editor")
-    //     ,
-    //     "id": "peek-button",
-    // })
-    //     .appendTo(buttonGroup)
-    //     .css("display", "none")
-    //     .on("click", peekAtEditorUI)
-    // ;
+    $("<button>", {
+        "class": "btn btn-default",
+        "html": $("<span>")
+            .append(mkGlyph("eye-open"))
+            //.append(nbsp + "Peek at Editor")
+        ,
+        "id": "peek-button",
+    })
+        .appendTo(buttonGroup)
+        .css("display", "none")
+        .on("click", peekAtEditorUI)
+    ;
 
-    // $("<button>", {
-    //     "class": "btn btn-default",
-    //     "html": $("<span>")
-    //         .append(mkGlyph("eye-close"))
-    //         //.append(nbsp + "Return to Proof Tree")
-    //     ,
-    //     "id": "unpeek-button",
-    // })
-    //     .appendTo(buttonGroup)
-    //     .css("display", "none")
-    //     .on("click", unpeekAtEditorUI)
-    // ;
+    $("<button>", {
+        "class": "btn btn-default",
+        "html": $("<span>")
+            .append(mkGlyph("eye-close"))
+            //.append(nbsp + "Return to Proof Tree")
+        ,
+        "id": "unpeek-button",
+    })
+        .appendTo(buttonGroup)
+        .css("display", "none")
+        .on("click", unpeekAtEditorUI)
+    ;
 
     /* Temporarily disabled
     $("<button>", {
@@ -388,8 +388,8 @@ function resize() {
     var windowHeight = $(window).height();
     // careful, there are many <body> when using proof tree!
     //$("html > body").height(windowHeight);
-    var height = windowHeight - $("#toolbar").height();
-    height = Math.floor(height / 2);
+    //var height = windowHeight - $("#toolbar").height();
+    //height = Math.floor(height / 2);
     //$("#editor").css("height", height);
     //$("#coqtop").css("height", height);
     //$("#prooftree").css("height", height);
@@ -397,6 +397,7 @@ function resize() {
     //$("svg").css("height", height);
     // TODO: fix height bug
     var width = $(window).width();
+    var height = $("#prooftree").height();
     if (activeProofTree !== undefined) {
         activeProofTree.resize($(window).width(), height);
     }
@@ -1126,9 +1127,15 @@ function getCaretVerticalPosition() {
 
 function peekAtEditorUI() {
 
+    $("#main").height("100%");
+    $("#prooftree").height("0%");
+    $("#main-right").css("display", "");
+
     // $("#editor").css("display", "");
     // $("#coqtop").css("display", "");
+    // $("#coqtop-error").css("display", "");
     // $("#prooftree").css("display", "none");
+
     $("#peek-button").css("display", "none");
     $("#unpeek-button").css("display", "");
     $("#editor").focus();
@@ -1137,20 +1144,32 @@ function peekAtEditorUI() {
 
 function unpeekAtEditorUI() {
 
+    $("#main").height("10%");
+    $("#prooftree").height("90%");
+    $("#main-right").css("display", "none");
+
     // $("#editor").css("display", "none");
     // $("#coqtop").css("display", "none");
+    // $("#coqtop-error").css("display", "none");
     // $("#prooftree").css("display", "");
+
     $("#peek-button").css("display", "");
     $("#unpeek-button").css("display", "none");
     $("#prooftree").focus();
+    scrollViewToCaret();
     activeProofTree.update();
 
 }
 
 function switchToProofUI() {
 
+    $("#main").height("10%");
+    $("#prooftree").height("90%");
+    $("#main-right").css("display", "none");
+
     // $("#editor").css("display", "none");
     // $("#coqtop").css("display", "none").text("CURRENTLY IN PROOF TREE MODE");
+    // $("#coqtop-error").css("display", "none");
     // $("#prooftree").css("display", "");
     $("#prover-down").attr("disabled", true);
     $("#prover-up").attr("disabled", true);
@@ -1164,8 +1183,13 @@ function switchToProofUI() {
 
 function switchToEditorUI() {
 
+    $("#main").height("100%");
+    $("#prooftree").height("0%");
+    $("#main-right").css("display", "");
+
     // $("#editor").css("display", "");
     // $("#coqtop").css("display", "").text("");
+    // $("#coqtop-error").css("display", "").text("");
     // $("#prooftree").css("display", "none");
     $("#prover-down").attr("disabled", false);
     $("#prover-up").attr("disabled", false);
@@ -1189,7 +1213,7 @@ function createProofTree(response) {
     activeProofTree = new ProofTree(
         $("#prooftree")[0],
         $(window).width(),
-        Math.floor(($(window).height() - $("#toolbar").height()) / 2),
+        $("#prooftree").height(),
         onQed,
         function() { $("#loading").css("display", ""); },
         function() { $("#loading").css("display", "none"); }
