@@ -26,6 +26,7 @@ $(document).ready(function() {
 var diffRed   = "#EE8888";
 var diffGreen = "#88EE88";
 var diffBlue  = "#8888EE";
+var diffOrange = "#FFB347";
 var diffOpacity = 0.75;
 var redStroke   = diffRed;
 var greenStroke = diffGreen;
@@ -1365,6 +1366,10 @@ ProofTree.prototype.update = function(callback) {
         .transition()
         .duration(animationDuration)
         .style("opacity", 1)
+        .each(function(d) {
+            d.addedSelections = [];
+            d.removedSelections = [];
+        })
     ;
 
     diffSelection
@@ -1378,24 +1383,52 @@ ProofTree.prototype.update = function(callback) {
 
             var subdiff = spotTheDifferences(gp.goalSpan, d.goalSpan);
 
-            d.removedSelection =
+            var goalRemovedSelection =
                 d3this.selectAll("rect.removed").data(subdiff.removed);
 
-            d.removedSelection.enter()
+            goalRemovedSelection.enter()
                 .append("rect")
                 .classed("removed", true)
-                .attr("fill", diffRed)
+                .attr("fill", diffOrange)
                 .attr("opacity", diffOpacity)
             ;
 
-            d.addedSelection =
+            goalRemovedSelection
+                .each(function(jSpan) {
+                    var rect = elmtRect(gp, jSpan[0]);
+                    d3.select(this)
+                        .transition()
+                        .duration(animationDuration)
+                        .attr("x", rect.left)
+                        .attr("y", rect.top)
+                        .attr("width", rect.width)
+                        .attr("height", rect.height)
+                    ;
+                })
+            ;
+
+            var goalAddedSelection =
                 d3this.selectAll("rect.added").data(subdiff.added);
 
-            d.addedSelection.enter()
+            goalAddedSelection.enter()
                 .append("rect")
                 .classed("added", true)
-                .attr("fill", diffGreen)
+                .attr("fill", diffOrange)
                 .attr("opacity", diffOpacity)
+            ;
+
+            goalAddedSelection
+                .each(function(jSpan) {
+                    var rect = elmtRect(d, jSpan[0]);
+                    d3.select(this)
+                        .transition()
+                        .duration(animationDuration)
+                        .attr("x", rect.left)
+                        .attr("y", rect.top)
+                        .attr("width", rect.width)
+                        .attr("height", rect.height)
+                    ;
+                })
             ;
 
             // adding diffs for the hypotheses
@@ -1442,7 +1475,11 @@ ProofTree.prototype.update = function(callback) {
             d.diffListSelection =
                 d3.select(this)
                 .selectAll("g.diff-item")
-                .data(diffList, byDiffId)
+            // ugly fix: unique id forces reentering, because there is a weird
+            // bug when updating, most likely due to changing the div in
+            // textSelection.each when recreating jQDiv. this should be
+            // re-written in a saner way, this is really hard to deal with
+                .data(diffList, function() { return _.uniqueId(); })//byDiffId)
             ;
 
             d.diffListSelection.enter()
@@ -1491,23 +1528,35 @@ ProofTree.prototype.update = function(callback) {
                                 newHyp.div
                             );
 
-                            diff.removedSelection =
-                                d3this.selectAll("rect.removed").data(subdiff.removed);
+                            // this part of the code becomes buggy when some
+                            // nodes end up here without the removedSelections
+                            // and addedSelections field because of an object
+                            // constancy bug I introduce by regenerating divs
+                            // with different ids
 
-                            diff.removedSelection.enter()
+                            var diffId = byDiffId(diff);
+
+                            d.removedSelections[diffId] =
+                            d3this.selectAll("rect.removed")
+                                .data(subdiff.removed)
+                            ;
+
+                            d.removedSelections[diffId].enter()
                                 .append("rect")
                                 .classed("removed", true)
-                                .attr("fill", diffRed)
+                                .attr("fill", diffOrange)
                                 .attr("opacity", diffOpacity)
                             ;
 
-                            diff.addedSelection =
-                                d3this.selectAll("rect.added").data(subdiff.added);
+                            d.addedSelections[diffId] =
+                                d3this.selectAll("rect.added")
+                                .data(subdiff.added)
+                            ;
 
-                            diff.addedSelection.enter()
+                            d.addedSelections[diffId].enter()
                                 .append("rect")
                                 .classed("added", true)
-                                .attr("fill", diffGreen)
+                                .attr("fill", diffOrange)
                                 .attr("opacity", diffOpacity)
                             ;
 
@@ -1516,49 +1565,6 @@ ProofTree.prototype.update = function(callback) {
                     }
                 })
             ;
-
-            d.diffListSelection.exit()
-                .remove()
-            ;
-
-        })
-    ;
-
-    diffSelection
-        .each(function(d) {
-            var gp = d.parent.parent;
-
-            // updating the goal diffs
-
-            d.removedSelection
-                .each(function(jSpan) {
-                    var rect = elmtRect(gp, jSpan[0]);
-                    d3.select(this)
-                        .transition()
-                        .duration(animationDuration)
-                        .attr("x", rect.left)
-                        .attr("y", rect.top)
-                        .attr("width", rect.width)
-                        .attr("height", rect.height)
-                    ;
-                })
-            ;
-
-            d.addedSelection
-                .each(function(jSpan) {
-                    var rect = elmtRect(d, jSpan[0]);
-                    d3.select(this)
-                        .transition()
-                        .duration(animationDuration)
-                        .attr("x", rect.left)
-                        .attr("y", rect.top)
-                        .attr("width", rect.width)
-                        .attr("height", rect.height)
-                    ;
-                })
-            ;
-
-            // updating the hypotheses diffs
 
             // keep track of how far we are vertically to draw the diffs with
             // only one side nicely
@@ -1618,49 +1624,63 @@ ProofTree.prototype.update = function(callback) {
                                     )
                                 )
                             ;
+
+                            leftY = elmtRect(gp, oldHyp.div).bottom;
+                            rightY = elmtRect(d, newHyp.div).bottom;
+
+                            // TODO: there is a bug here where this does not get
+                            // refreshed properly when nodes show up. To
+                            // reproduce, load bigtheorem.v, run intros, and
+                            // move down one tactic quickly.
+                            //console.log(diff, byDiffId(diff));
+                            var diffId = byDiffId(diff);
+
+                            if (d.removedSelections[diffId] === undefined
+                                || d.addedSelections[diffId] === undefined
+                               ) {
+                                throw d;
+                            }
+
+                            d.removedSelections[diffId]
+                                .each(function(jSpan) {
+                                    //console.log(Date.now(), 'this', byDiffId(diff));
+                                    var rect = elmtRect(gp, jSpan[0]);
+                                    d3.select(this)
+                                        .transition()
+                                        .duration(animationDuration)
+                                        .attr("x", rect.left)
+                                        .attr("y", rect.top)
+                                        .attr("width", rect.width)
+                                        .attr("height", rect.height)
+                                    ;
+                                })
+                                    ;
+
+                            d.addedSelections[diffId]
+                                .each(function(jSpan) {
+                                    var rect = elmtRect(d, jSpan[0]);
+                                    d3.select(this)
+                                        .transition()
+                                        .duration(animationDuration)
+                                        .attr("x", rect.left)
+                                        .attr("y", rect.top)
+                                        .attr("width", rect.width)
+                                        .attr("height", rect.height)
+                                    ;
+                                })
+                                    ;
                         }
-                        leftY = elmtRect(gp, oldHyp.div).bottom;
-                        rightY = elmtRect(d, newHyp.div).bottom;
 
-                    }
-
-                    if (diff.hasOwnProperty("removedSelection")) {
-                        diff.removedSelection
-                            .each(function(jSpan) {
-                                var rect = elmtRect(gp, jSpan[0]);
-                                d3.select(this)
-                                    .transition()
-                                    .duration(animationDuration)
-                                    .attr("x", rect.left)
-                                    .attr("y", rect.top)
-                                    .attr("width", rect.width)
-                                    .attr("height", rect.height)
-                                ;
-                            })
-                        ;
-                    }
-
-                    if (diff.hasOwnProperty("addedSelection")) {
-                        diff.addedSelection
-                            .each(function(jSpan) {
-                                var rect = elmtRect(d, jSpan[0]);
-                                d3.select(this)
-                                    .transition()
-                                    .duration(animationDuration)
-                                    .attr("x", rect.left)
-                                    .attr("y", rect.top)
-                                    .attr("width", rect.width)
-                                    .attr("height", rect.height)
-                                ;
-                            })
-                        ;
                     }
 
                 })
             ;
 
-        })
-    ;
+            d.diffListSelection.exit()
+                .remove()
+            ;
+
+        });
 
     diffSelection.exit()
         .remove()
