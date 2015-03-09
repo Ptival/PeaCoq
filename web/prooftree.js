@@ -13,7 +13,7 @@ var svgPanEnabled = false;
 var nodeVSpacing = 10;
 var nodeStroke = 2;
 var rectMargin = {top: 2, right: 8, bottom: 2, left: 8};
-var animationDuration = 0;
+var animationDuration = 200;
 var tacticNodeRounding = 10;
 var goalNodeRounding = 0;
 var keyboardDelay = 100;
@@ -604,7 +604,10 @@ ProofTree.prototype.runTactic = function(t, groupToAttachTo) {
 
                 if (!resultAlreadyExists && !tacticIsUseless) {
                     groupToAttachTo.addTactic(newChild);
+                    var oldAnimationDuration = animationDuration;
+                    animationDuration = 0;
                     self.update();
+                    animationDuration = oldAnimationDuration;
                 }
 
             } else {
@@ -3557,7 +3560,9 @@ GoalNode.prototype.reactTo = function(query, response) {
         existingTactic.makeFocused();
         proofTree.update(function() {
             existingTactic.parent.makeCurrentNode();;
-            proofTree.update(proofTree.autoFocus.bind(proofTree));
+            proofTree.update(function() {
+                proofTree.autoFocus();
+            });
         });
     } else {
         var groupToAttachTo = this.getUserTacticsGroup();
