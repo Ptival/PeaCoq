@@ -1013,7 +1013,7 @@ ProofTree.prototype.update = function(callback) {
                     jQContents.append(h.div);
                 });
                 jQContents.append($("<hr>"));
-                d.goalSpan = $("<span>").html(showTerm(d.goalTerm));
+                d.goalSpan = $("<div>").html(showTerm(d.goalTerm));
                 jQContents.append(d.goalSpan);
             } else {
                 throw d;
@@ -1057,7 +1057,7 @@ ProofTree.prototype.update = function(callback) {
                     jQContents.append(h.div);
                 });
                 jQContents.append($("<hr>"));
-                d.goalSpan = $("<span>").html(showTerm(d.goalTerm));
+                d.goalSpan = $("<div>").html(showTerm(d.goalTerm));
                 jQContents.append(d.goalSpan);
                 jqBody.empty();
                 jqBody.append(jQContents);
@@ -1386,6 +1386,28 @@ ProofTree.prototype.update = function(callback) {
 
             var subdiff = spotTheDifferences(gp.goalSpan, d.goalSpan);
 
+            // easier to just redraw than make a fake selection...
+            d3this.selectAll("path.goaldiff").remove();
+            if (subdiff.removed.length > 0) {
+                d3this
+                    .insert("path", ":first-child")
+                    .classed("goaldiff", true)
+                    .attr("fill", diffBlue)
+                    .attr("opacity", diffOpacity)
+                    .attr("stroke-width", 0)
+                    .transition()
+                    .duration(animationDuration)
+                    .attr(
+                        "d",
+                        connectRects(
+                            elmtRect(gp, gp.goalSpan[0]),
+                            elmtRect(d, d.goalSpan[0]),
+                            undefined //d.parent.cX + d.parent.width/2
+                        )
+                    )
+                ;
+            }
+
             var goalRemovedSelection =
                 d3this.selectAll("rect.removed").data(subdiff.removed);
 
@@ -1587,7 +1609,7 @@ ProofTree.prototype.update = function(callback) {
                                 connectRects(
                                     emptyRect(gp, leftY),
                                     elmtRect(d, newHyp.div),
-                                    d.parent.cX
+                                    undefined //d.parent.cX + d.parent.width/2
                                 )
                             )
                         ;
@@ -1604,7 +1626,7 @@ ProofTree.prototype.update = function(callback) {
                                 connectRects(
                                     elmtRect(gp, oldHyp.div),
                                     emptyRect(d, rightY),
-                                    d.parent.cX
+                                    undefined //d.parent.cX + d.parent.width/2
                                 )
                             )
                         ;
@@ -1623,7 +1645,7 @@ ProofTree.prototype.update = function(callback) {
                                     connectRects(
                                         elmtRect(gp, oldHyp.div),
                                         elmtRect(d, newHyp.div),
-                                        d.parent.cX
+                                        undefined //d.parent.cX + d.parent.width/2
                                     )
                                 )
                             ;
