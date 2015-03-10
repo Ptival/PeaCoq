@@ -336,6 +336,22 @@ function emptyRect(node, currentY) {
     );
 }
 
+function emptyRect0(node, currentY) {
+    var delta = 1; // how big to make the empty rectangle
+    return $.extend(
+        {
+            "left": node.cX0,
+            "right": node.cX0 + node.width,
+            "width": node.width
+        },
+        {
+            "top": currentY - delta,
+            "bottom": currentY + delta,
+            "height": 2 * delta,
+        }
+    );
+}
+
 function byNodeId(d) { return d.id; }
 function byLinkId(d) { return d.source.id + "," + d.target.id; }
 
@@ -604,10 +620,10 @@ ProofTree.prototype.runTactic = function(t, groupToAttachTo) {
 
                 if (!resultAlreadyExists && !tacticIsUseless) {
                     groupToAttachTo.addTactic(newChild);
-                    //var oldAnimationDuration = animationDuration;
-                    //animationDuration = 0;
+                    var oldAnimationDuration = animationDuration;
+                    animationDuration = 0;
                     self.update();
-                    //animationDuration = oldAnimationDuration;
+                    animationDuration = oldAnimationDuration;
                 }
 
             } else {
@@ -1365,14 +1381,14 @@ ProofTree.prototype.update = function(callback) {
         .append("g")
         .classed("node-diff", true)
         .classed("diff", true)
-        .style("opacity", 0)
-        .transition()
-        .duration(animationDuration)
-        .style("opacity", 1)
         .each(function(d) {
             d.addedSelections = [];
             d.removedSelections = [];
         })
+        .style("opacity", 0)
+        .transition()
+        .duration(animationDuration)
+        .style("opacity", 1)
     ;
 
     diffSelection
@@ -1395,6 +1411,14 @@ ProofTree.prototype.update = function(callback) {
                     .attr("fill", diffBlue)
                     .attr("opacity", diffOpacity)
                     .attr("stroke-width", 0)
+                    .attr(
+                        "d",
+                        connectRects(
+                            elmtRect0(gp, gp.goalSpan[0]),
+                            elmtRect0(d, d.goalSpan[0]),
+                            undefined //d.parent.cX + d.parent.width/2
+                        )
+                    )
                     .transition()
                     .duration(animationDuration)
                     .attr(
@@ -1420,14 +1444,17 @@ ProofTree.prototype.update = function(callback) {
 
             goalRemovedSelection
                 .each(function(jSpan) {
+                    var rect0 = elmtRect0(gp, jSpan[0]);
                     var rect = elmtRect(gp, jSpan[0]);
                     d3.select(this)
+                        .attr("width", rect.width)
+                        .attr("height", rect.height)
+                        .attr("x", rect0.left)
+                        .attr("y", rect0.top)
                         .transition()
                         .duration(animationDuration)
                         .attr("x", rect.left)
                         .attr("y", rect.top)
-                        .attr("width", rect.width)
-                        .attr("height", rect.height)
                     ;
                 })
             ;
@@ -1444,14 +1471,17 @@ ProofTree.prototype.update = function(callback) {
 
             goalAddedSelection
                 .each(function(jSpan) {
+                    var rect0 = elmtRect0(d, jSpan[0]);
                     var rect = elmtRect(d, jSpan[0]);
                     d3.select(this)
+                        .attr("width", rect.width)
+                        .attr("height", rect.height)
+                        .attr("x", rect0.left)
+                        .attr("y", rect0.top)
                         .transition()
                         .duration(animationDuration)
                         .attr("x", rect.left)
                         .attr("y", rect.top)
-                        .attr("width", rect.width)
-                        .attr("height", rect.height)
                     ;
                 })
             ;
@@ -1593,6 +1623,8 @@ ProofTree.prototype.update = function(callback) {
 
             // keep track of how far we are vertically to draw the diffs with
             // only one side nicely
+            var leftY0 = gp.cY0 + goalBodyPadding;
+            var rightY0 = d.cY0 + goalBodyPadding;
             var leftY = gp.cY + goalBodyPadding;
             var rightY = d.cY + goalBodyPadding;
 
@@ -1602,6 +1634,14 @@ ProofTree.prototype.update = function(callback) {
                     if (diff.oldHyp === undefined) {
                         var newHyp = diff.newHyp;
                         d3.select(this).select("path")
+                            .attr(
+                                "d",
+                                connectRects(
+                                    emptyRect0(gp, leftY0),
+                                    elmtRect0(d, newHyp.div),
+                                    undefined //d.parent.cX + d.parent.width/2
+                                )
+                            )
                             .transition()
                             .duration(animationDuration)
                             .attr(
@@ -1613,12 +1653,21 @@ ProofTree.prototype.update = function(callback) {
                                 )
                             )
                         ;
+                        rightY0 = elmtRect0(d, newHyp.div).bottom;
                         rightY = elmtRect(d, newHyp.div).bottom;
 
                     } else if (diff.newHyp === undefined) {
 
                         var oldHyp = diff.oldHyp;
                         d3.select(this).select("path")
+                            .attr(
+                                "d",
+                                connectRects(
+                                    elmtRect0(gp, oldHyp.div),
+                                    emptyRect0(d, rightY0),
+                                    undefined //d.parent.cX + d.parent.width/2
+                                )
+                            )
                             .transition()
                             .duration(animationDuration)
                             .attr(
@@ -1630,6 +1679,7 @@ ProofTree.prototype.update = function(callback) {
                                 )
                             )
                         ;
+                        leftY0 = elmtRect0(gp, oldHyp.div).bottom;
                         leftY = elmtRect(gp, oldHyp.div).bottom;
 
                     } else {
@@ -1638,6 +1688,14 @@ ProofTree.prototype.update = function(callback) {
                         var newHyp = diff.newHyp;
                         if (JSON.stringify(oldHyp.hType) !== JSON.stringify(newHyp.hType)) {
                             d3.select(this).select("path")
+                                .attr(
+                                    "d",
+                                    connectRects(
+                                        elmtRect0(gp, oldHyp.div),
+                                        elmtRect0(d, newHyp.div),
+                                        undefined //d.parent.cX + d.parent.width/2
+                                    )
+                                )
                                 .transition()
                                 .duration(animationDuration)
                                 .attr(
@@ -1657,42 +1715,45 @@ ProofTree.prototype.update = function(callback) {
                             //console.log(diff, byDiffId(diff));
                             var diffId = byDiffId(diff);
 
-                            if (d.removedSelections[diffId] === undefined
-                                || d.addedSelections[diffId] === undefined
-                               ) {
-                                throw d;
-                            }
-
                             d.removedSelections[diffId]
                                 .each(function(jSpan) {
                                     //console.log(Date.now(), 'this', byDiffId(diff));
+                                    var rect0 = elmtRect0(gp, jSpan[0]);
                                     var rect = elmtRect(gp, jSpan[0]);
                                     d3.select(this)
+                                        .attr("width", rect.width)
+                                        .attr("height", rect.height)
+                                        .attr("x", rect0.left)
+                                        .attr("y", rect0.top)
                                         .transition()
                                         .duration(animationDuration)
                                         .attr("x", rect.left)
                                         .attr("y", rect.top)
-                                        .attr("width", rect.width)
-                                        .attr("height", rect.height)
                                     ;
                                 })
-                                    ;
+                            ;
 
                             d.addedSelections[diffId]
                                 .each(function(jSpan) {
+                                    var rect0 = elmtRect0(d, jSpan[0]);
                                     var rect = elmtRect(d, jSpan[0]);
                                     d3.select(this)
+                                        .attr("width", rect.width)
+                                        .attr("height", rect.height)
+                                        .attr("x", rect0.left)
+                                        .attr("y", rect0.top)
                                         .transition()
                                         .duration(animationDuration)
                                         .attr("x", rect.left)
                                         .attr("y", rect.top)
-                                        .attr("width", rect.width)
-                                        .attr("height", rect.height)
                                     ;
                                 })
-                                    ;
+                                ;
+
                         }
 
+                        leftY0 = elmtRect0(gp, oldHyp.div).bottom;
+                        rightY0 = elmtRect0(d, newHyp.div).bottom;
                         leftY = elmtRect(gp, oldHyp.div).bottom;
                         rightY = elmtRect(d, newHyp.div).bottom;
 
@@ -1777,6 +1838,17 @@ function elmtRect(node, elmt) {
     var containerRect = $(elmt).parents("foreignObject")[0].getBoundingClientRect();
     var left = node.cX + deltaX(containerRect, rect);
     var top = node.cY + deltaY(containerRect, rect);
+    return {
+        "left": left, "right": left + rect.width, "width": rect.width,
+        "top": top, "bottom": top + rect.height, "height": rect.height,
+    };
+}
+
+function elmtRect0(node, elmt) {
+    var rect = elmt.getBoundingClientRect();
+    var containerRect = $(elmt).parents("foreignObject")[0].getBoundingClientRect();
+    var left = node.cX0 + deltaX(containerRect, rect);
+    var top = node.cY0 + deltaY(containerRect, rect);
     return {
         "left": left, "right": left + rect.width, "width": rect.width,
         "top": top, "bottom": top + rect.height, "height": rect.height,
