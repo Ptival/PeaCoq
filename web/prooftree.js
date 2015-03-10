@@ -604,10 +604,10 @@ ProofTree.prototype.runTactic = function(t, groupToAttachTo) {
 
                 if (!resultAlreadyExists && !tacticIsUseless) {
                     groupToAttachTo.addTactic(newChild);
-                    var oldAnimationDuration = animationDuration;
-                    animationDuration = 0;
+                    //var oldAnimationDuration = animationDuration;
+                    //animationDuration = 0;
                     self.update();
-                    animationDuration = oldAnimationDuration;
+                    //animationDuration = oldAnimationDuration;
                 }
 
             } else {
