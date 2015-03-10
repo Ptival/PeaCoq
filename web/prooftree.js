@@ -1650,9 +1650,6 @@ ProofTree.prototype.update = function(callback) {
                                 )
                             ;
 
-                            leftY = elmtRect(gp, oldHyp.div).bottom;
-                            rightY = elmtRect(d, newHyp.div).bottom;
-
                             // TODO: there is a bug here where this does not get
                             // refreshed properly when nodes show up. To
                             // reproduce, load bigtheorem.v, run intros, and
@@ -1695,6 +1692,9 @@ ProofTree.prototype.update = function(callback) {
                                 })
                                     ;
                         }
+
+                        leftY = elmtRect(gp, oldHyp.div).bottom;
+                        rightY = elmtRect(d, newHyp.div).bottom;
 
                     }
 
