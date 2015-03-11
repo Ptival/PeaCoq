@@ -620,10 +620,7 @@ ProofTree.prototype.runTactic = function(t, groupToAttachTo) {
 
                 if (!resultAlreadyExists && !tacticIsUseless) {
                     groupToAttachTo.addTactic(newChild);
-                    var oldAnimationDuration = animationDuration;
-                    animationDuration = 0;
                     self.update();
-                    animationDuration = oldAnimationDuration;
                 }
 
             } else {
@@ -1348,28 +1345,6 @@ ProofTree.prototype.update = function(callback) {
         .remove()
     ;
 
-    this.viewportX = - (
-        hasParent(curNode)
-            ? curNode.parent.cX
-            : curNode.cX // TODO: could do some math to align it the same way
-    );
-
-    this.viewportY =
-        - (
-            isGoal(curNode)
-                ? (curNode.cY + curNode.height / 2 - this.height / 2)
-                : (curNode.parent.cY + curNode.parent.height / 2 - this.height / 2)
-        )
-    ;
-
-    this.viewport
-        .transition()
-        .duration(animationDuration)
-        .attr("transform",
-              "translate(" + self.viewportX + ", " + self.viewportY + ")"
-             )
-    ;
-
     var focusedGoal = this.getFocusedGoal();
     var diffData = (focusedGoal === undefined) ? [] : [focusedGoal];
     var diffSelection = this.diffLayer.selectAll("g.node-diff").data(
@@ -1382,8 +1357,12 @@ ProofTree.prototype.update = function(callback) {
         .classed("node-diff", true)
         .classed("diff", true)
         .each(function(d) {
+            // create these so that the field exists on first access
             d.addedSelections = [];
             d.removedSelections = [];
+            // force the proper order of display, diffs on top of streams
+            d.pathsGroup = d3.select(this).append("g").classed("paths", true); // streams
+            d.rectsGroup = d3.select(this).append("g").classed("rects", true); // diffs
         })
         .style("opacity", 0)
         .transition()
@@ -1402,42 +1381,54 @@ ProofTree.prototype.update = function(callback) {
 
             var subdiff = spotTheDifferences(gp.goalSpan, d.goalSpan);
 
-            // easier to just redraw than make a fake selection...
-            d3this.selectAll("path.goaldiff").remove();
-            if (subdiff.removed.length > 0) {
-                d3this
-                    .insert("path", ":first-child")
-                    .classed("goaldiff", true)
-                    .attr("fill", diffBlue)
-                    .attr("opacity", diffOpacity)
-                    .attr("stroke-width", 0)
-                    .attr(
-                        "d",
-                        connectRects(
-                            elmtRect0(gp, gp.goalSpan[0]),
-                            elmtRect0(d, d.goalSpan[0]),
-                            undefined //d.parent.cX + d.parent.width/2
-                        )
+            // there should be a goal stream whenever there are diffs
+            var goalStreamData = subdiff.removed.length > 0 ? [undefined] : [];
+            var goalStreamSelection =
+                d.pathsGroup.selectAll("path.goalstream")
+                .data(goalStreamData)
+            ;
+
+            goalStreamSelection.enter()
+                .append("path")
+                .classed("goalstream", true)
+                .attr("fill", diffBlue)
+                .attr("opacity", diffOpacity)
+                .attr("stroke-width", 0)
+                .attr(
+                    "d",
+                    connectRects(
+                        elmtRect0(gp, gp.goalSpan[0]),
+                        elmtRect0(d, d.goalSpan[0]),
+                        undefined //d.parent.cX + d.parent.width/2
                     )
-                    .transition()
-                    .duration(animationDuration)
-                    .attr(
-                        "d",
-                        connectRects(
-                            elmtRect(gp, gp.goalSpan[0]),
-                            elmtRect(d, d.goalSpan[0]),
-                            undefined //d.parent.cX + d.parent.width/2
-                        )
+                )
+            ;
+
+            goalStreamSelection
+                .transition()
+                .duration(animationDuration)
+                .attr(
+                    "d",
+                    connectRects(
+                        elmtRect(gp, gp.goalSpan[0]),
+                        elmtRect(d, d.goalSpan[0]),
+                        undefined //d.parent.cX + d.parent.width/2
                     )
-                ;
-            }
+                )
+            ;
+
+            goalStreamSelection.exit()
+                .remove()
+            ;
 
             var goalRemovedSelection =
-                d3this.selectAll("rect.removed").data(subdiff.removed);
+                d.rectsGroup.selectAll("rect.goalremoved")
+                .data(subdiff.removed)
+            ;
 
             goalRemovedSelection.enter()
                 .append("rect")
-                .classed("removed", true)
+                .classed("goalremoved", true)
                 .attr("fill", diffOrange)
                 .attr("opacity", diffOpacity)
             ;
@@ -1460,11 +1451,13 @@ ProofTree.prototype.update = function(callback) {
             ;
 
             var goalAddedSelection =
-                d3this.selectAll("rect.added").data(subdiff.added);
+                d.rectsGroup.selectAll("rect.goaladded")
+                .data(subdiff.added)
+            ;
 
             goalAddedSelection.enter()
                 .append("rect")
-                .classed("added", true)
+                .classed("goaladded", true)
                 .attr("fill", diffOrange)
                 .attr("opacity", diffOpacity)
             ;
@@ -1528,13 +1521,8 @@ ProofTree.prototype.update = function(callback) {
             });
 
             d.diffListSelection =
-                d3.select(this)
-                .selectAll("g.diff-item")
-            // ugly fix: unique id forces reentering, because there is a weird
-            // bug when updating, most likely due to changing the div in
-            // textSelection.each when recreating jQDiv. this should be
-            // re-written in a saner way, this is really hard to deal with
-                .data(diffList, function() { return _.uniqueId(); })//byDiffId)
+                d.pathsGroup.selectAll("g.diff-item")
+                .data(diffList, byDiffId)
             ;
 
             d.diffListSelection.enter()
@@ -1572,47 +1560,10 @@ ProofTree.prototype.update = function(callback) {
                         if (JSON.stringify(oldHyp.hType)
                             !== JSON.stringify(newHyp.hType)) {
                             d3this
-                                .append("path")
+                                .insert("path", ":first-child")
                                 .attr("fill", diffBlue)
                                 .attr("opacity", diffOpacity)
                                 .attr("stroke-width", 0)
-                            ;
-
-                            var subdiff = spotTheDifferences(
-                                oldHyp.div,
-                                newHyp.div
-                            );
-
-                            // this part of the code becomes buggy when some
-                            // nodes end up here without the removedSelections
-                            // and addedSelections field because of an object
-                            // constancy bug I introduce by regenerating divs
-                            // with different ids
-
-                            var diffId = byDiffId(diff);
-
-                            d.removedSelections[diffId] =
-                            d3this.selectAll("rect.removed")
-                                .data(subdiff.removed)
-                            ;
-
-                            d.removedSelections[diffId].enter()
-                                .append("rect")
-                                .classed("removed", true)
-                                .attr("fill", diffOrange)
-                                .attr("opacity", diffOpacity)
-                            ;
-
-                            d.addedSelections[diffId] =
-                                d3this.selectAll("rect.added")
-                                .data(subdiff.added)
-                            ;
-
-                            d.addedSelections[diffId].enter()
-                                .append("rect")
-                                .classed("added", true)
-                                .attr("fill", diffOrange)
-                                .attr("opacity", diffOpacity)
                             ;
 
                         }
@@ -1687,6 +1638,7 @@ ProofTree.prototype.update = function(callback) {
                         var oldHyp = diff.oldHyp;
                         var newHyp = diff.newHyp;
                         if (JSON.stringify(oldHyp.hType) !== JSON.stringify(newHyp.hType)) {
+
                             d3.select(this).select("path")
                                 .attr(
                                     "d",
@@ -1708,6 +1660,44 @@ ProofTree.prototype.update = function(callback) {
                                 )
                             ;
 
+                            var subdiff = spotTheDifferences(
+                                oldHyp.div,
+                                newHyp.div
+                            );
+
+                            var diffId = byDiffId(diff);
+                            d.removedSelections[diffId] =
+                                d.rectsGroup.selectAll("rect.removed")
+                                .data(subdiff.removed)
+                            ;
+
+                            d.removedSelections[diffId].enter()
+                                .append("rect")
+                                .classed("removed", true)
+                                .attr("fill", diffOrange)
+                                .attr("opacity", diffOpacity)
+                            ;
+
+                            d.removedSelections[diffId].exit()
+                                .remove()
+                            ;
+
+                            d.addedSelections[diffId] =
+                                d.rectsGroup.selectAll("rect.added")
+                                .data(subdiff.added)
+                            ;
+
+                            d.addedSelections[diffId].enter()
+                                .append("rect")
+                                .classed("added", true)
+                                .attr("fill", diffOrange)
+                                .attr("opacity", diffOpacity)
+                            ;
+
+                            d.addedSelections[diffId].exit()
+                                .remove()
+                            ;
+
                             // TODO: there is a bug here where this does not get
                             // refreshed properly when nodes show up. To
                             // reproduce, load bigtheorem.v, run intros, and
@@ -1717,7 +1707,6 @@ ProofTree.prototype.update = function(callback) {
 
                             d.removedSelections[diffId]
                                 .each(function(jSpan) {
-                                    //console.log(Date.now(), 'this', byDiffId(diff));
                                     var rect0 = elmtRect0(gp, jSpan[0]);
                                     var rect = elmtRect(gp, jSpan[0]);
                                     d3.select(this)
@@ -1772,6 +1761,30 @@ ProofTree.prototype.update = function(callback) {
         .remove()
     ;
 
+    // refocus the viewport
+
+    this.viewportX = - (
+        hasParent(curNode)
+            ? curNode.parent.cX
+            : curNode.cX // TODO: could do some math to align it the same way
+    );
+
+    this.viewportY =
+        - (
+            isGoal(curNode)
+                ? (curNode.cY + curNode.height / 2 - this.height / 2)
+                : (curNode.parent.cY + curNode.parent.height / 2 - this.height / 2)
+        )
+    ;
+
+    this.viewport
+        .transition()
+        .duration(animationDuration)
+        .attr("transform",
+              "translate(" + self.viewportX + ", " + self.viewportY + ")"
+             )
+    ;
+
     /*
       It is important to update cX0 for all nodes so that we can uniformly
       initialize links to start between their source's cX0 and their target's
@@ -1795,9 +1808,9 @@ ProofTree.prototype.update = function(callback) {
 
 function byDiffId(d) {
     var res = "{";
-    if (d.oldHyp !== undefined) { res += $(d.oldHyp.div).attr("id"); }
+    if (d.oldHyp !== undefined) { res += d.oldHyp.hName; }
     res += "-";
-    if (d.newHyp !== undefined) { res += $(d.newHyp.div).attr("id"); }
+    if (d.newHyp !== undefined) { res += d.newHyp.hName; }
     return res + "}";
 }
 
