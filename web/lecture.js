@@ -686,9 +686,9 @@ function updateCoqtopPane(direction, response) {
     case "Good":
         $("#coqtop")
             .toggleClass("alert-success", true)
-            .toggleClass("alert-danger", false)
         ;
         $("#coqtop").empty();
+        $("#coqtop-error").empty();
         var contextDiv = $("<div>", { "id": "context" }).appendTo("#coqtop");
         var subgoalsDiv = $("<div>", {
             "id": "subgoals",
@@ -763,13 +763,8 @@ function updateCoqtopPane(direction, response) {
 
         break;
     case "Fail":
-        $("#coqtop")
-            .toggleClass("alert-danger", true)
-            .toggleClass("alert-success", false)
-        ;
         // maybe still display the goal?
-        //console.log("Fail", response);
-        $("#coqtop").empty().text(stripWarning(contents));
+        $("#coqtop-error").empty().text(stripWarning(contents));
         break;
     };
 
@@ -1129,7 +1124,8 @@ function peekAtEditorUI() {
 
     $("#main").height("100%");
     $("#prooftree").height("0%");
-    $("#main-right").css("display", "");
+    $("#coqtop").css("display", "");
+    $("#coqtop-error").height("20%");
 
     // $("#editor").css("display", "");
     // $("#coqtop").css("display", "");
@@ -1146,7 +1142,8 @@ function unpeekAtEditorUI() {
 
     $("#main").height("10%");
     $("#prooftree").height("90%");
-    $("#main-right").css("display", "none");
+    $("#coqtop").css("display", "none");
+    $("#coqtop-error").height("100%");
 
     // $("#editor").css("display", "none");
     // $("#coqtop").css("display", "none");
@@ -1165,7 +1162,8 @@ function switchToProofUI() {
 
     $("#main").height("10%");
     $("#prooftree").height("90%");
-    $("#main-right").css("display", "none");
+    $("#coqtop").css("display", "none");
+    $("#coqtop-error").height("100%");
 
     // $("#editor").css("display", "none");
     // $("#coqtop").css("display", "none").text("CURRENTLY IN PROOF TREE MODE");
@@ -1185,7 +1183,8 @@ function switchToEditorUI() {
 
     $("#main").height("100%");
     $("#prooftree").height("0%");
-    $("#main-right").css("display", "");
+    $("#coqtop").css("display", "");
+    $("#coqtop-error").height("20%");
 
     // $("#editor").css("display", "");
     // $("#coqtop").css("display", "").text("");
