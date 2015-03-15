@@ -34,7 +34,7 @@ function setupEditor(anchor) {
 
     doc = cm.getDoc();
 
-    resetEditor("(* Theorem easy : forall n, n = 0 \\\/ n > 0.*)\n\nPrint nat.\nPrint bool.\n");
+    resetEditor("");
 
 }
 
