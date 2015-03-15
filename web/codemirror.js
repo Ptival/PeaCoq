@@ -13,7 +13,11 @@ function setupEditor(anchor) {
             "autofocus": true,
             "extraKeys": {
                 "Ctrl-Down": function(cm) { onCtrlDown(); },
+                "Ctrl-Alt-Down": function(cm) { onCtrlDown(); },
                 "Ctrl-Up": function(cm) {
+                    onCtrlUp(false);
+                },
+                "Ctrl-Alt-Up": function(cm) {
                     onCtrlUp(false);
                 },
                 "Ctrl-Enter": function(cm) {
