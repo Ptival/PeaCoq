@@ -1,0 +1,59 @@
+html > body {
+    height: 100vh;
+    margin: 0;
+}
+
+#main { height: 100%; }
+
+#top, #bot {
+    height: 50%;
+}
+
+.CodeMirror {
+    border: 1px solid #CCCCCC;
+    height: 100%;
+}
+
+.proved { background-color: #90EE90; }
+
+.proving { background-color: #FFA500; }
+
+.toprove { background-color: #ADD8E6; }
+
+.unlocked {  }
+
+.div.CodeMirror-selected {background: #716C62 !important;}
+.CodeMirror ::selection { background: rgba(113, 108, 98, .99); }
+.CodeMirror ::-moz-selection { background: rgba(113, 108, 98, .99); }
+.CodeMirror-gutters {}
+.CodeMirror-guttermarker { color: white; }
+.CodeMirror-guttermarker-subtle { color: grey; }
+.CodeMirror-linenumber {color: #dadada;}
+.CodeMirror-cursor {}
+
+span.cm-comment {color: #95958a;}
+span.cm-atom {color: #00a8c6;}
+span.cm-number {color: #00a8c6;}
+
+span.cm-builtin {color: #00FFFF;}
+span.cm-tactic {color: #9370DB;}
+span.cm-terminator {color: #FF0000;}
+span.cm-admitter {background-color: #FF0000;}
+
+span.cm-property, .cm-s-mbo span.cm-attribute {color: #9ddfe9;}
+span.cm-keyword {color: #ffb928;}
+span.cm-string {color: #ffcf6c;}
+span.cm-string.cm-property {color: #ffffec;}
+
+span.cm-variable {color: #000000;}
+span.cm-variable-2 {color: #00a8c6;}
+span.cm-def {color: #ffffec;}
+span.cm-bracket {color: #fffffc; font-weight: bold;}
+span.cm-tag {color: #9ddfe9;}
+span.cm-link {color: #f54b07;}
+span.cm-error {border-bottom: #636363; color: #ffffec;}
+span.cm-qualifier {color: #ffffec;}
+
+.CodeMirror-activeline-background {background: #494b41 !important;}
+.CodeMirror-matchingbracket {color: #00FF00 !important; font-weight: bold;}
+.CodeMirror-matchingtag {background: rgba(255, 255, 255, .37);}

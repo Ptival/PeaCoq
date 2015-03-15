@@ -650,13 +650,14 @@ function undoCallback(fromTree, undone, response) {
             activeProofTree.onUndo(undone, response);
         }
         var stepsToRewind = + response.rResponse.contents[0];
-        //console.log("Rewinding additional " + stepsToRewind + " steps");
+        console.log("Rewinding additional " + stepsToRewind + " steps");
         while (stepsToRewind-- > 0) {
             var rProved = mProved.find();
+            var rUnlocked = mUnlocked.find();
             var proved = doc.getRange(rProved.from, rProved.to);
             if (proved === "") { return; }
             var prevIndex = prev(proved);
-            var pieceUnproved = proved.substring(index);
+            var pieceUnproved = proved.substring(prevIndex);
             if (pieceUnproved === "") { return; }
             var prevPos = cm.findPosH(rProved.from, prevIndex, "char");
             markProved(rProved.from, prevPos);

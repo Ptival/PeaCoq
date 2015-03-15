@@ -46,26 +46,30 @@
             'let',
             'match',
             'of',
-            'Prop',
             'return',
-            'Set', 'struct',
-            'then', 'Type',
+            'struct',
+            'then',
             'when', 'with',
         ];
 
         var tactics = [
-            'apply',
-            'case', 'clear',
-            'dependent',
-            'elim',
-            'firstorder',
+            'after', 'apply', 'assert', 'auto', 'autorewrite',
+            'case', 'change', 'clear', 'compute', 'congruence', 'constructor',
+            'cut', 'cutrewrite',
+            'dependent', 'destruct',
+            'eapply', 'eassumption', 'eauto', 'econstructor', 'elim',
+            'field', 'firstorder', 'fold', 'fourier',
             'generalize',
             'hnf',
-            'induction', 'intro', 'intros',
+            'induction', 'injection', 'intro', 'intros', 'inversion',
+            'left',
             'move',
             'pattern', 'pose',
-            'rename',
-            'set', 'simpl',
+            'refine', 'remember', 'rename', 'replace', 'revert', 'rewrite',
+            'right', 'ring',
+            'set', 'simpl', 'specialize', 'split', 'subst', 'symmetry',
+            'transitivity', 'trivial',
+            'unfold', 'unlock', 'using',
         ];
 
         var terminators = [
@@ -76,6 +80,11 @@
             'omega',
             'reflexivity',
             'tauto',
+        ];
+
+        var admitters = [
+            'admit',
+            'Admitted',
         ];
 
         var words = {};
@@ -94,6 +103,10 @@
 
         _(terminators).each(function(word) {
             words[word] = 'terminator';
+        });
+
+        _(admitters).each(function(word) {
+            words[word] = 'admitter';
         });
 
 //            'let': 'keyword',
@@ -128,9 +141,11 @@
 
             if (/\d/.test(ch)) {
                 stream.eatWhile(/[\d]/);
+                /*
                 if (stream.eat('.')) {
                     stream.eatWhile(/[\d]/);
                 }
+                */
                 return 'number';
             }
 
