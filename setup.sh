@@ -35,25 +35,10 @@ $GET https://raw.github.com/lodash/lodash/2.4.1/dist/lodash.min.js > lodash.min.
 cd ..
 $LN lodash/lodash.min.js lodash.js
 
-$MKDIR rangy
-cd rangy/
-$GET http://rangy.googlecode.com/svn/trunk/dev/uncompressed/rangy-core.js > rangy-core.js
-$GET http://rangy.googlecode.com/svn/trunk/dev/uncompressed/rangy-textrange.js > rangy-textrange.js
-$GET http://rangy.googlecode.com/svn/trunk/dev/uncompressed/rangy-selectionsaverestore.js > rangy-selectionsaverestore.js
-cd ..
-$LN rangy/rangy-core.js rangy-core.js
-$LN rangy/rangy-textrange.js rangy-textrange.js
-$LN rangy/rangy-selectionsaverestore.js rangy-selectionsaverestore.js
-
-$MKDIR highlight
-cd highlight/
-$GET https://raw.githubusercontent.com/highlightjs/cdn-release/master/build/highlight.min.js > highlight.min.js
-$GET https://raw.githubusercontent.com/highlightjs/cdn-release/master/build/languages/ocaml.min.js > ocaml.min.js
-$GET https://raw.githubusercontent.com/highlightjs/cdn-release/master/build/styles/github.min.css > github.min.css
-cd ..
-$LN highlight/highlight.min.js highlight.js
-$LN highlight/ocaml.min.js ocaml.js
-$LN highlight/github.min.css highlight.css
+$GET http://codemirror.net/codemirror.zip > codemirror.zip
+unzip -o codemirror.zip
+$LN codemirror-5.0 codemirror
+rm codemirror.zip
 
 cd ..
 
