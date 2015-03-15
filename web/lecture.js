@@ -1,71 +1,7 @@
-//var highlightingDelay = 1000; // milliseconds
-
 var processing = false;
 var nbsp = "\u00A0";
 var zwsp = "\u200B";
 var namesPossiblyInScope = [];
-
-var electric = false;
-var workaround_no_focusing = false;
-
-var proved = "";
-var proving = "";
-var provwill = "";
-
-function truncateProvedToIndex(index) {
-    proved = proved.substring(0, index);
-    pweSetLockedPart('proved', proved);
-}
-
-function appendToProved(text) {
-    proved += text;
-    pweSetLockedPart('proved', proved);
-}
-
-function setProving(text) {
-    if (proving !== '') {
-        throw text;
-    }
-    proving = text;
-    pweSetLockedPart('proving', proving);
-}
-
-function resetProving() {
-    proving = '';
-    pweSetLockedPart('proving', proving);
-}
-
-function prependToProvwill(text) {
-    provwill = text + provwill;
-    pweSetLockedPart('provwill', provwill);
-}
-
-function appendToProvwill(text) {
-    provwill += text;
-    pweSetLockedPart('provwill', provwill);
-}
-
-function truncateProvwillFromIndex(index) {
-    provwill = provwill.substring(index);
-    pweSetLockedPart('provwill', provwill);
-}
-
-function resetProvwill() {
-    provwill = '';
-    pweSetLockedPart('proving', provwill);
-}
-
-function prependToUnlocked(text) {
-    var unlocked = pweGetUnlocked();
-    unlocked = text + unlocked;
-    pweSetUnlocked(unlocked);
-}
-
-function truncateUnlockedFromIndex(index) {
-    var unlocked = pweGetUnlocked();
-    unlocked = unlocked.substring(index);
-    pweSetUnlocked(unlocked);
-}
 
 var unicodeList = [
     ("forall", "∀"),
@@ -307,23 +243,12 @@ $(document).ready(function() {
         .appendTo(buttonGroup)
     ;
 
-    //resetEditorWith("(* Your code here *)");
-
     //resize();
     $(window).resize(resize);
 
     $("body")
         .on("keydown", globalKeyHandler)
     ;
-
-    // $("#editor")
-    //     .keypress(keypressHandler)
-    //     .keydown(keydownHandler)
-    //     .on("cut", pweCutHandler)
-    //     .on("paste", pwePasteHandler)
-    // ;
-
-    //PT.handleKeyboard();
 
     asyncRevision()
         .then(function(response) {
@@ -673,39 +598,6 @@ function undoCallback(fromTree, undone, response) {
 }
 
 /*
-function tryProcessing(callback) {
-
-    if (processing) { return; }
-
-    // grab the next piece to process, if any
-    var index = next(provwill);
-    if (index === 0) {
-        highlight();
-        if (callback !== undefined) {
-            callback();
-        }
-        return;
-    }
-    // there is a piece to process, mark it as such
-    proving = provwill.substring(0, index);
-    provwill = provwill.substring(index);
-
-    pweSetLockedPart("provwill", provwill);
-    pweSetLockedPart("proving", proving);
-    //highlight();
-
-    asyncLog("PROVERDOWN " + proving);
-    // process this piece, then process the rest
-    processing = true;
-    asyncQuery(proving).then(function(response) {
-        alert("TODO");
-        throw "TODO";
-    });
-
-}
-*/
-
-/*
   Returns the position of the caret w.r.t. the editor: this includes all the
   characters in #proved, #proving, #provwill and #unlocked
 */
@@ -748,7 +640,7 @@ function safeAppendToProvwill(command) {
  * previous text and the next text. Returns how many characters were added for
  * safety.
  */
-function safePrependToProvwill(command) {
+function safePrependToprove(command) {
 
     var returnValue = 0;
 
@@ -779,8 +671,13 @@ function safePrependToProvwill(command) {
         }
     }
 
+    var rProving = mProving.find();
     var rToprove = mToprove.find();
+    var rUnlocked = mUnlocked.find();
+    mToprove.inclusiveLeft = false;
     doc.replaceRange(command, rToprove.from);
+    mToprove.inclusiveLeft = true;
+    markToprove(rProving.to, rUnlocked.from);
     // if rToprove was empty, the last command actually inserted into unlocked
     if (getToprove() === "") {
         var rUnlocked = mUnlocked.find();
@@ -791,46 +688,6 @@ function safePrependToProvwill(command) {
 
     return returnValue;
 }
-
-/*
-function proverRewindToIndex(index) {
-    if (proved.length > index) {
-        return proverUp().then(function() { return proverRewindToIndex(index); });
-    } else {
-        return Promise.resolve();
-    }
-}
-
-function proverToCaret () {
-    var caretIndex = getCaretPos();
-
-    var locked = proved + proving + provwill;
-    var unlocked = pweGetUnlocked();
-
-    // the caret is in the proved region, undo actions
-    if (caretIndex < proved.length) {
-        proverRewindToIndex(caretIndex);
-    } else if (locked.length <= caretIndex) { // can't jump in proving/provwill
-
-        // if the user jumped some spaces after a period, we want to jump to
-        // that period, unless the thing has already been processed, to mimic
-        // ProofGeneral
-        var editorText = locked + zwsp + unlocked;
-        while (_([' ', '\n']).contains(editorText[caretIndex-1])) {
-            caretIndex--;
-        }
-
-        var currentIndex;
-        do {
-            // bump the index if [proverDown] adds characters to the buffer
-            caretIndex += proverDown();
-            // + 1 because of zwsp
-            currentIndex = proved.length + proving.length + provwill.length + 1;
-        } while (currentIndex < caretIndex);
-
-    }
-}
-*/
 
 function mkGlyph(name) {
     return $("<i>", {
@@ -1108,333 +965,6 @@ if (!String.prototype.endsWith) {
     });
 }
 
-function resetEditorWith(text) {
-
-    proved = "";
-    proving = "";
-    provwill = "";
-
-    $("#editor").append(
-        $("<span>")
-            .attr("id", "proved")
-            .css("display", "inline")
-            .css("padding", 0)
-            .css("background-color", "#90EE90")
-    );
-
-    $("#editor").append(
-        $("<span>")
-            .attr("id", "proving")
-            .css("display", "inline")
-            .css("padding", 0)
-            .css("background-color", "#FFA500")
-    );
-
-    $("#editor").append(
-        $("<span>")
-            .attr("id", "provwill")
-            .css("display", "inline")
-            .css("padding", 0)
-            .css("background-color", "#ADD8E6")
-    );
-
-    $("#editor").append(
-        $("<span>")
-            .attr("id", "unlocked")
-            .css("display", "inline")
-            .css("padding", 0)
-            .text(zwsp + text)
-            .append('<br id=\"finalbr\"/>')
-    );
-
-}
-
-/*
-  should return an object
-  {
-  startSpan:   the <span> in which the focusNode lives,
-  startOffset: the offset at which the selection is relative to startSpan,
-  endSpan:     the <span> in which the anchorNode lives,
-  endOffset:   the offset at which the selection is relative to endSpan,
-  }
-*/
-function peacoqGetSelection() {
-    var res = {};
-    var sel = rangy.getSelection();
-
-    res.startSpan = $(sel.anchorNode).closest("#editor >")[0];
-
-    var startRange = rangy.createRange();
-    startRange.selectNodeContents(res.startSpan);
-    startRange.setEnd(sel.anchorNode, sel.anchorOffset);
-    res.startOffset = startRange.toString().length;
-
-    res.endSpan = $(sel.focusNode).closest("#editor >")[0];
-
-    var endRange = rangy.createRange();
-    endRange.selectNodeContents(res.endSpan);
-    endRange.setEnd(sel.focusNode, sel.focusOffset);
-    res.endOffset = endRange.toString().length;
-
-    return res;
-}
-
-function adjustSelection() {
-    var s = peacoqGetSelection();
-    var sel = rangy.getSelection();
-    var rng = sel.getRangeAt(0);
-
-    // if there is no selection, it's easy
-    if (s.startSpan === s.endSpan && s.startOffset === s.endOffset) {
-        var span = s.startSpan;
-        var offset = s.startOffset;
-        var processing = $("#proving").text();
-        var provwill = $("#provwill").text();
-        if (span.id === "proved" && offset === span.textContent.length
-            && processing.length === 0 && provwill.length === 0) {
-            var contents = $("#unlocked").contents();
-            var target = (contents.length === 0) ? $("#unlocked")[0] : contents[0];
-            rng.setStart(target, 0);
-            rng.setEnd(target, 0);
-            sel.setSingleRange(rng);
-        }
-    } else {
-        // TODO: a bit harder when there is a selection
-    }
-}
-
-function isSelectionLocked() {
-    adjustSelection();
-    var s = peacoqGetSelection();
-    return (s.startSpan.id !== "unlocked" || s.endSpan.id !== "unlocked");
-}
-
-function cutHandler(evt) {
-    if (isSelectionLocked()) { return; }
-}
-
-function pasteHandler(evt) {
-    evt.preventDefault();
-    if (isSelectionLocked()) { return; }
-    var clipped =
-        evt.originalEvent.clipboardData.getData("text/plain")
-    ;
-    var sel = rangy.getSelection();
-    var range = sel.getRangeAt(0);
-    range.deleteContents();
-    insertAtSelection(clipped);
-}
-
-/* ProofWeb */
-/*
-function pweRestoreFinalBR() {
-    var finalbr = $("#finalbr")[0];
-    if (!finalbr) {
-        $("#unlocked").append('<br id=\"finalbr\"/>');
-    }
-    return finalbr ? true : false;
-}
-
-function pweOptAdjustSelection() {
-    if (pweSelectionLockstate() === 1) {
-        pweAdjustSelection();
-    }
-}
-
-function pweAdjustSelection() {
-    var sel,bw,newrs;
-
-    sel = rangy.getSelection();
-    bw = sel.isBackwards();
-    newrs = $.map(sel.getAllRanges(), pweAdjustRange);
-
-    sel.removeAllRanges();
-    for (var i=0; i < newrs.length; i++) {
-        sel.addRange(newrs[i],bw);
-    }
-}
-
-function pweAdjustRange(range) {
-    var ulrange,cs,ce;
-
-    ulrange = pweUnlockedRange();
-
-    cs = rangy.dom.comparePoints(range.startContainer, range.startOffset,
-                                 ulrange.startContainer, ulrange.startOffset);
-    ce = rangy.dom.comparePoints(range.endContainer, range.endOffset,
-                                 ulrange.endContainer, ulrange.endOffset);
-
-    newrange = range.cloneRange();
-
-    if (cs < 0) {
-        newrange.setStart(ulrange.startContainer, ulrange.startOffset);
-    }
-
-    if (ce > 0) {
-        newrange.setEnd(ulrange.endContainer, ulrange.endOffset);
-    }
-
-    return newrange;
-}
-
-function pweSelectionLockstate() {
-    var sel = rangy.getSelection();
-    return arrmax($.map(sel.getAllRanges(), pweRangeLockstate));
-}
-
-function arrmax(arr) {
-    return (arr.length > 0) ? Math.max.apply(null, arr) : 0;
-}
-
-function pweRangeLockstate(range) {
-
-    var ulrange, trange, ts;
-
-    ulrange = pweUnlockedRange();
-
-    if (subrange(range,ulrange)) {
-        return 0; // UNLOCKED
-    } else {
-       trange = rangy.createRange();
-       trange.setStart(range.startContainer, range.startOffset);
-       trange.setEnd(ulrange.startContainer, ulrange.startOffset);
-       ts = trange.toString();
-       if (ts === "" || ts === zwsp) {
-           return 1; // LOCKED / Adjustable
-       }
-       else {
-           return 2; // LOCKED / Non-adjustable
-       }
-    }
-
-}
-
-function pweUnlockedRange() {
-    var finalbr, ulrange;
-    finalbr = $("#finalbr").get(0);
-    ulrange = rangy.createRange();
-    ulrange.selectNode($("#unlocked")[0]);
-    ulrange.moveStart("character", 1);
-    ulrange.setEndBefore(finalbr);
-    return ulrange;
-}
-
-function subrange(r1, r2) {
-    var intersection = intersectRanges(r1,r2);
-    return intersection !== null && r1.equals(intersection);
-}
-
-function intersectRanges(r1,r2) {
-    if (r1.intersectsOrTouchesRange(r2)) {
-        var startComparison = rangy.dom.comparePoints(r1.startContainer, r1.startOffset, r2.startContainer, r2.startOffset),
-            endComparison = rangy.dom.comparePoints(r1.endContainer, r1.endOffset, r2.endContainer, r2.endOffset);
-
-        var intersectionRange = r1.cloneRange();
-        if (startComparison == -1) {
-            intersectionRange.setStart(r2.startContainer, r2.startOffset);
-        }
-        if (endComparison == 1) {
-            intersectionRange.setEnd(r2.endContainer, r2.endOffset);
-        }
-        return intersectionRange;
-    }
-    return null;
-}
-
-function pweSelectionLocked() {
-    return pweSelectionLockstate() > 0;
-}
-
-function pweGetUnlocked() {
-    var ulrange;
-    ulrange = pweUnlockedRange();
-    return ulrange.textContent();
-}
-
-function pweSetLockedPart(part,txt) {
-    $("#" + part).html(txt);
-}
-
-function pweSetUnlocked(txt) {
-    $("#unlocked").html(zwsp + txt);
-    pweRestoreFinalBR();
-    //pweCaretAtStart();
-    //pweFocusEditor();
-}
-
-function pweCaretAtStart() {
-    pwePlaceCaret(true);
-}
-
-function pwePlaceCaret(atstart) {
-    var range,sel;
-
-    range = pweUnlockedRange();
-    range.collapse(atstart);
-    sel = rangy.getSelection();
-    sel.setSingleRange(range);
-    pweScrollToCaret();
-}
-
-function pweScrollToCaret() {
-    var margin,sel,rr,nr,rects,extraheight,ct,cb,cl,cr;
-
-    margin = 3;
-
-    sel = rangy.getSelection();
-    try {
-        // use non-collapsed range, because webkit seems to prefer it.
-        rr=rangy.createRange();
-        rr.setStartAndEnd(sel.focusNode, sel.focusOffset);
-        rr.moveStart("character",-1);
-
-        nr=rangy.createNativeRange();
-        nr.setStart(rr.startContainer, rr.startOffset);
-        nr.setEnd(rr.endContainer, rr.endOffset);
-        rects = nr.getClientRects();
-
-        if (rects.length === 0) return;
-        if (rr.textContent() === "\n") extraheight = rects[0].bottom - rects[0].top;
-        else extraheight = 0;
-        ct = arrmin($.map(rects,function(r){return r.top;}))    - margin
-        cb = arrmax($.map(rects,function(r){return r.bottom;})) + margin + extraheight;
-        cl = arrmin($.map(rects,function(r){return r.left;}))   - margin
-        cr = arrmax($.map(rects,function(r){return r.right;}))  + margin
-    } catch (e) {
-        return;
-    }
-
-    function scrolldist(ve,cs,ce) {
-        if (ce > ve) return ce - ve;
-        if (cs < 0)  return cs;
-        return 0;
-    }
-
-    var $w = $(window);
-    var vt = $w.scrollTop();
-    var vl = $w.scrollLeft();
-    var vh = $w.height();
-    var vw = $w.width();
-    var newt = vt + scrolldist(vh,ct,cb);
-    var newl = vl + scrolldist(vw,cl,cr);
-
-    if (st.workaround_delay_scroll) {
-        // scroll unconditionally, even if current viewport seems correct.
-        setTimeout(function(){
-            $w.scrollTop(newt);
-            $w.scrollLeft(newl);
-        }, 0);
-    } else {
-        if (vt !== newt) $w.scrollTop(newt);
-        if (vl !== newl) $w.scrollLeft(newl);
-    }
-}
-
-function pweFocusEditor() {
-    if (!workaround_no_focusing) $("#editor").focus();
-}
-*/
-
 function unquote_str (oldstr) {
     var str = oldstr
         .replace(/&lt;/g, "<")
@@ -1448,252 +978,6 @@ function unquote_str (oldstr) {
     ;
     return str;
 }
-
-/*
-function pweMoveLeft(extend) {
-    var sel,newfocus,erange,bw,rs;
-    var res = false;
-
-    if (pweRelativeFocusPos()==0) {
-        sel=rangy.getSelection();
-
-        newfocus=rangy.createRange();
-        newfocus.setStart(sel.focusNode,sel.focusOffset);
-        newfocus.collapse(true);
-        newfocus.move("character",-2)
-
-        erange=rangy.createRange();
-        erange.selectNodeContents($("#editor")[0]);
-
-        if (subrange(newfocus,erange)) {
-            if (extend) {
-                bw = sel.isBackwards();
-                rs = sel.getAllRanges();
-
-                if (bw) {
-                    rs[rs.length-1].moveStart("character",-2);
-                } else {
-                    rs[rs.length-1].moveEnd("character",-2);
-                }
-
-                sel.removeAllRanges();
-                for (var i=0; i < rs.length; i++) {
-                    sel.addRange(rs[i],bw);
-                }
-            } else {
-                sel.move("character",-2);
-            }
-        }
-
-        res=true;
-    }
-
-    return res;
-}
-
-function pweMoveRight(extend) {
-    var sel,newfocus,erange,bw,rs;
-    var res = false;
-
-    if (pweRelativeFocusPos()==-1) {
-        sel = rangy.getSelection();
-
-        newfocus = rangy.createRange();
-        newfocus.setStart(sel.focusNode, sel.focusOffset);
-        newfocus.collapse(true);
-        newfocus.move("character", +2);
-
-        erange = rangy.createRange();
-        erange.selectNodeContents($("#editor")[0]);
-
-        if (subrange(newfocus,erange)) {
-            if (extend) {
-                bw = sel.isBackwards();
-                rs = sel.getAllRanges();
-
-                if (bw) {
-                    rs[rs.length-1].moveStart("character",+2);
-                } else {
-                    rs[rs.length-1].moveEnd("character",+2);
-                }
-
-                sel.removeAllRanges();
-                for (var i=0; i < rs.length; i++) {
-                    sel.addRange(rs[i],bw);
-                }
-            } else {
-                sel.move("character", +2);
-            }
-        }
-
-        res = true;
-    }
-
-    return res;
-}
-
-function pweRelativeFocusPos() {
-    var sel,ur,cp;
-
-    sel = rangy.getSelection();
-    ur = pweUnlockedRange();
-    ur.collapse(true);
-
-    cp = rangy.dom.comparePoints(sel.focusNode,sel.focusOffset,ur.startContainer,ur.startOffset);
-
-    if (cp >= 0) {
-      ur.setEnd(sel.focusNode,sel.focusOffset);
-    } else {
-      ur.setStart(sel.focusNode,sel.focusOffset);
-    }
-
-    return (cp * ur.toString().length)
-}
-
-function pweEmulateReturn() {
-    pweInsertAtSelection("\n");
-    pweScrollToCaret();
-}
-
-function pweInsertAtSelection(txt) {
-    var sel, newrange;
-
-    pweRemoveSelection();
-
-    pweOptAdjustSelection();
-    sel = rangy.getSelection();
-    if (!pweSelectionLocked() && sel.rangeCount > 0) {
-        newrange = pweInsertText(txt,sel.getRangeAt(0));
-        sel.setSingleRange(newrange);
-    }
-}
-
-function pweRemoveSelection() {
-    var sel;
-
-    pweOptAdjustSelection();
-    if (!pweSelectionLocked()) {
-        sel = rangy.getSelection();
-        sel.deleteFromDocument();
-    }
-}
-
-function pweInsertText(txt,inrange) {
-    var range = inrange.cloneRange();
-    var tn = document.createTextNode(txt);
-    range.insertNode(tn);
-    range.selectNode(tn);
-    range.normalizeBoundaries();
-    range.collapse(false);
-    return range;
-}
-*/
-
-/*
- * decides whether we need to emulate Backspace because we are close to our
- * special character, or whether we can let the original [ev] go through
- * if [forceEmulation] is true, will definitely emulate
- */
-/*
-function pweEmulateBackspace(ev, forceEmulation) {
-    var range, sel;
-
-    sel = rangy.getSelection();
-
-    // do not emulate if not needed, so that Ctrl-Z will work
-    if (!forceEmulation && sel.anchorOffset > 1 && sel.focusOffset > 1) {
-        // ev will propagate and do the default
-        return;
-    }
-
-    if (sel.isCollapsed) {
-        range = sel.getRangeAt(0).cloneRange();
-        range.moveStart("character",-1);
-        if (!pweRangeLocked(range)) {
-           sel.setSingleRange(range);
-           sel.deleteFromDocument();
-        }
-    } else {
-        if (!pweSelectionLocked()) { // Superfluous condition?
-           sel.deleteFromDocument();
-        }
-    }
-
-    ev.preventDefault();
-    ev.stopPropagation();
-
-}
-
-function pweRangeLocked(range) {
-    return pweRangeLockstate(range) > 0;
-}
-
-function pwePasteHandler(ev) {
-    var cbd,txt="";
-
-    pweOptAdjustSelection();
-    if (!pweSelectionLocked()) {
-        cbd = ev.originalEvent.clipboardData
-            || window.clipboardData
-            || st.editorwin.clipboardData
-        ;
-        if (cbd) {
-            ev.preventDefault();
-            ev.stopPropagation();
-            try { txt = cbd.getData("text/plain");  } catch (e) {}
-            try { txt = txt || cbd.getData("Text"); } catch (e) {}
-            txt = pweSanitizeInput(txt);
-            if (txt) { pweInsertAtSelection(txt); }
-            pweScrollToCaret();
-        } else {
-            if (!st.workaround_native_paste) {
-                alert("Warning: your browser does not allow access to the clipboard\n"+
-                      "from the paste event handler. Attempting workaround.");
-                st.workaround_native_paste=true;
-            }
-            setTimeout(pweCleanupPaste,0);
-        }
-    } else {
-        ev.preventDefault();
-        ev.stopPropagation();
-    }
-}
-
-function pweCleanupPaste(ev) {
-    var caret,range,txt,txtclean;
-
-    caret = pweGetCaretPos();
-    range = rangy.createRange();
-    range.selectNodeContents($("#editor")[0]);
-    range.setStartAfter($("#provwill")[0]);
-
-    txt = range.textContent().substring(1);
-    txtclean =  pweSanitizeInput(txt);
-    caret -= (txt.length - txtclean.length);
-
-    range.pasteHtml('<span id="unlocked"></span>');
-    $("#unlocked").text(zwsp + txtclean);
-    pweRestoreFinalBR();
-    pweSetCaretPos(caret);
-}
-
-function pweSanitizeInput(txt) {
-    return txt
-        .replace(/\r\n/g,"\n")
-        .replace(/\r/g,"\n")
-        .replace(new RegExp(nbsp, 'g'), ' ')
-        .replace(new RegExp(zwsp, 'g'), '')
-    ;
-}
-
-function pweCutHandler(ev) {
-    pweOptAdjustSelection();
-    if (pweSelectionLocked()) {
-        ev.preventDefault();
-        ev.stopPropagation();
-    }
-}
-*/
 
 function makeGroup(name, tactics) {
     return {
@@ -1939,8 +1223,8 @@ function lookupRequestInIncoming(request) {
     var toprove = doc.getRange(rToprove.from, rToprove.to);
 
     if (toprove !== "") {
-        var nextIndex = next(provwill);
-        var nextItem = provwill.substring(0, nextIndex);
+        var nextIndex = next(toprove);
+        var nextItem = toprove.substring(0, nextIndex);
         return sameTrimmed(nextItem, request);
     }
 
@@ -1963,8 +1247,6 @@ function lookupRequestInIncoming(request) {
 
 function proofTreeQueryWish(request) {
 
-    //console.log("Looking up", request, "in", provwill + pweGetUnlocked());
-
     var requestWasPresent = lookupRequestInIncoming(request);
 
     if (requestWasPresent) {
@@ -1977,46 +1259,22 @@ function proofTreeQueryWish(request) {
         switch (request) {
         case '{':
         case '}':
-            safePrependToProvwill(request);
+            safePrependToprove(request);
             break;
             // for these, I want to put a newline
         case 'Proof.':
         case 'Qed.':
-            safePrependToProvwill('\n' + request);
+            safePrependToprove('\n' + request);
             break;
         default:
-            safePrependToProvwill(request);
-            //safePrependToProvwill('\n' + request);
+            safePrependToprove(request);
+            //safePrependToprove('\n' + request);
             break;
         }
     }
 
     processToprove();
 
-}
-
-var processingProvwill = false;
-
-function processProvwill() {
-    if (processingProvwill) { return Promise.resolve(); }
-    if (provwill === '') { return Promise.resolve(); }
-    // Here, the prooftree gets a chance to modify provwill
-    if (activeProofTree !== undefined) {
-        activeProofTree.beforeProvwillConsumption();
-    }
-    var nextIndex = next(provwill);
-    var pieceToProcess = provwill.substring(0, nextIndex);
-    setProving(pieceToProcess);
-    truncateProvwillFromIndex(nextIndex);
-    processingProvwill = true;
-    return asyncQuery(pieceToProcess)
-        .then(function(response) {
-            //console.log('response:', response);
-            processingProvwill = false;
-            processProvwill();
-        })
-        .catch(outputError)
-    ;
 }
 
 // TODO: support nested comments?

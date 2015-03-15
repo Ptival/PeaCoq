@@ -165,7 +165,12 @@ function onCtrlEnter() {
 }
 
 function rewindToPos(pos) {
-    
+    var rProved = mProved.find();
+    if (positionIsBefore(rProved.to, pos)) {
+        return Promise.resolve();
+    } else {
+        return onCtrlUp(false).then(function() { rewindToPos(pos); });
+    }
 }
 
 function processToPos(pos) {
@@ -183,7 +188,7 @@ function processToprove() {
     if (processingToprove) { return Promise.resolve(); }
     // Here, the prooftree gets a chance to modify toprove
     if (activeProofTree !== undefined) {
-        activeProofTree.beforeProvwillConsumption();
+        activeProofTree.beforeToproveConsumption();
     }
     var rProving = mProving.find();
     var rToprove = mToprove.find();

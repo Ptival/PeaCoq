@@ -3583,9 +3583,11 @@ ProofTree.prototype.onUndo = function(undone, response) {
     }
 }
 
-ProofTree.prototype.beforeProvwillConsumption = function(queryType, query) {
-    var nextIndex = next(provwill);
-    var nextPieceProcessed = provwill.substring(0, nextIndex);
+ProofTree.prototype.beforeToproveConsumption = function() {
+    var rToprove = mToprove.find();
+    var toprove = doc.getRange(rToprove.from, rToprove.to);
+    var nextIndex = next(toprove);
+    var nextPieceProcessed = toprove.substring(0, nextIndex);
     switch (nextPieceProcessed.trim()) {
 
     case '{':
@@ -3597,7 +3599,7 @@ ProofTree.prototype.beforeProvwillConsumption = function(queryType, query) {
         // if a tactic is about to be pushed without focus, force it!
         // first case: there is nothing to be done and we are unfocused
         if (isTacticGroup(this.curNode)) {
-            safePrependToProvwill('{');
+            safePrependToprove('{');
         }
         break;
 
