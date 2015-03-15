@@ -24,7 +24,7 @@ $(document).ready(function() {
     })
         .appendTo(buttonGroup)
         .on("click", function() {
-            proverDown();
+            onCtrlDown();
         })
         .append(mkGlyph("arrow-down"))
     ;
@@ -35,7 +35,7 @@ $(document).ready(function() {
     })
         .appendTo(buttonGroup)
         .on("click", function() {
-            proverUp();
+            onCtrlUp(false);
         })
         .append(mkGlyph("arrow-up"))
     ;
@@ -46,7 +46,7 @@ $(document).ready(function() {
     })
         .appendTo(buttonGroup)
         .on("click", function() {
-            proverToCaret();
+            onCtrlEnter();
         })
         .append(mkGlyph("arrow-right"))
         .append(mkGlyph("italic"))
