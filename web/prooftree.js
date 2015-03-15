@@ -13,7 +13,7 @@ var svgPanEnabled = false;
 var nodeVSpacing = 10;
 var nodeStroke = 2;
 var rectMargin = {top: 2, right: 8, bottom: 2, left: 8};
-var animationDuration = 1000;
+var animationDuration = 200;
 var tacticNodeRounding = 10;
 var goalNodeRounding = 0;
 var keyboardDelay = 100;
@@ -3657,7 +3657,6 @@ GoalNode.prototype.reactTo = function(query, response) {
     if (query.trim() === '{') {
         this.response = response;
         this.proofTree.refreshTactics();
-        repositionCaret();
         return;
     }
     var existingTactic = _(this.getTactics())
@@ -3756,7 +3755,7 @@ TacticNode.prototype.makeCurrentNode = function() {
 
 ProofTree.prototype.undoUntilNode = function(dst) {
     var self = this;
-    return proverUp(true)
+    return onCtrlUp(true)
         .then(function() {
             if (self.curNode.id === dst.id) {
                 return Promise.resolve();

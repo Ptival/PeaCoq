@@ -1,4 +1,4 @@
-var highlightingDelay = 1000; // milliseconds
+//var highlightingDelay = 1000; // milliseconds
 
 var processing = false;
 var nbsp = "\u00A0";
@@ -79,35 +79,6 @@ $(document).ready(function() {
     $(window).bind('beforeunload', function(){
         return '⚠⚠⚠ unsaved progress wil be lost ⚠⚠⚠';
     });
-
-    if (!rangy.initialized) {rangy.init();}
-
-    hljs.configure({'languages': ['ocaml']});
-
-    // Range.textContent : String.
-    // Returns the data content of all text nodes in the range, ignoring visibility.
-    rangy.rangePrototype.textContent = function() {
-        var textnodes = this.getNodes([3]);
-        var tn, res="";
-
-        for (var i=0; i < textnodes.length; i++) {
-            tn = textnodes[i];
-            if (tn === this.startContainer && tn === this.endContainer) {
-                res += tn.data.slice(this.startOffset, this.endOffset);
-            }
-            else if (tn === this.startContainer) {
-                res += tn.data.slice(this.startOffset);
-            }
-            else if (tn === this.endContainer) {
-                res += tn.data.slice(0,this.endOffset);
-            }
-            else {
-                res += tn.data;
-            }
-        }
-
-        return res;
-    }
 
     var buttonGroup = $(".btn-group");
 
@@ -336,21 +307,21 @@ $(document).ready(function() {
         .appendTo(buttonGroup)
     ;
 
-    resetEditorWith("(* Your code here *)");
+    //resetEditorWith("(* Your code here *)");
 
-    resize();
+    //resize();
     $(window).resize(resize);
 
     $("body")
         .on("keydown", globalKeyHandler)
     ;
 
-    $("#editor")
-        .keypress(keypressHandler)
-        .keydown(keydownHandler)
-        .on("cut", pweCutHandler)
-        .on("paste", pwePasteHandler)
-    ;
+    // $("#editor")
+    //     .keypress(keypressHandler)
+    //     .keydown(keydownHandler)
+    //     .on("cut", pweCutHandler)
+    //     .on("paste", pwePasteHandler)
+    // ;
 
     //PT.handleKeyboard();
 
@@ -405,8 +376,6 @@ function resize() {
 
 function onLoad(text) {
 
-    text = pweSanitizeInput(text);
-
     asyncLog("LOAD " + text);
 
     $("#editor").empty();//.css("display", "");
@@ -414,15 +383,13 @@ function onLoad(text) {
     $("#prooftree").empty();//.css("display", "none");
     activeProofTree = undefined;
 
-    resetEditorWith(text);
+    resetEditor(text);
 
     switchToEditorUI();
 
-    highlight();
-
     asyncResetCoq()
         .then(function() {
-            $("#editor").focus();
+            cm.focus();
         })
         .catch(outputError);
 
@@ -534,133 +501,6 @@ function globalKeyHandler(evt) {
     }
 }
 
-function keypressHandler(ev) {
-    //console.log("KEYPRESS", ev.keyCode)
-    pweRestoreFinalBR();
-    pweOptAdjustSelection();
-    if (!(ev.keyCode >= 33 && ev.keyCode <= 40) && pweSelectionLocked()) {
-        ev.preventDefault();
-        ev.stopPropagation();
-    }
-}
-
-function keyupHandler(evt) {
-    var bufferText = $("#buffer").text();
-    if (bufferText === zwsp) { return; }
-    var unlocked = $("#unlocked").text();
-    $("#buffer").text(zwsp);
-    $("#unlocked").text(bufferText.substring(1) + unlocked);
-}
-
-function keydownHandler(ev) {
-
-    eventuallyHighlight();
-
-    pweRestoreFinalBR();
-    pweOptAdjustSelection();
-
-    //console.log("KEYDOWN", ev.keyCode)
-
-    // Ctrl+C is copy
-    // Ctrl+A/B/E/F/N/P move the cursor under Mac
-    var ctrlWhitelist = [
-        65, // a
-        66, // b
-        67, // c
-        69, // e
-        70, // f
-        78, // n
-        80, // p
-    ];
-
-    // Meta+C is copy under Mac
-    if (ev.metaKey && evt.keyCode === 67) {
-        return;
-    }
-
-    if (ev.ctrlKey) {
-        if (ev.keyCode == 40 || ev.keyCode == 10) { //DOWN_ARROW
-            proverDown();
-            ev.preventDefault();
-            ev.stopPropagation();
-        } else if (ev.keyCode == 38) { // Up
-            proverUp();
-            ev.preventDefault();
-            ev.stopPropagation();
-        } else if (ev.keyCode == 34) { // PgDn
-            //prover_bottom();
-            ev.preventDefault();
-            ev.stopPropagation();
-        } else if (ev.keyCode == 33) { // PgUp
-            //prover_top();
-            ev.preventDefault();
-            ev.stopPropagation();
-        } else if (ev.keyCode == 13) { // Enter
-            proverToCaret();
-            ev.preventDefault();
-            ev.stopPropagation();
-        } else if (ev.keyCode == 8) { // Backspace
-            // tricky, for now just backspace
-            pweEmulateBackspace(ev, true);
-        } else if (
-            !pweSelectionLocked()
-                || _(ctrlWhitelist).contains(ev.keyCode)) {
-            // in the locked area, only whitelisted commands are allowed
-            return;
-        } else { // selection is locked and command is not whitelisted
-            ev.preventDefault();
-            ev.stopPropagation();
-        }
-    }
-
-    if (electric==true && evt.keyCode == 190) { setTimeout(proverToCaret, 0); }
-
-    if (ev.keyCode >= 33 && ev.keyCode <= 40) {
-        if (ev.keyCode == 37) { // Left
-            if (pweMoveLeft(ev.shiftKey)) {
-                ev.preventDefault();
-                ev.stopPropagation();
-            }
-        }
-        if (ev.keyCode == 39) { // Right
-            if (pweMoveRight(ev.shiftKey)) {
-                ev.preventDefault();
-                ev.stopPropagation();
-            }
-        }
-    } else if (!pweSelectionLocked()) {
-        if (ev.keyCode == 8) { // Backspace
-            pweEmulateBackspace(ev, false);
-        } else if (ev.keyCode == 9) { // Tab
-            insertAtSelection("  ");
-            ev.preventDefault();
-            ev.stopPropagation();
-        } else if (ev.keyCode == 13 && !ev.ctrlKey) { // Enter
-            // there is no way around emulating this: the browser adds a new <div>...
-            pweEmulateReturn();
-            ev.preventDefault();
-            ev.stopPropagation();
-        }
-    } else {
-        ev.preventDefault();
-        ev.stopPropagation();
-    }
-
-}
-
-var lastHighlight = Date.now();
-
-function eventuallyHighlight() {
-    lastHighlight = Date.now();
-    window.setTimeout(function() {
-        var now = Date.now();
-        var delta = now - lastHighlight;
-        if (delta > highlightingDelay) {
-            highlight();
-        }
-    }, highlightingDelay);
-}
-
 var goingDown = true, goingUp = false;
 
 function updateCoqtopPane(direction, response) {
@@ -757,9 +597,9 @@ function updateCoqtopPane(direction, response) {
         }
 
         // if we use highlightBlock here, it fails, so use the core highlighting
-        var contentsText = $("#contents").text();
-        var textHl = hljs.highlight('ocaml', contentsText, true).value;
-        $("#contents").html(textHl);
+        //var contentsText = $("#contents").text();
+        //var textHl = hljs.highlight('ocaml', contentsText, true).value;
+        //$("#contents").html(textHl);
 
         break;
     case "Fail":
@@ -803,28 +643,6 @@ function updateCoqtopPane(direction, response) {
 
 }
 
-function highlight() {
-    var sel = rangy.saveSelection();
-    // need to undo previous highlightings because hljs is dumb
-    var hljsClasses = [
-        "built_in",
-        "comment",
-        "keyword",
-        "literal",
-        "number",
-        "params",
-        "string",
-        "title",
-        "type",
-    ];
-    _(hljsClasses).each(function(className) {
-        $("#editor .hljs-" + className).replaceWith(function() { return this.innerHTML; });
-    });
-    hljs.highlightBlock($("#editor")[0]);
-    $("#editor").removeClass("hljs"); // no thanks
-    rangy.restoreSelection(sel);
-}
-
 function undoCallback(fromTree, undone, response) {
     switch(response.rResponse.tag) {
     case "Good":
@@ -834,13 +652,19 @@ function undoCallback(fromTree, undone, response) {
         var stepsToRewind = + response.rResponse.contents[0];
         //console.log("Rewinding additional " + stepsToRewind + " steps");
         while (stepsToRewind-- > 0) {
-            var index = 0;
-            if (proved != "") { index = prev(proved); }
+            var rProved = mProved.find();
+            var proved = doc.getRange(rProved.from, rProved.to);
+            if (proved === "") { return; }
+            var prevIndex = prev(proved);
             var pieceUnproved = proved.substring(index);
-            truncateProvedToIndex(index);
-            prependToUnlocked(pieceUnproved);
+            if (pieceUnproved === "") { return; }
+            var prevPos = cm.findPosH(rProved.from, prevIndex, "char");
+            markProved(rProved.from, prevPos);
+            markProving(prevPos, prevPos);
+            markToprove(prevPos, prevPos);
+            markUnlocked(prevPos, rUnlocked.to);
+            if (!fromTree) { doc.setCursor(prevPos); }
         }
-        if (!fromTree) { repositionCaret(); }
         response.rResponse.contents[0] = ""; // don't show the user the steps number
         break;
     };
@@ -898,6 +722,7 @@ var safeDelimiters = [' ', '\n'];
  * Adds [command] to [provwill], making sure that it is separated from the
  * previous text. Returns how many characters were added for safety.
  */
+/*
 function safeAppendToProvwill(command) {
     var returnValue = 0;
     // if the command does not start with a space, and the last thing did not
@@ -915,6 +740,7 @@ function safeAppendToProvwill(command) {
     appendToProvwill(command);
     return returnValue;
 }
+*/
 
 /*
  * Prepends [command] to [provwill], making sure that it is separated from the
@@ -927,8 +753,8 @@ function safePrependToProvwill(command) {
 
     // if the command does not start with a space, and the last thing did not
     // end with a newline or space, let's make some room
-    var stringBefore = proved + proving;
-    if (stringBefore !== '') {
+    var stringBefore = getProved() + getProving();
+    if (stringBefore !== "") {
         var characterBefore = stringBefore[stringBefore.length - 1];
         var characterAfter = command[0];
         if (!_(safeDelimiters).contains(characterBefore)
@@ -940,54 +766,32 @@ function safePrependToProvwill(command) {
 
     // if the command does not end with a space, and the next thing does not
     // start with a newline or space, let's make some room
-    var stringAfter = provwill + pweGetUnlocked();
-    if (stringAfter !== '') {
+    var stringAfter = getToprove() + getUnlocked();
+    if (stringAfter !== "") {
         var characterBefore = command[command.length - 1];
         var characterAfter = stringAfter[0];
         if (!_(safeDelimiters).contains(characterBefore)
             && !_(safeDelimiters).contains(characterAfter)) {
-            prependToUnlocked(' ');
+            var rUnlocked = mUnlocked.find();
+            doc.replaceRange(" ", rUnlocked.from);
             returnValue++;
         }
     }
 
-    prependToProvwill(command);
+    var rToprove = mToprove.find();
+    doc.replaceRange(command, rToprove.from);
+    // if rToprove was empty, the last command actually inserted into unlocked
+    if (getToprove() === "") {
+        var rUnlocked = mUnlocked.find();
+        var newPos = cm.findPosH(rUnlocked.from, command.length, "char");
+        markToprove(rToprove.from, newPos);
+        markUnlocked(newPos, rUnlocked.to);
+    }
 
     return returnValue;
 }
 
 /*
- * [proverDown] should trigger the processing of the next command in the buffer.
- * An invariant of the editor should be that text present in the buffer should
- * not disappear as it is being processed. Therefore, we cannot have the text be
- * put in the [provwill] area on callback, and have to move it here. This also
- * means that when the proof tree wants to run a command, it needs to put the
- * command in the [provwill] area as the callback should not do it.
- * [proverDown] returns the number of characters it added to the command
- * processed, so that [proverToCaret] can correctly adjust the destination index
- * when [proverDown] decides to add a space in front of a command.
-*/
-function proverDown() {
-    var unlocked = pweGetUnlocked();
-    var index = next(unlocked);
-    if (index == 0) { return; }
-    var pieceToProcess = unlocked.substring(0, index);
-    var trimmed = coqTrim(pieceToProcess);
-    if (_(['+', '-', '*']).contains(trimmed)) {
-        // eat and ignore bullets
-        truncateUnlockedFromIndex(index);
-        return proverDown();
-    }
-    truncateUnlockedFromIndex(index);
-    var returnValue = safeAppendToProvwill(pieceToProcess);
-    // TODO: this should not happen when calling proverDown from proverToCaret
-    processProvwill()
-        .then(repositionCaret)
-        .then(scrollViewToCaret)
-    ;
-    return returnValue;
-}
-
 function proverRewindToIndex(index) {
     if (proved.length > index) {
         return proverUp().then(function() { return proverRewindToIndex(index); });
@@ -1025,65 +829,7 @@ function proverToCaret () {
 
     }
 }
-
-/*
-  Assuming the system is done processing, #proving and #provwill should be
-  empty, we should therefore be able to just undo the last step. Undo might undo
-  more steps than that though, in which case we want to mark them undone too.
 */
-function proverUp (fromTree) {
-    var index = 0;
-    if (proved != "") { index = prev(proved); }
-    var pieceToUnprocess = proved.substring(index);
-    if (pieceToUnprocess !== "") {
-        truncateProvedToIndex(index);
-        prependToUnlocked(pieceToUnprocess);
-        asyncLog("PROVERUP " + pieceToUnprocess);
-        if (!fromTree) { repositionCaret(); }
-        return asyncUndo()
-            .then(_.partial(undoCallback, fromTree, pieceToUnprocess))
-        ;
-    } else {
-        return Promise.resolve();
-    }
-}
-
-// moves the caret to the start of the #unlocked area
-// [offset] allows to move it slightly more
-function repositionCaret(offset) {
-    if (offset === undefined) { offset = 0; }
-    var sel = rangy.getSelection();
-    var rng = rangy.createRange();
-    var contents = $("#unlocked").contents();
-    rng.setStart(
-        (contents.length === 0) ? $("#unlocked")[0] : contents[0],
-        offset
-    );
-    sel.setSingleRange(rng);
-    scrollViewToCaret();
-}
-
-function scrollViewToCaret() {
-    // now let's scroll so that the cursor is visible
-    var cursorMargin = 40; // about two lines
-    var cursorTop = getCaretVerticalPosition();
-    var editorRect = $("#editor")[0].getBoundingClientRect();
-    var editorBottom = editorRect.bottom;
-    var editorTop = editorRect.top;
-    var editorScroll = $("#editor").scrollTop();
-
-    // scroll down if the cursor is too far
-    if (cursorTop > editorBottom - cursorMargin) {
-        $("#editor").scrollTop(editorScroll + cursorTop - editorBottom + cursorMargin);
-    }
-
-    // scroll up if the cursor is too far
-    if (cursorTop < editorTop + cursorMargin) {
-        // avoid scrolling at the bottom when at the top
-        var scroll = Math.max(0, editorScroll + cursorTop - editorTop - cursorMargin);
-        $("#editor").scrollTop(scroll);
-    }
-}
 
 function mkGlyph(name) {
     return $("<i>", {
@@ -1127,11 +873,6 @@ function peekAtEditorUI() {
     $("#coqtop").css("display", "");
     $("#coqtop-error").height("20%");
 
-    // $("#editor").css("display", "");
-    // $("#coqtop").css("display", "");
-    // $("#coqtop-error").css("display", "");
-    // $("#prooftree").css("display", "none");
-
     $("#peek-button").css("display", "none");
     $("#unpeek-button").css("display", "");
     $("#editor").focus();
@@ -1140,42 +881,29 @@ function peekAtEditorUI() {
 
 function unpeekAtEditorUI() {
 
-    $("#main").height("10%");
-    $("#prooftree").height("90%");
+    $("#main").height("20%");
+    $("#prooftree").height("80%");
     $("#coqtop").css("display", "none");
     $("#coqtop-error").height("100%");
-
-    // $("#editor").css("display", "none");
-    // $("#coqtop").css("display", "none");
-    // $("#coqtop-error").css("display", "none");
-    // $("#prooftree").css("display", "");
 
     $("#peek-button").css("display", "");
     $("#unpeek-button").css("display", "none");
     $("#prooftree").focus();
-    scrollViewToCaret();
+
     activeProofTree.update();
 
 }
 
 function switchToProofUI() {
 
-    $("#main").height("10%");
-    $("#prooftree").height("90%");
+    $("#main").height("20%");
+    $("#prooftree").height("80%");
     $("#coqtop").css("display", "none");
     $("#coqtop-error").height("100%");
 
-    // $("#editor").css("display", "none");
-    // $("#coqtop").css("display", "none").text("CURRENTLY IN PROOF TREE MODE");
-    // $("#coqtop-error").css("display", "none");
-    // $("#prooftree").css("display", "");
-    $("#prover-down").attr("disabled", true);
-    $("#prover-up").attr("disabled", true);
-    $("#prover-caret").attr("disabled", true);
     $("#prooftree-button").css("display", "none");
     $("#noprooftree-button").css("display", "");
     $("#peek-button").css("display", "");
-    //$("#editor").attr("contenteditable", false);
 
 }
 
@@ -1186,18 +914,10 @@ function switchToEditorUI() {
     $("#coqtop").css("display", "");
     $("#coqtop-error").height("20%");
 
-    // $("#editor").css("display", "");
-    // $("#coqtop").css("display", "").text("");
-    // $("#coqtop-error").css("display", "").text("");
-    // $("#prooftree").css("display", "none");
-    $("#prover-down").attr("disabled", false);
-    $("#prover-up").attr("disabled", false);
-    $("#prover-caret").attr("disabled", false);
     $("#prooftree-button").css("display", "");
     $("#noprooftree-button").css("display", "none");
     $("#peek-button").css("display", "none");
     $("#unpeek-button").css("display", "none");
-    //$("#editor").attr("contenteditable", true);
 
 }
 
@@ -1256,8 +976,6 @@ function exitProofTree() {
     activeProofTree = undefined;
 
     $("#editor").focus();
-    repositionCaret();
-    scrollViewToCaret();
 
     asyncLog("EXITPROOFTREE");
 
@@ -1507,7 +1225,7 @@ function pasteHandler(evt) {
 }
 
 /* ProofWeb */
-
+/*
 function pweRestoreFinalBR() {
     var finalbr = $("#finalbr")[0];
     if (!finalbr) {
@@ -1714,6 +1432,7 @@ function pweScrollToCaret() {
 function pweFocusEditor() {
     if (!workaround_no_focusing) $("#editor").focus();
 }
+*/
 
 function unquote_str (oldstr) {
     var str = oldstr
@@ -1729,6 +1448,7 @@ function unquote_str (oldstr) {
     return str;
 }
 
+/*
 function pweMoveLeft(extend) {
     var sel,newfocus,erange,bw,rs;
     var res = false;
@@ -1866,12 +1586,14 @@ function pweInsertText(txt,inrange) {
     range.collapse(false);
     return range;
 }
+*/
 
 /*
  * decides whether we need to emulate Backspace because we are close to our
  * special character, or whether we can let the original [ev] go through
  * if [forceEmulation] is true, will definitely emulate
  */
+/*
 function pweEmulateBackspace(ev, forceEmulation) {
     var range, sel;
 
@@ -1970,6 +1692,7 @@ function pweCutHandler(ev) {
         ev.stopPropagation();
     }
 }
+*/
 
 function makeGroup(name, tactics) {
     return {
@@ -2146,6 +1869,8 @@ function editorOnResponse(requestType, request, response) {
         switch(response.rResponse.tag) {
 
         case 'Good':
+            var rProving = mProving.find();
+            var proving = doc.getRange(rProving.from, rProving.to);
             if (coqTrim(proving) !== coqTrim(request)) {
                 console.log(
                     'request response was for', request,
@@ -2153,8 +1878,11 @@ function editorOnResponse(requestType, request, response) {
                 );
                 return;
             }
-            appendToProved(proving);
-            resetProving();
+            var rProved = mProved.find();
+            var nextPos = rProving.to;
+            markProved(rProved.from, nextPos);
+            markProving(nextPos, rProving.to);
+            doc.setCursor(nextPos);
             updateCoqtopPane(goingDown, response);
 
             if (activeProofTree === undefined) {
@@ -2175,15 +1903,14 @@ function editorOnResponse(requestType, request, response) {
             break;
 
         case 'Fail':
-            // here, if the request originated from the proof tree, it sucks to
-            // dump it back in the editor, but this will be optimization for
-            // later...
-            var unlocked = pweGetUnlocked();
-            prependToUnlocked(provwill);
-            resetProvwill();
-            prependToUnlocked(proving);
-            resetProving();
-            repositionCaret(); scrollViewToCaret();
+            // move proving and toprove back to unlocked
+            var rProving = mProving.find();
+            var rProved = mProved.find();
+            var rUnlocked = mUnlocked.find();
+            markProving(rProving.from, rProving.from);
+            markToprove(rProving.from, rProving.from);
+            markUnlocked(rProving.from, rUnlocked.to);
+            doc.setCursor(rUnlocked.from);
             updateCoqtopPane(goingDown, response);
             break;
         };
@@ -2199,29 +1926,38 @@ function editorOnResponse(requestType, request, response) {
  */
 function lookupRequestInIncoming(request) {
 
-    if (proving !== '') {
+    var rProving = mProving.find();
+    var proving = doc.getRange(rProving.from, rProving.to);
 
+    if (proving !== "") {
         // this branch happens when one processes a lot of commands
         return sameTrimmed(proving, request);
+    }
 
-    } else if (provwill !== '') {
+    var rToprove = mToprove.find();
+    var toprove = doc.getRange(rToprove.from, rToprove.to);
 
+    if (toprove !== "") {
         var nextIndex = next(provwill);
         var nextItem = provwill.substring(0, nextIndex);
         return sameTrimmed(nextItem, request);
-
-    } else {
-
-        var unlocked = pweGetUnlocked();
-        var nextIndex = next(unlocked);
-        var nextUnlocked = unlocked.substring(0, nextIndex);
-        if (!sameTrimmed(nextUnlocked, request)) { return false; }
-
-        truncateUnlockedFromIndex(nextIndex);
-        safeAppendToProvwill(nextUnlocked);
-        return true;
-
     }
+
+    var rUnlocked = mUnlocked.find();
+    var unlocked = doc.getRange(rUnlocked.from, rUnlocked.to);
+    var nextIndex = next(unlocked);
+    var nextUnlocked = unlocked.substring(0, nextIndex);
+    var nextPos = cm.findPosH(rUnlocked.from, nextIndex, "char");
+
+    if (!sameTrimmed(nextUnlocked, request)) {
+        return false;
+    }
+
+    markToprove(rToprove.from, nextPos);
+    markUnlocked(nextPos, rUnlocked.to);
+
+    return true;
+
 }
 
 function proofTreeQueryWish(request) {
@@ -2254,10 +1990,7 @@ function proofTreeQueryWish(request) {
         }
     }
 
-    processProvwill();
-
-    //repositionCaret();
-    //scrollViewToCaret();
+    processToprove();
 
 }
 
@@ -2270,8 +2003,8 @@ function processProvwill() {
     if (activeProofTree !== undefined) {
         activeProofTree.beforeProvwillConsumption();
     }
-    nextIndex = next(provwill);
-    pieceToProcess = provwill.substring(0, nextIndex);
+    var nextIndex = next(provwill);
+    var pieceToProcess = provwill.substring(0, nextIndex);
     setProving(pieceToProcess);
     truncateProvwillFromIndex(nextIndex);
     processingProvwill = true;

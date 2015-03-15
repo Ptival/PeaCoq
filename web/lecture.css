@@ -1,34 +1,42 @@
 html > body {
     height: 100vh;
 }
+
+.CodeMirror {
+    border: 1px solid black;
+    height: 100%;
+}
+
 .btn-group {
     display: table-cell;
     vertical-align: top;
 }
-pre {
-    margin: 0;
-    padding: 2px;
-}
+
 #toolbar {
     height: 45px;
 }
+
 #main-and-prooftree {
     height: calc(100% - 45px);
 }
+
 #main {
     border: 0;
     font-family: monospace;
     height: 100%;
 }
+
 #main-left, #main-right {
     float: left;
     height: 100%;
     margin: 0;
     width: 50%;
 }
+
 #main-left {
     height: 100%;
 }
+
 #coqtop, #coqtop-error {
     border: 0;
     margin: 0;
@@ -36,25 +44,25 @@ pre {
     white-space: pre-wrap;
     word-break: normal;
 }
+
 #coqtop {
     height: 80%;
 }
+
 #coqtop-error {
     height: 20%;
 }
-#editor {
-    height: 100%;
-    white-space: pre-wrap;
-    word-break: normal;
-}
+
 #prooftree {
     border: 0;
     height: 0%;
 }
+
 #revision {
     font-family: monospace;
     text-align: right;
 }
+
 #toolbar {
     display: table;
     border: 0;

@@ -5,21 +5,22 @@
     <meta charset="utf-8" />
     <link rel="stylesheet" href="bootstrap.css">
     <link rel="stylesheet" href="bootstrap-theme.css">
-    <link rel="stylesheet" href="highlight.css">
+    <link rel="stylesheet" href="codemirror/lib/codemirror.css">
     <link rel="stylesheet" href="prooftree.css">
     <link rel="stylesheet" href="lecture.css">
+    <link rel="stylesheet" href="codemirror.css">
     <script src="jquery.js"></script>
     <script src="d3.js"></script>
     <script src="lodash.js"></script>
     <script src="bootstrap.js"></script>
-    <script src="rangy-core.js"></script>
-    <script src="rangy-textrange.js"></script>
-    <script src="rangy-selectionsaverestore.js"></script>
-    <script src="highlight.js"></script>
-    <script src="ocaml.js"></script>
+    <script src="codemirror/lib/codemirror.js"></script>
+    <script src="codemirror/addon/edit/matchbrackets.js"></script>
+    <script src="codemirror/keymap/emacs.js"></script>
+    <script src="codemirror.js"></script>
     <script src="coqtop.js"></script>
     <script src="prooftree.js"></script>
     <script src="lecture.js"></script>
+    <script src="coq.js"></script>
   </head>
   <body>
 
@@ -32,7 +33,7 @@
 
       <div id="main">
         <div id="main-left">
-          <pre id="editor" contenteditable="true" spellcheck="false"></pre>
+          <!-- editor goes here -->
         </div>
         <div id="main-right">
           <pre id="coqtop" contenteditable="true" spellcheck="false"
