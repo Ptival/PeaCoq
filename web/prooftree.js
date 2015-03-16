@@ -3541,7 +3541,7 @@ ProofTree.prototype.onUndo = function(undone, response) {
     case '{':
         if (this.curNode.proofTree.isRootNode(this.curNode)) {
             // unfocusing the root node should exit the proof
-            proverUp(true);
+            onCtrlUp(true);
         } else {
             this.curNode.parent.makeCurrentNode();
             this.update();
@@ -3561,12 +3561,12 @@ ProofTree.prototype.onUndo = function(undone, response) {
 
         this.update();
         // we want to trigger at least one more undo
-        proverUp(true);
+        onCtrlUp(true);
         break;
 
     case 'Proof.':
         // undo the Theorem and kill self!
-        proverUp();
+        onCtrlUp(true);
         exitProofTree();
 
     default:
