@@ -13,7 +13,7 @@ var unicodeList = [
 $(document).ready(function() {
 
     $(window).bind('beforeunload', function(){
-        return '⚠⚠⚠ unsaved progress wil be lost ⚠⚠⚠';
+        return 'WARNING: unsaved progress wil be lost';
     });
 
     var buttonGroup = $(".btn-group");
@@ -52,39 +52,11 @@ $(document).ready(function() {
         .append(mkGlyph("italic"))
     ;
 
-    // $("<button>", {
-    //     "class": "btn btn-success",
-    //     "html": $("<span>")
-    //         .append(mkGlyph("tree-deciduous"))
-    //         //.append(nbsp + "Proof Tree")
-    //     ,
-    //     "id": "prooftree-button",
-    // })
-    //     .appendTo(buttonGroup)
-    //     .on("click", function() {
-    //         asyncLog("MANUALENTERPROOFTREE");
-    //         enterProofTree();
-    //     })
-    //     .attr("disabled", true)
-    // ;
-
-    // $("<button>", {
-    //     "class": "btn btn-danger",
-    //     "html": $("<span>")
-    //         .append(mkGlyph("fire"))
-    //         //.append(nbsp + "Abort Proof Tree")
-    //     ,
-    //     "id": "noprooftree-button",
-    // })
-    //     .appendTo(buttonGroup)
-    //     .css("display", "none")
-    // ;
-
     $("<button>", {
         "class": "btn btn-default",
         "html": $("<span>")
             .append(mkGlyph("eye-open"))
-            //.append(nbsp + "Peek at Editor")
+            //.append(nbsp + "View Editor")
         ,
         "id": "peek-button",
     })
@@ -97,7 +69,7 @@ $(document).ready(function() {
         "class": "btn btn-default",
         "html": $("<span>")
             .append(mkGlyph("eye-close"))
-            //.append(nbsp + "Return to Proof Tree")
+            //.append(nbsp + "View Proof Tree")
         ,
         "id": "unpeek-button",
     })
@@ -303,7 +275,6 @@ function onLoad(text) {
 
     asyncLog("LOAD " + text);
 
-    $("#editor").empty();//.css("display", "");
     $("#coqtop").empty();//.css("display", "");
     $("#prooftree").empty();//.css("display", "none");
     activeProofTree = undefined;
@@ -521,50 +492,12 @@ function updateCoqtopPane(direction, response) {
 
         }
 
-        // if we use highlightBlock here, it fails, so use the core highlighting
-        //var contentsText = $("#contents").text();
-        //var textHl = hljs.highlight('ocaml', contentsText, true).value;
-        //$("#contents").html(textHl);
-
         break;
     case "Fail":
         // maybe still display the goal?
         $("#coqtop-error").empty().text(stripWarning(contents));
         break;
     };
-
-    /*
-    // also, enable/disable the button depending on whether we are in proof mode
-    asyncStatus()
-        .then(function(status) {
-
-            // while at it, let's gather names of definitions for proof purposes
-            // TODO: should this be done by prooftree.js?
-            if (status.current !== null && !_(namesPossiblyInScope).contains(status.current)) {
-                namesPossiblyInScope.push(status.current);
-            }
-
-            $("#prooftree-button").attr("disabled", !status.proving);
-            if (status.proving) {
-                // automatically enter proof mode if not in the process of proving more things
-                var lastCommand = getLastProved();
-                if (_(lastCommand).contains("(* notree *)")) {
-                    asyncLog("NOTREE");
-                }
-                if (direction === goingDown
-                    && ! lastCommand.endsWith("Proof.")
-                    && !_(lastCommand).contains("(* notree *)")
-                    && $("#provwill").text().length === 0) {
-                    if (!processing) {
-                        asyncLog("AUTOENTERPROOFTREE");
-                        enterProofTree();
-                    }
-                }
-            }
-
-        })
-    ;
-    */
 
 }
 
@@ -612,37 +545,10 @@ function getCaretPos() {
 var safeDelimiters = [' ', '\n'];
 
 /*
- * Adds [command] to [provwill], making sure that it is separated from the
- * previous text. Returns how many characters were added for safety.
- */
-/*
-function safeAppendToProvwill(command) {
-    var returnValue = 0;
-    // if the command does not start with a space, and the last thing did not
-    // end with a newline or space, let's make some room
-    var stringBefore = proved + proving + provwill;
-    if (stringBefore !== '') {
-        var characterBefore = stringBefore[stringBefore.length - 1];
-        var characterAfter = command[0];
-        if (!_(safeDelimiters).contains(characterBefore)
-            && !_(safeDelimiters).contains(characterAfter)) {
-            appendToProvwill(' ');
-            returnValue = 1;
-        }
-    }
-    appendToProvwill(command);
-    return returnValue;
-}
-*/
-
-/*
  * Prepends [command] to [provwill], making sure that it is separated from the
- * previous text and the next text. Returns how many characters were added for
- * safety.
+ * previous text and the next text.
  */
 function safePrependToprove(command) {
-
-    var returnValue = 0;
 
     // if the command does not start with a space, and the last thing did not
     // end with a newline or space, let's make some room
@@ -653,7 +559,6 @@ function safePrependToprove(command) {
         if (!_(safeDelimiters).contains(characterBefore)
             && !_(safeDelimiters).contains(characterAfter)) {
             command = ' ' + command;
-            returnValue++;
         }
     }
 
@@ -667,7 +572,6 @@ function safePrependToprove(command) {
             && !_(safeDelimiters).contains(characterAfter)) {
             var rUnlocked = mUnlocked.find();
             doc.replaceRange(" ", rUnlocked.from);
-            returnValue++;
         }
     }
 
@@ -686,7 +590,6 @@ function safePrependToprove(command) {
         markUnlocked(newPos, rUnlocked.to);
     }
 
-    return returnValue;
 }
 
 function mkGlyph(name) {
@@ -735,6 +638,8 @@ function peekAtEditorUI() {
     $("#unpeek-button").css("display", "");
     $("#editor").focus();
 
+    cm.focus();
+
 }
 
 function unpeekAtEditorUI() {
@@ -748,6 +653,7 @@ function unpeekAtEditorUI() {
     $("#unpeek-button").css("display", "none");
     $("#prooftree").focus();
 
+    cm.scrollIntoView(null);
     activeProofTree.update();
 
 }
@@ -1128,25 +1034,11 @@ function lectureTactics(pt) {
 function editorOnRequestTriggered(requestType, request) {
     switch (requestType) {
     case 'query':
-/*
-        var index = next(provwill);
-        var nextProvwill = provwill.substring(0, index);
-        if (nextProvwill.trim() !== request.trim()) {
-            console.log(
-                'request triggered was', request,
-                'but was expecting', nextProvwill
-            );
-        }
-        console.log('AND THERE');
-        setProving(nextProvwill);
-        console.log('AND THERE');
-        truncateProvwillFromIndex(index);
-        console.log('AND THERE');
         break;
-*/
     }
 }
 
+// TODO: collect names possibly in scope here
 function editorOnResponse(requestType, request, response) {
     switch (requestType) {
     case 'query':

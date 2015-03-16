@@ -14,13 +14,23 @@ html > body {
     height: 100%;
 }
 
-.proved { background-color: #90EE90; }
-
 .proving { background-color: #FFA500; }
 
 .toprove { background-color: #ADD8E6; }
 
 .unlocked {  }
+
+/* dark settings */
+/* .CodeMirror {background: #000020; color: #FFFFFF;} */
+/* .CodeMirror-gutters {background: #000030;} */
+/* span.cm-variable {color: #FFFFFF;} */
+/* .proved { background-color: #483D8B; } */
+
+/* bright settings */
+.CodeMirror {}
+.CodeMirror-gutters {}
+span.cm-variable {color: #000000;}
+.proved { background-color: #90EE90; }
 
 .div.CodeMirror-selected {background: #716C62 !important;}
 .CodeMirror ::selection { background: rgba(113, 108, 98, .99); }
@@ -45,7 +55,6 @@ span.cm-keyword {color: #ffb928;}
 span.cm-string {color: #ffcf6c;}
 span.cm-string.cm-property {color: #ffffec;}
 
-span.cm-variable {color: #000000;}
 span.cm-variable-2 {color: #00a8c6;}
 span.cm-def {color: #ffffec;}
 span.cm-bracket {color: #fffffc; font-weight: bold;}
