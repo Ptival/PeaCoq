@@ -4,6 +4,7 @@ html > body {
 
 .CodeMirror {
     border: 1px solid black;
+    box-sizing: border-box;
     height: 100%;
 }
 
@@ -33,16 +34,12 @@ html > body {
     width: 50%;
 }
 
-#main-left {
-    height: 100%;
+#coqtop-context {
+    height: 80%;
 }
 
-#coqtop, #coqtop-error {
-    border: 0;
-    margin: 0;
-    padding: 0;
-    white-space: pre-wrap;
-    word-break: normal;
+#coqtop-response {
+    height: 20%;
 }
 
 #coqtop {

@@ -11,6 +11,17 @@ html > body {
 
 .CodeMirror {
     border: 1px solid #CCCCCC;
+}
+
+#main-left > .CodeMirror {
+    height: 100%;
+}
+
+#coqtop-context > .CodeMirror {
+    height: 100%;
+}
+
+#coqtop-response > .CodeMirror {
     height: 100%;
 }
 

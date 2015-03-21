@@ -1,26 +1,28 @@
-var cm, doc;
+var cm, doc, cmContext, docContext, cmResponse, docResponse;
 var mProved, mProving, mToprove, mUnlocked;
 
+var setCursorOnResponse = false;
+
 $(document).ready(function() {
-    setupEditor($("#main-left")[0]);
+    setupEditor();
 });
 
-function setupEditor(anchor) {
+function setupEditor() {
 
     cm = CodeMirror(
-        anchor,
+        $("#main-left")[0],
         {
             "autofocus": true,
             "extraKeys": {
-                "Ctrl-Down": function(cm) { onCtrlDown(); },
-                "Ctrl-Alt-Down": function(cm) { onCtrlDown(); },
-                "Ctrl-Up": function(cm) {
-                    onCtrlUp(false);
-                },
+                "Ctrl-Alt-Down": function(cm) { onCtrlDown(true); },
+                "Ctrl-Alt-N": function(cm) { onCtrlDown(true); },
                 "Ctrl-Alt-Up": function(cm) {
-                    onCtrlUp(false);
+                    onCtrlUp(true);
                 },
-                "Ctrl-Enter": function(cm) {
+                "Ctrl-Alt-P": function(cm) {
+                    onCtrlUp(true);
+                },
+                "Ctrl-Alt-Enter": function(cm) {
                     onCtrlEnter();
                 },
             },
@@ -33,6 +35,28 @@ function setupEditor(anchor) {
     );
 
     doc = cm.getDoc();
+
+    cmContext = CodeMirror(
+        $("#coqtop-context")[0],
+        {
+            "lineWrapping": true,
+            "matchBrackets": true,
+            "mode": "text/x-coq",
+        }
+    );
+
+    docContext = cmContext.getDoc();
+
+    cmResponse = CodeMirror(
+        $("#coqtop-response")[0],
+        {
+            "lineWrapping": true,
+            "matchBrackets": true,
+            "mode": "text/x-coq",
+        }
+    );
+
+    docResponse = cmResponse.getDoc();
 
     resetEditor("");
 
@@ -114,7 +138,7 @@ function process() {
     }
 }
 
-function onCtrlDown() {
+function onCtrlDown(fromUser) {
     var rToprove = mToprove.find();
     var rUnlocked = mUnlocked.find();
     var unlocked = doc.getRange(rUnlocked.from, rUnlocked.to);
@@ -123,11 +147,15 @@ function onCtrlDown() {
     var nextPos = cm.findPosH(rUnlocked.from, nextIndex, "char");
     markToprove(rToprove.from, nextPos);
     markUnlocked(nextPos, rUnlocked.to);
-    doc.setCursor(nextPos);
+    if (fromUser) {
+        setCursorOnResponse = true;
+        doc.setCursor(nextPos);
+        scrollIntoView();
+    }
     processToprove();
 }
 
-function onCtrlUp(fromTree) {
+function onCtrlUp(fromUser) {
     if (processingToprove) { return Promise.resolve(); }
     var rProved = mProved.find();
     var rUnlocked = mUnlocked.find();
@@ -142,9 +170,13 @@ function onCtrlUp(fromTree) {
     markToprove(prevPos, prevPos);
     markUnlocked(prevPos, rUnlocked.to);
     asyncLog("PROVERUP " + pieceToUnprocess);
-    doc.setCursor(prevPos);
+    if (fromUser) {
+        setCursorOnResponse = true;
+        doc.setCursor(prevPos);
+        scrollIntoView();
+    }
     return asyncUndo()
-        .then(_.partial(undoCallback, fromTree, pieceToUnprocess))
+        .then(_.partial(undoCallback, fromUser, pieceToUnprocess))
     ;
 }
 
@@ -156,6 +188,7 @@ function positionIsBefore(a, b) {
 }
 
 function onCtrlEnter() {
+    setCursorOnResponse = false;
     var cursorPos = doc.getCursor();
     var rProved = mProved.find();
     var rUnlocked = mUnlocked.find();
@@ -181,7 +214,7 @@ function processToPos(pos) {
     var rToprove = mToprove.find();
     var rest = doc.getRange(rToprove.to, pos);
     if (coqTrim(rest) !== "") {
-        onCtrlDown();
+        onCtrlDown(false);
         processToPos(pos);
     }
 }
@@ -231,4 +264,12 @@ function getToprove() {
 function getUnlocked() {
     var rUnlocked = mUnlocked.find();
     return doc.getRange(rUnlocked.from, rUnlocked.to);
+}
+
+function scrollIntoView() {
+    var cursorPos = doc.getCursor();
+    cm.scrollIntoView({
+        "from": cm.findPosV(cursorPos, -1, "line"),
+        "to":   cm.findPosV(cursorPos, +1, "line"),
+    });
 }

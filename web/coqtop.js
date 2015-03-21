@@ -48,6 +48,8 @@ function processAsyncRequests() {
             alert("Server did not respond!");
         },
         success: function(response) {
+            var response = new Response(response);
+
             var afterTime = Date.now();
             processingAsync = false;
             //console.log("- UNLOCKING");
@@ -170,4 +172,88 @@ function asyncResetCoq() {
                 return Promise.resolve();
             }
         });
+}
+
+function makeGoals(list) {
+    return _(list)
+        .map(function(elt) {
+            return new Goal(elt);
+        })
+        .value()
+    ;
+}
+
+function Response(response) {
+    this.response = response.rResponse;
+
+    this.focused = makeGoals(response.rGoals.focused);
+
+    this.unfocused = _(response.rGoals.unfocused)
+        .map(function(elt) {
+            var goalsBefore = elt[0];
+            var goalsAfter  = elt[1];
+
+            return {
+                "goalsBefore": makeGoals(goalsBefore),
+                "goalsAfter": makeGoals(goalsAfter),
+            };
+        })
+        .value()
+    ;
+
+    // TO REMOVE
+    this.rGoals = response.rGoals;
+    this.rResponse = response.rResponse;
+}
+
+function listToString(list, eltToString) {
+    return (
+        "["
+            + _(list).reduce(function(acc, elt, ndx) {
+                return acc + ((ndx > 0) ? ", " : "") + eltToString(elt);
+            }, "")
+            + "]"
+    );
+}
+
+Response.prototype.toString = function() {
+    return (
+        "{"
+            + "\nfocused: "
+            + listToString(
+                this.focused,
+                function(elt) { return elt.toString(); }
+            )
+            + "\nunfocused: "
+            + listToString(
+                this.unfocused,
+                function(elt) {
+                    return (
+                        "("
+                            + listToString(
+                                elt.goalsBefore,
+                                function(elt) { return elt.toString(); }
+                            )
+                            + ", "
+                            + listToString(
+                                elt.goalsAfter,
+                                function(elt) { return elt.toString(); }
+                            )
+                            + ")"
+                    );
+                }
+            )
+            + "\nresponse: " + JSON.stringify(this.response)
+            + "\n}"
+    );
+}
+
+function Goal(g) {
+    this.gId = g.gId;
+    this.gHyps = g.gHyps;
+    this.gGoal = g.gGoal;
+}
+
+Goal.prototype.toString = function() {
+    return this.gId; //showTermText(extractGoal(this.gGoal));
 }

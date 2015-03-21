@@ -19,7 +19,7 @@
 
 .goal { fill: #AEC6CF; margin: 0; }
 .tactic { fill: #CB99C9; }
-.solved { fill: #03C03C; }
+.solved { fill: #33F06C; }
 .context, .debug { fill: #CFCFC4; }
 .current {
     stroke: #03C03C;

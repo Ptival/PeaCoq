@@ -2,6 +2,8 @@ var processing = false;
 var nbsp = "\u00A0";
 var zwsp = "\u200B";
 var namesPossiblyInScope = [];
+var smartMove = false;
+var focusedOnEditor = true;
 
 var unicodeList = [
     ("forall", "∀"),
@@ -24,7 +26,7 @@ $(document).ready(function() {
     })
         .appendTo(buttonGroup)
         .on("click", function() {
-            onCtrlDown();
+            onCtrlDown(true);
         })
         .append(mkGlyph("arrow-down"))
     ;
@@ -35,7 +37,7 @@ $(document).ready(function() {
     })
         .appendTo(buttonGroup)
         .on("click", function() {
-            onCtrlUp(false);
+            onCtrlUp(true);
         })
         .append(mkGlyph("arrow-up"))
     ;
@@ -62,7 +64,7 @@ $(document).ready(function() {
     })
         .appendTo(buttonGroup)
         .css("display", "none")
-        .on("click", peekAtEditorUI)
+        .on("click", focusEditorUI)
     ;
 
     $("<button>", {
@@ -75,7 +77,7 @@ $(document).ready(function() {
     })
         .appendTo(buttonGroup)
         .css("display", "none")
-        .on("click", unpeekAtEditorUI)
+        .on("click", focusProofTreeUI)
     ;
 
     /* Temporarily disabled
@@ -199,7 +201,7 @@ $(document).ready(function() {
 
     $("<button>", {
         "class": "btn btn-default",
-        "html": '<img src="media/ajax-loader.gif" />',
+        "html": '<img src="media/ajax-loader.gif" /><span id="loading-text"></span>',
         "id": "loading",
     })
         .appendTo(buttonGroup)
@@ -269,19 +271,50 @@ function resize() {
     if (activeProofTree !== undefined) {
         activeProofTree.resize($(window).width(), height);
     }
+    resizeCoqtopPanes();
+    scrollIntoView();
+}
+
+function resizeCoqtopPanes() {
+
+    if (focusedOnEditor) {
+
+        var contextLength = docContext.getValue().length;
+        var responseLength = docResponse.getValue().length;
+
+        if (contextLength === 0 && responseLength === 0) {
+            $("#coqtop-context").height("50%");
+            $("#coqtop-response").height("50%");
+        } else if (contextLength === 0) {
+            $("#coqtop-context").height("0%");
+            $("#coqtop-response").height("100%");
+        } else if (responseLength === 0) {
+            $("#coqtop-context").height("100%");
+            $("#coqtop-response").height("0%");
+        } else {
+            $("#coqtop-context").height("8%");
+            $("#coqtop-response").height("20%");
+        }
+
+    } else {
+
+        $("#coqtop-context").height("0%");
+        $("#coqtop-response").height("100%");
+
+    }
+
 }
 
 function onLoad(text) {
 
     asyncLog("LOAD " + text);
 
-    $("#coqtop").empty();//.css("display", "");
     $("#prooftree").empty();//.css("display", "none");
     activeProofTree = undefined;
 
     resetEditor(text);
 
-    switchToEditorUI();
+    focusEditorUI();
 
     asyncResetCoq()
         .then(function() {
@@ -316,13 +349,16 @@ function next(str) {
     return coq_find_dot(coq_undot(str), 0) + 1;
 }
 
+// TODO: this is a bit hacky
 function prev(str) {
     // remove the last delimiter, since we are looking for the previous one
     var str = str.substring(0, str.length - 1);
-    // if the very last thing is one of {, }, +, -, *, it is the prev
-    var trimmed = coqTrimRight(str);
-    if (_(bullets).contains(trimmed[trimmed.length - 1])) {
-        return trimmed.length;
+    var lastDotPosition = coq_find_last_dot(coq_undot(str), 0);
+    // now, it could be the case that there is a bullet after that dot
+    var strAfterDot = str.substring(lastDotPosition + 1, str.length);
+    var firstCharAfterDot = coqTrimLeft(strAfterDot)[0];
+    if (_(bullets).contains(firstCharAfterDot)) {
+        return lastDotPosition + 1 + strAfterDot.indexOf(firstCharAfterDot) + 1;
     }
     // otherwise, find the last dot
     return coq_find_last_dot(coq_undot(str), 0) + 1;
@@ -404,7 +440,9 @@ function updateCoqtopPane(direction, response) {
     var contents = response.rResponse.contents;
 
     switch (typeof contents) {
+
     case "string": break;
+
     case "object":
         if (contents.length > 1) {
             alert("Found contents with length greater than 1, see log");
@@ -412,103 +450,103 @@ function updateCoqtopPane(direction, response) {
         }
         contents = contents[0];
         break;
+
     default:
         alert("Found contents with type different than string and object, see log");
         console.log(typeof contents, contents);
+
     };
+
     contents = contents.trim();
 
+    var contextContents = "";
+
     switch (response.rResponse.tag) {
+
     case "Good":
-        $("#coqtop")
-            .toggleClass("alert-success", true)
-        ;
-        $("#coqtop").empty();
-        $("#coqtop-error").empty();
-        var contextDiv = $("<div>", { "id": "context" }).appendTo("#coqtop");
-        var subgoalsDiv = $("<div>", {
-            "id": "subgoals",
-        })
-            .css("margin-top", "10px")
-            .appendTo("#coqtop")
-        ;
-        var contentsDiv = $("<div>", {
-            "id": "contents",
-        })
-            .css("margin-top", "10px")
-            .appendTo("#coqtop")
-        ;
 
         var nbFocused = response.rGoals.focused.length;
         var unfocused = response.rGoals.unfocused[0];
 
         if (nbFocused > 0) {
+
             _(response.rGoals.focused[0].gHyps).each(function(h) {
-                contextDiv.append(PT.showHypothesis(extractHypothesis(h)) + "\n");
+                contextContents += PT.showHypothesisText(extractHypothesis(h)) + "\n";
             });
-            contextDiv.append($("<hr>").css("border", "1px solid black"));
-            contextDiv.append(showTerm(extractGoal(response.rGoals.focused[0].gGoal)));
+
+            var goalLinePosition = contextContents.split('\n').length;
+
+            contextContents += showTermText(extractGoal(response.rGoals.focused[0].gGoal));
+            contextContents += "\n\n";
 
             var nbUnfocused = (unfocused === undefined)
                 ? 0
                 : unfocused[0].length + unfocused[1].length
             ;
+
             if (nbUnfocused === 0) {
-                subgoalsDiv.text(
-                    nbFocused + " subgoal" + (nbFocused <= 1 ? "" : "s")
-                );
+                contextContents += nbFocused + " subgoal" + (nbFocused <= 1 ? "" : "s");
             } else {
-                subgoalsDiv.text(
+                contextContents += (
                     nbFocused + " focused subgoal" + (nbFocused <= 1 ? "" : "s")
                         + ", " + nbUnfocused + " unfocused"
                 );
             }
 
-            contentsDiv.text(contents);
+            docContext.setValue(contextContents);
+
+            cmContext.addLineWidget(
+                goalLinePosition - 1,
+                $("<hr>").css("border", "1px solid black")[0],
+                { "above": true }
+            );
 
         } else if (unfocused !== undefined) {
 
             var nbRemaining = unfocused[0].length + unfocused[1].length;
 
-            subgoalsDiv.text(
+            contextContents += (
                 nbRemaining + " remaining subgoal" + (nbRemaining <= 1 ? "" : "s")
             );
 
+            docContext.setValue(contextContents);
+
         } else {
 
-            $("#prooftree-button").attr("disabled", true);
-
-            contents = stripWarning(contents);
-
-            // postprocessing of Inductive
-            if (contents.startsWith("Inductive")) {
-                contents = contents
-                    .replace(/:=\s+/, ":=\n| ")
-                    .replace(/ \| /, "\n| ")
-                ;
-            }
-
-            contentsDiv.html(contents);
+            docContext.setValue(contextContents);
 
         }
 
         break;
+
     case "Fail":
-        // maybe still display the goal?
-        $("#coqtop-error").empty().text(stripWarning(contents));
+
         break;
+
     };
+
+    var responseContents = stripWarning(contents);
+
+    // postprocessing of Inductive
+    if (responseContents.startsWith("Inductive")) {
+        responseContents = responseContents
+            .replace(/:=\s+/, ":=\n| ")
+            .replace(/ \| /, "\n| ")
+        ;
+    }
+
+    docResponse.setValue(responseContents);
 
 }
 
-function undoCallback(fromTree, undone, response) {
+function undoCallback(fromUser, undone, response) {
     switch(response.rResponse.tag) {
     case "Good":
         if (activeProofTree !== undefined) {
-            activeProofTree.onUndo(undone, response);
+            activeProofTree.onUndo(fromUser, undone, response);
         }
         var stepsToRewind = + response.rResponse.contents[0];
-        console.log("Rewinding additional " + stepsToRewind + " steps");
+        //console.log("Rewinding additional " + stepsToRewind + " steps");
         while (stepsToRewind-- > 0) {
             var rProved = mProved.find();
             var rUnlocked = mUnlocked.find();
@@ -522,7 +560,10 @@ function undoCallback(fromTree, undone, response) {
             markProving(prevPos, prevPos);
             markToprove(prevPos, prevPos);
             markUnlocked(prevPos, rUnlocked.to);
-            if (!fromTree) { doc.setCursor(prevPos); }
+            if (fromUser) {
+                doc.setCursor(prevPos);
+                scrollIntoView();
+            }
         }
         response.rResponse.contents[0] = ""; // don't show the user the steps number
         break;
@@ -627,68 +668,39 @@ function getCaretVerticalPosition() {
     return caretTop;
 }
 
-function peekAtEditorUI() {
+function focusEditorUI() {
+
+    focusedOnEditor = true;
 
     $("#main").height("100%");
     $("#prooftree").height("0%");
-    $("#coqtop").css("display", "");
-    $("#coqtop-error").height("20%");
 
     $("#peek-button").css("display", "none");
     $("#unpeek-button").css("display", "");
     $("#editor").focus();
 
+    resize();
+    cm.refresh();
+    scrollIntoView();
     cm.focus();
 
 }
 
-function unpeekAtEditorUI() {
+function focusProofTreeUI() {
 
-    $("#main").height("20%");
-    $("#prooftree").height("80%");
-    $("#coqtop").css("display", "none");
-    $("#coqtop-error").height("100%");
+    focusedOnEditor = false;
+
+    $("#main").height("30%");
+    $("#prooftree").height("70%");
 
     $("#peek-button").css("display", "");
     $("#unpeek-button").css("display", "none");
     $("#prooftree").focus();
 
-    cm.scrollIntoView(null);
-    activeProofTree.update();
+    resize();
+    cm.refresh();
+    scrollIntoView();
 
-}
-
-function switchToProofUI() {
-
-    $("#main").height("20%");
-    $("#prooftree").height("80%");
-    $("#coqtop").css("display", "none");
-    $("#coqtop-error").height("100%");
-
-    $("#prooftree-button").css("display", "none");
-    $("#noprooftree-button").css("display", "");
-    $("#peek-button").css("display", "");
-
-}
-
-function switchToEditorUI() {
-
-    $("#main").height("100%");
-    $("#prooftree").height("0%");
-    $("#coqtop").css("display", "");
-    $("#coqtop-error").height("20%");
-
-    $("#prooftree-button").css("display", "");
-    $("#noprooftree-button").css("display", "none");
-    $("#peek-button").css("display", "none");
-    $("#unpeek-button").css("display", "none");
-
-}
-
-function enterProofTree() {
-    // do this as early as possible to avoid races
-    switchToProofUI();
-    proofTreeQueryWish('Proof.');
 }
 
 function createProofTree(response) {
@@ -702,47 +714,26 @@ function createProofTree(response) {
         function() { $("#loading").css("display", "none"); }
     );
 
-    // TODO: this is so ugly, find a different way
-    /*
-      need to figure out what the statement of the theorem is, and
-      there seems to be no way to ask that with status, so look it up in
-      the proved region as the last statement
-    */
-    var proved = $("#proved").text();
-    var assertionKeywords = [
-        "Theorem", "Lemma", "Remark", "Fact", "Corollary", "Proposition"
-    ];
-    // lookup the last time an assertion keyword was proved
-    var position = _(assertionKeywords)
-        .map(function(keyword) {
-            return proved.lastIndexOf(keyword);
-        })
-        .max()
-        .value()
-    ;
-    var theoremStatement = proved.substring(position);
-    // get rid of anything after the statement, like "Proof."
-    theoremStatement = theoremStatement.substring(0, next(theoremStatement));
-
     activeProofTree.newAlreadyStartedTheorem(
-        theoremStatement,
         response,
         lectureTactics
     );
 
+    focusProofTreeUI();
+
+    $("#coqtop-context").height("0%");
+    $("#coqtop-response").height("100%");
+
+    resize();
+    activeProofTree.refreshTactics();
+
 }
 
 function exitProofTree() {
-
-    switchToEditorUI();
-
     $("#prooftree").empty();
-    activeProofTree = undefined;
-
-    $("#editor").focus();
-
+    activeProofTree = undefined; // keep this line before focusEditorUI
+    focusEditorUI();
     asyncLog("EXITPROOFTREE");
-
 }
 
 function getLastProved() {
@@ -756,7 +747,7 @@ function getLastProved() {
  */
 function onQed(prooftree) {
 
-    switchToEditorUI();
+    focusEditorUI();
 
     var unlocked = pweGetUnlocked();
     pweSetUnlocked('\nQed.' + unlocked);
@@ -893,7 +884,7 @@ function makeGroup(name, tactics) {
 
 function lectureTactics(pt) {
 
-    var curGoal = (isGoal(this.curNode)) ? this.curNode : this.curNode.parent;
+    var curGoal = (isGoal(pt.curNode)) ? pt.curNode : pt.curNode.parent;
     var curHyps = _(curGoal.hyps).map(function(h) { return h.hName; }).reverse();
     var curNames = _(curHyps).union(namesPossiblyInScope.reverse());
 
@@ -1058,19 +1049,14 @@ function editorOnResponse(requestType, request, response) {
             var nextPos = rProving.to;
             markProved(rProved.from, nextPos);
             markProving(nextPos, rProving.to);
-            doc.setCursor(nextPos);
+            if (setCursorOnResponse) {
+                doc.setCursor(nextPos);
+            }
             updateCoqtopPane(goingDown, response);
 
             if (activeProofTree === undefined) {
-                if (coqTrim(request) === 'Proof.') {
+                if (response.rGoals.focused.length === 1 ) {
                     createProofTree(response);
-                } else {
-                    // used to do asyncStatus here and check stauts.proving here
-                    // but I'd rather avoid a request...  if you do async
-                    // operations here, you need to fix [processingAsyncRequest]
-                    if (response.rGoals.focused.length === 1 ) {
-                        enterProofTree();
-                    }
                 }
             } else {
 
@@ -1140,10 +1126,14 @@ function proofTreeQueryWish(request) {
 
     var requestWasPresent = lookupRequestInIncoming(request);
 
-    if (requestWasPresent) {
-        //console.log("Found");
-    } else {
-        //console.log("NOT Found");
+    // TODO: this should be elsewhere?
+    if (!requestWasPresent) {
+        if (coqTrim(request) === "Qed.") {
+            requestWasPresent = lookupRequestInIncoming("Defined.");
+        }
+        if (coqTrim(request) === "Defined.") {
+            requestWasPresent = lookupRequestInIncoming("Qed.");
+        }
     }
 
     if (!requestWasPresent) {
@@ -1168,30 +1158,75 @@ function proofTreeQueryWish(request) {
 
 }
 
-// TODO: support nested comments?
+function stripComments(s) {
+    var output = "";
+    var commentDepth = 0;
+    var pos = 0;
+    while (pos < s.length) {
+        var sub = s.substring(pos);
+        if (sub.startsWith("(*")) {
+            commentDepth++;
+            pos += 2;
+        } else if (sub.startsWith("*)")) {
+            commentDepth--;
+            pos += 2;
+        } else if (commentDepth > 0) {
+            pos++;
+        } else {
+            output += s[pos];
+            pos++;
+        }
+    }
+    return output;
+}
 
 function coqTrim(s) {
-    return s
-    // remove comments first
-        .replace(/\(\*[\s\S]*?\*\)/g, '')
-    // then trim
-        .replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, '')
-    ;
+    return stripComments(s).trim();
 }
 
 function coqTrimLeft(s) {
-    return s
-    // remove one heading comment first
-        .replace(/^[\s\uFEFF\xA0]+\(\*[\s\S]*?\*\)/g, '')
-    // then trim left
-        .replace(/^[\s\uFEFF\xA0]+/g, '')
-    ;
+    var commentDepth = 0;
+    var pos = 0;
+    while (pos < s.length) {
+        var sub = s.substring(pos);
+        if (sub.startsWith("(*")) {
+            commentDepth++;
+            pos += 2;
+        } else if (sub.startsWith("*)")) {
+            commentDepth--;
+            pos += 2;
+        } else if (commentDepth > 0) {
+            pos++;
+        } else if (sub[0] === ' ' || sub[0] === '\n') {
+            pos++;
+        } else {
+            return sub;
+        }
+    }
+    return "";
 }
 
 function coqTrimRight(s) {
-    return s
-        .replace(/[\s\uFEFF\xA0]+$/g, '')
-    ;
+    var commentDepth = 0;
+    var pos = s.length - 1;
+    while (pos > 0) {
+        var sub = s.substring(0, pos);
+        var lastChar = sub[sub.length - 1];
+        if (sub.endsWith("*)")) {
+            commentDepth++;
+            pos -= 2;
+        } else if (sub.endsWith("(*")) {
+            commentDepth--;
+            pos -= 2;
+        } else if (commentDepth > 0) {
+            pos--;
+        } else if (lastChar === ' ' || lastChar === '\n') {
+            pos--;
+        } else {
+            return sub;
+        }
+    }
+    return "";
 }
 
 function sameTrimmed(a, b) {

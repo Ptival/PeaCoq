@@ -15,6 +15,8 @@
     <script src="bootstrap.js"></script>
     <script src="codemirror/lib/codemirror.js"></script>
     <script src="codemirror/addon/edit/matchbrackets.js"></script>
+    <script src="codemirror/addon/search/search.js"></script>
+    <script src="codemirror/addon/search/searchcursor.js"></script>
     <script src="codemirror/keymap/emacs.js"></script>
     <script src="codemirror.js"></script>
     <script src="coqtop.js"></script>
@@ -33,13 +35,10 @@
 
       <div id="main">
         <div id="main-left">
-          <!-- editor goes here -->
         </div>
         <div id="main-right">
-          <pre id="coqtop" contenteditable="true" spellcheck="false"
-               class="alert"></pre>
-          <pre id="coqtop-error" contenteditable="true" spellcheck="false"
-               class="alert alert-danger"></pre>
+          <div id="coqtop-context"></div>
+          <div id="coqtop-response"></div>
         </div>
       </div>
 
