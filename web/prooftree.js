@@ -4012,6 +4012,7 @@ GoalNode.prototype.onUndo = function(fromUser, undone, response) {
             if (this.id === parentTactic.goals[0].id) {
                 if (undone === this.parentTactic.tactic) {
                     this.parent.parent.makeCurrentNode(response);
+                    this.proofTree.refreshTactics();
                     this.proofTree.update();
                 } else {
                     alert(undone
