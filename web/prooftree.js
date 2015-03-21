@@ -609,12 +609,6 @@ ProofTree.prototype.runTactic = function(t, groupToAttachTo) {
 
                 var resultAlreadyExists =
                     _(parentGoal.getTactics()).some(function(t) {
-                        if (tacticNodeUnicityRepr(t) === newChildRepr) {
-                            console.log(
-                                t,
-                                newChild
-                            );
-                        }
                         return (tacticNodeUnicityRepr(t) === newChildRepr);
                     })
                 ;
@@ -3826,7 +3820,7 @@ GoalNode.prototype.makeCurrentNode = function(response, onGoalNode) {
     this.response = response;
 
     var path = goalPath(this.proofTree.curNode, this);
-    console.log(path);
+
     return _(path).rest()
     // build a list of sparks
         .map(function(g) {
