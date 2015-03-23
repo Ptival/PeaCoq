@@ -631,6 +631,9 @@ ProofTree.prototype.processTactics = function() {
  * triggers a refreshing of the tactics for the current goal
  */
 ProofTree.prototype.refreshTactics = function() {
+
+    if (focusedOnEditor) { return; }
+
     var self = this;
     var curNode = this.curNode;
 
@@ -902,6 +905,8 @@ ProofTree.prototype.updateNodeMeasures = function(nodeDOM, d) {
 }
 
 ProofTree.prototype.update = function() {
+
+    if (focusedOnEditor) { return Promise.resolve(); }
 
     var self = this;
 
@@ -3178,8 +3183,7 @@ ProofTree.prototype.onUndo = function(fromUser, undone, response) {
 }
 
 ProofTree.prototype.beforeToproveConsumption = function() {
-    var rToprove = mToprove.find();
-    var toprove = doc.getRange(rToprove.from, rToprove.to);
+    var toprove = getToprove();
     var nextIndex = next(toprove);
     var nextPieceProcessed = toprove.substring(0, nextIndex);
     switch (coqTrim(nextPieceProcessed)) {

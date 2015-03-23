@@ -436,6 +436,13 @@ var goingDown = true, goingUp = false;
 
 function updateCoqtopPane(direction, response) {
 
+    var toprove = getToprove();
+    if (toprove.length !== 0) {
+        docContext.setValue("");
+        docResponse.setValue("");
+        return;
+    }
+
     var contents = response.rResponse.contents;
 
     switch (typeof contents) {
@@ -724,7 +731,7 @@ function createProofTree(response) {
     // only show up the tree automatically if the user is not processing to
     // caret
     var toprove = getToprove();
-    if (toprove === "") {
+    if (toprove.length === 0) {
         focusProofTreeUI();
         activeProofTree.refreshTactics();
     }
