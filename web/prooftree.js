@@ -149,41 +149,6 @@ function ProofTree(anchor, width, height, qedCallback,
     this.textLayer = this.viewport.append("g").attr("id", "text-layer");
     this.tipsLayer = this.viewport.append("g").attr("id", "tips-layer");
 
-    /*
-    this.debug = this.svg.append("g");
-
-    var debugWidth = this.width / 2;
-    var debugHeight;
-
-    var fo = this.debug
-        .append("foreignObject")
-        .attr("width", debugWidth + "px")
-    ;
-
-    fo
-        .append("xhtml:body")
-        .classed("svg", true)
-        .style("background-color", "rgba(0, 0, 0, 0)")
-        .style("font-family", "monospace")
-        .html('<div class="node" style="overflow: auto;">'
-              + '<p>No debug information</p></div>'
-             )
-        .each(function() {
-            debugHeight = this.firstChild.getBoundingClientRect().height;
-        })
-    ;
-
-    fo.attr("height", debugHeight + "px");
-
-    this.debug
-        .insert("rect", ":first-child")
-        .attr("width", debugWidth  + "px")
-        .attr("height", debugHeight + "px")
-        .attr("fill", "#B2DBA1")
-        .attr("opacity", "0.9")
-    ;
-    */
-
     if (svgPanEnabled) {
         this.svg
             .insert("script", ":first-child")
@@ -467,9 +432,7 @@ function evenFloor(x) {
     return (r % 2 === 0) ? r : r - 1;
 }
 
-ProofTree.prototype.newAlreadyStartedTheorem =
-    function(lastResponse, tactics)
-{
+ProofTree.prototype.newAlreadyStartedTheorem = function(lastResponse, tactics) {
 
     var self = this;
 
@@ -1948,103 +1911,6 @@ ProofTree.prototype.shiftNextGoal = function(n) {
     }
 }
 
-// TODO: make this a method of [GoalNode] and [TacticGroupNode] only!
-ProofTree.prototype.click = function(d, remember, callback) {
-
-    if (isTactic(d)) {
-        throw d;
-    }
-
-    var self = this;
-
-    if (this.paused) { return; }
-
-    d.makeFocusedTwoGenerations();
-
-    if (d.solved) {
-        if (hasParent(d)) {
-            this.click(d.parent, remember, callback);
-        }
-        return;
-    }
-
-    // when the user goes back to a parent tactic, if it only has one subgoal,
-    // it must probably mean the user wants to cancel the tactic altogether, so
-    // backtrack once more to the previous goal
-    if (isTacticish(d)
-        && d.depth < this.curNode.depth
-        && getTacticFromTacticish(d).goals.length === 1) {
-        this.click(d.parent, remember, callback);
-        return;
-    }
-
-    this.navigateTo(d, false)
-        .then(function() {
-            if (isGoal(d)) {
-                self.refreshTactics();
-            } if (isTactic(d)) {
-                if (isTerminating(d)) {
-                    self.solved(d);
-                }
-            } else if (isTacticGroup(d)) {
-                var tactic = d.getFocusedTactic();
-                if (_.isEmpty(tactic.goals)) {
-                    self.solved(tactic);
-                }
-            }
-            self.update
-                .then(callback)
-            ;
-        })
-        .catch(outputError);
-
-}
-
-// called when n has been solved
-ProofTree.prototype.solved = function(n) {
-    var self = this;
-    n.solved = true;
-    if (isTacticGroup(n)) {
-        n.getFocusedTactic().solved = true;
-    }
-    if (hasParent(n)) {
-        this.navigateTo(n.parent, true)
-            .then(function() {
-                window.setTimeout(function () {
-                    self.childSolved(n.parent);
-                    self.update();
-                }, animationDuration);
-            })
-            .catch(outputError);
-    } else {
-        window.setTimeout(function () {
-            asyncLog("QED " + JSON.stringify(self.rootNode.getProof()));
-            self.qedCallback(self);
-        }, animationDuration);
-    }
-}
-
-// called when a child of n has become solved
-ProofTree.prototype.childSolved = function(n) {
-    if (isGoal(n)) {
-        this.solved(n);
-    } else {
-        // Bubble up if this was the last subgoal
-        var lastSubgoal =
-            _(n.getViewChildren())
-            .every(function(n) { return n.solved === true; })
-        ;
-        if (lastSubgoal) {
-            this.solved(n);
-        } else {
-            var t = getTacticFromTacticish(n);
-            t.goalIndex = _(t.goals)
-                .findIndex(function(g) { return !g.solved; })
-            ;
-        }
-    }
-}
-
 ProofTree.prototype.commonAncestor = function(n1, n2) {
     if (n1.id === this.rootNode.id || n2.id === this.rootNode.id) { return this.rootNode; }
     if (n1.id === n2.id) { return n1; }
@@ -2321,134 +2187,6 @@ function span(t) {
         .css("vertical-align", "top")
         .html(t)
     ;
-}
-
-// returns a jQuery HTML partial proof
-ProofTree.prototype.partialProofFrom = function(t, indentation) {
-
-    var self = this;
-    var indent = repeat(2 * indentation, "&nbsp;");
-
-    if (isGoal(t)) {
-        var allTactics = t.getTactics();
-        // if one of the subgoals is solved, find it and return its proof
-        var solution = _(allTactics).find("solved");
-        if (solution !== undefined) {
-            return this.partialProofFrom(solution, indentation);
-        }
-        // otherwise, try to see if a partial path was recorded
-        var partial = _(allTactics).find(function(n) {
-            return n.hasOwnProperty("partial");
-        });
-        if (partial !== undefined) {
-            return this.partialProofFrom(partial, indentation);
-        }
-        // otherwise, try to find a node in the ancestor tree of the current
-        var viewChildren = t.getViewChildren();
-        var curTac = _(viewChildren).find(function(n) {
-            return n.isCurNodeAncestor();
-        });
-        if (curTac !== undefined) {
-            return this.partialProofFrom(curTac, indentation);
-        }
-        // otherwise, make the appropriate textarea
-        if (this.isCurNode(t)) {
-            var result = $("<span>");
-            var ta = $("<textarea>")
-                .addClass("resizeWidth")
-                .addClass("resizeHeight")
-                .addClass("activeTextarea")
-                .css("background-color", "#CB99C9")
-                .css("min-height", "22px")
-                .css("min-width", "22px")
-                .css("resize", "none")
-            ;
-            PT.resizeTextarea.call(ta);
-            result.append(ta);
-            result.append(
-                $("<button>")
-                    .css("margin", 0)
-                    .css("padding", "0px 2px")
-                    .css("border", 0)
-                    .css("background-color", "#BB89B9")
-                    .css("vertical-align", "top")
-                    .css("height", "22px")
-                    .text("OK")
-                    .click(function() {
-
-                        var tactic = ta.val();
-
-                        asyncLog("MANUALTACTIC " + tactic);
-
-                        // if the tactic is already here, just click it
-                        var existingTactic = _(self.curNode.getTactics())
-                            .find(function(elt) {
-                                return elt.tactic === tactic;
-                            })
-                        ;
-                        if (existingTactic !== undefined) {
-                            existingTactic.makeFocusedUptoGroup();
-                            self.click(existingTactic.parent);
-                            return;
-                        } else {
-                            // otherwise, need to run the tactic
-                            self.runUserTactic(tactic);
-                        }
-
-                    })
-            );
-            return result;
-        } else {
-            var ta = $("<textarea>")
-                .addClass("resizeWidth")
-                .addClass("resizeHeight")
-                .css("min-height", "22px")
-                .css("min-width", "22px")
-                .val("admit.")
-                .css("resize", "none")
-                .focus(function() {
-                    self.click(
-                        t,
-                        true,
-                        function() {
-                            var ta = $(".activeTextarea");
-                            $(".activeTextarea").focus();
-                        }
-                    );
-                })
-            ;
-            PT.resizeTextarea.call(ta);
-            return ta;
-        }
-    }
-    else if (isTactic(t)) {
-        var t = getTacticFromTacticish(t);
-        var result = span(t.tactic);
-        if (t.goals.length === 1) {
-            _(t.goals).each(function(e) {
-                result.append(document.createTextNode(" "));
-                result.append(self.partialProofFrom(e, indentation));
-            });
-        } else {
-            _(t.goals).each(function(e) {
-                var subproof = $("<div>");
-                subproof.append(span(indent + "{" + nbsp));
-                subproof.append(
-                    $("<span>").append(self.partialProofFrom(e, indentation + 1))
-                );
-                // should be div if the proof has branching
-                subproof.append(span(" }"));
-                result.append(subproof);
-            });
-        }
-        return result;
-    } else if (isTacticGroup(t)) {
-        var tactic = t.getFocusedTactic();
-        return this.partialProofFrom(tactic, indentation);
-    } else {
-        throw t;
-    }
-
 }
 
 function repeat(n, s) { return Array(n + 1).join(s); }
@@ -3024,76 +2762,6 @@ function nodeString(d) {
     }
 }
 
-var lastDebugId = undefined;
-
-ProofTree.prototype.updateDebug = function() {
-
-    var debugWidth = this.width / 2;
-
-    this.debug
-        .selectAll(function() { return this.getElementsByTagName("foreignObject"); })
-        .attr("width", debugWidth + "px")
-    ;
-    this.debug.select("rect").attr("width", debugWidth + "px");
-
-    // avoid recomputing debug when user has not moved
-    if (this.curNode.id !== lastDebugId) {
-
-        lastDebugId = this.curNode.id;
-
-        var debugDiv = this.debug.select('div');
-        var jDebugDiv = $(debugDiv[0]);
-
-        var partialProof = this.partialProofFrom(this.rootNode, 1);
-
-        jDebugDiv.empty();
-        jDebugDiv.css("height", ""); // removing it so that it recomputes
-        jDebugDiv.append($("<div>").text(this.theorem));
-        jDebugDiv.append($("<div>").text("Proof."));
-        partialProof.prepend(span("&nbsp;&nbsp;")); // initial indentation
-        jDebugDiv.append(partialProof);
-        //$(".resizeWidth, .resizeHeight").change();
-        jDebugDiv.append($("<div>").text("Qed."));
-
-    }
-
-    updateNodeHeight(this.debug, Math.floor(this.height / 3));
-
-}
-
-function updateNodeHeight(selector, maxHeight) {
-
-    var div = selector.select('div');
-
-    selector
-    // Webkit bug, cannot selectAll on camel case names :(
-        .selectAll(function() {
-            return this.getElementsByTagName("foreignObject");
-        })
-        .attr("height", function() {
-            var height = div[0][0].getBoundingClientRect().height;
-            var desiredHeight = Math.min(height, maxHeight);
-            $(this).css("height", desiredHeight + "px");
-            $(div[0][0]).css("height", desiredHeight + "px");
-            selector
-                .select("rect")
-                .attr("height", desiredHeight + "px")
-            ;
-            return desiredHeight + "px";
-        })
-    ;
-
-    var jDiv = $(div[0]);
-    var button = jDiv.find("button");
-    if (button.length !== 0) {
-        var topMargin = 60; // somewhat arbitrary, should be about 2 lines
-        jDiv.scrollTop(
-            jDiv.scrollTop() - jDiv.offset().top + button.offset().top - topMargin
-        );
-    }
-
-}
-
 /*
  * @return <Promise>
  */
@@ -3366,44 +3034,6 @@ TacticGroupNode.prototype.getFocusedChild = function() {
     return viewChildren[this.tactics[this.tacticIndex].goalIndex];
 }
 
-/*
- * [setFocusedChild] sets the focused child of a node. It assumes [child] is a
- * child of the node.
- */
-/*
-GoalNode.prototype.setFocusedChild = function(child) {
-    this.tacticIndex = _(this.tacticGroups)
-        .filter(function(group) { return (group.tactics.length > 0); })
-        .findIndex(function(node) { return node.id === child.id; })
-    ;
-    if (this.tacticIndex === -1) {
-        throw ['GoalNode.setFocusedChild', this];
-    }
-}
-
-TacticNode.prototype.setFocusedChild = function(child) {
-    this.goalIndex = _(this.goals)
-        .findIndex(function(goal) { return goal.id === child.id; })
-    ;
-}
-
-TacticGroupNode.prototype.setFocusedChild = function(child) {
-    if (child.constructor === GoalNode) {
-        this.setFocusedChild(child.parentTactic);
-        child.parentTactic.setFocusedChild(child);
-    } else if (child.constructor === TacticNode) {
-        this.tacticIndex = _(this.tactics)
-            .findIndex(function(tactic) { return tactic.id === child.id; })
-        ;
-        if (this.tacticIndex === -1) {
-            throw ['TacticGroupNode.setFocusedChild', this];
-        }
-    } else {
-        throw ['TacticGroupNode.setFocusedChild', child];
-    }
-}
-*/
-
 /* makes [this] the focused child of its parent [TacticNode] */
 GoalNode.prototype.makeFocused = function() {
     var self = this;
@@ -3544,12 +3174,6 @@ GoalNode.prototype.getUserTacticsGroup = function() {
     }
     return userTacticsGroup;
 }
-
-var navigateSimulateStrategy = {
-    'onGoingDownTacticGroup': function(dst) {
-        return Promise.resolve();
-    },
-};
 
 ProofTree.prototype.onUndo = function(fromUser, undone, response) {
     var undone = coqTrim(undone);
