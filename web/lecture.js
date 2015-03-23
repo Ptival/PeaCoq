@@ -136,6 +136,44 @@ $(document).ready(function() {
     ;
 
     $("<button>", {
+        "class": "btn btn-default",
+        "data-target": "help",
+        "data-toggle": "modal",
+        "id": "options-button",
+        "html": $("<span>")
+            .append(mkGlyph("th-list"))
+            .append(nbsp + nbsp + "Settings"),
+    })
+        .appendTo(buttonGroup)
+        .on("click", function() {
+            $("#options").modal();
+        })
+    ;
+
+    $("#set-printing-all").change(function() {
+        if($(this).is(":checked")) {
+            asyncRequest('setprintingall', undefined);
+        } else {
+            asyncRequest('unsetprintingall', undefined);
+        }
+    });
+
+    $("<button>", {
+        "class": "btn btn-default",
+        "data-target": "help",
+        "data-toggle": "modal",
+        "id": "feedback-button",
+        "html": $("<span>")
+            .append(mkGlyph("question-sign"))
+            .append(nbsp + nbsp + "Help"),
+    })
+        .appendTo(buttonGroup)
+        .on("click", function() {
+            $("#help").modal();
+        })
+    ;
+
+    $("<button>", {
         "class": "btn btn-info",
         "data-target": "feedback",
         "data-toggle": "modal",
@@ -159,44 +197,6 @@ $(document).ready(function() {
         $("#feedback-form").text("");
         asyncLog("FEEDBACK " + feedback);
         $("#cancel-feedback").click();
-    });
-
-    $("<button>", {
-        "class": "btn btn-default",
-        "data-target": "help",
-        "data-toggle": "modal",
-        "id": "feedback-button",
-        "html": $("<span>")
-            .append(mkGlyph("question-sign"))
-            .append(nbsp + nbsp + "Help"),
-    })
-        .appendTo(buttonGroup)
-        .on("click", function() {
-            $("#help").modal();
-        })
-    ;
-
-    $("<button>", {
-        "class": "btn btn-default",
-        "data-target": "help",
-        "data-toggle": "modal",
-        "id": "options-button",
-        "html": $("<span>")
-            .append(mkGlyph("th-list"))
-            //.append(nbsp + nbsp + ""),
-    })
-        .appendTo(buttonGroup)
-        .on("click", function() {
-            $("#options").modal();
-        })
-    ;
-
-    $("#set-printing-all").change(function() {
-        if($(this).is(":checked")) {
-            asyncRequest('setprintingall', undefined);
-        } else {
-            asyncRequest('unsetprintingall', undefined);
-        }
     });
 
     $("<button>", {
