@@ -14,17 +14,42 @@ function setupEditor() {
         {
             "autofocus": true,
             "extraKeys": {
-                "Ctrl-Alt-Down": function(cm) { onCtrlDown(true); },
-                "Ctrl-Alt-N": function(cm) { onCtrlDown(true); },
+
                 "Ctrl-Alt-Up": function(cm) {
                     onCtrlUp(true);
                 },
+
+                "Ctrl-Alt-Right": function(cm) {
+                },
+
+                "Ctrl-Alt-Down": function(cm) {
+                    onCtrlDown(true);
+                },
+
+                "Ctrl-Alt-Left": function(cm) {
+                },
+
+                "Ctrl-Alt-N": function(cm) { onCtrlDown(true); },
+
                 "Ctrl-Alt-P": function(cm) {
                     onCtrlUp(true);
                 },
+
+                "Ctrl-Alt-T": function(cm) {
+                    if ($("#peek-button").css("display") !== "none") {
+                        $("#peek-button").click();
+                        return;
+                    }
+                    if ($("#unpeek-button").css("display") !== "none") {
+                        $("#unpeek-button").click();
+                        return;
+                    }
+                },
+
                 "Ctrl-Alt-Enter": function(cm) {
                     onCtrlEnter();
                 },
+
             },
             "keyMap": "emacs",
             "lineNumbers": true,
