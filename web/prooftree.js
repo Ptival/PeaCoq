@@ -916,9 +916,6 @@ ProofTree.prototype.update = function() {
         // sizes are correct
         self.resetSVGTransform();
 
-        // no need to draw all the nodes that are not on the screen
-        var currentRoot = self.curNode;
-        if (currentRoot.hasParent()) { currentRoot = currentRoot.parent; }
         var nodes = self.tree.nodes(self.rootNode);
         // now get rid of the fake nodes used for layout
         _(nodes)

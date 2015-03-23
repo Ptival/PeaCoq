@@ -696,6 +696,9 @@ function focusProofTreeUI() {
     $("#unpeek-button").css("display", "none");
     $("#prooftree").focus();
 
+    $("#coqtop-context").height("0%");
+    $("#coqtop-response").height("100%");
+
     resize();
     cm.refresh();
     scrollIntoView();
@@ -718,13 +721,13 @@ function createProofTree(response) {
         lectureTactics
     );
 
-    focusProofTreeUI();
-
-    $("#coqtop-context").height("0%");
-    $("#coqtop-response").height("100%");
-
-    resize();
-    activeProofTree.refreshTactics();
+    // only show up the tree automatically if the user is not processing to
+    // caret
+    var toprove = getToprove();
+    if (toprove === "") {
+        focusProofTreeUI();
+        activeProofTree.refreshTactics();
+    }
 
 }
 
