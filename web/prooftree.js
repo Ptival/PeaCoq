@@ -550,7 +550,7 @@ ProofTree.prototype.runTactic = function(t, groupToAttachTo) {
     // to query for status at this moment
     var beforeResponse = parentGoal.response;
 
-    $("#loading-text").text("Trying " + t);
+    $("#loading-text").text(nbsp + nbsp + "Trying " + t);
 
     return asyncQueryAndUndo(t)
         .then(delayPromise(0))

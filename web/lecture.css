@@ -1,5 +1,13 @@
+* {
+    border-radius: 0 !important;
+}
+
 html > body {
     height: 100vh;
+}
+
+.btn {
+    padding: 4px 8px !important;
 }
 
 .CodeMirror {
@@ -14,11 +22,11 @@ html > body {
 }
 
 #toolbar {
-    height: 45px;
+    /*height: 33px;*/
 }
 
 #main-and-prooftree {
-    height: calc(100% - 45px);
+    height: calc(100% - 33px);
 }
 
 #main {

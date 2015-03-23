@@ -142,7 +142,7 @@ $(document).ready(function() {
         "id": "feedback-button",
         "html": $("<span>")
             .append(mkGlyph("bullhorn"))
-            //.append(nbsp + nbsp + "Feedback"),
+            .append(nbsp + nbsp + "About / Feedback"),
     })
         .appendTo(buttonGroup)
         .on("click", function() {
@@ -168,7 +168,7 @@ $(document).ready(function() {
         "id": "feedback-button",
         "html": $("<span>")
             .append(mkGlyph("question-sign"))
-            //.append(nbsp + nbsp + "Help"),
+            .append(nbsp + nbsp + "Help"),
     })
         .appendTo(buttonGroup)
         .on("click", function() {
@@ -205,7 +205,6 @@ $(document).ready(function() {
         "id": "loading",
     })
         .appendTo(buttonGroup)
-        .css("padding", "2px 10px")
         .css("display", "none")
     ;
 
