@@ -29,10 +29,18 @@ function setupEditor() {
                 "Ctrl-Alt-Left": function(cm) {
                 },
 
+                "Ctrl-Alt-L": function(cm) {
+                    $("#load-local-button").click();
+                },
+
                 "Ctrl-Alt-N": function(cm) { onCtrlDown(true); },
 
                 "Ctrl-Alt-P": function(cm) {
                     onCtrlUp(true);
+                },
+
+                "Ctrl-Alt-S": function(cm) {
+                    $("#save-local-button").click();
                 },
 
                 "Ctrl-Alt-T": function(cm) {

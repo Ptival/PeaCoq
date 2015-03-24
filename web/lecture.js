@@ -423,10 +423,6 @@ function globalKeyHandler(evt) {
     //console.log(evt.keyCode);
     if (evt.ctrlKey) {
         switch(evt.keyCode) {
-        case 76: // Ctrl-L
-            $("#load-local-button").click();
-            evt.preventDefault();
-            break;
         default:
             break;
         };
