@@ -5,6 +5,7 @@ var nbsp = "\u00A0";
 var zwsp = "\u200B";
 var namesPossiblyInScope = [];
 var focusedOnEditor = true;
+var activeProofTrees = [];
 
 var unicodeList = [
     ("forall", "∀"),
@@ -311,6 +312,7 @@ function onLoad(text) {
 
     $("#prooftree").empty();//.css("display", "none");
     activeProofTree = undefined;
+    activeProofTrees = [];
 
     resetEditor(text);
 
@@ -736,9 +738,13 @@ function createProofTree(response) {
 }
 
 function exitProofTree() {
-    $("#prooftree").empty();
-    activeProofTree = undefined; // keep this line before focusEditorUI
-    focusEditorUI();
+    activeProofTree.div.remove();
+    activeProofTree = activeProofTrees.pop(); // keep this line before focusEditorUI
+    if (activeProofTree === undefined) {
+        focusEditorUI();
+    } else {
+        activeProofTree.div.style("display", "");
+    }
     asyncLog("EXITPROOFTREE");
 }
 
@@ -1061,11 +1067,22 @@ function editorOnResponse(requestType, request, response) {
             updateCoqtopPane(goingDown, response);
 
             if (activeProofTree === undefined) {
-                if (response.rGoals.focused.length === 1 ) {
+                if (response.rGoals.focused.length === 1
+                    && response.rGoals.unfocused.length === 0
+                   ) {
                     createProofTree(response);
                 }
             } else {
-
+                // it is possible to start a proof within another proof,
+                // stacking trees
+                if (response.rGoals.focused.length === 1
+                    && response.rGoals.unfocused.length === 0
+                    && _(theoremStarters).contains(getVernac(request))
+                   ) {
+                    activeProofTree.div.style("display", "none");
+                    activeProofTrees.push(activeProofTree);
+                    createProofTree(response);
+                }
             }
 
             break;
