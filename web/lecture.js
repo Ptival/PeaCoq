@@ -1,8 +1,9 @@
+"use strict";
+
 var processing = false;
 var nbsp = "\u00A0";
 var zwsp = "\u200B";
 var namesPossiblyInScope = [];
-var smartMove = false;
 var focusedOnEditor = true;
 
 var unicodeList = [

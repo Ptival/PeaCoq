@@ -16,6 +16,7 @@ var rectMargin = {top: 2, right: 8, bottom: 2, left: 8};
 var animationDuration = 200;
 var keyboardDelay = 100;
 var keyboardPaused = false;
+var autoLayout = true;
 
 $(document).ready(function() {
     setupTextareaResizing();
@@ -3197,7 +3198,7 @@ ProofTree.prototype.beforeToproveConsumption = function() {
         // if a tactic is about to be pushed without focus, force it!
         // first case: there is nothing to be done and we are unfocused
         if (isTacticGroup(this.curNode)) {
-            if (smartMove) { safePrependToprove('{'); }
+            //if (autoLayout) { safePrependToprove('{'); }
         }
         break;
 
@@ -3220,27 +3221,6 @@ ProofTree.prototype.onResponse = function(queryType, query, response) {
             break;
         }
     }
-}
-
-/*
- * [autoFocus] is called after moving to a [TacticGroupNode]. It should either
- * focus or solve and unfocus depending on the children count.
- */
-ProofTree.prototype.autoFocus = function() {
-
-    if (!smartMove) { return; }
-
-    var focusedTactic = this.curNode.getFocusedTactic();
-    var unsolvedGoal = _(focusedTactic.goals)
-        .find(function(elt) { return !elt.isSolved(); })
-    ;
-
-    if (unsolvedGoal === undefined) {
-        //proofTreeQueryWish('}');
-    } else {
-        //proofTreeQueryWish('{');
-    }
-
 }
 
 function isUpperCase(character) {
@@ -3344,44 +3324,6 @@ GoalNode.prototype.reactTo = function(query, response) {
 TacticGroupNode.prototype.reactTo = function(query, response) {
 
     alert('tactic group node reacts to' + query);
-
-    /*
-    var proofTree = this.proofTree;
-    switch (query.trim()) {
-
-    case '{':
-        var goalToFocus = _(this.getFocusedTactic().goals)
-            .find(function(elt) { return !elt.isSolved(); })
-        ;
-        goalToFocus.response = response;
-        goalToFocus.makeCurrentNode();
-        proofTree.refreshTactics();
-        proofTree.update();
-        break;
-
-    case '}':
-        this.getFocusedTactic().solved = true;
-        this.solved = true;
-        this.parent.makeCurrentNode();
-        proofTree.update(function() {
-            proofTree.curNode.solved = true;
-            if (hasParent(proofTree.curNode)) {
-                proofTree.curNode.parent.makeCurrentNode();
-                proofTree.update(proofTree.autoFocus.bind(proofTree));
-            } else {
-                // Qed!
-                proofTree.update(function() {
-                    proofTreeQueryWish('Qed.');
-                });
-            }
-        });
-        break;
-
-    default:
-        alert('TacticGroupNode cannot react to query: ' + query);
-        break;
-    }
-    */
 
 }
 
@@ -3533,7 +3475,11 @@ GoalNode.prototype.onSolved = function(response) {
     if (this.openBraces === this.closedBraces) {
         if (this.hasParent()) {
             this.parent.onChildSolvedAndUnfocused(response);
+        } else if (autoLayout) {
+            proofTreeQueryWish('Qed.');
         }
+    } else if (autoLayout) {
+        proofTreeQueryWish('}');
     }
 }
 
@@ -3585,7 +3531,7 @@ GoalNode.prototype.onUndo = function(fromUser, undone, response) {
         break;
 
     case '}':
-        if (this.openBraces === this.closedBraces) {
+        if (this.closedBraces === 0) {
             /*
               This is tricky! Undoing this closing curly brace means we need to
               focus on the goal that was finished with that brace. It can be
