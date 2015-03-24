@@ -734,6 +734,14 @@ function createProofTree(response) {
         activeProofTree.refreshTactics();
     }
 
+    if (autoLayout) {
+        proofTreeQueryWish("Proof.");
+
+        // TODO: insert a newline only when needed...
+        //var rUnlocked = mUnlocked.find();
+        //doc.replaceRange('\n  ', rUnlocked.from);
+    }
+
 }
 
 function exitProofTree() {
@@ -1022,6 +1030,24 @@ function editorOnRequestTriggered(requestType, request) {
     }
 }
 
+var theoremStarters = [
+    'CoFixpoint', 'Definition', 'Fixpoint', 'Lemma', 'Theorem',
+];
+
+function getVernac(s) {
+    var trimmed = coqTrim(s);
+    var firstSpace = trimmed.indexOf(' ');
+    if (firstSpace === -1) { firstSpace = +Infinity; }
+    var firstNewline = trimmed.indexOf('\n');
+    if (firstNewline === -1) { firstNewline = +Infinity; }
+    var firstBlank = Math.min(firstSpace, firstNewline);
+    if (firstBlank === +Infinity) {
+        return s;
+    } else {
+        return trimmed.substring(0, firstBlank);
+    }
+}
+
 // TODO: collect names possibly in scope here
 function editorOnResponse(requestType, request, response) {
     switch (requestType) {
@@ -1128,7 +1154,7 @@ function lookupRequestInIncoming(request) {
 
 function proofTreeQueryWish(request) {
 
-    var requestWasPresent = lookupRequestInIncoming(request);
+    var requestWasPresent = lookupRequestInIncoming(coqTrim(request));
 
     // TODO: this should be elsewhere?
     if (!requestWasPresent) {
@@ -1141,7 +1167,7 @@ function proofTreeQueryWish(request) {
     }
 
     if (!requestWasPresent) {
-        switch (request) {
+        switch (coqTrim(request)) {
         case '{':
         case '}':
             safePrependToprove(request);

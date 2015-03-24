@@ -3563,9 +3563,7 @@ GoalNode.prototype.onUndo = function(fromUser, undone, response) {
     default:
 
         // if aborting proof
-        if (response.rGoals.focused.length === 0
-            && response.rGoals.unfocused.length === 0
-           ) {
+        if (_(theoremStarters).contains(getVernac(undone))) {
             exitProofTree();
             return;
         }
