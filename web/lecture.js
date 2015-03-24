@@ -717,7 +717,6 @@ function createProofTree(response) {
         $("#prooftree")[0],
         $(window).width(),
         $("#prooftree").height(),
-        onQed,
         function() { $("#loading").css("display", ""); },
         function() { $("#loading").css("display", "none"); }
     );
@@ -751,24 +750,6 @@ function exitProofTree() {
 function getLastProved() {
     var proved = $("#proved").text();
     return coqTrim(proved.substring(prev(proved)));
-}
-
-/*
- * TODO: now that ProofTree does not undo, no need to backtract and redo.
- * However, we now need to insert the 'Proof.' keyword.
- */
-function onQed(prooftree) {
-
-    focusEditorUI();
-
-    var unlocked = pweGetUnlocked();
-    pweSetUnlocked('\nQed.' + unlocked);
-    proverDown();
-
-    $("#prooftree").empty();
-    activeProofTree = undefined; // bad attempt at GC?
-    repositionCaret();
-
 }
 
 function stripWarning(s) {

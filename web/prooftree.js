@@ -55,7 +55,7 @@ anchor
 
 */
 // [anchor] is a native DOM element
-function ProofTree(anchor, width, height, qedCallback,
+function ProofTree(anchor, width, height,
                    onStartProcessing, onEndProcessing) {
 
     var self = this;
@@ -63,7 +63,6 @@ function ProofTree(anchor, width, height, qedCallback,
     this.anchor = d3.select(anchor);
     this.width = width;
     this.height = height;
-    this.qedCallback = qedCallback;
     this.onStartProcessing = onStartProcessing;
     this.onEndProcessing = onEndProcessing;
 
