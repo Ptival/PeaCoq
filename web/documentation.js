@@ -6,7 +6,7 @@ var documentation = {
     },
 
     "constructor": {
-        "text": "Tries to apply a constructor of the type of the goal.",
+        "text": "If your goal is an inductive type t, constructor tries to apply a constructor of that type.",
         "doc": ["10", "17"],
     },
 
