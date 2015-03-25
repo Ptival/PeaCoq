@@ -7,6 +7,35 @@ $(document).ready(function() {
     setupEditor();
 });
 
+function showTooltip(e) {
+
+    if ($(".CodeMirror-lint-tooltip").length > 0) { return; }
+
+    var initialTarget = e.target;
+    var tt = document.createElement("div");
+    tt.className = "CodeMirror-lint-tooltip";
+    fillDocumentation($(tt), $(e.target).text());
+    document.body.appendChild(tt);
+
+    var box = initialTarget.getBoundingClientRect();
+    tt.style.top = box.bottom + "px";
+    tt.style.left = box.left + "px";
+    function position(e) {
+        if (e.target !== initialTarget && $(e.target).closest(tt).length === 0) {
+            tt.remove();
+            CodeMirror.off(document, "mousemove", position);
+        }
+        //tt.style.top = Math.max(0, e.clientY - tt.offsetHeight - 5) + "px";
+        //tt.style.left = (e.clientX + 5) + "px";
+    }
+
+    CodeMirror.on(document, "mousemove", position);
+    position(e);
+    if (tt.style.opacity != null) tt.style.opacity = 1;
+    return tt;
+
+}
+
 function setupEditor() {
 
     cm = CodeMirror(
@@ -64,8 +93,32 @@ function setupEditor() {
             "lineWrapping": true,
             "matchBrackets": true,
             "mode": "text/x-coq",
+            "placeholder": "(* Type your Coq code here or load a file *)",
+            "styleSelectedText": true,
         }
     );
+
+    var targets = ["cm-admitter", "cm-tactic", "cm-terminator"];
+
+    // this prevents tooltips for elements on the path of the mouse cursor from
+    // triggering when moving the cursor faster than the timeout
+    var lastEvent = undefined;
+
+    CodeMirror.on(cm.getWrapperElement(), "mouseover", function(e) {
+        var target = e.target;
+        if (!_(targets).some(function(name) {
+            return $(target).hasClass(name);
+        })) { return; }
+        //var box = target.getBoundingClientRect();
+        //var x = (box.left + box.right) / 2;
+        //var y = (box.top + box.bottom) / 2;
+        //var spans = cm.findMarksAt(cm.coordsChar({left: x, top: y}, "client"));
+        //console.log("spans", spans);
+        lastEvent = e;
+        window.setTimeout(function() {
+            showTooltip(lastEvent);
+        }, 300);
+    });
 
     doc = cm.getDoc();
 
