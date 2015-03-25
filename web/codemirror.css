@@ -3,6 +3,9 @@ html > body {
     margin: 0;
 }
 
+dl { margin: 0; }
+dd { margin-bottom: 10px; }
+
 #main { height: 100%; }
 
 #top, #bot {
