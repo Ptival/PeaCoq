@@ -51,6 +51,7 @@ span.cm-variable {color: #000000;}
 .CodeMirror-guttermarker-subtle { color: grey; }
 .CodeMirror-linenumber {color: #dadada;}
 .CodeMirror-cursor {}
+.CodeMirror-empty {color: #BBBBBB;}
 
 span.cm-comment {color: #95958a;}
 span.cm-atom {color: #00a8c6;}
