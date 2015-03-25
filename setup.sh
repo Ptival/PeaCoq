@@ -37,7 +37,7 @@ $LN lodash/lodash.min.js lodash.js
 
 $GET http://codemirror.net/codemirror.zip > codemirror.zip
 unzip -o codemirror.zip
-$LN codemirror-5.0 codemirror
+$LN codemirror-5.1 codemirror
 rm codemirror.zip
 
 cd ..
