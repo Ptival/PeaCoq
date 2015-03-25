@@ -100,10 +100,6 @@ function setupEditor() {
 
     var targets = ["cm-admitter", "cm-tactic", "cm-terminator"];
 
-    // this prevents tooltips for elements on the path of the mouse cursor from
-    // triggering when moving the cursor faster than the timeout
-    var lastEvent = undefined;
-
     CodeMirror.on(cm.getWrapperElement(), "mouseover", function(e) {
         var target = e.target;
         if (!_(targets).some(function(name) {
@@ -114,9 +110,16 @@ function setupEditor() {
         //var y = (box.top + box.bottom) / 2;
         //var spans = cm.findMarksAt(cm.coordsChar({left: x, top: y}, "client"));
         //console.log("spans", spans);
-        lastEvent = e;
+        var aborted = false;
+        function monitorMouseMove(newE) {
+            if (newE.target !== e.target) {
+                aborted = true;
+            }
+        }
+        CodeMirror.on(document, "mousemove", monitorMouseMove);
         window.setTimeout(function() {
-            showTooltip(lastEvent);
+            CodeMirror.off(document, "mousemove", monitorMouseMove);
+            if (!aborted) { showTooltip(e); }
         }, 300);
     });
 
