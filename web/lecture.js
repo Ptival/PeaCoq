@@ -152,6 +152,15 @@ $(document).ready(function() {
         })
     ;
 
+    $("input:radio[name='keymap']").change(function() {
+        if ($(this).is(":checked")) {
+            var keyMap = $(this).val();
+            cm.setOption("keyMap", keyMap);
+            cmContext.setOption("keyMap", keyMap);
+            cmResponse.setOption("keyMap", keyMap);
+        }
+    });
+
     $("#set-printing-all").change(function() {
         if($(this).is(":checked")) {
             asyncRequest('setprintingall', undefined);

@@ -21,6 +21,8 @@
     <script src="codemirror/addon/search/searchcursor.js"></script>
     <script src="codemirror/addon/selection/mark-selection.js"></script>
     <script src="codemirror/keymap/emacs.js"></script>
+    <script src="codemirror/keymap/sublime.js"></script>
+    <script src="codemirror/keymap/vim.js"></script>
     <script src="codemirror.js"></script>
     <script src="coqtop.js"></script>
     <script src="prooftree.js"></script>
@@ -181,7 +183,20 @@
           <div class="modal-body">
             <div class="row">
               <div class="col-md-6">
-                <input id="set-printing-all" type="checkbox" autocomplete="off"> Set Printing All.</input>
+                <p>
+                  <input id="set-printing-all" type="checkbox" autocomplete="off"> Set Printing All.</input>
+                </p>
+                <p>
+                  <label class="radio-inline">
+                    <input type="radio" name="keymap" value="emacs" checked> emacs
+                  </label>
+                  <label class="radio-inline">
+                    <input type="radio" name="keymap" value="sublime"> sublime
+                  </label>
+                  <label class="radio-inline">
+                    <input type="radio" name="keymap" value="vim"> vim
+                  </label>
+                </p>
               </div>
             </div>
           </div>
