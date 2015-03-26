@@ -241,7 +241,7 @@ function onCtrlDown(fromUser) {
         doc.setCursor(nextPos);
         scrollIntoView();
     }
-    processToprove();
+    return processToprove();
 }
 
 function onCtrlUp(fromUser) {
