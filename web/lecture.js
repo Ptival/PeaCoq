@@ -191,7 +191,7 @@ $(document).ready(function() {
         "id": "feedback-button",
         "html": $("<span>")
             .append(mkGlyph("bullhorn"))
-            .append(nbsp + nbsp + "About / Feedback"),
+            .append(nbsp + nbsp + "Feedback"),
     })
         .appendTo(buttonGroup)
         .on("click", function() {
