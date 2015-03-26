@@ -48,3 +48,9 @@ p {
   font-family: monospace;
   padding-bottom: 10px;
 }
+blockquote {
+  font-size: 14pt;
+}
+blockquote li {
+  padding-bottom: 10px;
+}

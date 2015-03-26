@@ -1,0 +1,5 @@
+On expressing Y using call/cc:
+  http://www.okmij.org/ftp/Scheme/callcc-fixpoint.txt
+
+An argument against call/cc:
+  http://okmij.org/ftp/continuations/against-callcc.html

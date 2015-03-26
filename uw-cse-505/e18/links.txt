@@ -1,0 +1,5 @@
+Social processes and proofs of theorems and programs
+  http://dl.acm.org/citation.cfm?id=359106
+
+Certification of a Compiler Back-end or: Programming a Compiler with a Proof Assistant
+  http://gallium.inria.fr/~xleroy/publi/compiler-certif.pdf
