@@ -92,7 +92,7 @@
           <div class="modal-body">
             <div class="row">
               <div class="col-md-6">
-                <h5>Editor mode</h5>
+                <h4>Editor mode shortcuts</h4>
                 <ul>
                   <li>
                     <span class="badge">Ctrl</span>
@@ -134,7 +134,7 @@
                 </ul>
               </div>
               <div class="col-md-6">
-                <h5>Proof Tree mode</h5>
+                <h4>Proof Tree mode shortcuts</h4>
                 <ul>
                   <li>
                     <span class="badge">→</span>
@@ -157,6 +157,31 @@
                     : Browse tactics within a tactic group
                   </li>
                 </ul>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-6">
+                <h4>Glossary</h4>
+                <dl>
+                  <dt>conclusion</dt>
+                  <dd>In a type like <code>a -> b -> c</code>, the conclusion is <code>c</code>.</dd>
+                </dl>
+                <dl>
+                  <dt>constructor</dt>
+                  <dd>A constructor is a symbol used to create a value of some user-defined type. Each constructor belongs to only one type, and the constructors are known to be distinct (we say they are injective).</dd>
+                </dl>
+                <dl>
+                  <dt>existential unification variable</dt>
+                  <dd>When you need to prove <code>exists x, P x</code>, you can delay, under certain conditions, the choice of <code>x</code> by introducing a temporary variable, say <code>?42</code>, that will stand for whatever <code>x</code> should have been.</dd>
+                </dl>
+                <dl>
+                  <dt>inductive type</dt>
+                  <dd>Inductive types are defined by the user by giving the list of their constructors. Values of that type can only be created using one of these constructors and providing it arguments of the type it requires (if any).</dd>
+                </dl>
+                <dl>
+                  <dt>obligation</dt>
+                  <dd>A proof obligation is another way of saying that there is a new goal to prove. Usually, applying a tactic can yield new obligations. We say that a tactic finishes a goal if it yields no obligation.</dd>
+                </dl>
               </div>
             </div>
           </div>
