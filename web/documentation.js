@@ -11,19 +11,50 @@ function DocItem(template, docHTML, section, number) {
 
 var applyDoc = [
     DocItem(
-        "apply term",
-        "If the conclusion of the type of term matches the goal, the term is used to prove the goal, and obligations are left to be proven for each argument of term that could not be inferred.",
+        "apply <i>t</i>",
+        "If the conclusion of <i>t</i>'s type of term matches the goal, <i>t</i> is used to prove the goal, and obligations are left to be proven for each argument of <i>t<i> that could not be inferred.",
         10, 8
     ),
     DocItem(
-        "apply term in ident",
+        "apply <i>t</i> in <i>H</i>",
         "If the conclusion of the hypothesis ident matches an argument of term (testing from right to left), the hypothesis is replaced with the conclusion of term, and obligations are left for the other arguments of term that could not be inferred.",
         10, 13
     ),
     DocItem(
-        "eapply term",
+        "eapply <i>t</i>",
         "Same as apply, but introduces existential unification variables for terms it cannot infer.",
         10, 10
+    ),
+];
+
+var assumptionDoc = [
+    DocItem(
+        "assumption",
+        "Solves a goal if a hypothesis has the exact type.",
+        10, 5
+    ),
+    DocItem(
+        "eassumption",
+        "Same as assumption, but also works if your goal has existential unification variables.",
+        10, 6
+    ),
+];
+
+var autoDoc = [
+    DocItem(
+        "auto",
+        "Automation procedure that attemps to solve your goal using a resolution procedure and the hints provided by the user.",
+        10, 141
+    ),
+    DocItem(
+        "auto 6",
+        "Same as auto, but searches to a depth of 6 (the default being 5).",
+        10, 141
+    ),
+    DocItem(
+        "eauto",
+        "eauto is like auto, but it uses eapply instead of apply. As a result, it may create intermediate existential unification variables.",
+        10, 143
     ),
 ];
 
@@ -52,12 +83,22 @@ var documentation = {
 
     "apply": applyDoc,
 
+    "auto": autoDoc,
+
+    "congruence": [
+        DocItem(
+            "congruence",
+            "Proves equality goals when the two sides are equal and goals where the equalities in the context are contradictory.",
+            10, 153
+        ),
+    ],
+
     "constructor": constructorDoc,
 
     "destruct": [
         DocItem(
-            "destruct term",
-            "Performs case analysis on its argument, yielding one goal per constructor.",
+            "destruct <i>t</i>",
+            "Performs case analysis <i>t</i>, yielding one goal per constructor of its type.",
             10, 65
         ),
     ],
@@ -72,6 +113,8 @@ var documentation = {
 
     "eapply": applyDoc,
 
+    "eauto": autoDoc,
+
     "econstructor": constructorDoc,
 
     "firstorder": [
@@ -84,8 +127,8 @@ var documentation = {
 
     "induction": [
         DocItem(
-            "induction term",
-            "Performs case analysis on its argument, yielding one goal per constructor, and adding induction hypotheses in your context for the inductive cases.",
+            "induction <i>t</i>",
+            "Performs case analysis <i>t</i>, yielding one goal per constructor of its type, and adding induction hypotheses in your context for the inductive cases.",
             10, 71
         ),
     ],
@@ -108,8 +151,8 @@ var documentation = {
 
     "inversion": [
         DocItem(
-            "inversion ident",
-            "Performs case analysis on its argument, figuring out impossible cases, and retaining equations for the indices.",
+            "inversion <i>t</i>",
+            "Performs case analysis on <i>t</i>, figuring out impossible cases, and retaining equations for the indices.",
             10, 87
         ),
     ],
@@ -132,8 +175,8 @@ var documentation = {
 
     "remember": [
         DocItem(
-            "remember term",
-            "Introduces a new variable of the same type as the argument, and a proof that this new variable is equal to the argument. Useful when you want to apply a theorem but keep the original variable, or when you want to save equations across tactics that lose information like destruct and inversion.",
+            "remember <i>foo</i>",
+            "Introduces a new variable <i>foo'</i>of the same type as the term <i>foo</i>, and a proof <i>H</i> that <i>foo'</i> is equal to <i>foo</i>. Useful when you want to apply a theorem but keep the original variable, or when you want to save equations across tactics that lose information like destruct and inversion.",
             10, 44
         ),
     ],
@@ -151,6 +194,19 @@ var documentation = {
             "subst",
             "For all proofs that a variable is equal to something else in your context, replaces that variable with the other side of the equality everywhere possible.",
             10, 122
+        ),
+    ],
+
+    "unfold": [
+        DocItem(
+            "unfold <i>t</i>",
+            "Replaces occurences of <i>t</i> in your goal with the body of the definition of <i>t</i>.",
+            10, 138
+        ),
+        DocItem(
+            "unfold <i>t</i> in <i>H</i>",
+            "Same as unfold, but replaces occurences in the hypothesis <i>H</i> rather than the goal.",
+            10, 138
         ),
     ],
 
