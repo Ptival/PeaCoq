@@ -42,6 +42,7 @@ function setupEditor() {
         $("#main-left")[0],
         {
             "autofocus": true,
+            "cursorScrollMargin": 40,
             "extraKeys": {
 
                 "Ctrl-Alt-Up": function(cm) {
@@ -94,6 +95,7 @@ function setupEditor() {
             "matchBrackets": true,
             "mode": "text/x-coq",
             "placeholder": "(* Type your Coq code here or load a file *)",
+            "showCursorWhenSelecting": true,
             "styleSelectedText": true,
         }
     );
