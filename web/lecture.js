@@ -302,7 +302,7 @@ function resizeCoqtopPanes() {
             $("#coqtop-context").height("100%");
             $("#coqtop-response").height("0%");
         } else {
-            $("#coqtop-context").height("8%");
+            $("#coqtop-context").height("80%");
             $("#coqtop-response").height("20%");
         }
 
