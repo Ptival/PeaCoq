@@ -576,7 +576,8 @@ ProofTree.prototype.runTactic = function(t, groupToAttachTo) {
 
                 var resultAlreadyExists =
                     _(parentGoal.getTactics()).some(function(t) {
-                        return (tacticNodeUnicityRepr(t) === newChildRepr);
+                        return t.tactic === newChild.tactic;
+                        //return (tacticNodeUnicityRepr(t) === newChildRepr);
                     })
                 ;
 
@@ -1291,9 +1292,7 @@ ProofTree.prototype.update = function() {
                 var tgt = swapXY(centerLeft0(d.target));
                 return self.diagonal({"source": src, "target": tgt});
             })
-        // TODO: this does not work
-        /*
-            .attr("fill", function(d) {
+            .attr("stroke", function(d) {
                 if (isTacticGroup(d.target)
                     && d.target.getFocusedTactic().goals.length === 0) {
                     return "#00FF00";
@@ -1301,7 +1300,6 @@ ProofTree.prototype.update = function() {
                     return "#000000";
                 }
             })
-        */
         ;
 
         linkSelection
