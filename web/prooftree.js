@@ -432,6 +432,10 @@ function evenFloor(x) {
     return (r % 2 === 0) ? r : r - 1;
 }
 
+ProofTree.prototype.getFocus = function() {
+    $(":focus").blur();
+}
+
 ProofTree.prototype.newAlreadyStartedTheorem = function(lastResponse, tactics) {
 
     var self = this;
@@ -448,7 +452,7 @@ ProofTree.prototype.newAlreadyStartedTheorem = function(lastResponse, tactics) {
 
     self.hInit(lastResponse);
 
-    $(this.svg[0]).focus();
+    //this.getFocus();
     //this.svg.on("click")();
 
 }

@@ -691,7 +691,6 @@ function focusEditorUI() {
 
     $("#peek-button").css("display", "none");
     $("#unpeek-button").css("display", "");
-    $("#editor").focus();
 
     resize();
     cm.refresh();
@@ -709,7 +708,6 @@ function focusProofTreeUI() {
 
     $("#peek-button").css("display", "");
     $("#unpeek-button").css("display", "none");
-    $("#prooftree").focus();
 
     $("#coqtop-context").height("0%");
     $("#coqtop-response").height("100%");
@@ -717,6 +715,8 @@ function focusProofTreeUI() {
     resize();
     cm.refresh();
     scrollIntoView();
+    activeProofTree.getFocus();
+    activeProofTree.refreshTactics();
 
 }
 
@@ -749,6 +749,8 @@ function createProofTree(response) {
         // TODO: insert a newline only when needed...
         //var rUnlocked = mUnlocked.find();
         //doc.replaceRange('\n  ', rUnlocked.from);
+
+        activeProofTree.getFocus();
     }
 
 }
