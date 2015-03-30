@@ -9,7 +9,7 @@ from glob import glob
 rItem = re.compile(r'\n(?=\[201)')
 
 # [2015-11-26 01:23:45 PST]
-rServerDate = r'\[(\d+)-(\d+)-(\d+) (\d+):(\d+):(\d+) PST\]'
+rServerDate = r'\[(\d+)-(\d+)-(\d+) (\d+):(\d+):(\d+) P[DS]T\]'
 # [26/11/2015, 1:23:45 AM]
 rClientDate = r'\[(\d+)\/(\d+)\/(\d+), (\d+):(\d+):(\d+) (AM|PM)\]'
 
