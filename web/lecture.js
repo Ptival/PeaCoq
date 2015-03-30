@@ -1119,7 +1119,7 @@ function editorOnResponse(requestType, request, response) {
 
             var name = getVernacName(request);
             if (name !== undefined) {
-                if (!namesPossiblyInScope.contains(name)) {
+                if (!_(namesPossiblyInScope).contains(name)) {
                     namesPossiblyInScope.push(name);
                 }
             }
