@@ -1111,7 +1111,8 @@ function editorOnResponse(requestType, request, response) {
             markProving(rProving.from, rProving.from);
             markToprove(rProving.from, rProving.from);
             markUnlocked(rProving.from, rUnlocked.to);
-            doc.setCursor(rUnlocked.from);
+            doc.setCursor(rProving.from);
+            cm.focus(); // somehow it gets unfocused sometimes
             updateCoqtopPane(goingDown, response);
             break;
         };
