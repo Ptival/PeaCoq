@@ -161,13 +161,13 @@ $(document).ready(function() {
         }
     });
 
-    $("#set-printing-all").change(function() {
-        if($(this).is(":checked")) {
-            asyncRequest('setprintingall', undefined);
-        } else {
-            asyncRequest('unsetprintingall', undefined);
-        }
-    });
+    // $("#set-printing-all").change(function() {
+    //     if($(this).is(":checked")) {
+    //         asyncRequest('setprintingall', undefined);
+    //     } else {
+    //         asyncRequest('unsetprintingall', undefined);
+    //     }
+    // });
 
     $("<button>", {
         "class": "btn btn-default",
