@@ -59,7 +59,7 @@ $(document).ready(function() {
     $("<button>", {
         "class": "btn btn-default",
         "html": $("<span>")
-            .append(mkGlyph("eye-open"))
+            .append(mkGlyph("edit"))
             //.append(nbsp + "View Editor")
         ,
         "id": "peek-button",
@@ -72,7 +72,7 @@ $(document).ready(function() {
     $("<button>", {
         "class": "btn btn-default",
         "html": $("<span>")
-            .append(mkGlyph("eye-close"))
+            .append(mkGlyph("tree-deciduous"))
             //.append(nbsp + "View Proof Tree")
         ,
         "id": "unpeek-button",
