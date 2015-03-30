@@ -1042,21 +1042,54 @@ function editorOnRequestTriggered(requestType, request) {
 }
 
 var theoremStarters = [
-    'CoFixpoint', 'Definition', 'Fixpoint', 'Lemma', 'Theorem',
+    'CoFixpoint', 'Definition', 'Example', 'Fixpoint', 'Lemma', 'Theorem',
 ];
+
+/*
+ * TODO: OMG this is ugly, gotta make something better when I have time
+ */
+function splitAtFirstDelimiter(s) {
+    var firstSpace = s.indexOf(' ');
+    if (firstSpace === -1) { firstSpace = +Infinity; }
+    var firstNewline = s.indexOf('\n');
+    if (firstNewline === -1) { firstNewline = +Infinity; }
+    var firstColon = s.indexOf(':');
+    if (firstColon === -1) { firstColon = +Infinity; }
+    var firstParen = s.indexOf('(');
+    if (firstParen === -1) { firstParen = +Infinity; }
+    var firstCurly = s.indexOf('{');
+    if (firstCurly === -1) { firstCurly = +Infinity; }
+    var firstDelimiter = Math.min(firstSpace, firstNewline, firstColon, firstParen, firstCurly);
+    if (firstDelimiter === +Infinity) {
+        return undefined;
+    } else {
+        return {
+            "before": s.substring(0, firstDelimiter),
+            "after": s.substring(firstDelimiter + 1),
+        };
+    }
+}
 
 function getVernac(s) {
     var trimmed = coqTrim(s);
-    var firstSpace = trimmed.indexOf(' ');
-    if (firstSpace === -1) { firstSpace = +Infinity; }
-    var firstNewline = trimmed.indexOf('\n');
-    if (firstNewline === -1) { firstNewline = +Infinity; }
-    var firstBlank = Math.min(firstSpace, firstNewline);
-    if (firstBlank === +Infinity) {
-        return s;
+    var split = splitAtFirstDelimiter(trimmed);
+    if (split === undefined) {
+        return s; // untrimmed!
     } else {
-        return trimmed.substring(0, firstBlank);
+        return split.before;
     }
+}
+
+// TODO: extract all the constructor names from an inductive definition
+// Returns the name defined by a command, if any
+function getVernacName(s) {
+    var trimmed = coqTrim(s);
+    var split = splitAtFirstDelimiter(trimmed);
+    if (split == undefined) { return undefined; }
+    if (!_(theoremStarters).contains(split.before)) { return undefined; }
+    split = splitAtFirstDelimiter(split.after);
+    if (split == undefined) { return undefined; }
+    return split.before;
 }
 
 // TODO: collect names possibly in scope here
@@ -1083,6 +1116,13 @@ function editorOnResponse(requestType, request, response) {
                 doc.setCursor(nextPos);
             }
             updateCoqtopPane(goingDown, response);
+
+            var name = getVernacName(request);
+            if (name !== undefined) {
+                if (!namesPossiblyInScope.contains(name)) {
+                    namesPossiblyInScope.push(name);
+                }
+            }
 
             if (activeProofTree === undefined) {
                 if (response.rGoals.focused.length === 1
