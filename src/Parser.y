@@ -89,10 +89,11 @@ comment { TokComment $$ }
 %left '*'
 %nonassoc '(' ')'
 %nonassoc '{' '}'
-%nonassoc var num str
+%nonassoc var num str "[]" '∀' '∃' 'λ' '¬' "fun" "match"
 -- it is important that APP has higher precedence than var, num, '('
+-- and all terminals that can be the start of a term,
 -- so that shift/reduce conflicts of the form
--- Term Term . <var/num/'('>
+-- Term Term . <var/num/'('/...>
 -- gets resolved into a reduce rather than shifting the incoming token
 %nonassoc APP
 -- high precedence
