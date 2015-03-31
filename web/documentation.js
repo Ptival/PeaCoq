@@ -194,6 +194,14 @@ var documentation = {
         ),
     ],
 
+    "omega": [
+        DocItem(
+            "omega",
+            "A decision procedure for Presburger arithmetic, which solves goals involving first-order logic and the types nat and Z.",
+            10, 170, 118
+        ),
+    ],
+
     "reflexivity": [
         DocItem(
             "reflexivity",
