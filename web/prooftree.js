@@ -3555,6 +3555,7 @@ GoalNode.prototype.onUndo = function(fromUser, undone, response) {
         break;
 
     case 'Proof.':
+        onCtrlUp(false);
         break;
 
     case '+':
