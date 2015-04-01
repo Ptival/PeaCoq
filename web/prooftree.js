@@ -1026,7 +1026,8 @@ ProofTree.prototype.update = function() {
 
                         if (d.tacticIndex > 0) {
                             d.span.append(
-                                $("<span>")
+                                $("<a>")
+                                    .attr("href", "#")
                                     .text('◀')
                                     .click(function(e) {
                                         e.stopImmediatePropagation();
@@ -1043,7 +1044,8 @@ ProofTree.prototype.update = function() {
 
                         if (d.tacticIndex < d.tactics.length - 1) {
                             d.span.append(
-                                $("<span>")
+                                $("<a>")
+                                    .attr("href", "#")
                                     .text('▶')
                                     .click(function(e) {
                                         e.stopImmediatePropagation();
@@ -1235,8 +1237,8 @@ ProofTree.prototype.update = function() {
                 d.cX = nodeX(d) * self.xFactor + self.xOffset(d);
                 d.cY = nodeY(d) * self.yFactor + self.yOffset(d);
             })
-                // preset the width to update measures correctly
-                .attr("width", function(d) { return d.width; })
+            // preset the width to update measures correctly
+            .attr("width", function(d) { return d.width; })
             .attr("height", function(d) { return d.height; })
             .transition()
             .duration(animationDuration)
