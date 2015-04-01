@@ -1016,19 +1016,52 @@ ProofTree.prototype.update = function() {
                 if (isTacticGroup(d)) {
                     var focusedTactic = d.tactics[d.tacticIndex];
                     var nbTactics = d.tactics.length;
-                    var counterPrefix = (
-                        (nbTactics > 1)
-                            ? '[' + (d.tacticIndex + 1) + '/' + d.tactics.length + ']<br/>'
-                            : ''
-                    );
                     d.span = $("<div>")
                         .addClass("tacticNode")
                         .css("padding", "4px")
-                        .html(
-                            (self.isCurNodeChild(d))
-                                ? counterPrefix + focusedTactic.tactic
-                                : focusedTactic.tactic
+                    ;
+
+                    // prepend a tactic node selector if necessary
+                    if (nbTactics > 1) {
+
+                        if (d.tacticIndex > 0) {
+                            d.span.append(
+                                $("<span>")
+                                    .text('◀')
+                                    .click(function(e) {
+                                        e.stopImmediatePropagation();
+                                        d.shiftPrevInGroup();
+                                    })
+                            );
+                        } else {
+                            d.span.append(nbsp);
+                        }
+
+                        d.span.append(
+                            '[' + (d.tacticIndex + 1) + '/' + d.tactics.length + ']'
                         );
+
+                        if (d.tacticIndex < d.tactics.length - 1) {
+                            d.span.append(
+                                $("<span>")
+                                    .text('▶')
+                                    .click(function(e) {
+                                        e.stopImmediatePropagation();
+                                        d.shiftNextInGroup();
+                                    })
+                            );
+                        } else {
+                            d.span.append(nbsp);
+                        }
+
+                        d.span.append($("<br>"));
+
+                    }
+
+                    d.span.append(
+                        focusedTactic.tactic
+                    );
+
                     jQContents = d.span;
                     jqBody.empty();
                     jqBody.append(jQContents);
@@ -2136,22 +2169,14 @@ ProofTree.prototype.keydownHandler = function() {
     case 219: // [
         var focusedChild = curNode.getFocusedChild();
         if (isTacticGroup(focusedChild)) {
-            if (focusedChild.tacticIndex > 0) {
-                focusedChild.tacticIndex--;
-                asyncLog("PREVGROUPFOCUS " + nodeString(focusedChild.tactics[focusedChild.tacticIndex]));
-                this.update();
-            }
+            focusedChild.shiftPrevInGroup();
         }
         break;
 
     case 221: // ]
         var focusedChild = curNode.getFocusedChild();
         if (isTacticGroup(focusedChild)) {
-            if (focusedChild.tacticIndex < focusedChild.tactics.length - 1) {
-                focusedChild.tacticIndex++;
-                asyncLog("NEXTGROUPFOCUS " + nodeString(focusedChild.tactics[focusedChild.tacticIndex]));
-                this.update();
-            }
+            focusedChild.shiftNextInGroup();
         }
         break;
 
@@ -3635,5 +3660,21 @@ GoalNode.prototype.unsolveLastSolved = function() {
     } else {
         var subgoal = focusedTactic.goals[focusedTactic.goals.length - 1];
         return subgoal.unsolveLastSolved();
+    }
+}
+
+TacticGroupNode.prototype.shiftNextInGroup = function() {
+    if (this.tacticIndex < this.tactics.length - 1) {
+        this.tacticIndex++;
+        asyncLog("NEXTGROUPFOCUS " + nodeString(this.tactics[this.tacticIndex]));
+        this.proofTree.update();
+    }
+}
+
+TacticGroupNode.prototype.shiftPrevInGroup = function() {
+    if (this.tacticIndex > 0) {
+        this.tacticIndex--;
+        asyncLog("PREVGROUPFOCUS " + nodeString(this.tactics[this.tacticIndex]));
+        this.proofTree.update();
     }
 }
