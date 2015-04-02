@@ -58,7 +58,7 @@ $(document).ready(function() {
         .append(mkGlyph("italic"))
         .append(nbsp + "Go to caret")
     ;
-
+/*
     $("<button>", {
         "class": "btn btn-default",
         "html": $("<span>")
@@ -84,7 +84,7 @@ $(document).ready(function() {
         .css("display", "none")
         .on("click", focusProofTreeUI)
     ;
-
+*/
     /* Temporarily disabled
     $("<button>", {
         "class": "btn btn-default",
@@ -736,7 +736,7 @@ function focusProofTreeUI() {
 }
 
 function createProofTree(response) {
-
+    return;
     activeProofTree = new ProofTree(
         $("#prooftree")[0],
         $(window).width(),
