@@ -31,6 +31,7 @@ $(document).ready(function() {
             onCtrlDown(true);
         })
         .append(mkGlyph("arrow-down"))
+        .append(nbsp + "Prev")
     ;
 
     $("<button>", {
@@ -42,6 +43,7 @@ $(document).ready(function() {
             onCtrlUp(true);
         })
         .append(mkGlyph("arrow-up"))
+        .append(nbsp + "Next")
     ;
 
     $("<button>", {
@@ -54,13 +56,14 @@ $(document).ready(function() {
         })
         .append(mkGlyph("arrow-right"))
         .append(mkGlyph("italic"))
+        .append(nbsp + "Go to caret")
     ;
 
     $("<button>", {
         "class": "btn btn-default",
         "html": $("<span>")
             .append(mkGlyph("edit"))
-            //.append(nbsp + "View Editor")
+            .append(nbsp + "View Editor")
         ,
         "id": "peek-button",
     })
@@ -73,7 +76,7 @@ $(document).ready(function() {
         "class": "btn btn-default",
         "html": $("<span>")
             .append(mkGlyph("tree-deciduous"))
-            //.append(nbsp + "View Proof Tree")
+            .append(nbsp + "View Proof Tree")
         ,
         "id": "unpeek-button",
     })
