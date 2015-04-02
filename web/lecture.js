@@ -1146,6 +1146,7 @@ function editorOnResponse(requestType, request, response) {
             break;
 
         case 'Fail':
+
             // move proving and toprove back to unlocked
             var rProving = mProving.find();
             var rProved = mProved.find();
@@ -1156,6 +1157,8 @@ function editorOnResponse(requestType, request, response) {
             doc.setCursor(rProving.from);
             cm.focus(); // somehow it gets unfocused sometimes
             updateCoqtopPane(goingDown, response);
+            resizeCoqtopPanes();
+
             break;
         };
         break;
