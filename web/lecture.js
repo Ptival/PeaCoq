@@ -172,6 +172,36 @@ $(document).ready(function() {
     //     }
     // });
 
+    // $("<button>", {
+    //     "class": "btn btn-default",
+    //     "data-target": "help",
+    //     "data-toggle": "modal",
+    //     "id": "feedback-button",
+    //     "html": $("<span>")
+    //         .append(mkGlyph("question-sign"))
+    //         .append(nbsp + nbsp + "Help"),
+    // })
+    //     .appendTo(buttonGroup)
+    //     .on("click", function() {
+    //         $("#help").modal();
+    //     })
+    // ;
+
+    // $("<button>", {
+    //     "class": "btn btn-info",
+    //     "data-target": "feedback",
+    //     "data-toggle": "modal",
+    //     "id": "feedback-button",
+    //     "html": $("<span>")
+    //         .append(mkGlyph("bullhorn"))
+    //         .append(nbsp + nbsp + "Feedback"),
+    // })
+    //     .appendTo(buttonGroup)
+    //     .on("click", function() {
+    //         $("#feedback").modal();
+    //     })
+    // ;
+
     $("<button>", {
         "class": "btn btn-default",
         "data-target": "help",
