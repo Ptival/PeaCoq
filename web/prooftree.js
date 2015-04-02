@@ -2574,7 +2574,7 @@ function showTermAux(t, indentation, precParent, newline) {
     case "Forall":
         return par(
             precForall,
-            syntax("∀") + showBinders(c[0]) + syntax(",")
+            syntax("forall") + showBinders(c[0]) + syntax(",")
                 + (newline ? "<br/>" + getIndent(indentation + 1) : " ")
                 + showTermAux(c[1], indentation + 1, precParent, newline)
         );
@@ -2582,7 +2582,7 @@ function showTermAux(t, indentation, precParent, newline) {
     case "Lambda":
         return par(
             precForall,
-            syntax("λ") + showBinders(c[0]) + syntax(",")
+            syntax("fun") + showBinders(c[0]) + syntax("=>")
                 + (newline ? "<br/>" + getIndent(indentation + 1) : " ")
                 + showTermAux(c[1], indentation + 1, precParent, newline)
         );
@@ -2590,7 +2590,7 @@ function showTermAux(t, indentation, precParent, newline) {
     case "Exists":
         return par(
             precForall,
-            syntax("∃") + showBinders(c[0]) + syntax(",")
+            syntax("exists") + showBinders(c[0]) + syntax(",")
                 + (newline ? "<br/>" + getIndent(indentation + 1) : " ")
                 + showTermAux(c[1], indentation + 1, precParent, newline)
         );
@@ -2598,7 +2598,7 @@ function showTermAux(t, indentation, precParent, newline) {
     case "Arrow":
         return term(
             showTermAux(c[0], indentation, precArrow, false)
-                + nbsp + syntax("→") + (newline ? "<br/>" + indent : " ")
+                + nbsp + syntax("->") + (newline ? "<br/>" + indent : " ")
                 + showTermAux(c[1], indentation, precParent, newline)
         );
 
@@ -2658,10 +2658,10 @@ function showTermAux(t, indentation, precParent, newline) {
                 return showOp(c, "*", precMult);
 
             case "and":
-                return showOp(c, "∧", precAnd);
+                return showOp(c, "/\\", precAnd);
 
             case "or":
-                return showOp(c, "∨", precOr);
+                return showOp(c, "\\/", precOr);
 
             case "andb":
                 return showOp(c, "&&", precAndB);
@@ -2669,11 +2669,11 @@ function showTermAux(t, indentation, precParent, newline) {
             case "orb":
                 return showOp(c, "||", precOrB);
 
-            case "cons":
-                return showOp(c, "::", precCons);
+            // case "cons":
+            //     return showOp(c, "::", precCons);
 
-            case "app":
-                return showOp(c, "++", precAppend);
+            // case "app":
+            //     return showOp(c, "++", precAppend);
 
             default:
                 // nothing, fall through
