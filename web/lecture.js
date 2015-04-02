@@ -1160,10 +1160,12 @@ function editorOnResponse(requestType, request, response) {
             doc.setCursor(rProving.from);
             cm.focus(); // somehow it gets unfocused sometimes
             updateCoqtopPane(goingDown, response);
-            resizeCoqtopPanes();
 
             break;
         };
+
+        resizeCoqtopPanes();
+
         break;
 
     }
