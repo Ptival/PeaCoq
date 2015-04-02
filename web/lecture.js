@@ -31,7 +31,7 @@ $(document).ready(function() {
             onCtrlDown(true);
         })
         .append(mkGlyph("arrow-down"))
-        .append(nbsp + "Prev")
+        .append(nbsp + "Next")
     ;
 
     $("<button>", {
@@ -43,7 +43,7 @@ $(document).ready(function() {
             onCtrlUp(true);
         })
         .append(mkGlyph("arrow-up"))
-        .append(nbsp + "Next")
+        .append(nbsp + "Prev")
     ;
 
     $("<button>", {
