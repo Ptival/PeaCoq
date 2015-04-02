@@ -523,7 +523,10 @@ function updateCoqtopPane(direction, response) {
 
             cmContext.addLineWidget(
                 goalLinePosition - 1,
-                $("<hr>").css("border", "1px solid black")[0],
+                //$("<hr>").css("border", "1px solid black")[0],
+                $("<span>")
+                    .text("______________________________________________________________________")
+                [0],
                 { "above": true }
             );
 
