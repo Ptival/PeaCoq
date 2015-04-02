@@ -510,6 +510,15 @@ function updateCoqtopPane(direction, response) {
                 );
             }
 
+            _(response.rGoals.focused)
+                .rest()
+                .each(function(g, ndx) {
+                    contextContents += "\n\n";
+                    contextContents += "subgoal " + (ndx + 2) + "\n";
+                    contextContents += showTermText(extractGoal(g.gGoal));
+                })
+            ;
+
             docContext.setValue(contextContents);
 
             cmContext.addLineWidget(
