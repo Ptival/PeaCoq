@@ -203,32 +203,45 @@ $(document).ready(function() {
     // ;
 
     $("<button>", {
-        "class": "btn btn-default",
-        "data-target": "help",
-        "data-toggle": "modal",
-        "id": "feedback-button",
+        "class": "btn btn-primary",
+        "id": "ask-for-help-button",
         "html": $("<span>")
-            .append(mkGlyph("question-sign"))
-            .append(nbsp + nbsp + "Help"),
+            .append(mkGlyph("user"))
+            .append(nbsp + nbsp + "Ask for help"),
     })
         .appendTo(buttonGroup)
         .on("click", function() {
-            $("#help").modal();
+            asyncLog("NEEDHELP");
+            $("#ask-for-help-button").css("display", "none");
+            $("#asked-for-help-button").css("display", "");
         })
     ;
 
     $("<button>", {
-        "class": "btn btn-info",
-        "data-target": "feedback",
-        "data-toggle": "modal",
-        "id": "feedback-button",
+        "class": "btn btn-primary",
+        "id": "asked-for-help-button",
         "html": $("<span>")
-            .append(mkGlyph("bullhorn"))
-            .append(nbsp + nbsp + "Feedback"),
+            .append(mkGlyph("user"))
+            .append(nbsp + nbsp + "You asked for help"),
     })
         .appendTo(buttonGroup)
+        .css("display", "none")
+    ;
+
+    $("<button>", {
+        "class": "btn btn-danger",
+        "id": "help-in-progress-button",
+        "html": $("<span>")
+            .append(mkGlyph("user"))
+            .append(nbsp + nbsp + "Help in progress, click here when done!"),
+    })
+        .appendTo(buttonGroup)
+        .css("display", "none")
         .on("click", function() {
-            $("#feedback").modal();
+            asyncLog("HELPEND");
+            $(this).css("display", "none");
+            $("#ask-for-help-button").css("display", "");
+            $("#asked-for-help-button").css("display", "none");
         })
     ;
 

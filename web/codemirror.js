@@ -59,6 +59,11 @@ function setupEditor() {
                 "Ctrl-Alt-Left": function(cm) {
                 },
 
+                "Ctrl-Alt-H": function(cm) {
+                    asyncLog("HELPSTART");
+                    $("#help-in-progress-button").css("display", "");
+                },
+
                 "Ctrl-Alt-L": function(cm) {
                     $("#load-local-button").click();
                 },
