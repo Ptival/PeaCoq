@@ -3598,6 +3598,12 @@ GoalNode.prototype.onUndo = function(fromUser, undone, response) {
             return;
         }
 
+        // if it was a command
+        if (isUpperCase(undone[0])) {
+            this.proofTree.refreshTactics();
+            return;
+        }
+
         if (this.isSolved()) {
             // undoing the solving tactic
             this.unsolveLastSolved().makeCurrentNode(response);
@@ -3629,8 +3635,10 @@ GoalNode.prototype.onUndo = function(fromUser, undone, response) {
                 this.proofTree.update();
             }
         }
+
         break;
     }
+
 }
 
 /*
