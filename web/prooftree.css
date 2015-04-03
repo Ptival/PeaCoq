@@ -51,6 +51,7 @@
 .prooftree div, .prooftree p, .prooftree textarea, .prooftree .form-control {
     line-height: normal;
     word-break: normal;
+    word-wrap: break-word;
 }
 
 .removed { background-color: #FF6961; }
