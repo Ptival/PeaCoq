@@ -239,35 +239,58 @@ function deltaY(rect1, rect2) { return rect2.top - rect1.top; }
 
 function spotTheDifferences(before, after) {
 
-    var removed = [];
-    var added = [];
-
     function rec(before, after) {
 
         var nbBefore = before.children().length;
         var nbAfter  =  after.children().length;
         if (nbBefore !== nbAfter) {
-            removed.push(before);
-            added.push(after);
-            return;
+            return [{
+                "removed": before,
+                "added": after,
+            }];
         }
 
         var nbChildren = nbBefore;
         if (nbChildren === 0) { // both leaves
             if (before.html() !== after.html()) {
-                removed.push(before);
-                added.push(after);
+                return [{
+                    "removed": before,
+                    "added": after,
+                }];
+            } else {
+                return [];;
             }
-            return;
         }
 
-        for (var i in _.range(nbChildren)) {
-            rec($(before.children()[i]), $(after.children()[i]));
+        var everyChildChanged = true;
+
+        var childrenChanges = _.range(nbChildren).reduce(function(acc, i) {
+            var tmp = rec($(before.children()[i]), $(after.children()[i]));
+            if (tmp.length === 0) { everyChildChanged = false; }
+            return acc.concat(tmp);
+        }, [])
+        ;
+
+        if (everyChildChanged) {
+            return [{
+                "removed": before,
+                "added": after,
+            }];
+        } else {
+            return childrenChanges;
         }
 
     }
 
-    rec($(before), $(after));
+    var removed = [];
+    var added = [];
+
+    _(rec($(before).children(), $(after).children())).each(function(pair) {
+        pair.removed.css("background-color", diffOrange);
+        pair.added.css("background-color", diffOrange);
+        //removed.push(pair.removed);
+        //added.push(pair.added);
+    });
 
     return {"removed": removed, "added": added};
 }
