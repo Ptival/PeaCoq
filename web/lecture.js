@@ -952,6 +952,11 @@ function makeGroup(name, tactics) {
     };
 }
 
+var goTactics = false;
+var eachTactic = false;
+var applyTactic = false;
+var destructTactic = false;
+
 function lectureTactics(pt) {
 
     var curGoal = (isGoal(pt.curNode)) ? pt.curNode : pt.curNode.parent;
@@ -962,22 +967,38 @@ function lectureTactics(pt) {
 
         makeGroup(
             "terminators",
-            ["reflexivity", "discriminate", "assumption", "eassumption",]
+            [
+                "reflexivity",
+                //"discriminate",
+                //"assumption",
+                //"eassumption",
+            ]
         ),
 
         makeGroup(
             "autos",
-            ["auto", "eauto"]
+            [
+                //"auto",
+                //"eauto",
+            ]
         ),
 
         makeGroup(
             "introductions",
-            ["intro", "intros"]
+            [
+                "intro",
+                "intros",
+            ]
         ),
 
         makeGroup(
             "break_if, f_equal, subst",
-            ["break_if", "f_equal", "repeat f_equal", "subst"]
+            [
+                //"break_if",
+                //"f_equal",
+                //"repeat f_equal",
+                //"subst"
+            ]
         ),
 
         makeGroup(
@@ -989,12 +1010,21 @@ function lectureTactics(pt) {
 
         makeGroup(
             "constructors",
-            ["left", "right", "split", "constructor", "econstructor", "eexists"]
+            [
+                //"left",
+                //"right",
+                //"split",
+                //"constructor",
+                //"econstructor",
+                //"eexists"
+            ]
         ),
 
         makeGroup(
             "destructors",
-            _(curHyps).map(function(h) { return "destruct " + h; }).value()
+            destructTactic
+                ? _(curHyps).map(function(h) { return "destruct " + h; }).value()
+                : []
         ),
 
         makeGroup(
@@ -1002,22 +1032,49 @@ function lectureTactics(pt) {
             _(curHyps).map(function(h) { return "induction " + h; }).value()
         ),
 
-        makeGroup(
-            "inversions",
-            _(curHyps).map(function(h) { return "inversion " + h; }).value()
-        ),
+        // makeGroup(
+        //     "inversions",
+        //     _(curHyps).map(function(h) { return "inversion " + h; }).value()
+        // ),
 
         makeGroup(
             "solvers",
-            ["congruence", "omega", "firstorder"]
+            [
+                //"congruence",
+                //"omega",
+                //"firstorder",
+            ]
+        ),
+
+        makeGroup(
+            "go-group",
+            goTactics
+                ?
+                [
+                    "goleft",
+                    "goright",
+                ]
+                : []
+        ),
+
+        makeGroup(
+            "each-group",
+            eachTactic
+                ?
+                [
+                    "each",
+                ]
+                : []
         ),
 
         makeGroup(
             "applications",
-            _(curNames).map(function(n) { return "apply " + n; }).value()
-                .concat(
-                    _(curNames).map(function(n) { return "eapply " + n; }).value()
-                )
+            applyTactic
+                ? _(curNames).map(function(n) { return "apply " + n; }).value()
+                // .concat(
+                //     _(curNames).map(function(n) { return "eapply " + n; }).value()
+                // )
+                : []
         ),
 
         makeGroup(
@@ -1028,20 +1085,20 @@ function lectureTactics(pt) {
                 )
         ),
 
-        makeGroup(
-            "applications in",
-            _(curNames).map(function(n) {
-                return _(curHyps)
-                    .map(function(h) {
-                        if (h === n) { return []; }
-                        return ([
-                            "apply " + n + " in " + h,
-                            "eapply " + n + " in " + h
-                        ]);
-                    })
-                    .flatten(true).value();
-            }).flatten(true).value()
-        ),
+        // makeGroup(
+        //     "applications in",
+        //     _(curNames).map(function(n) {
+        //         return _(curHyps)
+        //             .map(function(h) {
+        //                 if (h === n) { return []; }
+        //                 return ([
+        //                     "apply " + n + " in " + h,
+        //                     //"eapply " + n + " in " + h,
+        //                 ]);
+        //             })
+        //             .flatten(true).value();
+        //     }).flatten(true).value()
+        // ),
 
         makeGroup(
             "rewrites in",
@@ -1050,8 +1107,8 @@ function lectureTactics(pt) {
                     .map(function(h) {
                         if (h === n) { return []; }
                         return ([
-                            ("rewrite -> " + n + " in " + h),
-                            ("rewrite <- " + n + " in " + h)
+                            //("rewrite -> " + n + " in " + h),
+                            //("rewrite <- " + n + " in " + h),
                         ]);
                     })
                     .flatten(true).value()
@@ -1059,10 +1116,10 @@ function lectureTactics(pt) {
             }).flatten(true).value()
         ),
 
-        makeGroup(
-            "reverts",
-            _(curHyps).map(function(h) { return "revert " + h; }).value()
-        ),
+        // makeGroup(
+        //     "reverts",
+        //     _(curHyps).map(function(h) { return "revert " + h; }).value()
+        // ),
 
     ];
 
@@ -1157,6 +1214,20 @@ function editorOnResponse(requestType, request, response) {
         switch(response.rResponse.tag) {
 
         case 'Good':
+            // for the study, activate tactic groups
+            if (_.include(request, "New tactics: goleft, goright")) {
+                goTactics = true;
+            }
+            if (_.include(request, "New tactic: apply")) {
+                applyTactic = true;
+            }
+            if (_.include(request, "New tactic: each")) {
+                eachTactic = true;
+            }
+            if (_.include(request, "New tactic: destruct")) {
+                destructTactic = true;
+            }
+
             var rProving = mProving.find();
             var proving = doc.getRange(rProving.from, rProving.to);
             if (coqTrim(proving) !== coqTrim(request)) {
