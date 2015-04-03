@@ -5,6 +5,14 @@ var setCursorOnResponse = false;
 
 $(document).ready(function() {
     setupEditor();
+
+    $(document).keydown(function(e) {
+        if (e.which === 72 && e.ctrlKey && e.altKey) {
+            asyncLog("HELPSTART");
+            $("#help-in-progress-button").css("display", "");
+        }
+    });
+
 });
 
 function showTooltip(e) {
@@ -57,11 +65,6 @@ function setupEditor() {
                 },
 
                 "Ctrl-Alt-Left": function(cm) {
-                },
-
-                "Ctrl-Alt-H": function(cm) {
-                    asyncLog("HELPSTART");
-                    $("#help-in-progress-button").css("display", "");
                 },
 
                 "Ctrl-Alt-L": function(cm) {
