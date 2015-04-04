@@ -78,12 +78,14 @@ comment { TokComment $$ }
 
 -- low precedence
 %right '→'
-%right '∧' '∨'
+%right '∨'
+%right '∧'
 %nonassoc '¬'
 %nonassoc '=' '≠'
 %right "::"
 %right "++"
-%left "&&" "||"
+%left "||"
+%left "&&"
 %nonassoc '<' '>' "<=" ">="
 %left '+' '-'
 %left '*'
