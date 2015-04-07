@@ -972,7 +972,7 @@ function lectureTactics(pt) {
 
         makeGroup(
             "introductions",
-            ["intro", "intros"]
+            ["intros", "intro"]
         ),
 
         makeGroup(
