@@ -153,6 +153,7 @@ def buildExerciseBucket(userBucket):
                         time = l.serverT - currentExercise.serverT
                         #print("Gave up on exercise: " + exercise + " after " + str(time))
                         timingBuckets[user][exercise] += time
+                        timelineBuckets[user].append([exercise, currentExercise.serverT, l.serverT])
                     currentExercise = None
 
             # if currentExercise == None:
@@ -178,7 +179,7 @@ def buildExerciseBucket(userBucket):
             start = str(l[1])
             end = str(l[2])
             print('%s,%s,%s,%s'
-                  % ( u, e, start, end))
+                  % (u, e, start, end))
 
 
 def main():
