@@ -2134,6 +2134,7 @@ ProofTree.prototype.keydownHandler = function() {
             asyncLog("LEFT " + nodeString(curNode.parent));
             curNode.parent.click();
         } else {
+            // when at the root node, undo the last action (usually Proof.)
             onCtrlUp(false);
         }
         break;
@@ -3490,6 +3491,10 @@ TacticNode.prototype.makeCurrentNode = function() {
  */
 
 ProofTree.prototype.undoUntilNode = function(dst) {
+    // prevents infinite loops when user mashes Left
+    if (activeProofTree.curNode.isRootNode()) {
+        return Promise.resolve();
+    }
     var self = this;
     return onCtrlUp(true)
         .then(function() {
@@ -3712,4 +3717,8 @@ TacticGroupNode.prototype.shiftPrevInGroup = function() {
         asyncLog("PREVGROUPFOCUS " + nodeString(this.tactics[this.tacticIndex]));
         this.proofTree.update();
     }
+}
+
+Node.prototype.isRootNode = function() {
+    return this.proofTree.rootNode.id === this.id;
 }
