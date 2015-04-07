@@ -97,7 +97,7 @@ function setupEditor() {
                 },
 
             },
-            "keyMap": "emacs",
+            "keyMap": "sublime",
             "lineNumbers": true,
             "lineWrapping": true,
             "matchBrackets": true,
