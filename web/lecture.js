@@ -421,8 +421,8 @@ function prev(str) {
     return coq_find_last_dot(coq_undot(str), 0) + 1;
 }
 
-function count (str, pat) {
-    var arr = str.split (pat);
+function count(str, pat) {
+    var arr = str.split(pat);
     return (arr.length);
 }
 
@@ -643,18 +643,6 @@ function undoCallback(fromUser, undone, response) {
     updateCoqtopPane(goingUp, response);
 }
 
-/*
-  Returns the position of the caret w.r.t. the editor: this includes all the
-  characters in #proved, #proving, #provwill and #unlocked
-*/
-function getCaretPos() {
-    var sel = rangy.getSelection();
-    var rng = rangy.createRange();
-    rng.selectNodeContents($("#editor")[0]);
-    rng.setEnd(sel.focusNode, sel.focusOffset);
-    return rng.toString().length;
-}
-
 var safeDelimiters = [' ', '\n'];
 
 /*
@@ -709,35 +697,6 @@ function mkGlyph(name) {
     return $("<i>", {
         "class": "glyphicon glyphicon-" + name,
     });
-}
-
-function insertAtSelection(txt) {
-    var sel, newrange;
-    sel = rangy.getSelection();
-    if (sel.rangeCount > 0) {
-        newrange = insertText(txt, sel.getRangeAt(0));
-        sel.setSingleRange(newrange);
-    }
-}
-
-function insertText(txt, inrange) {
-    var range = inrange.cloneRange();
-    var tn = document.createTextNode(txt);
-    range.insertNode(tn);
-    range.selectNode(tn);
-    range.normalizeBoundaries();
-    range.collapse(false);
-    return range;
-}
-
-function getCaretVerticalPosition() {
-    var sel = rangy.getSelection();
-    var range = sel.getRangeAt(0).cloneRange();
-    var span = $("<span>", { "id": "toremove", "text": " " })[0];
-    range.insertNode(span);
-    var caretTop = span.getBoundingClientRect().top;
-    span.remove();
-    return caretTop;
 }
 
 function focusEditorUI() {
@@ -822,11 +781,6 @@ function exitProofTree() {
         activeProofTree.div.style("display", "");
     }
     asyncLog("EXITPROOFTREE");
-}
-
-function getLastProved() {
-    var proved = $("#proved").text();
-    return coqTrim(proved.substring(prev(proved)));
 }
 
 function stripWarning(s) {
@@ -929,20 +883,6 @@ if (!String.prototype.endsWith) {
             return lastIndex !== -1 && lastIndex === position;
         }
     });
-}
-
-function unquote_str (oldstr) {
-    var str = oldstr
-        .replace(/&lt;/g, "<")
-        .replace(/&gt;/g, ">")
-        .replace(/&quot;/g, "\"")
-        .replace(/&apos;/g, "'")
-        .replace(/&amp;/g, "&")
-        .replace(/<br>/g,"\n")
-        .replace(/<BR>/g,"\n")
-        .replace(/<BR\/>/g,"\n")
-    ;
-    return str;
 }
 
 function makeGroup(name, tactics) {
