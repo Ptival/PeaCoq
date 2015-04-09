@@ -3,5 +3,3 @@ encryption_key
 log/
 logs/
 selenium-server*
-web/octicons/
-web/website.html
