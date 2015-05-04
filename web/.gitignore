@@ -13,7 +13,9 @@ d3/
 fonts
 /jquery.js
 jquery/
+lib/
 /lodash.js
 lodash/
+/main.js
 /ocaml.js
 octicons/

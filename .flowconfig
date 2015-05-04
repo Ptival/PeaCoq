@@ -1,0 +1,6 @@
+[ignore]
+.*/.module-cache/.*
+.*/build/.*
+.*/web/main.js
+[libs]
+./web/interfaces
