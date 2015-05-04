@@ -1,9 +1,11 @@
+.module-cache/
 bootstrap-filestyle.js
 bootstrap-filestyle/
 bootstrap-theme.css
 bootstrap.css
 /bootstrap.js
 bootstrap/
+build/
 codemirror
 codemirror-5.*/
 /d3.js

@@ -1,5 +1,6 @@
+ab-study/
 dist/
 encryption_key
 log/
 logs/
-selenium-server*
+*.png
