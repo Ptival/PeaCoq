@@ -3281,6 +3281,10 @@ function isUpperCase(character) {
     return /^[A-Z]$/.test(character);
 }
 
+function isLowerCase(character) {
+    return /^[a-z]$/.test(character);
+}
+
 /*
  * [GoalNode] and [TacticGroupNode] can react to responses. These methods assume
  * that [this] is the current node.
@@ -3721,4 +3725,43 @@ TacticGroupNode.prototype.shiftPrevInGroup = function() {
 
 Node.prototype.isRootNode = function() {
     return this.proofTree.rootNode.id === this.id;
+}
+
+ProofTree.prototype.goalIsConjunction = function() {
+    var goalTerm = this.curNode.goalTerm;
+    return (
+        goalTerm.tag === "App"
+            && goalTerm.contents[0].tag === "App"
+            && goalTerm.contents[0].contents[0].tag === "Var"
+            && goalTerm.contents[0].contents[0].contents === "and"
+    );
+}
+
+ProofTree.prototype.goalIsDisjunction = function() {
+    var goalTerm = this.curNode.goalTerm;
+    return (
+        goalTerm.tag === "App"
+            && goalTerm.contents[0].tag === "App"
+            && goalTerm.contents[0].contents[0].tag === "Var"
+            && goalTerm.contents[0].contents[0].contents === "or"
+    );
+}
+
+ProofTree.prototype.goalIsForall = function() {
+    return this.curNode.goalTerm.tag === "Forall";
+}
+
+ProofTree.prototype.goalIsExists = function() {
+    return this.curNode.goalTerm.tag === "Exists";
+}
+
+ProofTree.prototype.goalIsReflexive = function() {
+    var goalTerm = this.curNode.goalTerm;
+    return (
+        goalTerm.tag === "App"
+            && goalTerm.contents[0].tag === "App"
+            && goalTerm.contents[0].contents[0].tag === "Var"
+            && goalTerm.contents[0].contents[0].contents === "eq"
+            && _.isEqual(goalTerm.contents[1], goalTerm.contents[0].contents[1])
+    );
 }
