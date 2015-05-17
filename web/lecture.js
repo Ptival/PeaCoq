@@ -895,7 +895,8 @@ function makeGroup(name, tactics) {
 function lectureTactics(pt) {
 
     var curGoal = (isGoal(pt.curNode)) ? pt.curNode : pt.curNode.parent;
-    var curHyps = _(curGoal.hyps).map(function(h) { return h.hName; }).reverse();
+    var curHypsFull = _(curGoal.hyps).clone().reverse();
+    var curHyps = _(curHypsFull).map(function(h) { return h.hName; });
     var curNames = _(curHyps).union(namesPossiblyInScope.reverse());
 
     var res = [
@@ -960,13 +961,12 @@ function lectureTactics(pt) {
 
         makeGroup(
             "inductions",
-            _(curHyps).some(function(h) { return h.startsWith("IH"); })
-                ? []
-                : (_(curHyps)
-                   .filter(function(h) { return isLowerCase(h[0]); })
-                   .map(function(h) { return "induction " + h; })
-                   .value()
-                  )
+            _(curHypsFull)
+                .filter(function(h) {
+                    return h.hType.tag === "Var" && h.hType.contents === "natlist";
+                })
+                .map(function(h) { return "induction " + h.hName; })
+                .value()
         ),
 
         // makeGroup(
@@ -982,9 +982,9 @@ function lectureTactics(pt) {
         makeGroup(
             "applications",
             _(curNames).map(function(n) { return "apply " + n; }).value()
-                .concat(
-                    _(curNames).map(function(n) { return "eapply " + n; }).value()
-                )
+                // .concat(
+                //     _(curNames).map(function(n) { return "eapply " + n; }).value()
+                // )
         ),
 
         makeGroup(
@@ -1011,7 +1011,7 @@ function lectureTactics(pt) {
                         if (h === n) { return []; }
                         return ([
                             "apply " + n + " in " + h,
-                            "eapply " + n + " in " + h
+                            //"eapply " + n + " in " + h,
                         ]);
                     })
                     .flatten(true).value();
