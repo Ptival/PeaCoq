@@ -1,10 +1,10 @@
 Name:                peacoq
 Version:             0.1
-Synopsis:            Project Synopsis Here
-Description:         Project Description Here
+Synopsis:            PeaCoq is a web front-end to Coq
+Description:         PeaCoq is still a web front-end to Coq
 License:             AllRightsReserved
-Author:              Author
-Maintainer:          maintainer@example.com
+Author:              Valentin Robert
+Maintainer:          vrobert@cs.ucsd.edu
 Stability:           Experimental
 Category:            Web
 Build-type:          Simple
@@ -21,7 +21,7 @@ Executable peacoq
   Build-depends:
     aeson                     >= 0.7   && < 0.8,
     array                     >= 0.5   && < 0.6,
-    base                      >= 4     && < 5,
+    base                      >= 4     && < 4.8,
     bytestring                >= 0.9.1 && < 0.11,
     conduit                   >= 1.1   && < 1.2,
     conduit-extra             >= 1.1   && < 1.2,
