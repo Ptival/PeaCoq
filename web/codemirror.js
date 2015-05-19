@@ -138,6 +138,7 @@ function setupEditor() {
     cmContext = CodeMirror(
         $("#coqtop-context")[0],
         {
+            "gutters": ["tactic-gutter"],
             "lineWrapping": true,
             "matchBrackets": true,
             "mode": "text/x-coq",

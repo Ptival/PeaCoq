@@ -6,7 +6,11 @@ html > body {
 dl { margin: 0; }
 dd { margin-bottom: 10px; }
 
-#main { height: 100%; }
+#main {
+    height: 100%;
+    position: relative;
+    z-index: 0;
+}
 
 #top, #bot {
     height: 50%;
@@ -81,3 +85,14 @@ span.cm-qualifier {color: #ffffec;}
 .CodeMirror-activeline-background {background: #494b41 !important;}
 .CodeMirror-matchingbracket {color: #00FF00 !important; font-weight: bold;}
 .CodeMirror-matchingtag {background: rgba(255, 255, 255, .37);}
+
+.tactic-gutter {
+    width: 20px;
+}
+
+.btn-sm {
+    padding: 0px 5px !important;
+}
+
+.CodeMirror-sizer { z-index: 4 }/* because .CodeMirror-gutters uses z-index 3 */
+.CodeMirror-gutter-wrapper, .CodeMirror-gutter-elt { z-index: auto }

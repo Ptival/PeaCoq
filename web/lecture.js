@@ -573,6 +573,52 @@ function updateCoqtopPane(direction, response) {
                 { "above": true }
             );
 
+            // _(response.rGoals.focused[0].gHyps).each(function(h, ndx) {
+
+            //     var h = extractHypothesis(h);
+
+            //     var div = $("<div>")
+            //         .attr("class", "btn-group dropdown")
+            //         .css("position", "relative")
+            //     ;
+
+            //     div.append(
+            //         $("<button>")
+            //             .attr("class", "btn btn-default btn-sm dropdown-toggle")
+            //             .attr("data-toggle", "dropdown")
+            //             .attr("aria-expanded", "false")
+            //             .html('<span class="caret"></span>')
+            //     );
+
+            //     var ul = $("<ul>")
+            //         .attr("class", "dropdown-menu pull-left")
+            //         .css("height", "auto !important")
+            //         .css("overflow", "visible !important")
+            //         .attr("role", "menu")
+            //     ;
+
+            //     div.append(ul);
+
+            //     _(["clear", "destruct", "generalize", "induction", "revert", "very long name for a tactic"])
+            //         .each(function(item) {
+            //             ul.append(
+            //                 $("<li>").append(
+            //                     $("<a>")
+            //                         .attr("href", "#")
+            //                         .text(item + ' ' + h.hName + '.')
+            //                 )
+            //             );
+            //         })
+            //     ;
+
+            //     cmContext.setGutterMarker(
+            //         ndx,
+            //         "tactic-gutter",
+            //         div[0]
+            //     );
+
+            // });
+
         } else if (unfocused !== undefined) {
 
             var nbRemaining = unfocused[0].length + unfocused[1].length;
