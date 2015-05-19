@@ -23,10 +23,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
  *)
 
-Ltac each := match goal with |- _ /\ _ => split end.
-Ltac goleft := match goal with |- _ \/ _ => left end.
-Ltac goright := match goal with |- _ \/ _ => right end.
-
 (* ###################################################################### *)
 (** ** Days of the Week *)
 
@@ -54,7 +50,7 @@ Definition tomorrow (d: day) : day :=
 Theorem test_tomorrow:
   tomorrow saturday = sunday.
 Proof.
-  (* FILL IN HERE *)
+  simpl. reflexivity.
 Qed.
 
 (* ###################################################### *)
@@ -82,7 +78,7 @@ Theorem test_concat1:
          (cons 3 (cons 4 nil))
   = (cons 1 (cons 2 (cons 3 (cons 4 nil)))).
 Proof.
-  (* FILL IN HERE *)
+  simpl. reflexivity.
 Qed.
 
 (* ###################################################### *)
@@ -90,20 +86,20 @@ Qed.
 
 Theorem concat_nil_left : forall l : natlist,
   concat nil l = l.
-Proof.
+Proof. intros. simpl. reflexivity.
   (* FILL IN HERE *)
 Qed.
 
 Theorem concat_nil_right : forall l : natlist,
   concat l nil = l.
-Proof.
+Proof. intros. induction l. simpl. reflexivity. simpl. rewrite -> IHl. reflexivity.
   (* FILL IN HERE *)
 Qed.
 
 (* In-class exercise! *)
 Theorem concat_associativity : forall l2 l1 l3 : natlist,
   concat (concat l1 l2) l3 = concat l1 (concat l2 l3).
-Proof.
+Proof. intros. induction l1. apply concat_nil_left. simpl. rewrite -> IHl1. reflexivity.
   (* FILL IN HERE *)
 Qed.
 
@@ -138,19 +134,19 @@ Fixpoint rev (l: natlist) : natlist :=
 
 Theorem rev_snoc : forall x l,
   rev (snoc l x) = cons x (rev l).
-Proof.
+Proof. intros. induction l. apply concat_nil_left. simpl. rewrite -> IHl. apply concat_nil_left.
   (* FILL IN HERE *)
 Qed.
 
 Theorem rev_involutive : forall l : natlist,
   rev (rev l) = l.
-Proof.
+Proof. intros. induction l. apply concat_nil_left. simpl. rewrite -> rev_snoc. rewrite -> IHl. reflexivity.
   (* FILL IN HERE *)
 Qed.
 
 Theorem concat_cons_snoc : forall l1 x l2,
   concat l1 (cons x l2) = concat (snoc l1 x) l2.
-Proof.
+Proof. intros. induction l1. apply concat_nil_left. simpl. rewrite -> IHl1. reflexivity.
   (* FILL IN HERE *)
 Qed.
 
@@ -160,23 +156,22 @@ Qed.
   /\   stands for the logical conjunction (AND) of two propositions
   \/   stands for the logical disjunction (OR)  of two propositions
 
-  New tactics: goleft, goright
+  New tactics: left, right
 
   When your goal looks like [A \/ B]
   You get to pick which of [A] or [B] you will prove.
-  If you believe you can prove [A], use the [goleft.] tactic.
-  If you believe you can prove [B], use the [goright.] tactic.
+  If you believe you can prove [A], use the [left.] tactic.
+  If you believe you can prove [B], use the [right.] tactic.
 
   Here is an example:
 *)
 
 Theorem goright_example : 0 = 1 \/ 1 = 1.
-Proof.
-  goright. reflexivity.
+Proof. right. reflexivity.
 Qed.
 
 Theorem go_somewhere : 0 = 1 \/ (2 = 2 \/ 2 = 3).
-Proof.
+Proof. right. left. reflexivity.
   (* FILL IN HERE *)
 Qed.
 
@@ -193,7 +188,7 @@ Qed.
 Theorem B_is_enough : forall A B : Prop,
   B ->
   A \/ B.
-Proof.
+Proof. intros. right. apply H.
   (* FILL IN HERE *)
 Qed.
 
@@ -208,12 +203,11 @@ Qed.
 *)
 
 Theorem two_facts : nil = nil /\ 42 = 42.
-Proof.
-  each. reflexivity. reflexivity.
+Proof. split. reflexivity. reflexivity.
 Qed.
 
 Theorem more_facts : 1 = 2 \/ (1 = 1 /\ nil = nil).
-Proof.
+Proof. right. split. reflexivity. reflexivity.
   (* FILL IN HERE *)
 Qed.
 
@@ -221,7 +215,7 @@ Theorem A_and_B : forall A B : Prop,
   A ->
   B ->
   A /\ B.
-Proof.
+Proof. intros. split. apply H. apply H0.
   (* FILL IN HERE *)
 Qed.
 
@@ -229,13 +223,13 @@ Qed.
 
 Theorem snoc_concat_end : forall (l: natlist) (n: nat),
   snoc l n = concat l (cons n nil).
-Proof.
+Proof. intros. induction l. apply concat_nil_left. simpl. rewrite -> IHl. reflexivity.
   (* FILL IN HERE *)
 Qed.
 
 Theorem rev_distributes_over_concat : forall l1 l2 : natlist,
   rev (concat l1 l2) = concat (rev l2) (rev l1).
-Proof.
+Proof. intros. induction l1.
   (* FILL IN HERE *)
 Qed.
 
