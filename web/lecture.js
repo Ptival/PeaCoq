@@ -430,7 +430,7 @@ function count(str, pat) {
 function coq_undot(str) {
     str = str.replace(/[.][.][.]/g, '__.'); // emphasize the last dot of ...
     str = str.replace(/[.][.]/g, '__'); // hides .. in notations
-    str = str.replace(/[.][a-zA-Z1-9_]/g, '__'); // hides qualified identifiers
+    str = str.replace(/[.][a-zA-Z1-9_\(]/g, '__'); // hides qualified identifiers
     // hide curly braces that are implicit arguments
     str = str.replace(/\{((?:[^\.\}]|\.(?!\s))*)\}/g, "_$1_");
     // make other braces look like periods
