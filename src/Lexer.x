@@ -22,13 +22,14 @@ tokens :-
   (\∃|"exists") { tok TokExists }
   (\→|\-\>)     { tok TokArrow }
   (\=\>)        { tok TokDoubleArrow }
+  (\<\-\>)      { tok TokEquiv }
   (\λ|\\)       { tok TokLambda }
   \:\=          { tok TokColonEq }
   \:            { tok TokColon }
   \:\:          { tok TokCons }
   \[\]          { tok TokNil }
   \=            { tok TokEq }
-  \≠            { tok TokNeq }
+  (\<\>|\≠)     { tok TokNeq }
   \_            { tok TokUnderscore }
   \,            { tok TokComma }
   \+            { tok TokPlus }
@@ -86,6 +87,7 @@ data Token
   | TokRBrace
   | TokArrow
   | TokDoubleArrow
+  | TokEquiv
   | TokForall
   | TokExists
   | TokLambda

@@ -2415,8 +2415,12 @@ function getIndent(depth) {
 }
 
 var precedence = 0;
+
 var precMin    = precedence++;
-var precForall = precedence++;
+
+// low precedence
+
+var precEquiv  = precedence++;
 var precArrow  = precedence++;
 var precOr     = precedence++;
 var precAnd    = precedence++;
@@ -2428,6 +2432,11 @@ var precAndB   = precedence++;
 var precPlus   = precedence++; var precMinus = precPlus;
 var precMult   = precedence++;
 var precApp    = precedence++;
+var precForall = precedence++;
+
+// high precedence
+
+var precMax   = precedence++;
 
 var nbsp = "&nbsp;";
 function vernac(s) { return '<span class="vernac">' + s + '</span>'; }
@@ -2694,6 +2703,9 @@ function showTermAux(t, indentation, precParent, newline) {
 
             case "orb":
                 return showOp(c, "||", precOrB);
+
+            case "iff":
+                return showOp(c, "<->", precEquiv);
 
             // case "cons":
             //     return showOp(c, "::", precCons);

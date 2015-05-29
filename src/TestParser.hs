@@ -61,14 +61,39 @@ testVector =
     )
   ]
 
+shouldParseTheSame :: [(String, String)]
+shouldParseTheSame =
+  [ ("a → b <-> c → d", "(a → b) <-> (c → d)")
+  , ("∀ x, P x → ∀ y, Q y", "∀ x, (P x → (∀ y, Q y))")
+  , ("∀ P : Prop, P /\\ P \\/ P", "∀ P : Prop, (P /\\ P) \\/ P")
+  , ("∀ P : Prop, P \\/ P /\\ P", "∀ P : Prop, P \\/ (P /\\ P)")
+  ]
+
 main = do
   forM_ testVector $ \ (string, expected) ->
-    let computed = parseTerm string in
-    case expected == computed of
-      True ->
-        putStrLn "✓"
-      False ->
-        do
-          putStrLn $ "Failed on input: " ++ string
-          putStrLn $ "Expected: " ++ show expected
-          putStrLn $ "Computed: " ++ show computed
+    case parseTerm string of
+      Left err -> putStrLn $ "Failed to parse: " ++ string ++ "\nError: " ++ err
+      Right computed ->
+        case expected == computed of
+          True ->
+            putStrLn "✓"
+          False ->
+            do
+              putStrLn $ "Failed on input: " ++ string
+              putStrLn $ "Expected: " ++ show expected
+              putStrLn $ "Computed: " ++ show computed
+  forM_ shouldParseTheSame $ \ (s1, s2) ->
+    case parseTerm s1 of
+      Left err -> putStrLn $ "Failed to parse: " ++ s1 ++ "\nError: " ++ err
+      Right c1 ->
+        case parseTerm s2 of
+          Left err -> putStrLn $ "Failed to parse: " ++ s2 ++ "\nError: " ++ err
+          Right c2 ->
+            case c1 == c2 of
+              True ->
+                putStrLn "✓"
+              False ->
+                do
+                  putStrLn $ "Failed on input: " ++ show (s1, s2)
+                  putStrLn $ "Left parse: " ++ show c1
+                  putStrLn $ "Right parse: " ++ show c2

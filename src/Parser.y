@@ -35,6 +35,7 @@ comment { TokComment $$ }
 '}' { TokRBrace }
 '→' { TokArrow }
 "=>" { TokDoubleArrow }
+"<->" { TokEquiv }
 '∀' { TokForall }
 '∃' { TokExists }
 'λ' { TokLambda }
@@ -77,6 +78,7 @@ comment { TokComment $$ }
 "Qed" { TokQed }
 
 -- low precedence
+%left "<->"
 %right '→'
 %right '∨'
 %right '∧'
@@ -121,6 +123,7 @@ Term :: { Term }
 | "fun" Binders "=>" Term { Lambda $2 $4 }
 | '∃' Binders ',' Term    { Exists $2 $4 }
 | Term '→' Term           { Arrow $1 $3 }
+| Term "<->" Term         { App (App (Var "iff")  $1) $3 }
 | Term '=' Term           { App (App (Var "eq") $1) $3 }
 | Term '≠' Term           { App (Var "not") (App (App (Var "eq") $1) $3) }
 | Term '+' Term           { App (App (Var "plus")  $1) $3 }
