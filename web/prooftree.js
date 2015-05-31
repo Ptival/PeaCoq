@@ -19,7 +19,20 @@ var keyboardPaused = false;
 var autoLayout = true;
 
 $(document).ready(function() {
+
     setupTextareaResizing();
+
+    $(document)
+        .on('mouseenter mouseover', '.term', function(e){
+            $(this).css('background-color', 'lightblue');
+            e.stopImmediatePropagation();
+        })
+        .on('mouseout mouseleave', '.term', function(e){
+            $(this).css('background-color', 'transparent');
+            e.stopImmediatePropagation();
+        })
+    ;
+
 });
 
 var diffRed   = "#EE8888";
