@@ -9,7 +9,7 @@
 window.PT = {};
 
 // CONFIGURATION
-var svgPanEnabled = false;
+var svgPanEnabled = true;
 var nodeVSpacing = 10;
 var nodeStroke = 2;
 var rectMargin = {top: 2, right: 8, bottom: 2, left: 8};
@@ -1519,45 +1519,7 @@ ProofTree.prototype.update = function() {
                         ;
 
                 // adding diffs for the hypotheses
-
-                var oldHyps = gp.hyps.slice(); // slice() creates a shallow copy
-                var newHyps = d.hyps.slice();
-
-                var diff = computeDiff(oldHyps, newHyps);
-                var removed = diff.removed;
-                var changed = diff.changed;
-                var added   = diff.added;
-
-                var diffList = [];
-                // try to match old and new hypotheses that are the same
-                while (oldHyps.length !== 0 && newHyps.length !== 0) {
-                    var oldChanged = _(changed).some(function(c) {
-                        return c.before.hName === oldHyps[0].hName;
-                    });
-                    var newChanged = _(changed).some(function(c) {
-                        return c.after.hName === newHyps[0].hName;
-                    });
-                    if (oldChanged && newChanged) {
-                        var oldHyp = oldHyps.shift(), newHyp = newHyps.shift();
-                        diffList.push({ "oldHyp": oldHyp, "newHyp": newHyp });
-                    } else if (oldChanged) {
-                        var newHyp = newHyps.shift();
-                        diffList.push({ "oldHyp": undefined, "newHyp": newHyp });
-                    } else if (newChanged) {
-                        var oldHyp = oldHyps.shift();
-                        diffList.push({ "oldHyp": oldHyp, "newHyp": undefined });
-                    } else {
-                        var oldHyp = oldHyps.shift();
-                        diffList.push({ "oldHyp": oldHyp, "newHyp": undefined });
-                    }
-                }
-                // just push the remainder
-                _(oldHyps).each(function(oldHyp) {
-                    diffList.push({ "oldHyp": oldHyp, "newHyp": undefined });
-                });
-                _(newHyps).each(function(newHyp) {
-                    diffList.push({ "oldHyp": undefined, "newHyp": newHyp });
-                });
+                var diffList = computeDiffList(gp.hyps, d.hyps);
 
                 d.diffListSelection =
                     d.pathsGroup.selectAll("g.diff-item")
@@ -1781,9 +1743,19 @@ ProofTree.prototype.update = function() {
                             }
 
                             leftY0 = elmtRect0(gp, oldHyp.div).bottom;
-                            rightY0 = elmtRect0(d, newHyp.div).bottom;
                             leftY = elmtRect(gp, oldHyp.div).bottom;
-                            rightY = elmtRect(d, newHyp.div).bottom;
+
+                            /*
+                              we don't want to move the right cursor if the
+                              right hypothesis was not the very next
+                              hypothesis. this happens when a hypothesis gets
+                              moved down the list of hypotheses.
+                             */
+
+                            if (!diff.isJump) {
+                                rightY0 = elmtRect0(d, newHyp.div).bottom;
+                                rightY = elmtRect(d, newHyp.div).bottom;
+                            }
 
                         }
 
@@ -1826,11 +1798,10 @@ ProofTree.prototype.update = function() {
 
         /*
           It is important to update cX0 for all nodes so that we can uniformly
-          initialize links to start between their source's cX0 and their target's
-          cX0.
-          Without this, links created from nodes that have moved away from their
-          cX0 will seem to appear from the node's old position rather than its
-          current one.
+          initialize links to start between their source's cX0 and their
+          target's cX0.  Without this, links created from nodes that have moved
+          away from their cX0 will seem to appear from the node's old position
+          rather than its current one.
         */
         _(nodes).each(function(d) {
             d.x0 = d.x;
@@ -1855,32 +1826,52 @@ function byDiffId(d) {
     return res + "}";
 }
 
-function computeDiff(oldHyps, newHyps) {
+function sameNameAs(a) {
+    return function(b) { return a.hName === b.hName; };
+}
 
-    var removed = [];
-    var added = [];
-    var changed = [];
+function computeDiffList(oldHypsOriginal, newHypsOriginal) {
+    var diffList = [];
 
-    _(oldHyps).each(function(h) {
-        var match = _(newHyps).find(function(g) { return g.hName === h.hName; });
+    // slice() creates a shallow copy, since we will mutate this
+    var oldHyps = oldHypsOriginal.slice();
+    var newHyps = newHypsOriginal.slice();
+
+    _(oldHypsOriginal).each(function(h) {
+
+        _(oldHyps).remove(sameNameAs(h));
+
+        var match = _(newHyps).find(sameNameAs(h));
+
         if (match !== undefined) {
-            changed.push({"before": h, "after": match});
+            diffList.push({"oldHyp": h, "newHyp": match,
+                           "isJump": newHyps[0].hName !== h.hName});
+            _(newHyps).remove(sameNameAs(h));
         } else {
-            removed.push(h);
+
+            diffList.push({"oldHyp": h, "newHyp": undefined,
+                           "isJump": false});
+
+            // now, if the incoming hypotheses in newHyps are new, they should
+            // be pushed now
+            while (newHyps.length > 0 && !_(oldHyps).some(sameNameAs(newHyps[0]))) {
+                diffList.push({"oldHyp": undefined, "newHyp": newHyps[0],
+                               "isJump": false});
+                _(oldHyps).remove(sameNameAs(newHyps[0]));
+                newHyps.shift();
+            }
+
         }
+
     });
 
+    // things that have not been removed from newHyps are new hypotheses
     _(newHyps).each(function(h) {
-        var match = _(oldHyps).find(function(g) { return g.hName === h.hName; });
-        if (match === undefined) { added.push(h); }
+        diffList.push({"oldHyp": undefined, "newHyp": h,
+                       "isJump": false});
     });
 
-    return {
-        "removed": removed,
-        "changed": changed,
-        "added":   added,
-    };
-
+    return diffList;
 }
 
 /*
