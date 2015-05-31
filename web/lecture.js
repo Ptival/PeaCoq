@@ -795,7 +795,7 @@ function createProofTree(response) {
 
     activeProofTree.newAlreadyStartedTheorem(
         response,
-        lectureTactics
+        replayTactics
     );
 
     // only show up the tree automatically if the user is not processing to
@@ -931,6 +931,13 @@ if (!String.prototype.endsWith) {
     });
 }
 
+function makeGroupNoPeriod(name, tactics) {
+    return {
+        "name": name,
+        "tactics": _(tactics).map(function(s) { return s; }).value(),
+    };
+}
+
 function makeGroup(name, tactics) {
     return {
         "name": name,
@@ -938,6 +945,31 @@ function makeGroup(name, tactics) {
     };
 }
 
+function incomingCommand() {
+    var rToprove = mToprove.find();
+    var toprove = doc.getRange(rToprove.from, rToprove.to);
+    if (toprove !== "") {
+        var nextIndex = next(toprove);
+        return coqTrim(toprove.substring(0, nextIndex));
+    }
+    var rUnlocked = mUnlocked.find();
+    var unlocked = doc.getRange(rUnlocked.from, rUnlocked.to);
+    var nextIndex = next(unlocked);
+    return coqTrim(unlocked.substring(0, nextIndex));
+}
+
+/*
+  This strategy returns only the tactic that is coming next in the file, making
+  it easy to replay an entire file by just always picking the tactic that
+  appears.
+*/
+function replayTactics(pt) {
+    return [makeGroupNoPeriod("incoming", [incomingCommand()])];
+}
+
+/*
+  This strategy tries many tactics, not trying to be smart.
+*/
 function lectureTactics(pt) {
 
     var curGoal = (isGoal(pt.curNode)) ? pt.curNode : pt.curNode.parent;
