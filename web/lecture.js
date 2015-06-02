@@ -1014,7 +1014,7 @@ function lectureTactics(pt) {
             ["simpl"].concat(
                 _(curHyps).map(function(h) { return "simpl in " + h; }).value()
             ).concat(
-                (this.curNode.hyps.length > 0 ? ["simpl in *"] : [])
+                (pt.curNode.hyps.length > 0 ? ["simpl in *"] : [])
             )
         ),
 
