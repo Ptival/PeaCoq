@@ -313,7 +313,8 @@ function rewindToPos(pos) {
 function processToPos(pos) {
     var rToprove = mToprove.find();
     var rest = doc.getRange(rToprove.to, pos);
-    if (coqTrim(rest) !== "") {
+    // [rest] in the next line can be huge, be careful with computations
+    if (coqTrimLeft(rest) !== "") {
         onCtrlDown(false);
         processToPos(pos);
     }
