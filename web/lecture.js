@@ -432,9 +432,9 @@ function coq_undot(str) {
     str = str.replace(/[.][.]/g, '__'); // hides .. in notations
     str = str.replace(/[.][a-zA-Z1-9_\(]/g, '__'); // hides qualified identifiers
     // hide curly braces that are implicit arguments
-    str = str.replace(/\{((?:[^\.\}]|\.(?!\s))*)\}/g, "_$1_");
+    //str = str.replace(/\{((?:[^\.\}]|\.(?!\s))*)\}/g, "_$1_");
     // make other braces look like periods
-    str = str.replace(/[\{\}]/g, ".");
+    //str = str.replace(/[\{\}]/g, ".");
     return str;
 }
 
