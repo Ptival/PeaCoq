@@ -795,7 +795,8 @@ function createProofTree(response) {
 
     activeProofTree.newAlreadyStartedTheorem(
         response,
-        replayAndStudyTactics
+        replayTactics
+        //replayAndStudyTactics
     );
 
     // only show up the tree automatically if the user is not processing to
@@ -905,32 +906,6 @@ function saveLocal() {
 
 }
 
-if (!String.prototype.startsWith) {
-    Object.defineProperty(String.prototype, 'startsWith', {
-        enumerable: false,
-        configurable: false,
-        writable: false,
-        value: function(searchString, position) {
-            position = position || 0;
-            return this.lastIndexOf(searchString, position) === position;
-        }
-    });
-}
-
-if (!String.prototype.endsWith) {
-    Object.defineProperty(String.prototype, 'endsWith', {
-        value: function(searchString, position) {
-            var subjectString = this.toString();
-            if (position === undefined || position > subjectString.length) {
-                position = subjectString.length;
-            }
-            position -= searchString.length;
-            var lastIndex = subjectString.indexOf(searchString, position);
-            return lastIndex !== -1 && lastIndex === position;
-        }
-    });
-}
-
 function makeGroupNoPeriod(name, tactics) {
     return {
         "name": name,
@@ -963,7 +938,10 @@ function incomingTactic() {
 
 function safeIncomingTactic() {
     var res = incomingTactic();
-    if (isUpperCase(res[0])) { return undefined; }
+    if (isVernacularCommand(res)) {
+        return undefined;
+    }
+    return res;
 }
 
 function replayAndStudyTactics(pt) {
@@ -1330,7 +1308,14 @@ function editorOnRequestTriggered(requestType, request) {
 }
 
 var theoremStarters = [
-    'CoFixpoint', 'Definition', 'Example', 'Fixpoint', 'Lemma', 'Theorem',
+    'CoFixpoint',
+    'Definition',
+    'Example',
+    'Fixpoint',
+    'Global', // Global Instance
+    'Instance',
+    'Lemma',
+    'Theorem',
 ];
 
 /*
@@ -1457,18 +1442,19 @@ function editorOnResponse(requestType, request, response) {
 }
 
 /*
- * If [request] is the next thing in the provwill or unlocked region, instead of
- * adding the [request] to [provwill], we will shift the incoming one instead.
- * Returns [true] if it did that.
+ * Returns the result of applying [predicate] to the trimmed incoming command,
+ * either in the [proving], [toprove] or [unlocked] region. If the command was
+ * in [unlocked], it is also added to [toprove].
  */
-function lookupRequestInIncoming(request) {
+function lookupRequestInIncoming(predicate) {
 
     var rProving = mProving.find();
     var proving = doc.getRange(rProving.from, rProving.to);
 
     if (proving !== "") {
         // this branch happens when one processes a lot of commands
-        return sameTrimmed(proving, request);
+        // [proving] should only contain one command, no need for [next]
+        return predicate(coqTrim(proving));
     }
 
     var rToprove = mToprove.find();
@@ -1477,7 +1463,7 @@ function lookupRequestInIncoming(request) {
     if (toprove !== "") {
         var nextIndex = next(toprove);
         var nextItem = toprove.substring(0, nextIndex);
-        return sameTrimmed(nextItem, request);
+        return predicate(nextItem);
     }
 
     var rUnlocked = mUnlocked.find();
@@ -1486,7 +1472,9 @@ function lookupRequestInIncoming(request) {
     var nextUnlocked = unlocked.substring(0, nextIndex);
     var nextPos = cm.findPosH(rUnlocked.from, nextIndex, "char");
 
-    if (!sameTrimmed(nextUnlocked, request)) {
+    var result = predicate(nextUnlocked);
+
+    if (!result) {
         return false;
     }
 
@@ -1499,7 +1487,13 @@ function lookupRequestInIncoming(request) {
 
 function proofTreeQueryWish(request) {
 
-    var requestWasPresent = lookupRequestInIncoming(coqTrim(request));
+    var requestWasPresent = lookupRequestInIncoming(function(cmd) {
+        // if the query is "Proof.", we also accept things like "Proof with..."
+        if (request === "Proof.") {
+            return isProof(cmd);
+        }
+        return cmd === coqTrim(request);
+    });
 
     // TODO: this should be elsewhere?
     if (!requestWasPresent) {
@@ -1512,17 +1506,21 @@ function proofTreeQueryWish(request) {
     }
 
     if (!requestWasPresent) {
-        switch (coqTrim(request)) {
+        var trimmed = coqTrim(request);
+        switch (trimmed) {
         case '{':
         case '}':
             safePrependToprove(request);
             break;
             // for these, I want to put a newline
-        case 'Proof.':
         case 'Qed.':
             safePrependToprove('\n' + request);
             break;
         default:
+            if (isProof(trimmed)) {
+                safePrependToprove('\n' + request);
+                break;
+            }
             safePrependToprove(request);
             //safePrependToprove('\n' + request);
             break;
@@ -1556,6 +1554,9 @@ function stripComments(s) {
 }
 
 function coqTrim(s) {
+    if (s.length > 10000) {
+        alert("WARNING: Performing coqTrim on large string");
+    }
     return stripComments(s).trim();
 }
 

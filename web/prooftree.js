@@ -3318,10 +3318,11 @@ GoalNode.prototype.reactTo = function(query, response) {
         return;
     }
 
-    if (isUpperCase(trimmed[0])) {
+    // don't create nodes for commands/bullets, but keep track of last response
+    if (isVernacularCommand(trimmed) || isLtacBullet(trimmed)) {
         this.response = response;
         this.proofTree.refreshTactics();
-        return; // don't create tactic nodes for commands
+        return;
     }
 
     switch (trimmed) {
@@ -3642,6 +3643,7 @@ GoalNode.prototype.onUndo = function(fromUser, undone, response) {
 
     default:
 
+        // TODO: there should be a safer way to detect this
         // if aborting proof
         if (_(theoremStarters).contains(getVernac(undone))) {
             exitProofTree();
@@ -3649,7 +3651,7 @@ GoalNode.prototype.onUndo = function(fromUser, undone, response) {
         }
 
         // if it was a command
-        if (isUpperCase(undone[0])) {
+        if (isVernacularCommand(undone)) {
             this.proofTree.refreshTactics();
             return;
         }
