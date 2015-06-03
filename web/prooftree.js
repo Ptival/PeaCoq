@@ -2435,8 +2435,8 @@ var precOrB    = precedence++;
 var precAndB   = precedence++;
 var precPlus   = precedence++; var precMinus = precPlus;
 var precMult   = precedence++;
-var precApp    = precedence++;
 var precForall = precedence++;
+var precApp    = precedence++;
 
 // high precedence
 
@@ -2620,10 +2620,10 @@ function showTermAux(t, indentation, precParent, newline) {
 
     case "Lambda":
         return par(
-            precForall,
-            syntax("fun") + showBinders(c[0]) + syntax("=>")
+            precMin,
+            syntax("fun") + showBinders(c[0]) + nbsp + syntax("=>")
                 + (newline ? "<br/>" + getIndent(indentation + 1) : " ")
-                + showTermAux(c[1], indentation + 1, precParent, newline)
+                + showTermAux(c[1], indentation + 1, precMin, newline)
         );
 
     case "Exists":
