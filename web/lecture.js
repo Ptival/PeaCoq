@@ -1007,7 +1007,7 @@ function studyTactics(pt) {
         makeGroup(
             "autos",
             [
-                "auto",
+                //"auto",
                 //"eauto",
             ]
         ),
@@ -1021,8 +1021,8 @@ function studyTactics(pt) {
             "break_if, f_equal, subst",
             [
                 "break_if",
-                "f_equal",
-                "repeat f_equal",
+                //"f_equal",
+                //"repeat f_equal",
                 "subst"
             ]
         ),
@@ -1041,19 +1041,19 @@ function studyTactics(pt) {
             (pt.goalIsDisjunction() ? ["left", "right"] : [])
                 .concat(pt.goalIsConjunction() ? ["split"] : [])
                 .concat([
-                    "constructor",
+                    //"constructor",
                     //"econstructor",
                     //"eexists",
                 ])
         ),
 
-        makeGroup(
-            "destructors",
-            _(curHyps)
-                .filter(function(h) { return isLowerCase(h[0]); })
-                .map(function(h) { return "destruct " + h; })
-                .value()
-        ),
+        // makeGroup(
+        //     "destructors",
+        //     _(curHyps)
+        //         .filter(function(h) { return isLowerCase(h[0]); })
+        //         .map(function(h) { return "destruct " + h; })
+        //         .value()
+        // ),
 
         makeGroup(
             "inductions",
@@ -1073,9 +1073,9 @@ function studyTactics(pt) {
         makeGroup(
             "solvers",
             [
-                "congruence",
-                "omega",
-                "firstorder"
+                //"congruence",
+                //"omega",
+                //"firstorder"
             ]
         ),
 
