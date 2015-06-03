@@ -124,7 +124,7 @@ Fixpoint rev (l: natlist) : natlist :=
   end.
 
 (* ###################################################### *)
-(** 
+(**
   For each theorem:
   - Discuss the statement of the theorem with your partner.
   - Once you understand it, prove the theorem.
@@ -229,7 +229,7 @@ Qed.
 
 Theorem rev_distributes_over_concat : forall l1 l2 : natlist,
   rev (concat l1 l2) = concat (rev l2) (rev l1).
-Proof. intros. induction l1.
+Proof. intros. induction l1. simpl. rewrite -> concat_nil_right. reflexivity. simpl. rewrite -> IHl1. rewrite -> snoc_concat_end. rewrite -> concat_associativity. rewrite -> snoc_concat_end. reflexivity.
   (* FILL IN HERE *)
 Qed.
 
@@ -247,7 +247,7 @@ Fixpoint map (f: nat -> nat) (l: natlist) :=
 Theorem map_commutes : forall f g l,
   (forall x, f (g x) = g (f x)) ->
   map f (map g l) = map g (map f l).
-Proof.
+Proof. intros. induction l. simpl. reflexivity. simpl. rewrite -> IHl. rewrite -> H. reflexivity.
   (* FILL IN HERE *)
 Qed.
 
@@ -255,7 +255,7 @@ Qed.
    a parameter [x] and returns the result on the right of the arrow. *)
 Theorem map_fusion : forall f g l,
   map f (map g l) = map (fun x => f (g x)) l.
-Proof.
+Proof. intros. induction l. simpl. reflexivity. simpl. rewrite <- IHl. reflexivity.
   (* FILL IN HERE *)
 Qed.
 
@@ -271,7 +271,7 @@ Fixpoint fold (f: nat -> natlist -> natlist) (l: natlist) (b: natlist) :=
 
 Theorem fold_snoc : forall f l x b,
   fold f (snoc l x) b = fold f l (f x b).
-Proof.
+Proof. intros. induction l. simpl. reflexivity. simpl. rewrite -> IHl. reflexivity.
   (* FILL IN HERE *)
 Qed.
 
@@ -281,12 +281,12 @@ Definition map' f l := fold (fun x fxs => cons (f x) fxs) l nil.
    help you in proving the next theorem. *)
 Lemma map'_unroll : forall f x xs,
   map' f (cons x xs) = cons (f x) (map' f xs).
-Proof.
+Proof. admit.
   (* FILL IN HERE *)
 Qed.
 
 Theorem map_map' : forall f l, map f l = map' f l.
-Proof.
+Proof. intros. induction l. simpl. admit. rewrite -> map'_unroll. simpl. rewrite -> IHl. reflexivity.
   (* FILL IN HERE *)
 Qed.
 
@@ -311,13 +311,14 @@ Fixpoint In n l :=
 Theorem In_cons : forall x h l,
   In x l ->
   In x (cons h l).
-Proof.
+Proof. intros. simpl. right. assumption.
   (* FILL IN HERE *)
 Qed.
 
 Theorem In_concat_left : forall x l1 l2,
   In x l1 ->
   In x (concat l1 l2).
-Proof.
+Proof. intros. induction l1. simpl in H. admit. simpl. simpl in H. destruct H.
+  left. assumption. right. apply IHl1. assumption.
   (* FILL IN HERE *)
 Qed.
