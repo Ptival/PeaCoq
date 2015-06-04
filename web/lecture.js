@@ -1472,7 +1472,7 @@ function lookupRequestInIncoming(predicate) {
     var nextUnlocked = unlocked.substring(0, nextIndex);
     var nextPos = cm.findPosH(rUnlocked.from, nextIndex, "char");
 
-    var result = predicate(nextUnlocked);
+    var result = predicate(coqTrim(nextUnlocked));
 
     if (!result) {
         return false;
