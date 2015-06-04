@@ -1492,18 +1492,12 @@ function proofTreeQueryWish(request) {
         if (request === "Proof.") {
             return isProof(cmd);
         }
+        // Defined and Qed should be interchangeable
+        if (request === "Defined." || request === "Qed.") {
+            return cmd === "Defined." || cmd === "Qed.";
+        }
         return cmd === coqTrim(request);
     });
-
-    // TODO: this should be elsewhere?
-    if (!requestWasPresent) {
-        if (coqTrim(request) === "Qed.") {
-            requestWasPresent = lookupRequestInIncoming("Defined.");
-        }
-        if (coqTrim(request) === "Defined.") {
-            requestWasPresent = lookupRequestInIncoming("Qed.");
-        }
-    }
 
     if (!requestWasPresent) {
         var trimmed = coqTrim(request);
