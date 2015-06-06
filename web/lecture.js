@@ -256,79 +256,79 @@ $(document).ready(function() {
         $("#cancel-feedback").click();
     });
 
-    $("<button>", {
-        "class": "btn btn-default",
-        "data-target": "help",
-        "data-toggle": "modal",
-        "id": "screenshot-button",
-        "html": $("<span>")
-            .append(mkGlyph("camera"))
-            .append(nbsp + nbsp + "Screenshot"),
-    })
-        .appendTo(buttonGroup)
-        .on("click", function() {
+    // $("<button>", {
+    //     "class": "btn btn-default",
+    //     "data-target": "help",
+    //     "data-toggle": "modal",
+    //     "id": "screenshot-button",
+    //     "html": $("<span>")
+    //         .append(mkGlyph("camera"))
+    //         .append(nbsp + nbsp + "Screenshot"),
+    // })
+    //     .appendTo(buttonGroup)
+    //     .on("click", function() {
 
-            //This code takes a screenshot of the SVG with embedded HTML
-            $("svg")[0].toDataURL("image/png", {
-                "callback": function(url) {
-                    $("#save-screenshot").attr("href", url);
-                    $("#save-screenshot")[0].click();
-                    cm.focus();
-                },
-                "keepNonSafe": true,
-            });
+    //         //This code takes a screenshot of the SVG with embedded HTML
+    //         $("svg")[0].toDataURL("image/png", {
+    //             "callback": function(url) {
+    //                 $("#save-screenshot").attr("href", url);
+    //                 $("#save-screenshot")[0].click();
+    //                 cm.focus();
+    //             },
+    //             "keepNonSafe": true,
+    //         });
 
-            // var transform = $("#viewport").attr("transform");
-            // $("#viewport").attr("transform", "");
-            // $("svg body").each(function() {
-            //     var self = this;
-            //     html2canvas($(self).children(0), {
-            //         "allowTaint": true,
-            //         "onrendered": function(canvas) {
-            //             var copy = document.createElement("canvas");
-            //             copy.getContext("2d").drawImage(canvas, 0, 0);
-            //             var c = canvas.getContext("2d");
-            //             var tx = SVGTransformX($("#viewport"));
-            //             var ty = SVGTransformY($("#viewport"));
-            //             c.setTransform(1, 0, 0, 1, 0, 0);
-            //             c.clearRect(0, 0, canvas.width, canvas.height);
-            //             c.translate(tx, ty);
-            //             c.drawImage(copy, 0, 0);
-            //             $(self).children(0).replaceWith(canvas);
-            //         },
-            //     });
-            // });
-            // $("#viewport").attr("transform", transform);
+    //         // var transform = $("#viewport").attr("transform");
+    //         // $("#viewport").attr("transform", "");
+    //         // $("svg body").each(function() {
+    //         //     var self = this;
+    //         //     html2canvas($(self).children(0), {
+    //         //         "allowTaint": true,
+    //         //         "onrendered": function(canvas) {
+    //         //             var copy = document.createElement("canvas");
+    //         //             copy.getContext("2d").drawImage(canvas, 0, 0);
+    //         //             var c = canvas.getContext("2d");
+    //         //             var tx = SVGTransformX($("#viewport"));
+    //         //             var ty = SVGTransformY($("#viewport"));
+    //         //             c.setTransform(1, 0, 0, 1, 0, 0);
+    //         //             c.clearRect(0, 0, canvas.width, canvas.height);
+    //         //             c.translate(tx, ty);
+    //         //             c.drawImage(copy, 0, 0);
+    //         //             $(self).children(0).replaceWith(canvas);
+    //         //         },
+    //         //     });
+    //         // });
+    //         // $("#viewport").attr("transform", transform);
 
-            // //canvg();
+    //         // //canvg();
 
-            // html2canvas($("body"), {
-            //     "allowTaint": true,
-            //     "onrendered": function(canvas) {
-            //         var url = canvas.toDataURL();
-            //         $("#save-screenshot").attr("href", url);
-            //         $("#save-screenshot")[0].click();
-            //         cm.focus();
-            //     },
-            // });
+    //         // html2canvas($("body"), {
+    //         //     "allowTaint": true,
+    //         //     "onrendered": function(canvas) {
+    //         //         var url = canvas.toDataURL();
+    //         //         $("#save-screenshot").attr("href", url);
+    //         //         $("#save-screenshot")[0].click();
+    //         //         cm.focus();
+    //         //     },
+    //         // });
 
-        })
-    ;
+    //     })
+    // ;
 
-    $("<button>", {
-        "class": "btn btn-default",
-        "data-target": "help",
-        "data-toggle": "modal",
-        "id": "diffs-button",
-        "html": $("<span>")
-            .append(mkGlyph("camera"))
-            .append(nbsp + nbsp + "Capture diffs"),
-    })
-        .appendTo(buttonGroup)
-        .on("click", function() {
-            captureDiffs();
-        })
-    ;
+    // $("<button>", {
+    //     "class": "btn btn-default",
+    //     "data-target": "help",
+    //     "data-toggle": "modal",
+    //     "id": "diffs-button",
+    //     "html": $("<span>")
+    //         .append(mkGlyph("camera"))
+    //         .append(nbsp + nbsp + "Capture diffs"),
+    // })
+    //     .appendTo(buttonGroup)
+    //     .on("click", function() {
+    //         captureDiffs();
+    //     })
+    // ;
 
     $("<button>", {
         "class": "btn btn-default",
