@@ -40,6 +40,9 @@ unzip -o codemirror.zip
 $LN codemirror-5.1 codemirror
 rm codemirror.zip
 
+#$GET https://github.com/niklasvh/html2canvas/releases/download/0.4.1/html2canvas.js > html2canvas.js
+$GET https://raw.githubusercontent.com/sampumon/SVG.toDataURL/master/svg_todataurl.js > svg_todataurl.js
+
 cd ..
 
 CONFIGPATH="${HOME}"

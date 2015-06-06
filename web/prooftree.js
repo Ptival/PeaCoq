@@ -139,6 +139,9 @@ function ProofTree(anchor, width, height,
         .attr("display", "block")
         .style("width", this.width + "px")
         .style("height", this.height + "px")
+    // also need these as attributes for svg_todataurl
+        .attr("width", this.width + "px")
+        .attr("height", this.height + "px")
         //.attr("focusable", true)
     // this creates a blue outline that changes the width weirdly
     //.attr("tabindex", 0)
@@ -191,6 +194,9 @@ ProofTree.prototype.resize = function(width, height) {
     this.div.style("height", this.height + "px");
     this.svg.style("width", this.width + "px");
     this.svg.style("height", this.height + "px");
+    // also need these as attr for svg_todataurl
+    this.svg.attr("width", this.width + "px");
+    this.svg.attr("height", this.height + "px");
     this.goalWidth = computeGoalWidth(this.width);
     this.tacticWidth = computeTacticWidth(this.width);
     this.update();
@@ -945,6 +951,27 @@ ProofTree.prototype.updateNodeMeasures = function(nodeDOM, d) {
     d.height = Math.ceil(rect.height);
 }
 
+function makeContextDivider() {
+    return $("<hr>")
+    // inlining the CSS for svg_datatourl
+        .css("border", 0)
+        .css("border-top", "1px solid black")
+        .css("margin", 0)
+    ;
+}
+
+function makeGoalNodePre() {
+    return $("<pre>")
+        .addClass("goalNode")
+    // inlining some CSS for svg_datatourl
+        .css("font-family", "monospace")
+        .css("font-size", "14px")
+        .css("line-height", "normal")
+        .css("margin", 0)
+        .css("padding", 0)
+    ;
+}
+
 ProofTree.prototype.update = function() {
 
     if (focusedOnEditor) { return Promise.resolve(); }
@@ -1005,6 +1032,7 @@ ProofTree.prototype.update = function() {
         textEnter
             .append("xhtml:body")
         //.classed("svg", true)
+            .style("margin", 0) // keep this line for svg_datatourl
             .style("padding", function(d) {
                 return isGoal(d) ? goalBodyPadding + "px" : "0px 0px";
             })
@@ -1020,12 +1048,13 @@ ProofTree.prototype.update = function() {
                     d.span = $("<div>")
                         .addClass("tacticNode")
                         .css("padding", "4px")
+                        .css("text-align", "center")
                         .text(d.tactic);
                     jQContents = d.span;
                 } else if (isTacticGroup(d)) {
                     return; // needs to be refreshed on every update, see below
                 } else if (isGoal(d)) {
-                    jQContents = $("<div>").addClass("goalNode");
+                    jQContents = makeGoalNodePre();
                     _(d.hyps).each(function(h) {
                         var jQDiv = $("<div>")
                             .html(PT.showHypothesis(h))
@@ -1034,7 +1063,7 @@ ProofTree.prototype.update = function() {
                         h.div = jQDiv[0];
                         jQContents.append(h.div);
                     });
-                    jQContents.append($("<hr>"));
+                    jQContents.append(makeContextDivider());
                     d.goalSpan = $("<div>").html(showTerm(d.goalTerm));
                     jQContents.append(d.goalSpan);
                 } else {
@@ -1055,6 +1084,7 @@ ProofTree.prototype.update = function() {
                     d.span = $("<div>")
                         .addClass("tacticNode")
                         .css("padding", "4px")
+                        .css("text-align", "center")
                     ;
 
                     // prepend a tactic node selector if necessary
@@ -1104,7 +1134,7 @@ ProofTree.prototype.update = function() {
                     jqBody.empty();
                     jqBody.append(jQContents);
                 } else if (isGoal(d)) {
-                    jQContents = $("<div>").addClass("goalNode");
+                    jQContents = makeGoalNodePre();
                     _(d.hyps).each(function(h) {
                         var jQDiv = $("<div>")
                             .html(PT.showHypothesis(h))
@@ -1113,27 +1143,28 @@ ProofTree.prototype.update = function() {
                         h.div = jQDiv[0];
                         jQContents.append(h.div);
                     });
-                    jQContents.append($("<hr>"));
+
+                    jQContents.append(makeContextDivider());
                     d.goalSpan = $("<div>").html(showTerm(d.goalTerm));
                     jQContents.append(d.goalSpan);
                     jqBody.empty();
                     jqBody.append(jQContents);
                 }
             })
-                .each(function(d) {
-                    var nodeDOM = d3.select(this).node();
-                    self.updateNodeMeasures(nodeDOM, d);
-                })
-                    // preset the width to update measures correctly
-                    .attr("width", function(d) {
-                        return isGoal(d) ? self.goalWidth : self.tacticWidth;
-                    })
+            .each(function(d) {
+                var nodeDOM = d3.select(this).node();
+                self.updateNodeMeasures(nodeDOM, d);
+            })
+            // preset the width to update measures correctly
+            .attr("width", function(d) {
+                return isGoal(d) ? self.goalWidth : self.tacticWidth;
+            })
             .attr("height", 0)
             .each(function(d) {
                 var nodeDOM = d3.select(this).node().firstChild;
                 self.updateNodeMeasures(nodeDOM, d);
             })
-                ;
+        ;
 
         // Now that the nodes have a size, we can compute the factors
 
@@ -1324,6 +1355,11 @@ ProofTree.prototype.update = function() {
         rectSelection.enter()
             .append("rect")
             .classed("goal", isGoal)
+            .style("fill", function(d) {
+                if (isGoal(d)) { return "#AEC6CF"; }
+                if (isTacticish(d)) { return "#CB99C9"; }
+                return "#000000";
+            })
             .classed("tactic", isTacticish)
             .attr("width", function(d) { return d.width; })
             .attr("height", function(d) { return d.height; })
@@ -1334,6 +1370,12 @@ ProofTree.prototype.update = function() {
 
         rectSelection
             .classed("current", function(d) { return self.isCurNode(d); })
+            .style("stroke", function(d) {
+                return self.isCurNode(d) ? "#03C03C" : "";
+            })
+            .style("stroke-width", function(d) {
+                return self.isCurNode(d) ? "4px" : "";
+            })
             .classed("solved", function(d) { return d.solved; })
             .transition()
             .duration(animationDuration)

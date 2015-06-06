@@ -12,20 +12,18 @@
     border: 0;
 }
 
+pre.goalNode {
+    background-color: transparent;
+    border: 0;
+    padding: 0;
+}
+
 .link {
     fill: none;
 }
 
-.goal { fill: #AEC6CF; margin: 0; }
-.tactic { fill: #CB99C9; }
 .solved { fill: #33F06C; }
 .context, .debug { fill: #CFCFC4; }
-.current {
-    stroke: #03C03C;
-    stroke-width: 4px;
-}
-
-.tacticNode { text-align: center; }
 
 .monospace {
     font-family: DejaVu Sans Mono, monospace;
@@ -44,7 +42,9 @@
 }
 
 .prooftree hr {
+    border: 0;
     border-color: black;
+    border-top: 1px solid #eee;
     margin: 0;
 }
 

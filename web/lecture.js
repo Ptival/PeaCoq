@@ -258,6 +258,80 @@ $(document).ready(function() {
 
     $("<button>", {
         "class": "btn btn-default",
+        "data-target": "help",
+        "data-toggle": "modal",
+        "id": "screenshot-button",
+        "html": $("<span>")
+            .append(mkGlyph("camera"))
+            .append(nbsp + nbsp + "Screenshot"),
+    })
+        .appendTo(buttonGroup)
+        .on("click", function() {
+
+            //This code takes a screenshot of the SVG with embedded HTML
+            $("svg")[0].toDataURL("image/png", {
+                "callback": function(url) {
+                    $("#save-screenshot").attr("href", url);
+                    $("#save-screenshot")[0].click();
+                    cm.focus();
+                },
+                "keepNonSafe": true,
+            });
+
+            // var transform = $("#viewport").attr("transform");
+            // $("#viewport").attr("transform", "");
+            // $("svg body").each(function() {
+            //     var self = this;
+            //     html2canvas($(self).children(0), {
+            //         "allowTaint": true,
+            //         "onrendered": function(canvas) {
+            //             var copy = document.createElement("canvas");
+            //             copy.getContext("2d").drawImage(canvas, 0, 0);
+            //             var c = canvas.getContext("2d");
+            //             var tx = SVGTransformX($("#viewport"));
+            //             var ty = SVGTransformY($("#viewport"));
+            //             c.setTransform(1, 0, 0, 1, 0, 0);
+            //             c.clearRect(0, 0, canvas.width, canvas.height);
+            //             c.translate(tx, ty);
+            //             c.drawImage(copy, 0, 0);
+            //             $(self).children(0).replaceWith(canvas);
+            //         },
+            //     });
+            // });
+            // $("#viewport").attr("transform", transform);
+
+            // //canvg();
+
+            // html2canvas($("body"), {
+            //     "allowTaint": true,
+            //     "onrendered": function(canvas) {
+            //         var url = canvas.toDataURL();
+            //         $("#save-screenshot").attr("href", url);
+            //         $("#save-screenshot")[0].click();
+            //         cm.focus();
+            //     },
+            // });
+
+        })
+    ;
+
+    $("<button>", {
+        "class": "btn btn-default",
+        "data-target": "help",
+        "data-toggle": "modal",
+        "id": "diffs-button",
+        "html": $("<span>")
+            .append(mkGlyph("camera"))
+            .append(nbsp + nbsp + "Capture diffs"),
+    })
+        .appendTo(buttonGroup)
+        .on("click", function() {
+            captureDiffs();
+        })
+    ;
+
+    $("<button>", {
+        "class": "btn btn-default",
         "html": '<img src="media/ajax-loader.gif" /><span id="loading-text"></span>',
         "id": "loading",
     })
@@ -268,6 +342,14 @@ $(document).ready(function() {
     $("<a>", {
         "download": "output.v",
         "id": "save-local-link",
+    })
+        .css("display", "none")
+        .appendTo(buttonGroup)
+    ;
+
+    $("<a>", {
+        "download": "screenshot.png",
+        "id": "save-screenshot",
     })
         .css("display", "none")
         .appendTo(buttonGroup)
@@ -1602,3 +1684,62 @@ function coqTrimRight(s) {
 function sameTrimmed(a, b) {
     return (coqTrim(a) === coqTrim(b));
 }
+
+function zeroPad(s) {
+    return s < 10 ? '0' + s : s;
+}
+
+function getFormattedDate() {
+    var d = new Date();
+    var month = zeroPad(d.getMonth() + 1);
+    var day = zeroPad(d.getDate());
+    var hours = zeroPad(d.getHours());
+    var minutes = zeroPad(d.getMinutes());
+    var seconds = zeroPad(d.getSeconds());
+    return d.getFullYear() + '-' + month + '-' + day + '-'
+        + hours + ':' + minutes + ':' + seconds + ':' + d.getMilliseconds();
+}
+
+function captureDiffs() {
+    var rUnlocked = mUnlocked.find();
+    var unlocked = doc.getRange(rUnlocked.from, rUnlocked.to);
+    if (coqTrimLeft(unlocked).length === 0
+        //|| activeProofTree === undefined
+       ) {
+        return Promise.resolve();
+    }
+    return (
+        onCtrlDown(true)
+            .then(delayPromise(3 * animationDuration))
+            .then(function() {
+                if (activeProofTree !== undefined
+                    && activeProofTree.curNode.getViewChildren().length > 0
+                    && activeProofTree.curNode.getViewGrandChildren().length > 0
+                   ) {
+                    $("#save-screenshot").attr("download", getFormattedDate());
+                    $("#screenshot-button").click();
+                }
+            })
+            .then(captureDiffs)
+    );
+}
+
+/*
+  svg_todataurl will try to binary64-encode the code in the HTML using
+  window.btoa, which does not deal well with things outside of Latin-1
+  by default. We override these to handle Unicode.
+*/
+
+(function() {
+    var old = window.btoa;
+    window.btoa = function utf8_to_b64(str) {
+        return old(unescape(encodeURIComponent(str)));
+    }
+})();
+
+(function() {
+    var old = window.atob;
+    window.atob = function b64_to_utf8(str) {
+        return decodeURIComponent(escape(old(str)));
+    }
+})();
