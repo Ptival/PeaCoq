@@ -2345,7 +2345,7 @@ function showBinder(t) {
     if (t[1] === null) {
         return showNames(t[0]);
     } else {
-        return showNames(t[0]) + syntax(":") + nbsp + showTermAux(t[1], 0, 0, false);
+        return showNames(t[0]) + syntax(":") + ' ' + showTermAux(t[1], 0, 0, false);
     }
 }
 
@@ -2363,7 +2363,7 @@ function showPatternAux(p, withParens) {
             if (c[0] === "cons" && c[1].length === 2) {
                 return (withParens ? syntax("(") : "")
                     + showPatternAux(c[1][0], true)
-                    + nbsp + syntax("::") + nbsp
+                    + ' ' + syntax("::") + ' '
                     + showPattern(c[1][1], false)
                     + (withParens ? syntax(")") : "")
                 ;
@@ -2415,7 +2415,7 @@ function showTermIndent(t, indent) {
 }
 
 function getIndent(depth) {
-    return repeat(2 * depth, "&nbsp;");
+    return repeat(2 * depth, " ");
 }
 
 var precedence = 0;
@@ -2452,17 +2452,17 @@ function showConstructor(t) {
     var name = t[0];
     if (t[1] === null) {
         return syntax("|")
-            + nbsp
+            + ' '
             + ident(name)
         ;
     } else {
         var type = showTermInline(t[1]);
         return syntax("|")
-            + nbsp
+            + ' '
             + ident(name)
-            + nbsp
+            + ' '
             + syntax(":")
-            + nbsp
+            + ' '
             + type
         ;
     }
@@ -2478,13 +2478,13 @@ function showVernac(t) {
         var type = showTermInline(c[1]);
         var constructors = _(c[2]).map(showConstructor);
         return vernac("Inductive")
-            + nbsp
+            + ' '
             + ident(name)
-            + nbsp
+            + ' '
             + syntax(":")
-            + nbsp
+            + ' '
             + type
-            + nbsp
+            + ' '
             + syntax(":=")
             + "<br>"
             + _(constructors).reduce(function(acc, elt) { return acc + elt + "<br>"; }, "")
@@ -2495,11 +2495,11 @@ function showVernac(t) {
         var name = c[0];
         var type = showTermInline(c[1]);
         return vernac("Theorem")
-            + nbsp
+            + ' '
             + ident(name)
-            + nbsp
+            + ' '
             + syntax(":")
-            + nbsp
+            + ' '
             + type
             + syntax(".")
         ;
@@ -2508,15 +2508,15 @@ function showVernac(t) {
         var name = c[0];
         var args = _(c[1]).map(showBinder);
         var type = (c[2] !== null)
-            ? syntax(":") + nbsp + showTermInline(c[2]) + nbsp
+            ? syntax(":") + ' ' + showTermInline(c[2]) + ' '
             : "";
         var term = showTermIndent(c[3], 1);
         return vernac("Definition")
-            + nbsp
+            + ' '
             + ident(name)
-            + nbsp
+            + ' '
             + _(args).reduce(function(acc, elt) {
-                return acc + syntax("(") + elt + syntax(")") + nbsp; }, "")
+                return acc + syntax("(") + elt + syntax(")") + ' '; }, "")
             + type
             + syntax(":=")
             + "<br>" + getIndent(1)
@@ -2529,19 +2529,19 @@ function showVernac(t) {
         var args = _(c[1]).map(showBinder);
         var decreasing = c[2];
         var type = (c[3] !== null)
-            ? syntax(":") + nbsp + showTermInline(c[3]) + nbsp
+            ? syntax(":") + ' ' + showTermInline(c[3]) + ' '
             : "";
         var term = showTermIndent(c[4], 1);
         return vernac("Fixpoint")
-            + nbsp
+            + ' '
             + ident(name)
-            + nbsp
+            + ' '
             + _(args).reduce(function(acc, elt) {
-                return acc + syntax("(") + elt + syntax(")") + nbsp; }, "")
+                return acc + syntax("(") + elt + syntax(")") + ' '; }, "")
             + (
                 (decreasing !== null)
-                    ? syntax("{") + nbsp + syntax("struct")
-                    + nbsp + decreasing + nbsp + syntax("}") + nbsp
+                    ? syntax("{") + ' ' + syntax("struct")
+                    + ' ' + decreasing + ' ' + syntax("}") + ' '
                     : ""
             )
             + type
@@ -2621,7 +2621,7 @@ function showTermAux(t, indentation, precParent, newline) {
     case "Lambda":
         return par(
             precMin,
-            syntax("fun") + showBinders(c[0]) + nbsp + syntax("=>")
+            syntax("fun") + showBinders(c[0]) + ' ' + syntax("=>")
                 + (newline ? "<br/>" + getIndent(indentation + 1) : " ")
                 + showTermAux(c[1], indentation + 1, precMin, newline)
         );
@@ -2637,7 +2637,7 @@ function showTermAux(t, indentation, precParent, newline) {
     case "Arrow":
         return term(
             showTermAux(c[0], indentation, precArrow, false)
-                + nbsp + syntax("->") + (newline ? "<br/>" + indent : " ")
+                + ' ' + syntax("->") + (newline ? "<br/>" + indent : " ")
                 + showTermAux(c[1], indentation, precParent, newline)
         );
 
@@ -2645,20 +2645,20 @@ function showTermAux(t, indentation, precParent, newline) {
         var matchItems = c[0];
         var equations = c[1];
         return term(
-            syntax("match") + nbsp
-                + showMatchItems(matchItems) + nbsp
+            syntax("match") + ' '
+                + showMatchItems(matchItems) + ' '
                 + syntax("with") + "<br>"
                 + _(equations).reduce(function(acc, elt) {
                     var patterns = showPatterns(elt[0]);
                     var body = showTermAux(elt[1], indentation + 1, precParent, newline);
                     return acc
-                        + getIndent(indentation) + syntax("|") + nbsp
+                        + getIndent(indentation) + syntax("|") + ' '
                         + patterns
-                        + nbsp
+                        + ' '
                         + syntax("=>")
                         + (
                             (body.indexOf("<br>") === -1)
-                                ? nbsp + body
+                                ? ' ' + body
                                 : "<br>" + getIndent(indentation + 1) + body
                         )
                         + "<br>";
@@ -2738,9 +2738,9 @@ function showTermAux(t, indentation, precParent, newline) {
 function showHypothesis(h) {
     var res = term(h.hName);
     if (h.hValue !== null) {
-        res = res + nbsp + syntax(":=") + nbsp + showTermInline(h.hValue);
+        res = res + ' ' + syntax(":=") + ' ' + showTermInline(h.hValue);
     }
-    res = res + nbsp + syntax(":") + nbsp + showTermInline(h.hType);
+    res = res + ' ' + syntax(":") + ' ' + showTermInline(h.hType);
     return res;
 }
 PT.showHypothesis = showHypothesis;
