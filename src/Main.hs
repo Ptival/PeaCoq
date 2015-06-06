@@ -70,9 +70,9 @@ serverConfig logPath mUserId nowString =
     hook dat = do
       port <- socketPort . head $ getStartupSockets dat
       putStrLn $ "Server listening on port: " ++ show port
-      putStrLn $ "On recycle, visit: http://recycle.cs.washington.edu:" ++ show port
-      putStrLn $ "On attu, visit: http://attu.cs.washington.edu:" ++ show port
-      putStrLn $ "Otherwise, visit: http://localhost:" ++ show port
+      --putStrLn $ "On recycle, visit: http://recycle.cs.washington.edu:" ++ show port
+      --putStrLn $ "On attu, visit: http://attu.cs.washington.edu:" ++ show port
+      --putStrLn $ "Otherwise, visit: http://localhost:" ++ show port
 
 {-
 For running the UW study, each participant will run their own instance of the server.
@@ -96,8 +96,11 @@ mainUW = do
   forkIO $ cleanStaleSessions globRef -- parallel thread to regularly clean up
   serveSnaplet (serverConfig logPath mUserId nowString) $ peacoqSnaplet globRef
 
+sessionTimeoutMinutes :: Int
+sessionTimeoutMinutes = 15
+
 sessionTimeoutSeconds :: Int
-sessionTimeoutSeconds = 24 * 3600
+sessionTimeoutSeconds = 60 * sessionTimeoutMinutes
 
 sessionTimeoutMicroseconds :: Int
 sessionTimeoutMicroseconds = sessionTimeoutSeconds * 1000 * 1000
