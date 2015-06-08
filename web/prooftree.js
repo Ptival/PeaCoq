@@ -256,6 +256,31 @@ function connectRects(r1, r2, rightsLeft) {
 function deltaX(rect1, rect2) { return rect2.left - rect1.left; }
 function deltaY(rect1, rect2) { return rect2.top - rect1.top; }
 
+var diffColor = (function() {
+    var colors = [
+        "#ffbb78",
+        "#f7b6d2",
+        "#dbdb8d",
+        "#6b6ecf",
+        "#8ca252",
+        "#b5cf6b",
+        "#cedb9c",
+        "#bd9e39",
+        "#d6616b",
+        "#ce6dbd",
+        "#de9ed6",
+    ];
+    var scale = d3.scale.ordinal().range(colors);
+    return function(n) {
+        return scale(n);
+    };
+})();
+
+/*
+  This might be terrible design, but [spotTheDifference] currently marks inline
+  diffs through CSS background-color. It's much more stable than using
+  rectangles when animated.
+ */
 function spotTheDifferences(before, after) {
 
     function rec(before, after) {
@@ -304,9 +329,9 @@ function spotTheDifferences(before, after) {
     var removed = [];
     var added = [];
 
-    _(rec($(before).children(), $(after).children())).each(function(pair) {
-        pair.removed.css("background-color", diffOrange);
-        pair.added.css("background-color", diffOrange);
+    _(rec($(before).children(), $(after).children())).each(function(pair, ndx) {
+        pair.removed.css("background-color", diffColor(ndx));
+        pair.added.css("background-color", diffColor(ndx));
         //removed.push(pair.removed);
         //added.push(pair.added);
     });
@@ -1515,63 +1540,67 @@ ProofTree.prototype.update = function() {
                     .remove()
                 ;
 
-                var goalRemovedSelection =
-                    d.rectsGroup.selectAll("rect.goalremoved")
-                    .data(subdiff.removed)
-                ;
+                // var goalRemovedSelection =
+                //     d.rectsGroup.selectAll("rect.goalremoved")
+                //     .data(subdiff.removed)
+                // ;
 
-                goalRemovedSelection.enter()
-                    .append("rect")
-                    .classed("goalremoved", true)
-                    .attr("fill", diffOrange)
-                    .attr("opacity", diffOpacity)
-                ;
+                // goalRemovedSelection.enter()
+                //     .append("rect")
+                //     .classed("goalremoved", true)
+                //     .attr("fill", function(d, ndx) {
+                //         return colorScale(ndx);
+                //     })
+                //     .attr("opacity", diffOpacity)
+                // ;
 
-                goalRemovedSelection
-                    .each(function(jSpan) {
-                        var rect0 = elmtRect0(gp, jSpan[0]);
-                        var rect = elmtRect(gp, jSpan[0]);
-                        d3.select(this)
-                            .attr("width", rect.width)
-                            .attr("height", rect.height)
-                            .attr("x", rect0.left)
-                            .attr("y", rect0.top)
-                            .transition()
-                            .duration(animationDuration)
-                            .attr("x", rect.left)
-                            .attr("y", rect.top)
-                        ;
-                    })
-                        ;
+                // goalRemovedSelection
+                //     .each(function(jSpan) {
+                //         var rect0 = elmtRect0(gp, jSpan[0]);
+                //         var rect = elmtRect(gp, jSpan[0]);
+                //         d3.select(this)
+                //             .attr("width", rect.width)
+                //             .attr("height", rect.height)
+                //             .attr("x", rect0.left)
+                //             .attr("y", rect0.top)
+                //             .transition()
+                //             .duration(animationDuration)
+                //             .attr("x", rect.left)
+                //             .attr("y", rect.top)
+                //         ;
+                //     })
+                //         ;
 
-                var goalAddedSelection =
-                    d.rectsGroup.selectAll("rect.goaladded")
-                    .data(subdiff.added)
-                ;
+                // var goalAddedSelection =
+                //     d.rectsGroup.selectAll("rect.goaladded")
+                //     .data(subdiff.added)
+                // ;
 
-                goalAddedSelection.enter()
-                    .append("rect")
-                    .classed("goaladded", true)
-                    .attr("fill", diffOrange)
-                    .attr("opacity", diffOpacity)
-                ;
+                // goalAddedSelection.enter()
+                //     .append("rect")
+                //     .classed("goaladded", true)
+                //     .attr("fill", function(d, ndx) {
+                //         return colorScale(ndx);
+                //     })
+                //     .attr("opacity", diffOpacity)
+                // ;
 
-                goalAddedSelection
-                    .each(function(jSpan) {
-                        var rect0 = elmtRect0(d, jSpan[0]);
-                        var rect = elmtRect(d, jSpan[0]);
-                        d3.select(this)
-                            .attr("width", rect.width)
-                            .attr("height", rect.height)
-                            .attr("x", rect0.left)
-                            .attr("y", rect0.top)
-                            .transition()
-                            .duration(animationDuration)
-                            .attr("x", rect.left)
-                            .attr("y", rect.top)
-                        ;
-                    })
-                        ;
+                // goalAddedSelection
+                //     .each(function(jSpan) {
+                //         var rect0 = elmtRect0(d, jSpan[0]);
+                //         var rect = elmtRect(d, jSpan[0]);
+                //         d3.select(this)
+                //             .attr("width", rect.width)
+                //             .attr("height", rect.height)
+                //             .attr("x", rect0.left)
+                //             .attr("y", rect0.top)
+                //             .transition()
+                //             .duration(animationDuration)
+                //             .attr("x", rect.left)
+                //             .attr("y", rect.top)
+                //         ;
+                //     })
+                //         ;
 
                 // adding diffs for the hypotheses
                 var diffList = computeDiffList(gp.hyps, d.hyps);
@@ -1721,79 +1750,83 @@ ProofTree.prototype.update = function() {
                                     newHyp.div
                                 );
 
-                                var diffId = byDiffId(diff);
-                                d.removedSelections[diffId] =
-                                    d.rectsGroup.selectAll("rect.removed")
-                                    .data(subdiff.removed)
-                                ;
+                                // var diffId = byDiffId(diff);
+                                // d.removedSelections[diffId] =
+                                //     d.rectsGroup.selectAll("rect.removed")
+                                //     .data(subdiff.removed)
+                                // ;
 
-                                d.removedSelections[diffId].enter()
-                                    .append("rect")
-                                    .classed("removed", true)
-                                    .attr("fill", diffOrange)
-                                    .attr("opacity", diffOpacity)
-                                ;
+                                // d.removedSelections[diffId].enter()
+                                //     .append("rect")
+                                //     .classed("removed", true)
+                                //     .attr("fill", function(d, ndx) {
+                                //         return colorScale(ndx);
+                                //     })
+                                //     .attr("opacity", diffOpacity)
+                                // ;
 
-                                d.removedSelections[diffId].exit()
-                                    .remove()
-                                ;
+                                // d.removedSelections[diffId].exit()
+                                //     .remove()
+                                // ;
 
-                                d.addedSelections[diffId] =
-                                    d.rectsGroup.selectAll("rect.added")
-                                    .data(subdiff.added)
-                                ;
+                                // d.addedSelections[diffId] =
+                                //     d.rectsGroup.selectAll("rect.added")
+                                //     .data(subdiff.added)
+                                // ;
 
-                                d.addedSelections[diffId].enter()
-                                    .append("rect")
-                                    .classed("added", true)
-                                    .attr("fill", diffOrange)
-                                    .attr("opacity", diffOpacity)
-                                ;
+                                // d.addedSelections[diffId].enter()
+                                //     .append("rect")
+                                //     .classed("added", true)
+                                //     .attr("fill", function(d, ndx) {
+                                //         return colorScale(ndx);
+                                //     })
+                                //     .attr("opacity", diffOpacity)
+                                // ;
 
-                                d.addedSelections[diffId].exit()
-                                    .remove()
-                                ;
+                                // d.addedSelections[diffId].exit()
+                                //     .remove()
+                                // ;
 
-                                // TODO: there is a bug here where this does not get
-                                // refreshed properly when nodes show up. To
-                                // reproduce, load bigtheorem.v, run intros, and
-                                // move down one tactic quickly.
-                                //console.log(diff, byDiffId(diff));
-                                var diffId = byDiffId(diff);
+                                // // TODO: there is a bug here where this does not get
+                                // // refreshed properly when nodes show up. To
+                                // // reproduce, load bigtheorem.v, run intros, and
+                                // // move down one tactic quickly.
+                                // //console.log(diff, byDiffId(diff));
+                                // var diffId = byDiffId(diff);
 
-                                d.removedSelections[diffId]
-                                    .each(function(jSpan) {
-                                        var rect0 = elmtRect0(gp, jSpan[0]);
-                                        var rect = elmtRect(gp, jSpan[0]);
-                                        d3.select(this)
-                                            .attr("width", rect.width)
-                                            .attr("height", rect.height)
-                                            .attr("x", rect0.left)
-                                            .attr("y", rect0.top)
-                                            .transition()
-                                            .duration(animationDuration)
-                                            .attr("x", rect.left)
-                                            .attr("y", rect.top)
-                                        ;
-                                    })
-                                        ;
+                                // d.removedSelections[diffId]
+                                //     .each(function(jSpan) {
+                                //         var rect0 = elmtRect0(gp, jSpan[0]);
+                                //         var rect = elmtRect(gp, jSpan[0]);
+                                //         d3.select(this)
+                                //             .attr("width", rect.width)
+                                //             .attr("height", rect.height)
+                                //             .attr("x", rect0.left)
+                                //             .attr("y", rect0.top)
+                                //             .transition()
+                                //             .duration(animationDuration)
+                                //             .attr("x", rect.left)
+                                //             .attr("y", rect.top)
+                                //         ;
+                                //     })
+                                //         ;
 
-                                d.addedSelections[diffId]
-                                    .each(function(jSpan) {
-                                        var rect0 = elmtRect0(d, jSpan[0]);
-                                        var rect = elmtRect(d, jSpan[0]);
-                                        d3.select(this)
-                                            .attr("width", rect.width)
-                                            .attr("height", rect.height)
-                                            .attr("x", rect0.left)
-                                            .attr("y", rect0.top)
-                                            .transition()
-                                            .duration(animationDuration)
-                                            .attr("x", rect.left)
-                                            .attr("y", rect.top)
-                                        ;
-                                    })
-                                        ;
+                                // d.addedSelections[diffId]
+                                //     .each(function(jSpan) {
+                                //         var rect0 = elmtRect0(d, jSpan[0]);
+                                //         var rect = elmtRect(d, jSpan[0]);
+                                //         d3.select(this)
+                                //             .attr("width", rect.width)
+                                //             .attr("height", rect.height)
+                                //             .attr("x", rect0.left)
+                                //             .attr("y", rect0.top)
+                                //             .transition()
+                                //             .duration(animationDuration)
+                                //             .attr("x", rect.left)
+                                //             .attr("y", rect.top)
+                                //         ;
+                                //     })
+                                //         ;
 
                             }
 
