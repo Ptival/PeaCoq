@@ -172,20 +172,20 @@ $(document).ready(function() {
     //     }
     // });
 
-    // $("<button>", {
-    //     "class": "btn btn-default",
-    //     "data-target": "help",
-    //     "data-toggle": "modal",
-    //     "id": "feedback-button",
-    //     "html": $("<span>")
-    //         .append(mkGlyph("question-sign"))
-    //         .append(nbsp + nbsp + "Help"),
-    // })
-    //     .appendTo(buttonGroup)
-    //     .on("click", function() {
-    //         $("#help").modal();
-    //     })
-    // ;
+    $("<button>", {
+        "class": "btn btn-default",
+        "data-target": "help",
+        "data-toggle": "modal",
+        "id": "feedback-button",
+        "html": $("<span>")
+            .append(mkGlyph("question-sign"))
+            .append(nbsp + nbsp + "Help"),
+    })
+        .appendTo(buttonGroup)
+        .on("click", function() {
+            $("#help").modal();
+        })
+    ;
 
     // $("<button>", {
     //     "class": "btn btn-info",
