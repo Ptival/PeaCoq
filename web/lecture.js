@@ -877,8 +877,8 @@ function createProofTree(response) {
 
     activeProofTree.newAlreadyStartedTheorem(
         response,
-        replayTactics
-        //replayAndStudyTactics
+        //replayTactics
+        replayAndStudyTactics
     );
 
     // only show up the tree automatically if the user is not processing to
