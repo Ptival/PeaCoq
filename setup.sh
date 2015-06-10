@@ -37,7 +37,7 @@ $LN lodash/lodash.min.js lodash.js
 
 $GET http://codemirror.net/codemirror.zip > codemirror.zip
 unzip -o codemirror.zip
-$LN codemirror-5.1 codemirror
+$LN codemirror-5.3 codemirror
 rm codemirror.zip
 
 #$GET https://github.com/niklasvh/html2canvas/releases/download/0.4.1/html2canvas.js > html2canvas.js
