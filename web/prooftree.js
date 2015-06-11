@@ -1928,39 +1928,35 @@ function computeDiffList(oldHypsOriginal, newHypsOriginal) {
     var oldHyps = oldHypsOriginal.slice();
     var newHyps = newHypsOriginal.slice();
 
-    _(oldHypsOriginal).each(function(h) {
-
-        _(oldHyps).remove(sameNameAs(h));
-
-        var match = _(newHyps).find(sameNameAs(h));
-
-        if (match !== undefined) {
-            diffList.push({"oldHyp": h, "newHyp": match,
-                           "isJump": newHyps[0].hName !== h.hName});
-            _(newHyps).remove(sameNameAs(h));
-        } else {
-
-            diffList.push({"oldHyp": h, "newHyp": undefined,
-                           "isJump": false});
-
-            // now, if the incoming hypotheses in newHyps are new, they should
-            // be pushed now
-            while (newHyps.length > 0 && !_(oldHyps).some(sameNameAs(newHyps[0]))) {
-                diffList.push({"oldHyp": undefined, "newHyp": newHyps[0],
-                               "isJump": false});
-                _(oldHyps).remove(sameNameAs(newHyps[0]));
-                newHyps.shift();
-            }
-
+    while (oldHyps.length > 0 && newHyps.length > 0) {
+        var oldHyp = oldHyps[0];
+        var newHyp = newHyps[0];
+        // either the first two match
+        if (oldHyp.hName === newHyp.hName) {
+            diffList.push({"oldHyp": oldHyp, "newHyp": newHyp, "isJump": false});
+            oldHyps.shift();
+            newHyps.shift();
+            continue;
         }
-
-    });
-
-    // things that have not been removed from newHyps are new hypotheses
-    _(newHyps).each(function(h) {
-        diffList.push({"oldHyp": undefined, "newHyp": h,
-                       "isJump": false});
-    });
+        var oldMatch = _(newHyps).find(sameNameAs(oldHyp));
+        // or the first old has disappeared
+        if (oldMatch === undefined) {
+            diffList.push({"oldHyp": oldHyp, "newHyp": undefined, "isJump": false});
+            oldHyps.shift();
+            continue;
+        }
+        // or the first old has moved, but the first new has appeared
+        var newMatch = _(oldHyps).find(sameNameAs(newHyp));
+        if (newMatch === undefined) {
+            diffList.push({"oldHyp": undefined, "newHyp": newHyp, "isJump": false});
+            newHyps.shift();
+            continue;
+        }
+        // otherwise, register the oldMatch as a "jump"
+        diffList.push({"oldHyp": oldHyp, "newHyp": oldMatch, "isJump": true});
+        oldHyps.shift();
+        newHyps.shift();
+    }
 
     return diffList;
 }
