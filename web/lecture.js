@@ -1166,9 +1166,9 @@ function proofTreeQueryWish(request) {
         if (request === "Proof.") {
             return isProof(cmd);
         }
-        // Defined and Qed should be interchangeable
-        if (request === "Defined." || request === "Qed.") {
-            return cmd === "Defined." || cmd === "Qed.";
+        // Abort, Defined, Qed should be interchangeable
+        if (request === "Defined." || request === "Qed." || request === "Abort.") {
+            return cmd === "Defined." || cmd === "Qed." || cmd === "Abort.";
         }
         return cmd === coqTrim(request);
     });
