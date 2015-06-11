@@ -413,20 +413,23 @@ ProofTree.prototype.xOffset = function(d) {
 
 ProofTree.prototype.yOffset = function(d) {
     var offset = - d.height / 2; // for the center
-    // for the focused tactic of the current goal, show it in front of its goal
     var focusedChild = this.curNode.getFocusedChild();
-    if (
-        (isGoal(this.curNode) && focusedChild !== undefined && d.id === focusedChild.id)
-            ||
-            (isTacticish(d) && this.isCurNode(d))
-       ) {
-        // return something such that cY === nodeY(d.parent) * yFactor + offset
-        return offset + (nodeY(d.parent) - nodeY(d)) * this.yFactor;
-    } else if (this.isCurGoalChild(d) || this.isCurGoalGrandChild(d)) {
-        return offset + this.descendantsOffset;
-    } else {
-        return offset;
+
+    // all tactic nodes are shifted such that the current tactic is centered
+    assert(isGoal(this.curNode), "yOffset assumes the current node is a goal!");
+    if (this.isCurGoalChild(d)) {
+        assert(focusedChild !== undefined);
+        return offset + (nodeY(d.parent) - nodeY(focusedChild)) * this.yFactor;
     }
+
+    // all goal grandchildren are shifted such that the context line of the
+    // current goal and the current suboal align
+    if (this.isCurGoalGrandChild(d)) {
+        return offset + this.descendantsOffset;
+    }
+
+    // the other nodes (current goal and its ancestors) stay where they need
+    return offset;
 }
 
 var centerLeftOffset  = +10;
