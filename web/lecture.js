@@ -551,7 +551,10 @@ function createProofTree(response) {
     }
 
     if (autoLayout) {
-        proofTreeQueryWish("Proof.");
+        // do not insert Proof. when processing file further
+        if (toprove.length === 0) {
+            proofTreeQueryWish("Proof.");
+        }
 
         // TODO: insert a newline only when needed...
         //var rUnlocked = mUnlocked.find();
