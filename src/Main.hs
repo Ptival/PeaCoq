@@ -23,7 +23,6 @@ import           Snap.Snaplet.Session.SessionManager ()
 import           Snap.Util.FileServe
 import           System.Directory
 import           System.IO
-import           System.Locale
 import           System.Log.Formatter
 import           System.Log.Handler (setFormatter)
 import           System.Log.Handler.Simple

@@ -2,7 +2,6 @@
 
 module XMLParsers where
 
-import           Control.Applicative ((<$>), (<*))
 import           Control.Monad.Catch ()
 import           Data.Conduit
 import           Data.List (intersperse)

@@ -3,6 +3,7 @@
 module Lexer where
 
 import Data.Char (chr)
+import Prelude hiding ((<$>))
 }
 
 %wrapper "monad"

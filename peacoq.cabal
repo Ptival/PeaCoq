@@ -8,7 +8,7 @@ Maintainer:          vrobert@cs.ucsd.edu
 Stability:           Experimental
 Category:            Web
 Build-type:          Simple
-Cabal-version:       >=1.2
+Cabal-version:       >=1.22
 
 Executable peacoq
 
@@ -19,38 +19,34 @@ Executable peacoq
   Build-tools:  alex, happy
 
   Build-depends:
-    aeson                     >= 0.7   && < 0.8,
+    aeson                     >= 0.8   && < 0.9,
     array                     >= 0.5   && < 0.6,
-    base                      >= 4     && < 4.8,
-    bytestring                >= 0.9.1 && < 0.11,
-    conduit                   >= 1.1   && < 1.2,
+    base                      >= 4.8   && < 4.9,
+    bytestring                >= 0.10  && < 0.11,
+    conduit                   >= 1.2   && < 1.3,
     conduit-extra             >= 1.1   && < 1.2,
     containers                >= 0.5   && < 0.6,
     data-default              >= 0.5   && < 0.6,
     directory                 >= 1.2   && < 1.3,
     exceptions                >= 0.6   && < 0.7,
     filemanip                 >= 0.3   && < 0.4,
-    ghc-prim                  >= 0.3   && < 0.4,
     hslogger                  >= 1.2   && < 1.3,
-    lens                      >= 4.4   && < 4.5,
-    network                   >= 2.5   && < 2.7,
-    old-locale                >= 1.0   && < 1.1,
-    MissingH                  >=1.3    && < 1.4,
-    MonadCatchIO-transformers >= 0.2.1 && < 0.4,
-    mtl                       >= 2     && < 3,
+    lens                      >= 4.11  && < 4.12,
+    MissingH                  >= 1.3   && < 1.4,
+    network                   >= 2.6   && < 2.7,
     process                   >= 1.2   && < 1.3,
     random                    >= 1.0   && < 1.1,
-    snap                      >= 0.13  && < 0.14,
+    snap                      >= 0.14  && < 0.15,
     snap-core                 >= 0.9   && < 0.10,
-    snap-extras               >= 0.9   && < 0.12,
+    snap-extras               >= 0.11  && < 0.12,
     snap-server               >= 0.9   && < 0.10,
     tagsoup                   >= 0.13  && < 0.14,
-    text                      >= 1.1   && < 1.2,
-    time                      >= 1.4   && < 1.5,
-    transformers              >= 0.3   && < 0.5,
+    text                      >= 1.2   && < 1.3,
+    time                      >= 1.5   && < 1.6,
+    transformers              >= 0.4   && < 0.5,
     unordered-containers      >= 0.2   && < 0.3,
     utf8-string               >= 0.3   && < 0.4,
-    xml-conduit               >= 1.2   && < 1.4,
+    xml-conduit               >= 1.3   && < 1.4,
     xml-types                 >= 0.3   && < 0.4
 
   Other-modules:
