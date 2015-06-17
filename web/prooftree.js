@@ -24,11 +24,12 @@ $(document).ready(function() {
 
     $(document)
         .on('mouseenter mouseover', '.term', function(e){
-            $(this).css('background-color', 'lightblue');
+            $(this).data('background-color', $(this).css('background-color'));
+            $(this).css('background-color', 'white');
             e.stopImmediatePropagation();
         })
         .on('mouseout mouseleave', '.term', function(e){
-            $(this).css('background-color', 'transparent');
+            $(this).css('background-color', $(this).data('background-color'));
             e.stopImmediatePropagation();
         })
     ;
