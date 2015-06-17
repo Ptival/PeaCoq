@@ -2637,9 +2637,18 @@ function showTermText(t) {
 }
 
 function showMatchItems(items) {
-    return _(items).rest().reduce(function(acc, term) {
-        return acc + syntax(", ") + showTermInline(term);
-    }, showTermInline(items[0]));
+    return _(items).reduce(function(acc, item, ndx) {
+        var term = item[0];
+        var matchAs = item[1];
+        var matchIn = item[2];
+        return (
+            acc
+                + (ndx > 0 ? syntax(",") + ' ' : "")
+                + showTermInline(term)
+                + (matchAs ? ' ' + syntax("as") + ' ' + matchAs : "")
+                + (matchIn ? ' ' + syntax("in") + ' ' + showTermInline(matchIn) : "")
+        );
+    }, "");
 }
 
 /*
@@ -2719,10 +2728,15 @@ function showTermAux(t, indentation, precParent, newline) {
 
     case "Match":
         var matchItems = c[0];
-        var equations = c[1];
+        var maybeType = c[1];
+        var equations = c[2];
         return term(
             syntax("match") + ' '
                 + showMatchItems(matchItems) + ' '
+                + (maybeType
+                   ? syntax(":") + ' ' + showTermAux(c[1], 0, precMin, false)
+                   : ""
+                  )
                 + syntax("with") + "<br>"
                 + _(equations).reduce(function(acc, elt) {
                     var patterns = showPatterns(elt[0]);

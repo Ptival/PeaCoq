@@ -51,9 +51,13 @@ tokens :-
   \%            { tok TokPercent }
   \+\+          { tok TokAppend }
   "match"       { tok TokMatch }
+  "as"          { tok TokAs }
+  "in"          { tok TokIn }
+  "return"      { tok TokReturn }
   "with"        { tok TokWith }
   "end"         { tok TokEnd }
   "fun"         { tok TokFun }
+  "let"         { tok TokLet }
   "Inductive"   { tok TokInductive }
   "Theorem"     { tok TokTheorem }
   "Lemma"       { tok TokLemma }
@@ -118,9 +122,13 @@ data Token
   | TokAppend
   | TokNum String
   | TokMatch
+  | TokAs
+  | TokIn
+  | TokReturn
   | TokWith
   | TokEnd
   | TokFun
+  | TokLet
   | TokInductive
   | TokTheorem
   | TokLemma

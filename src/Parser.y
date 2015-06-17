@@ -25,8 +25,8 @@ import Lexer
 %token
 
 var { TokId $$ }
-access_ident { TokAccessId $$ }
 num { TokNum $$ }
+access_ident { TokAccessId $$ }
 str { TokString $$ }
 comment { TokComment $$ }
 '(' { TokLParen }
@@ -64,9 +64,13 @@ comment { TokComment $$ }
 "[]" { TokNil }
 "++" { TokAppend }
 "match" { TokMatch }
+"as" { TokAs }
+"in" { TokIn }
+"return" { TokReturn }
 "with" { TokWith }
 "end" { TokEnd }
 "fun" { TokFun }
+"let" { TokLet }
 "Inductive" { TokInductive }
 "Theorem" { TokTheorem }
 "Lemma" { TokLemma }
@@ -93,7 +97,7 @@ comment { TokComment $$ }
 %left '*'
 %nonassoc '(' ')'
 %nonassoc '{' '}'
-%nonassoc var num str "[]" '∀' '∃' 'λ' '¬' "fun" "match"
+%nonassoc var num str "[]" '∀' '∃' 'λ' '¬' "fun" "match" "let"
 -- it is important that APP has higher precedence than var, num, '('
 -- and all terminals that can be the start of a term,
 -- so that shift/reduce conflicts of the form
@@ -144,18 +148,52 @@ Term :: { Term }
 | Term '%' var            { $1 }
 | Term Term %prec APP     { App $1 $2 }
 | '(' Term ')'            { $2 }
-| "match" MatchItems "with" MaybePipe EquationStar "end" { Match $2 $5 }
+| "match" MatchItems MaybeReturnType "with" MaybePipe EquationStar "end" { Match $2 $3 $6 }
+| "let" var MaybeBinders MaybeTypeAnnotation ":=" Term "in" Term { Let $2 $3 $4 $6 $8 }
+| "let" '(' MaybeCommaSepNames ')' MaybeDepRepType ":=" Term "in" Term { LetParen $3 $5 $7 $9 }
+| '(' CommaTerms ',' Term ')' { App (App (Var "prod") $2) $4 }
 
-QualId :: {String}
+CommaTerms :: { Term }
+: Term                { $1 }
+| CommaTerms ',' Term { App (App (Var "prod") $1) $3 }
+
+MaybeAs :: { Maybe String }
+: {- empty -} { Nothing }
+| "as" var    { Just $2 }
+
+MaybeIn :: { Maybe Term }
+: {- empty -} { Nothing }
+| "in" Term   { Just $2 }
+
+ReturnType :: { Type }
+: "return" Term { $2 }
+
+MaybeReturnType :: { Maybe Type }
+: {- empty -} { Nothing }
+| ReturnType  { Just $1 }
+
+MaybeDepRepType :: { Maybe DepRetType }
+: {- empty -}        { Nothing }
+| MaybeAs ReturnType { Just ($1, $2) }
+
+MaybeCommaSepNames :: { [String] }
+: {- empty -}   { [] }
+| CommaSepNames { $1 }
+
+CommaSepNames :: { [String] }
+: var                   { [$1] }
+| var ',' CommaSepNames { $1 : $3 }
+
+QualId :: { String }
 : var                 { $1 }
 | QualId access_ident { $1 ++ $2 }
 
-MatchItems :: { [Term] }
+MatchItems :: { [MatchItem] }
 : MatchItem                { [$1] }
 | MatchItem ',' MatchItems { $1 : $3 }
 
-MatchItem :: { Term }
-: Term { $1 }
+MatchItem :: { MatchItem }
+: Term MaybeAs MaybeIn { ($1, $2, $3) }
 
 EquationStar :: { [Equation] }
 : {- empty -}                          { [] }
@@ -177,14 +215,14 @@ MultiPattern :: { MultiPattern }
 | Pattern ',' MultiPattern { $1 : $3 }
 
 Pattern :: { Pattern }
-: var SubpatternStar   { Pattern $1 $2 }
+: QualId PatternStar   { Pattern $1 $2 }
 | Pattern "::" Pattern { Pattern "cons" [$1, $3] }
 | '_'                  { Wildcard }
+| num                  { Pattern $1 [] }
 
-SubpatternStar :: { [Pattern] }
-: {- empty -}                    { [] }
-| var SubpatternStar             { Pattern $1 [] : $2 }
-| '(' Pattern ')' SubpatternStar { $2 : $4 }
+PatternStar :: { [Pattern] }
+: {- empty -}         { [] }
+| Pattern PatternStar { $1 : $2 }
 
 MaybePipe :: { () }
 : {- empty -} { () }
@@ -266,6 +304,9 @@ data Constructor
   = Constructor String (Maybe Type)
   deriving (Generic, Show)
 
+type DepRetType = (Maybe String, Type)
+type MatchItem = (Term, Maybe String, Maybe Type)
+
 data Term
   = Var String
   | Forall Binders Term
@@ -273,7 +314,9 @@ data Term
   | Exists Binders Term
   | Arrow Term Term
   | App Term Term
-  | Match [Term] [Equation]
+  | Match [MatchItem] (Maybe Type) [Equation]
+  | Let String Binders (Maybe Type) Term Term
+  | LetParen [String] (Maybe DepRetType) Term Term
   deriving (Eq, Generic, Show)
 
 type Type = Term
