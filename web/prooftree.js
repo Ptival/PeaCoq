@@ -2712,7 +2712,8 @@ function showTermAux(t, indentation, precParent, newline) {
     case "Arrow":
         return term(
             showTermAux(c[0], indentation, precArrow, false)
-                + ' ' + syntax("->") + (newline ? "<br/>" + indent : " ")
+                + ' ' + syntax("->")
+                + (newline ? "<br/>" + indent : " ")
                 + showTermAux(c[1], indentation, precParent, newline)
         );
 
@@ -2810,12 +2811,17 @@ function showTermAux(t, indentation, precParent, newline) {
     };
 }
 
+function inlineBlock(contents) {
+    return '<div class="inline-block">' + contents + '</div>';
+}
+
 function showHypothesis(h) {
-    var res = term(h.hName);
+    var res = h.hName;
     if (h.hValue !== null) {
         res = res + ' ' + syntax(":=") + ' ' + showTermInline(h.hValue);
     }
-    res = res + ' ' + syntax(":") + ' ' + showTermInline(h.hType);
+    res = inlineBlock(res + ' ' + syntax(":") + ' ')
+        + inlineBlock(showTermInline(h.hType));
     return res;
 }
 PT.showHypothesis = showHypothesis;

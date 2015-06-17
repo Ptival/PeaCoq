@@ -75,5 +75,14 @@ pre.goalNode {
 }
 
 .term {
+    /* display: inline-block; */
+    /* vertical-align: top; */
     /*border: 1px solid black;*/
+}
+
+.inline-block {
+    display: inline-block;
+    max-width: 100%;
+    /* position: relative; */
+    vertical-align: top;
 }
