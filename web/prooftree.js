@@ -24,12 +24,16 @@ $(document).ready(function() {
 
     $(document)
         .on('mouseenter mouseover', '.term', function(e){
-            $(this).data('background-color', $(this).css('background-color'));
-            $(this).css('background-color', 'white');
+            $(this).find("*").andSelf().each(function() {
+                $(this).data('background-color', $(this).css('background-color'));
+                $(this).css('background-color', 'white');
+            });
             e.stopImmediatePropagation();
         })
         .on('mouseout mouseleave', '.term', function(e){
-            $(this).css('background-color', $(this).data('background-color'));
+            $(this).find("*").andSelf().each(function() {
+                $(this).css('background-color', $(this).data('background-color'));
+            });
             e.stopImmediatePropagation();
         })
     ;
