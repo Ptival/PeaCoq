@@ -3609,13 +3609,13 @@ ProofTree.prototype.undoUntilNode = function(dst) {
 }
 
 GoalNode.prototype.click = function() {
-    if (this.isCurNodeChild()) {
-        // TODO: if this is not the first unsolved child, add as many admits as
-        // necessary?
-        //proofTreeQueryWish('{');
-    } else if (this.isCurNodeParent()) {
-        this.proofTree.undoUntilNode(this);
-    }
+    // if (this.isCurNodeChild()) {
+    //     // TODO: if this is not the first unsolved child, add as many admits as
+    //     // necessary?
+    //     //proofTreeQueryWish('{');
+    // } else if (this.isCurNodeParent()) {
+    //     this.proofTree.undoUntilNode(this);
+    // }
 }
 
 TacticGroupNode.prototype.click = function() {
