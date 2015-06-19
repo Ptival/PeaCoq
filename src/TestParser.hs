@@ -59,6 +59,17 @@ testVector =
      ]
      (Var "False")
     )
+  , ("match n with | 0 => True | S _ => False end",
+     Match
+     [(Var "n",Nothing,Nothing)]
+     Nothing
+     [ ([[Pattern "0" []]],Var "True")
+     , ([[Pattern "S" [Wildcard]]],Var "False")
+     ]
+    )
+  , ("let (a, b) := c in d",
+     LetParen ["a","b"] Nothing (Var "c") (Var "d")
+    )
   ]
 
 shouldParseTheSame :: [(String, String)]
@@ -67,6 +78,7 @@ shouldParseTheSame =
   , ("∀ x, P x → ∀ y, Q y", "∀ x, (P x → (∀ y, Q y))")
   , ("∀ P : Prop, P /\\ P \\/ P", "∀ P : Prop, (P /\\ P) \\/ P")
   , ("∀ P : Prop, P \\/ P /\\ P", "∀ P : Prop, P \\/ (P /\\ P)")
+  , ("match n with | 0 => True end", "match n with 0 => True end")
   ]
 
 main = do
