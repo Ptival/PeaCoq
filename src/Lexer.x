@@ -3,7 +3,7 @@
 module Lexer where
 
 import Data.Char (chr)
-import Prelude hiding ((<$>))
+import Prelude
 }
 
 %wrapper "monad"
@@ -178,9 +178,9 @@ nestedComment _ _ = do
 getPos :: AlexPosn -> (Int, Int)
 getPos (AlexPn _ line column) = (line, column)
 
-infixl 4 <$>
-(<$>) :: (a -> b) -> Alex a -> Alex b
-f <$> a = do
+infixl 4 <$$>
+(<$$>) :: (a -> b) -> Alex a -> Alex b
+f <$$> a = do
     v <- a
     return $ f v
 
@@ -205,6 +205,6 @@ alexScanTokens input = runAlex input gather
     t <- alexMonadScan
     case t of
       TokEOF -> return [TokEOF]
-      _      -> (t :) <$> gather
+      _      -> (t :) <$$> gather
 
 }
