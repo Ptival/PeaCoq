@@ -215,10 +215,19 @@ MultiPattern :: { MultiPattern }
 | Pattern ',' MultiPattern { $1 : $3 }
 
 Pattern :: { Pattern }
-: QualId PatternStar   { Pattern $1 $2 }
-| Pattern "::" Pattern { Pattern "cons" [$1, $3] }
-| '_'                  { Wildcard }
-| num                  { Pattern $1 [] }
+: QualId PatternStar         { Pattern $1 $2 }
+| Pattern "::" Pattern       { Pattern "cons" [$1, $3] }
+| '_'                        { Wildcard }
+| num                        { Pattern $1 [] }
+| '(' CommaSepOrPatterns ')' { OrPatterns $2 }
+
+CommaSepOrPatterns :: { [[Pattern]] }
+: OrPattern                        { [$1] }
+| OrPattern ',' CommaSepOrPatterns { $1 : $3 }
+
+OrPattern :: { [Pattern] }
+: Pattern               { [$1] }
+| Pattern '|' OrPattern { $1 : $3 }
 
 PatternStar :: { [Pattern] }
 : {- empty -}         { [] }
@@ -326,6 +335,7 @@ type Binders = [Binder]
 data Pattern
   = Pattern String [Pattern]
   | Wildcard
+  | OrPatterns [[Pattern]]
   deriving (Eq, Generic, Show)
 
 type MultiPattern = [Pattern]

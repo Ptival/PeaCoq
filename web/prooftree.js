@@ -2455,6 +2455,31 @@ function showPatternAux(p, withParens) {
                 ;
             }
         }
+        break;
+
+        case "OrPatterns":
+        var c = p.contents;
+        var patterns = c[0];
+        return (
+            syntax("(")
+                + _(patterns).reduce(function(acc, orpattern, ndx) {
+                    return (
+                        (ndx > 0 ? syntax(",") : "")
+                            + _(orpattern).reduce(function(acc, pattern, ndx) {
+                                return (
+                                    (ndx > 0 ? "|" : "")
+                                        + showPatternAux(pattern, false)
+                                );
+                            })
+                    );
+                })
+                + syntax(")")
+        );
+        break;
+
+        default:
+        alert("Unknown pattern: " + p.tag);
+
     };
 }
 
