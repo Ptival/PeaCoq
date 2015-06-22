@@ -5,5 +5,7 @@ Theorem test : forall n
   | O => O
   | _ => O
   end = O + O + O + O + O + O + O + O + O + O + O + O + O + O + O + O + O + O + O + O + O ->
-  n = O.
-Proof. intros. destruct n; [ reflexivity | ].
+  0 + 0 + 0 = (0 + (0 + 0)) ->
+  n = n.
+Proof. intros. reflexivity.
+Qed.
