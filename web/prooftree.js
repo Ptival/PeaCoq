@@ -3654,7 +3654,7 @@ GoalNode.prototype.onSolved = function(response) {
         if (this.hasParent()) {
             this.parent.onChildSolvedAndUnfocused(response);
         } else if (autoLayout) {
-            proofTreeQueryWish('Qed.');
+            //proofTreeQueryWish('Qed.');
         }
     } else if (autoLayout) {
         proofTreeQueryWish('}');
