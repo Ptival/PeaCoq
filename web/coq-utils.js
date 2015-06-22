@@ -328,6 +328,10 @@ var vernacularPrefixes = [
 ];
 
 var notVernacularWhitelist = [
+    "Case",
+    "SCase",
+    "SSCase",
+    "SSSCase",
     "ESD.fsetdec",
     "ESD2.fsetdec",
     "InvBooleans",
