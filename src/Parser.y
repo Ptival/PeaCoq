@@ -97,7 +97,7 @@ comment { TokComment $$ }
 %left '*'
 %nonassoc '(' ')'
 %nonassoc '{' '}'
-%nonassoc var num str "[]" '∀' '∃' 'λ' '¬' "fun" "match" "let"
+%nonassoc var num str "[]" '∀' '∃' 'λ' "fun" "match" "let"
 -- it is important that APP has higher precedence than var, num, '('
 -- and all terminals that can be the start of a term,
 -- so that shift/reduce conflicts of the form

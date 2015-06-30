@@ -47,14 +47,6 @@ var diffOrange = "#FFB347";
 var diffOpacity = 0.75;
 var goalBodyPadding = 4;
 
-// CHECKS
-function assert(condition, message) {
-    if (!condition) {
-        alert(message);
-        throw message || "Assertion failed";
-    }
-}
-
 // COMPUTED GLOBALS
 var activeProofTree;
 
@@ -1963,7 +1955,7 @@ function computeDiffList(oldHypsOriginal, newHypsOriginal) {
         _(newHyps).remove(sameNameAs(matchesOld));
     }
 
-  // now register the remaining disappearing
+    // now register the remaining disappearing
     _(oldHyps).each(function(oldHyp) {
         diffList.push({"oldHyp": oldHyp, "newHyp": undefined, "isJump": false});
     });
@@ -2521,6 +2513,8 @@ function showNames(t) {
 }
 
 function showTerm(t) {
+    var term = mkTerm(t);
+    console.log(term, term.toString());
     return showTermAux(t, 0, 0, true);
 }
 
