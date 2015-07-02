@@ -1943,25 +1943,35 @@ function computeDiffList(oldHypsOriginal, newHypsOriginal) {
             newHyps.shift();
             continue;
         }
-        var oldMatch = _(newHyps).find(sameNameAs(oldHyp));
+        var matchesOld = _(newHyps).find(sameNameAs(oldHyp));
         // or the first old has disappeared
-        if (oldMatch === undefined) {
+        if (matchesOld === undefined) {
             diffList.push({"oldHyp": oldHyp, "newHyp": undefined, "isJump": false});
             oldHyps.shift();
             continue;
         }
         // or the first old has moved, but the first new has appeared
-        var newMatch = _(oldHyps).find(sameNameAs(newHyp));
-        if (newMatch === undefined) {
+        var matchesNew = _(oldHyps).find(sameNameAs(newHyp));
+        if (matchesNew === undefined) {
             diffList.push({"oldHyp": undefined, "newHyp": newHyp, "isJump": false});
             newHyps.shift();
             continue;
         }
-        // otherwise, register the oldMatch as a "jump"
-        diffList.push({"oldHyp": oldHyp, "newHyp": oldMatch, "isJump": true});
+        // otherwise, register matchesOld as a "jump"
+        diffList.push({"oldHyp": oldHyp, "newHyp": matchesOld, "isJump": true});
         oldHyps.shift();
-        newHyps.shift();
+        _(newHyps).remove(sameNameAs(matchesOld));
     }
+
+  // now register the remaining disappearing
+    _(oldHyps).each(function(oldHyp) {
+        diffList.push({"oldHyp": oldHyp, "newHyp": undefined, "isJump": false});
+    });
+
+    // now register the remaining appearing
+    _(newHyps).each(function(newHyp) {
+        diffList.push({"oldHyp": undefined, "newHyp": newHyp, "isJump": false});
+    });
 
     return diffList;
 }
