@@ -29,6 +29,7 @@ import           System.Log.Handler.Simple
 import           System.Log.Logger
 import           System.Process
 
+import           Config
 import           Coqtop
 import           Handlers
 import           PeaCoq
@@ -130,7 +131,7 @@ cleanStaleSessions globRef = forever $ do
 
 startCoqtop :: IO (Handle, Handle, ProcessHandle)
 startCoqtop = do
-  (hi, ho, he, ph) <- runInteractiveCommand "coqtop -ideslave"
+  (hi, ho, he, ph) <- runInteractiveCommand coqtop
   hClose he
   hSetBinaryMode hi False
   hSetBuffering stdin LineBuffering
