@@ -1335,3 +1335,13 @@ function captureDiffs() {
         return decodeURIComponent(escape(old(str)));
     }
 })();
+
+function recordDiff() {
+    if (activeProofTree) {
+        window.copy(JSON.stringify({
+            "before": activeProofTree.curNode.response,
+            "tactic": activeProofTree.curNode.children[0].getFocusedTactic().tactic,
+            "after": activeProofTree.curNode.children[0].children[0].response,
+        }));
+    }
+}
