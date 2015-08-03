@@ -2865,7 +2865,7 @@ function showTermAux(t, indentation, precParent, newline) {
 }
 
 function inlineBlock(contents) {
-    return '<div class="inline-block">' + contents + '</div>';
+    return '<div style="display: inline-block; max-width: 100%; vertical-align: top;">' + contents + '</div>';
 }
 
 function showHypothesis(h) {
