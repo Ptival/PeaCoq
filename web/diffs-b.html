@@ -5,11 +5,7 @@
     <meta charset="utf-8" />
     <link rel="stylesheet" href="bootstrap.css">
     <link rel="stylesheet" href="bootstrap-theme.css">
-    <link rel="stylesheet" href="codemirror/lib/codemirror.css">
-    <link rel="stylesheet" href="codemirror/addon/lint/lint.css">
-    <link rel="stylesheet" href="prooftree.css">
-    <link rel="stylesheet" href="lecture.css">
-    <link rel="stylesheet" href="diffs.css">
+    <link rel="stylesheet" href="diffs-b.css">
     <script src="jquery.js"></script>
     <script src="d3.js"></script>
     <script src="lodash.js"></script>
@@ -29,7 +25,7 @@
     <script src="prooftree.js"></script>
     <script src="coq.js"></script>
     <script src="documentation.js"></script>
-    <script src="diffs.js"></script>
+    <script src="diffs-b.js"></script>
     <script type="text/javascript" src="diffs.data"></script>
   </head>
   <body>
@@ -51,12 +47,6 @@
             detect the appearing, disappearing, and modification of
             lines.</p>
             <p>Each line starts with its name, followed by its contents.</p>
-            <p>Two buttons: <span class="btn-group"
-            id="before-placeholder"></span> and
-            <span class="btn-group"
-            id="after-placeholder"></span> will let you switch back
-            and forth to the state before and after applying some
-            action.</p>
             <p>The format for your answers should be: <code>x, H0, H1,
             a</code></p>
             <p>Do NOT use the line number. Use its name.</p>
@@ -94,44 +84,46 @@
     
     <div id="main-and-prooftree">
       <div id="main">
-        <div id="main-left">
-          <div id="coqtop-context"></div>
-        </div>
-        <div id="main-right">
+        <div id="main-top">
           <form id="form" autocomplete="off">
-            <p>Input your answers here then press Submit.</p>
-            <p>The format for your answers should be: <code>x, H0, H1, a</code></p>
-            <p>Do NOT use the line number. Use its name.</p>
-            <div class="form-group">
-              <label for="input-removed">Which lines were removed?
+            <div class="form-group form-group-sm">
+            <p>Input your answers here then press Submit.
+            The format for your answers should be: <code>x, H0, H1, a</code>
+            Do NOT use the line number. Use its name.</p>
+              <label class="col-sm-6" for="input-removed">Which lines were removed?
               (present before, absent after)</label>
-              <input type="text" class="form-control" id="input-removed">
-            </div>
-            <div class="form-group">
-              <label for="input-added">Which lines were added?
+              <div class="col-sm-6">
+                <input type="text" class="form-control" id="input-removed">
+              </div>
+              <label class="col-sm-6" for="input-added">Which lines were added?
               (absent before, present after)</label>
-              <input type="text" class="form-control" id="input-added">
-            </div>
-            <div class="form-group">
-              <label for="input-changed">Which lines have changed?
+              <div class="col-sm-6">
+                <input type="text" class="form-control" id="input-added">
+              </div>
+              <label class="col-sm-6" for="input-changed">Which lines have changed?
               (present before and after, but with a different
               value)</label>
-              <input type="text" class="form-control" id="input-changed">
-            </div>
-            <label for="goal-changed">
-              Did the goal change? (the text under the black line)
-            </label>
-            <div class="btn-group" data-toggle="buttons">
-              <label class="btn btn-primary">
-                <input type="radio" name="goal-changed" autocomplete="off" id="goal-changed-yes"> Yes
+              <div class="col-sm-6">
+                <input type="text" class="form-control" id="input-changed">
+              </div>
+              <label class="col-sm-6">
+                Did the goal change? (the text under the black line)
               </label>
-              <label class="btn btn-primary">
-                <input type="radio" name="goal-changed" autocomplete="off" id="goal-changed-no"> No
-              </label>
+                <div class="btn-group col-sm-6" data-toggle="buttons">
+                  <label class="btn btn-primary">
+                    <input type="radio" name="goal-changed" autocomplete="off" id="goal-changed-yes"> Yes
+                  </label>
+                  <label class="btn btn-primary">
+                    <input type="radio" name="goal-changed" autocomplete="off" id="goal-changed-no"> No
+                  </label>
+                </div>
+            <p>
+              <button type="submit" class="btn btn-primary col-sm-2">Submit (no going back!)</button>
+            </p>
             </div>
-            <p></p>
-            <button type="submit" class="btn btn-primary">Submit (no going back!)</button>
           </form>
+        </div>
+        <div id="main-bottom">
         </div>
       </div>
     </div>

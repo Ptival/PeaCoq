@@ -1,5 +1,5 @@
-var first = 2;
-var last = 12;
+var first = 0;
+var last = 10;
 
 var current = first;
 
@@ -20,14 +20,9 @@ $(document).ready(function() {
 
     var buttonGroup = $("#toolbar > .btn-group");
 
-    addBefore(cm, buttonGroup);
-    addAfter(cm, buttonGroup);
-
-    //addPrevious(cm, buttonGroup);
-    //addNext(cm, buttonGroup);
-
-    addTitle(buttonGroup);
-
+    addPrevious(cm, buttonGroup);
+    addNext(cm, buttonGroup);
+    
     onPrevious(cm);
 
     $("#form").submit(function() {
@@ -89,15 +84,11 @@ function resetForm() {
 }
 
 function onBefore(cm) {
-    renderContext(cm, allDiffs[current].before);
-    $("#before").prop("disabled", true);
-    $("#after").prop("disabled", false);
+    displayDiff();
 }
 
 function onAfter(cm) {
-    renderContext(cm, allDiffs[current].after);
-    $("#before").prop("disabled", false);
-    $("#after").prop("disabled", true);
+    displayDiff();
 }
 
 function onPrevious(cm) {
@@ -115,60 +106,6 @@ function onNext(cm) {
     updateTitle();
     onBefore(cm);
     resetForm();
-}
-
-function addTitle(buttonGroup) {
-    $("<button>", {
-        "class": "btn btn-info",
-        "disabled": true,
-        "id": "title",
-    })
-        .appendTo(buttonGroup)
-    ;
-}
-
-function addBefore(cm, buttonGroup) {
-
-    $("<button>", {
-        "class": "btn btn-default",
-        "id": "before",
-    })
-        .appendTo(buttonGroup)
-        .on("click", _.partial(onBefore, cm))
-        .append(mkGlyph("backward"))
-        .append(nbsp + "Before")
-    ;
-
-    $("<button>", {
-        "class": "btn btn-default",
-    })
-        .appendTo($("#before-placeholder"))
-        .append(mkGlyph("backward"))
-        .append(nbsp + "Before")
-    ;
-
-}
-
-function addAfter(cm, buttonGroup) {
-
-    $("<button>", {
-        "class": "btn btn-default",
-        "id": "after",
-    })
-        .appendTo(buttonGroup)
-        .on("click", _.partial(onAfter, cm))    
-        .append(mkGlyph("forward"))
-        .append(nbsp + "After")
-    ;
-
-    $("<button>", {
-        "class": "btn btn-default",
-    })
-        .appendTo($("#after-placeholder"))
-        .append(mkGlyph("forward"))
-        .append(nbsp + "After")
-    ;
-
 }
 
 function addPrevious(cm, buttonGroup) {
@@ -210,50 +147,12 @@ function showHypothesisText(h) {
     return res;
 }
 
-/*
-  Fill a [CodeMirror] instance [cm] with the context for a given [response].
- */
-function renderContext(cm, response) {
-    var value = "";
-
-    switch (response.response.tag) {
-    case "Good":
-        var nbFocused = response.focused.length;
-        if (response.focused.length > 0) {
-
-            _(response.focused[0].gHyps).each(function(h) {
-                var hyp = extractHypothesis(h);
-                var currentLinePosition = value.split('\n').length;
-//                cm.setGutterMarker(currentLinePosition + 1, "context-gutter",
-//                                   $("<span class='gutterspan'>").text(hyp.hName));
-                value += showHypothesisText(hyp) + "\n";
-            });
-
-            // the goal line position must be computed now
-            var goalLinePosition = value.split('\n').length;
-
-            value += showTermText(extractGoal(response.focused[0].gGoal));
-
-            cm.getDoc().setValue(value);
-
-            cm.addLineWidget(
-                goalLinePosition - 1,
-                $("<hr>").css("border", "1px solid black")[0],
-                /*
-                $("<div>")
-                    .text("__________________________________________________")
-                [0],
-                */
-                { "above": true }
-            );
-
-        } else {
-
-            alert("This should not happen");
-
-        }
-        break;
-    case "Fail":
-        break;
-    }
+function displayDiff() {
+    $("#main-bottom").html(
+        '<img id="picture" src="coq/diffs/screenshot ('
+            + current + ').png"/>'
+    );
+    $("#main-bottom").height(
+        $("body").height() - $("#main-top").height() - $("#toolbar").height() - 2
+    );
 }
