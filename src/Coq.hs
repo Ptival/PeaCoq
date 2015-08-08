@@ -45,7 +45,7 @@ type CoqIO = RWST CoqReader CoqWriter CoqState IO
 type CoqtopIO a = CoqIO (Value a)
 
 initialCoqState :: CoqState
-initialCoqState = (MkStateId 0, 0)
+initialCoqState = (MkStateId 1, 0) -- 1 after auto-initialization
 
 data StateId
   = MkStateId Int
@@ -123,7 +123,7 @@ data Feedback
 instance ToJSON Feedback
 
 data Status =
-  MkStatus [String] (Maybe String) [String] StateId
+  MkStatus [String] (Maybe String) [String] Int
   deriving (Generic, Show)
 
 instance ToJSON Status
@@ -365,7 +365,7 @@ instance FromXML Status where
     path <- forceXML
     proofName <- forceXML
     allProofs <- forceXML
-    proofNum <- MkStateId <$> forceXML
+    proofNum <- forceXML
     return $ MkStatus path proofName allProofs proofNum
 
 xmlConduit :: (MonadThrow m) => Conduit BS.ByteString m Event
@@ -420,10 +420,8 @@ instance FromXML a => FromXML (Value a) where
     $ \ (val, locS, locE) ->
     case val of
     "good" -> ValueGood <$> do
-      liftIO . putStrLn $ "good"
       forceXML
     "fail" -> do
-      liftIO . putStrLn $ "fail"
       stateID <- forceXML
       errMsg <- unpackContent
       return $ ValueFail stateID (errorLoc locS locE) errMsg

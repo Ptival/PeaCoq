@@ -99,7 +99,8 @@ modifySessionState f = do
   case IM.lookup mapKey m of
     Nothing -> do
       (hi, ho, ph) <- liftIO startCoqtop
-      let (s, res) = f (SessionState True (hi, ho) ph initialCoqState)
+      (_, st, _) <- liftIO $ runCoqtopIO (hi, ho) initialCoqState (init Nothing)
+      let (s, res) = f (SessionState True (hi, ho) ph st)
       modifyGlobalState $ insertSession mapKey s
       --logAction hash $ "NEWSESSION " ++ show sessionIdentity
       return res

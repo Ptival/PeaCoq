@@ -48,7 +48,7 @@ peacoqRoutes =
   , ("getoptions", handlerGetOptions)
   , ("goal",       handlerGoal)
   , ("hints",      handlerHints)
-  , ("init",       handlerInit)
+  --, ("init",       handlerInit)
   , ("interp",     handlerInterp)
   , ("mkcases",    handlerMkCases)
   , ("printast",   handlerPrintAST)
