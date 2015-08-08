@@ -1,0 +1,51 @@
+html, body, #interface {
+    height: 100%;
+    margin: 0;
+}
+#interface, #main, #main-right, #context, #context-tabs, #coqtop, #coqtop-tabs {
+    display: flex; /* Flex container */
+}
+#interface, #main-right, #context, #coqtop {
+    flex-direction: column; /* Column layout */
+}
+#main, #main-left, #main-right, #context, #context-tabs, #coqtop, #coqtop-tabs {
+    flex: 1; /* Distribute space equally among the flex items */
+    flex-basis: 0;
+    overflow: auto; /* Use scrollbars if necessary */
+}
+
+a, button {
+    border-radius: 0 !important;
+    padding: 2px 4px !important;
+}
+
+.tab-pane {
+    display: flex;
+    width: 100%;
+}
+
+.tab-pane > .ace_editor {
+    display: flex;
+    flex-grow: 1;
+}
+
+.coq-command {
+    background: #00AA00;
+    position: absolute;
+    z-index: 5;
+}
+
+.begin-marker {
+    position: absolute;
+    border-left: 2px solid green;
+}
+
+.marker {
+    position: absolute;
+    border-left: 2px solid blue;
+}
+
+.end-marker {
+    position: absolute;
+    border-left: 2px solid red;
+}
