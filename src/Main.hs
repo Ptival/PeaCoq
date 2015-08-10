@@ -2,28 +2,29 @@
 
 module Main where
 
-import           Control.Concurrent (forkIO, threadDelay)
-import           Control.Monad (forever, forM)
-import           Control.Monad.IO.Class (liftIO)
-import           Data.ByteString (ByteString, append)
-import qualified Data.HashMap.Strict as HM (map)
+import           Control.Concurrent                          (forkIO, threadDelay)
+import           Control.Monad                               (forever, forM)
+import           Control.Monad.IO.Class                      (liftIO)
+import           Data.ByteString                             (ByteString, append)
+import qualified Data.HashMap.Strict                         as HM (map)
 import           Data.IORef
-import qualified Data.IntMap as IM
+import qualified Data.IntMap                                 as IM
+import           Data.String.Utils
 import           Data.Time.Format
 import           Data.Time.LocalTime
 import           Network.Socket
-import           Prelude hiding (log)
-import           Snap.Core (MonadSnap)
+import           Prelude                                     hiding (log)
+import           Snap.Core                                   (MonadSnap)
 import           Snap.Http.Server.Config
 import           Snap.Snaplet
-import           Snap.Snaplet.Session hiding (touchSession)
+import           Snap.Snaplet.Session                        hiding (touchSession)
 import           Snap.Snaplet.Session.Backends.CookieSession (initCookieSessionManager)
-import           Snap.Snaplet.Session.SessionManager ()
+import           Snap.Snaplet.Session.SessionManager         ()
 import           Snap.Util.FileServe
 import           System.Directory
 import           System.IO
 import           System.Log.Formatter
-import           System.Log.Handler (setFormatter)
+import           System.Log.Handler                          (setFormatter)
 import           System.Log.Handler.Simple
 import           System.Log.Logger
 import           System.Process
@@ -80,7 +81,9 @@ mainUW :: IO ()
 mainUW = do
   hash <- getGitCommitHash
   homeDir <- getHomeDirectory
-  PeaCoqConfig mUserId logPath coqtop <- read <$> readFile (homeDir ++ "/" ++ configFile)
+  fileString <- readFile (homeDir ++ "/" ++ configFile)
+  let configString = unwords . filter (not <$> startswith "--") $ lines fileString
+  let PeaCoqConfig mUserId logPath coqtop = read configString
   now <- getZonedTime
   let nowString = formatTime defaultTimeLocale "%F-%H-%M-%S" now
   case mUserId of
