@@ -14,6 +14,6 @@ touchSession :: SessionState -> SessionState
 touchSession (SessionState _ h ph st) = SessionState True h ph st
 
 adjustSession :: (SessionState -> SessionState) -> Int -> GlobalState ->
-                (GlobalState, Int)
-adjustSession f mapKey (GlobalState c m) =
-  (GlobalState c (adjust f mapKey m), c)
+                (GlobalState, ())
+adjustSession f mapKey gs =
+  (gs { gActiveSessions = adjust f mapKey (gActiveSessions gs) }, ())

@@ -225,7 +225,7 @@ function globalKeyHandler(evt) {
         switch(evt.keyCode) {
         default:
             break;
-        };
+        }
     }
 }
 
@@ -539,7 +539,8 @@ function createProofTree(response) {
     activeProofTree.newAlreadyStartedTheorem(
         response,
         //replayTactics
-        replayAndStudyTactics
+        //replayAndStudyTactics
+        studyTactics
     );
 
     // only show up the tree automatically if the user is not processing to
@@ -635,6 +636,16 @@ function replayTactics(pt) {
            );
 }
 
+function onlyRightRewrite(s) {
+    switch (s) {
+    case "concat_nil_left":
+    case "concat_nil_right":
+        return true;
+    default:
+        return false;
+    }
+}
+
 /*
   This strategy tries many tactics, not trying to be smart.
 */
@@ -681,11 +692,13 @@ function studyTactics(pt) {
 
         makeGroup(
             "simplifications",
-            ["simpl"].concat(
-                _(curHyps).map(function(h) { return "simpl in " + h; }).value()
-            ).concat(
-                (pt.curNode.hyps.length > 0 ? ["simpl in *"] : [])
-            )
+            ["simpl"]
+                .concat(
+                    (pt.curNode.hyps.length > 0 ? ["simpl in *"] : [])
+                )
+                .concat(
+                    _(curHyps).map(function(h) { return "simpl in " + h; }).value()
+                )
         ),
 
         makeGroup(
@@ -697,6 +710,21 @@ function studyTactics(pt) {
                     //"econstructor",
                     //"eexists",
                 ])
+        ),
+
+        makeGroup(
+            "destructors",
+            []
+                .concat(
+                    _(curHypsFull).map(function(h) {
+                        return pt.hypIsDisjunction(h) ? ["destruct " + h.hName] : [];
+                    }).value()
+                )
+                .concat(
+                    _(curHypsFull).map(function(h) {
+                        return pt.hypIsConjunction(h) ? ["destruct " + h.hName] : [];
+                    }).value()
+                )
         ),
 
         // makeGroup(
@@ -743,10 +771,14 @@ function studyTactics(pt) {
             "rewrites",
             _(curNames)
                 .map(function(n) {
-                    return [
-                        "rewrite -> " + n,
-                        "rewrite <- " + n
-                    ];
+                    if (onlyRightRewrite(n)) {
+                        return ["rewrite -> " + n];
+                    } else {
+                        return [
+                            "rewrite -> " + n,
+                            "rewrite <- " + n
+                        ];
+                    }
                 })
                 .flatten(true).value()
         ),
@@ -772,20 +804,24 @@ function studyTactics(pt) {
                 return _(curHyps)
                     .map(function(h) {
                         if (h === n) { return []; }
-                        return ([
-                            ("rewrite -> " + n + " in " + h),
-                            ("rewrite <- " + n + " in " + h)
-                        ]);
+                        if (onlyRightRewrite(n)) {
+                            return ["rewrite -> " + n + " in " + h];
+                        } else {
+                            return ([
+                                ("rewrite -> " + n + " in " + h),
+                                ("rewrite <- " + n + " in " + h)
+                            ]);
+                        }
                     })
                     .flatten(true).value()
                 ;
             }).flatten(true).value()
         ),
 
-        makeGroup(
-            "reverts",
-            _(curHyps).map(function(h) { return "revert " + h; }).value()
-        ),
+        // makeGroup(
+        //     "reverts",
+        //     _(curHyps).map(function(h) { return "revert " + h; }).value()
+        // ),
 
     ];
 
@@ -1106,7 +1142,7 @@ function editorOnResponse(requestType, request, response) {
             updateCoqtopPane(goingDown, response);
 
             break;
-        };
+        }
 
         resizeCoqtopPanes();
 
@@ -1335,3 +1371,13 @@ function captureDiffs() {
         return decodeURIComponent(escape(old(str)));
     }
 })();
+
+function recordDiff() {
+    if (activeProofTree) {
+        window.copy(JSON.stringify({
+            "before": activeProofTree.curNode.response,
+            "tactic": activeProofTree.curNode.children[0].getFocusedTactic().tactic,
+            "after": activeProofTree.curNode.children[0].children[0].response,
+        }));
+    }
+}

@@ -9,6 +9,7 @@ import           Data.ByteString                             (ByteString, append
 import qualified Data.HashMap.Strict                         as HM (map)
 import           Data.IORef
 import qualified Data.IntMap                                 as IM
+import           Data.String.Utils
 import           Data.Time.Format
 import           Data.Time.LocalTime
 import           Network.Socket
@@ -20,6 +21,7 @@ import           Snap.Snaplet.Session                        hiding (touchSessio
 import           Snap.Snaplet.Session.Backends.CookieSession (initCookieSessionManager)
 import           Snap.Snaplet.Session.SessionManager         ()
 import           Snap.Util.FileServe
+import           System.Directory
 import           System.IO
 import           System.Log.Formatter
 import           System.Log.Handler                          (setFormatter)
@@ -27,12 +29,14 @@ import           System.Log.Handler.Simple
 import           System.Log.Logger
 import           System.Process
 
-import           Config
 import           Handlers
 import           PeaCoq
 import           Session
 
 {- Configuration -}
+
+configFile :: String
+configFile = ".PeaCoqConfig.hs"
 
 sessionTimeoutMinutes :: Int
 sessionTimeoutMinutes = 15
@@ -71,20 +75,21 @@ peacoqRoutes =
 
 data PeaCoqConfig =
   PeaCoqConfig
-  { configUserId  :: Maybe String
+  { configUserId  :: String
   , configLogPath :: FilePath
+  , configCoqtop :: String
   }
   deriving (Read)
 
-serverConfig :: MonadSnap m => String -> Config m a
-serverConfig nowString =
+serverConfig :: MonadSnap m => PeaCoqConfig -> String -> Config m a
+serverConfig (PeaCoqConfig { configUserId = u, configLogPath = l }) nowString =
   setStartupHook hook -- figures out which port was used and prints it
   . setPort 0         -- 0 means that unless specified, pick a random port
   . setAccessLog (ConfigFileLog $ prefix ++ "access.log")
   . setErrorLog (ConfigFileLog $ prefix ++ "error.log")
   $ defaultConfig
   where
-    prefix = logPath ++ "/" ++ userId ++ "-" ++ nowString ++ "-"
+    prefix = l ++ "/" ++ u ++ "-" ++ nowString ++ "-"
     hook dat = do
       port <- socketPort . head $ getStartupSockets dat
       putStrLn $ "Server listening on port: " ++ show port
@@ -96,13 +101,19 @@ main :: IO ()
 main = do
   now <- getZonedTime
   let nowString = formatTime defaultTimeLocale "%F-%H-%M-%S" now
+  homeDir <- getHomeDirectory
+  fileString <- readFile (homeDir ++ "/" ++ configFile)
+  let configString = unwords . filter (not <$> startswith "--") $ lines fileString
+  let config@(PeaCoqConfig { configUserId = u
+                           , configLogPath = l
+                           , configCoqtop = coqtop }) = read configString
   handler <- fileHandler
-            (logPath ++ "/" ++ userId ++ "-" ++ nowString ++ ".log")
+            (l ++ "/" ++ u ++ "-" ++ nowString ++ ".log")
             loggingPriority
   let format = simpleLogFormatter "[$time] $msg"
   let fHandler = setFormatter handler format
   updateGlobalLogger rootLoggerName (setLevel loggingPriority . addHandler fHandler)
-  serveSnaplet (serverConfig nowString) peaCoqSnaplet
+  serveSnaplet (serverConfig config nowString) (peaCoqSnaplet coqtop)
 
 sessionTimeoutSeconds :: Int
 sessionTimeoutSeconds = 60 * sessionTimeoutMinutes
@@ -124,19 +135,18 @@ closeSession _hash (SessionState _ (hi, ho) ph _) = do
 
 cleanStaleSessions :: String -> IORef GlobalState -> IO ()
 cleanStaleSessions hash globRef = forever $ do
-  GlobalState _ _ <- readIORef globRef
   sessionsToClose <- atomicModifyIORef' globRef markAndSweep
   forM sessionsToClose (closeSession hash)
   threadDelay sessionTimeoutMicroseconds
   where
     markAndSweep :: GlobalState -> (GlobalState, [SessionState])
-    markAndSweep (GlobalState c m) =
-      let (alive, stale) = IM.partition isAlive m in
-      (GlobalState c (IM.map markStale alive), IM.elems stale)
+    markAndSweep gs =
+      let (alive, stale) = IM.partition isAlive (gActiveSessions gs) in
+      (gs { gActiveSessions = IM.map markStale alive }, IM.elems stale)
 
-newPeaCoqGlobalState :: String -> IO (IORef GlobalState)
-newPeaCoqGlobalState hash = liftIO $ do
-  globRef <- newIORef $ GlobalState 0 IM.empty
+newPeaCoqGlobalState :: String -> String -> IO (IORef GlobalState)
+newPeaCoqGlobalState coqtop hash = liftIO $ do
+  globRef <- newIORef $ GlobalState 0 IM.empty coqtop
   -- spawn a parallel thread to regularly clean up
   forkIO $ cleanStaleSessions hash globRef
   return globRef
@@ -151,10 +161,10 @@ hashInit hash =
   makeSnaplet "hash" "Holds the current git commit hash" Nothing $ do
     return hash
 
-peaCoqSnaplet :: SnapletInit PeaCoq PeaCoq
-peaCoqSnaplet = makeSnaplet "PeaCoq" "PeaCoq" Nothing $ do
+peaCoqSnaplet :: String -> SnapletInit PeaCoq PeaCoq
+peaCoqSnaplet coqtop = makeSnaplet "PeaCoq" "PeaCoq" Nothing $ do
   hash <- liftIO $ getGitCommitHash
-  globRef <- liftIO $ newPeaCoqGlobalState hash
+  globRef <- liftIO $ newPeaCoqGlobalState coqtop hash
   g <- nestSnaplet "globRef" lGlobRef $ globRefInit globRef
   h <- nestSnaplet "hash" lHash $ hashInit hash
   s <- nestSnaplet "session" lSession cookieSessionManager

@@ -12,6 +12,7 @@ import qualified Data.IntMap                         as IM
 import           Data.String.Utils                   (strip)
 import qualified Data.Text                           as T
 import           Prelude                             hiding (init)
+
 import           Snap.Core
 import           Snap.Extras.JSON
 import           Snap.Snaplet
@@ -22,7 +23,6 @@ import           System.IO
 import           System.Process
 import           System.Random
 
-import           Config
 import           Coq
 import           PeaCoq
 import           Session
@@ -71,8 +71,8 @@ handleCoqtopIO :: (FromJSON i, ToJSON o) =>
                  (i -> CoqtopIO o) -> PeaCoqHandler ()
 handleCoqtopIO = void . withParam . liftCoqtopIO
 
-startCoqtop :: IO (Handle, Handle, ProcessHandle)
-startCoqtop = do
+startCoqtop :: String -> IO (Handle, Handle, ProcessHandle)
+startCoqtop coqtop = do
   (hi, ho, he, ph) <- runInteractiveCommand coqtop
   hClose he
   hSetBinaryMode hi False
@@ -94,11 +94,11 @@ modifyGlobalState f = do
 
 modifySessionState :: (SessionState -> (SessionState, a)) -> PeaCoqHandler a
 modifySessionState f = do
-  GlobalState _ m <- getGlobalState
+  GlobalState { gActiveSessions = m, gCoqtop = coqtop } <- getGlobalState
   mapKey <- withSession lSession getSessionKey
   case IM.lookup mapKey m of
     Nothing -> do
-      (hi, ho, ph) <- liftIO startCoqtop
+      (hi, ho, ph) <- liftIO $ startCoqtop coqtop
       (_, st, _) <- liftIO $ runCoqtopIO (hi, ho) initialCoqState (init Nothing)
       let (s, res) = f (SessionState True (hi, ho) ph st)
       modifyGlobalState $ insertSession mapKey s
@@ -118,8 +118,10 @@ setCoqState s =
   modifySessionState (\ (SessionState a b c _) -> (SessionState a b c s, ()))
 
 insertSession :: Int -> SessionState -> GlobalState -> (GlobalState, ())
-insertSession mapKey s (GlobalState c m) =
-  (GlobalState (c + 1) (IM.insert mapKey s m), ())
+insertSession mapKey s gs@(GlobalState { gNextSession = c, gActiveSessions = m }) =
+  (gs { gNextSession = c + 1
+      , gActiveSessions = IM.insert mapKey s m
+      }, ())
 
 --logAction :: String -> String -> IO ()
 --logAction hash message = infoM rootLoggerName (hash ++ " " ++ message)

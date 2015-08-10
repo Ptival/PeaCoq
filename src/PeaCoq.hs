@@ -22,8 +22,10 @@ data SessionState
 -- Global state must be used in thread-safe way
 data GlobalState
   = GlobalState
-    Int                   -- next session number
-    (IntMap SessionState) -- active sessions
+    { gNextSession :: Int -- number to assign to the next session
+    , gActiveSessions :: IntMap SessionState
+    , gCoqtop :: String -- the command to use to run coqtop
+    }
 
 type PeaCoqGlobRef = (IORef GlobalState)
 type PeaCoqHash    = String

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>PeaCoq</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="bootstrap.css">
+    <link rel="stylesheet" href="bootstrap-theme.css">
+    <link rel="stylesheet" href="diffs-b.css">
+    <script src="jquery.js"></script>
+    <script src="d3.js"></script>
+    <script src="lodash.js"></script>
+    <script src="bootstrap.js"></script>
+    <script src="codemirror/lib/codemirror.js"></script>
+    <script src="codemirror/addon/display/placeholder.js"></script>
+    <script src="codemirror/addon/edit/matchbrackets.js"></script>
+    <script src="codemirror/addon/search/search.js"></script>
+    <script src="codemirror/addon/search/searchcursor.js"></script>
+    <script src="codemirror/addon/selection/mark-selection.js"></script>
+    <script src="codemirror/keymap/emacs.js"></script>
+    <script src="codemirror/keymap/sublime.js"></script>
+    <script src="codemirror/keymap/vim.js"></script>
+    <script src="polyfill.js"></script>
+    <script src="coq-utils.js"></script>
+    <script src="coqtop.js"></script>
+    <script src="prooftree.js"></script>
+    <script src="coq.js"></script>
+    <script src="documentation.js"></script>
+    <script src="diffs-b.js"></script>
+    <script type="text/javascript" src="diffs.data"></script>
+  </head>
+  <body>
+
+    <div id="toolbar">
+      <div class="btn-group btn-group-lg"></div>
+    </div>
+
+    <div class="modal fade modal-fullscreen force-fullscreen"
+         id="startModal" tabindex="-1" role="dialog"
+         aria-labelledby="myModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title">Get ready!</h4>
+          </div>
+          <div class="modal-body">
+            <p>In this sequence of exercises, you will be asked to
+            detect the appearing, disappearing, and modification of
+            lines.</p>
+            <p>Each line starts with its name, followed by its contents.</p>
+            <p>The format for your answers should be: <code>x, H0, H1,
+            a</code></p>
+            <p>Do NOT use the line number. Use its name.</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-info" data-dismiss="modal"
+                    id="start">
+              Got it, let's start!
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade modal-fullscreen force-fullscreen"
+         id="stopModal" tabindex="-1" role="dialog"
+         aria-labelledby="myModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title">You are done!</h4>
+          </div>
+          <div class="modal-body">
+            <p>Thanks for participating!</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-info" data-dismiss="modal"
+                    id="quit">
+              Quit!
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div id="main-and-prooftree">
+      <div id="main">
+        <div id="main-top">
+          <form id="form" autocomplete="off">
+            <div class="form-group form-group-sm">
+            <p>Input your answers here then press Submit.
+            The format for your answers should be: <code>x, H0, H1, a</code>
+            Do NOT use the line number. Use its name.</p>
+              <label class="col-sm-6" for="input-removed">Which lines were removed?
+              (present before, absent after)</label>
+              <div class="col-sm-6">
+                <input type="text" class="form-control" id="input-removed">
+              </div>
+              <label class="col-sm-6" for="input-added">Which lines were added?
+              (absent before, present after)</label>
+              <div class="col-sm-6">
+                <input type="text" class="form-control" id="input-added">
+              </div>
+              <label class="col-sm-6" for="input-changed">Which lines have changed?
+              (present before and after, but with a different
+              value)</label>
+              <div class="col-sm-6">
+                <input type="text" class="form-control" id="input-changed">
+              </div>
+              <label class="col-sm-6">
+                Did the goal change? (the text under the black line)
+              </label>
+                <div class="btn-group col-sm-6" data-toggle="buttons">
+                  <label class="btn btn-primary">
+                    <input type="radio" name="goal-changed" autocomplete="off" id="goal-changed-yes"> Yes
+                  </label>
+                  <label class="btn btn-primary">
+                    <input type="radio" name="goal-changed" autocomplete="off" id="goal-changed-no"> No
+                  </label>
+                </div>
+            <p>
+              <button type="submit" class="btn btn-primary col-sm-2">Submit (no going back!)</button>
+            </p>
+            </div>
+          </form>
+        </div>
+        <div id="main-bottom">
+        </div>
+      </div>
+    </div>
+
+  </body>
+</html>
