@@ -2,7 +2,6 @@
 
 module Main where
 
-import           Control.Applicative ((<$>))
 import           Control.Concurrent (forkIO, threadDelay)
 import           Control.Monad (forever, forM)
 import           Control.Monad.IO.Class (liftIO)
@@ -29,7 +28,6 @@ import           System.Log.Handler.Simple
 import           System.Log.Logger
 import           System.Process
 
-import           Config
 import           Coqtop
 import           Handlers
 import           PeaCoq
@@ -54,6 +52,7 @@ data PeaCoqConfig =
   PeaCoqConfig
   { configUserId  :: Maybe String
   , configLogPath :: FilePath
+  , configCoqtop :: String
   }
   deriving (Read)
 
@@ -81,7 +80,7 @@ mainUW :: IO ()
 mainUW = do
   hash <- getGitCommitHash
   homeDir <- getHomeDirectory
-  PeaCoqConfig mUserId logPath <- read <$> readFile (homeDir ++ "/" ++ configFile)
+  PeaCoqConfig mUserId logPath coqtop <- read <$> readFile (homeDir ++ "/" ++ configFile)
   now <- getZonedTime
   let nowString = formatTime defaultTimeLocale "%F-%H-%M-%S" now
   case mUserId of
@@ -92,7 +91,7 @@ mainUW = do
       updateGlobalLogger rootLoggerName (setLevel loggingPriority . addHandler fHandler)
       logAction hash $ "USERIDENTIFIED " ++ userId
     Nothing -> return ()
-  globRef <- newIORef $ GlobalState 0 IM.empty mUserId hash
+  globRef <- newIORef $ GlobalState 0 IM.empty mUserId hash coqtop
   forkIO $ cleanStaleSessions globRef -- parallel thread to regularly clean up
   serveSnaplet (serverConfig logPath mUserId nowString) $ peacoqSnaplet globRef
 
@@ -119,18 +118,18 @@ closeSession hash (SessionState sessId _ (hi, ho) ph) = do
 
 cleanStaleSessions :: IORef GlobalState -> IO ()
 cleanStaleSessions globRef = forever $ do
-  GlobalState _ _ _ hash <- readIORef globRef
+  GlobalState _ _ _ hash _ <- readIORef globRef
   sessionsToClose <- atomicModifyIORef' globRef markAndSweep
   forM sessionsToClose (closeSession hash)
   threadDelay sessionTimeoutMicroseconds
   where
     markAndSweep :: GlobalState -> (GlobalState, [SessionState])
-    markAndSweep (GlobalState c m u h) =
-      let (alive, stale) = IM.partition isAlive m in
-      (GlobalState c (IM.map markStale alive) u h, IM.elems stale)
+    markAndSweep gs =
+      let (alive, stale) = IM.partition isAlive (gActiveSessions gs) in
+      (gs { gActiveSessions = IM.map markStale alive }, IM.elems stale)
 
-startCoqtop :: IO (Handle, Handle, ProcessHandle)
-startCoqtop = do
+startCoqtop :: String -> IO (Handle, Handle, ProcessHandle)
+startCoqtop coqtop = do
   (hi, ho, he, ph) <- runInteractiveCommand coqtop
   hClose he
   hSetBinaryMode hi False
@@ -149,10 +148,10 @@ withSessionHandles r h = withSession lSession $ do
   mapKey <- getSessionKey
   -- retrieve or create two handles for this session
   (hi, ho, hash) <- liftIO $ do
-    GlobalState _ m _ hash <- readIORef r
+    GlobalState _ m _ hash coqtop <- readIORef r
     case IM.lookup mapKey m of
       Nothing -> do
-        (hi, ho, ph) <- startCoqtop
+        (hi, ho, ph) <- startCoqtop coqtop
         sessionIdentity <- atomicModifyIORef' r $ updateNewSession mapKey (hi, ho) ph
         logAction hash $ "NEWSESSION " ++ show sessionIdentity
         return (hi, ho, hash)
@@ -164,13 +163,16 @@ withSessionHandles r h = withSession lSession $ do
   h (HandlerInput hi ho hash)
   where
     updateNewSession :: Int -> (Handle, Handle) -> ProcessHandle -> GlobalState -> (GlobalState, Int)
-    updateNewSession mapKey hs ph (GlobalState c m u hash) =
-      (GlobalState (c + 1) (IM.insert mapKey (SessionState c True hs ph) m) u hash, c)
-    updateTouchSession :: Int -> GlobalState -> (GlobalState, Int)
+    updateNewSession mapKey hs ph gs@(GlobalState c m _ _ _) =
+      (gs { gNextSession = c + 1
+          , gActiveSessions = IM.insert mapKey (SessionState c True hs ph) m
+          }, c)
+    updateTouchSession :: Int -> GlobalState -> (GlobalState, ())
     updateTouchSession = adjustSession touchSession
 
-adjustSession :: (SessionState -> SessionState) -> Int -> GlobalState -> (GlobalState, Int)
-adjustSession f mapKey (GlobalState c m u h) = (GlobalState c (IM.adjust f mapKey m) u h, c)
+adjustSession :: (SessionState -> SessionState) -> Int -> GlobalState -> (GlobalState, ())
+adjustSession f mapKey gs =
+  (gs { gActiveSessions = IM.adjust f mapKey (gActiveSessions gs) }, ())
 
 peacoqSnaplet :: IORef GlobalState -> SnapletInit PeaCoq PeaCoq
 peacoqSnaplet globRef = makeSnaplet "PeaCoq" "PeaCoq" Nothing $ do

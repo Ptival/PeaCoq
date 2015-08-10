@@ -2,7 +2,6 @@
 
 module Handlers where
 
-import           Control.Applicative ((<$>))
 import           Control.Monad.IO.Class (liftIO)
 import           Data.ByteString.UTF8 (toString)
 import qualified Data.IntMap as IM
