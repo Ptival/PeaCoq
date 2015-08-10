@@ -225,7 +225,7 @@ function globalKeyHandler(evt) {
         switch(evt.keyCode) {
         default:
             break;
-        };
+        }
     }
 }
 
@@ -743,10 +743,16 @@ function studyTactics(pt) {
             "rewrites",
             _(curNames)
                 .map(function(n) {
-                    return [
-                        "rewrite -> " + n,
-                        "rewrite <- " + n
-                    ];
+                    switch (n) {
+                        // only right rewrites
+                    case "concat_nil_left":
+                        return ["rewrite -> " + n];
+                    default:
+                        return [
+                            "rewrite -> " + n,
+                            "rewrite <- " + n
+                        ];
+                    }
                 })
                 .flatten(true).value()
         ),
@@ -772,20 +778,26 @@ function studyTactics(pt) {
                 return _(curHyps)
                     .map(function(h) {
                         if (h === n) { return []; }
-                        return ([
-                            ("rewrite -> " + n + " in " + h),
-                            ("rewrite <- " + n + " in " + h)
-                        ]);
+                        switch (n) {
+                            // only right rewrites
+                        case "concat_nil_left":
+                            return ["rewrite -> " + n + " in " + h];
+                        default:
+                            return ([
+                                ("rewrite -> " + n + " in " + h),
+                                ("rewrite <- " + n + " in " + h)
+                            ]);
+                        }
                     })
                     .flatten(true).value()
                 ;
             }).flatten(true).value()
         ),
 
-        makeGroup(
-            "reverts",
-            _(curHyps).map(function(h) { return "revert " + h; }).value()
-        ),
+        // makeGroup(
+        //     "reverts",
+        //     _(curHyps).map(function(h) { return "revert " + h; }).value()
+        // ),
 
     ];
 
@@ -1106,7 +1118,7 @@ function editorOnResponse(requestType, request, response) {
             updateCoqtopPane(goingDown, response);
 
             break;
-        };
+        }
 
         resizeCoqtopPanes();
 

@@ -5,6 +5,10 @@ var current = first;
 
 var startTime;
 
+// processingAsyncRequests should take this as an argument...
+var editorOnRequestTriggered = function() { }
+var editorOnResponse = function() { }
+
 $(document).ready(function() {
     
     cm = CodeMirror(
@@ -55,6 +59,8 @@ $(document).ready(function() {
 
         // TODO: send to backend
         console.log(deltaTime, removed, added, changed, goalChanged);
+        asyncLog(deltaTime + "," + removed + "," + added + "," + changed + ","
+                 + goalChanged);
 
         if (current !== last) {
             onNext(cm);
