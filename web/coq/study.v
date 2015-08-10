@@ -152,6 +152,8 @@ Qed.
 
 (* ###################################################### *)
 
+Module LogicExercises.
+
 (* We now use notations from logic:
   /\   stands for the logical conjunction (AND) of two propositions
   \/   stands for the logical disjunction (OR)  of two propositions
@@ -174,7 +176,6 @@ Theorem go_somewhere : 0 = 1 \/ (2 = 2 \/ 2 = 3).
 Proof. right. left. reflexivity.
   (* FILL IN HERE *)
 Qed.
-
 
 (*
   New tactic: apply
@@ -218,6 +219,8 @@ Theorem A_and_B : forall A B : Prop,
 Proof. intros. split. apply H. apply H0.
   (* FILL IN HERE *)
 Qed.
+
+End LogicExercises.
 
 (* ###################################################### *)
 

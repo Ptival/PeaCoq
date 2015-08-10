@@ -3689,7 +3689,7 @@ GoalNode.prototype.onSolved = function(response) {
         if (this.hasParent()) {
             this.parent.onChildSolvedAndUnfocused(response);
         } else if (autoLayout) {
-            //proofTreeQueryWish('Qed.');
+            proofTreeQueryWish('Qed.');
         }
     } else if (autoLayout) {
         proofTreeQueryWish('}');
@@ -3879,24 +3879,38 @@ Node.prototype.isRootNode = function() {
     return this.proofTree.rootNode.id === this.id;
 }
 
-ProofTree.prototype.goalIsConjunction = function() {
-    var goalTerm = this.curNode.goalTerm;
+function isConjunction(t) {
     return (
-        goalTerm.tag === "App"
-            && goalTerm.contents[0].tag === "App"
-            && goalTerm.contents[0].contents[0].tag === "Var"
-            && goalTerm.contents[0].contents[0].contents === "and"
+        t.tag === "App"
+            && t.contents[0].tag === "App"
+            && t.contents[0].contents[0].tag === "Var"
+            && t.contents[0].contents[0].contents === "and"
     );
 }
 
-ProofTree.prototype.goalIsDisjunction = function() {
-    var goalTerm = this.curNode.goalTerm;
+function isDisjunction(t) {
     return (
-        goalTerm.tag === "App"
-            && goalTerm.contents[0].tag === "App"
-            && goalTerm.contents[0].contents[0].tag === "Var"
-            && goalTerm.contents[0].contents[0].contents === "or"
+        t.tag === "App"
+            && t.contents[0].tag === "App"
+            && t.contents[0].contents[0].tag === "Var"
+            && t.contents[0].contents[0].contents === "or"
     );
+}
+
+ProofTree.prototype.hypIsDisjunction = function(h) {
+    return isDisjunction(h.hType);
+}
+
+ProofTree.prototype.hypIsConjunction = function(h) {
+    return isConjunction(h.hType);
+}
+
+ProofTree.prototype.goalIsConjunction = function() {
+    return isConjunction(this.curNode.goalTerm);
+}
+
+ProofTree.prototype.goalIsDisjunction = function() {
+    return isDisjunction(this.curNode.goalTerm);
 }
 
 ProofTree.prototype.goalIsForall = function() {

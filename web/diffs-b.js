@@ -20,8 +20,8 @@ $(document).ready(function() {
 
     var buttonGroup = $("#toolbar > .btn-group");
 
-    addPrevious(cm, buttonGroup);
-    addNext(cm, buttonGroup);
+    //addPrevious(cm, buttonGroup);
+    //addNext(cm, buttonGroup);
     
     onPrevious(cm);
 

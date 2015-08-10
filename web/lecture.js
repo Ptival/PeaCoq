@@ -539,7 +539,8 @@ function createProofTree(response) {
     activeProofTree.newAlreadyStartedTheorem(
         response,
         //replayTactics
-        replayAndStudyTactics
+        //replayAndStudyTactics
+        studyTactics
     );
 
     // only show up the tree automatically if the user is not processing to
@@ -635,6 +636,16 @@ function replayTactics(pt) {
            );
 }
 
+function onlyRightRewrite(s) {
+    switch (s) {
+    case "concat_nil_left":
+    case "concat_nil_right":
+        return true;
+    default:
+        return false;
+    }
+}
+
 /*
   This strategy tries many tactics, not trying to be smart.
 */
@@ -681,11 +692,13 @@ function studyTactics(pt) {
 
         makeGroup(
             "simplifications",
-            ["simpl"].concat(
-                _(curHyps).map(function(h) { return "simpl in " + h; }).value()
-            ).concat(
-                (pt.curNode.hyps.length > 0 ? ["simpl in *"] : [])
-            )
+            ["simpl"]
+                .concat(
+                    (pt.curNode.hyps.length > 0 ? ["simpl in *"] : [])
+                )
+                .concat(
+                    _(curHyps).map(function(h) { return "simpl in " + h; }).value()
+                )
         ),
 
         makeGroup(
@@ -697,6 +710,21 @@ function studyTactics(pt) {
                     //"econstructor",
                     //"eexists",
                 ])
+        ),
+
+        makeGroup(
+            "destructors",
+            []
+                .concat(
+                    _(curHypsFull).map(function(h) {
+                        return pt.hypIsDisjunction(h) ? ["destruct " + h.hName] : [];
+                    }).value()
+                )
+                .concat(
+                    _(curHypsFull).map(function(h) {
+                        return pt.hypIsConjunction(h) ? ["destruct " + h.hName] : [];
+                    }).value()
+                )
         ),
 
         // makeGroup(
@@ -743,11 +771,9 @@ function studyTactics(pt) {
             "rewrites",
             _(curNames)
                 .map(function(n) {
-                    switch (n) {
-                        // only right rewrites
-                    case "concat_nil_left":
+                    if (onlyRightRewrite(n)) {
                         return ["rewrite -> " + n];
-                    default:
+                    } else {
                         return [
                             "rewrite -> " + n,
                             "rewrite <- " + n
@@ -778,11 +804,9 @@ function studyTactics(pt) {
                 return _(curHyps)
                     .map(function(h) {
                         if (h === n) { return []; }
-                        switch (n) {
-                            // only right rewrites
-                        case "concat_nil_left":
+                        if (onlyRightRewrite(n)) {
                             return ["rewrite -> " + n + " in " + h];
-                        default:
+                        } else {
                             return ([
                                 ("rewrite -> " + n + " in " + h),
                                 ("rewrite <- " + n + " in " + h)
