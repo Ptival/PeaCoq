@@ -27,7 +27,7 @@ data GlobalState
   = GlobalState
     { gNextSession :: Int -- number to assign to the next session
     , gActiveSessions :: (IM.IntMap SessionState)
-    , gUserName :: Maybe String
+    , gUserName :: String
     , gCommitNumber :: String
     , gCoqtop :: String
     }

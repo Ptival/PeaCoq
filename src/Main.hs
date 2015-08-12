@@ -51,22 +51,21 @@ mainWeb =do
 
 data PeaCoqConfig =
   PeaCoqConfig
-  { configUserId  :: Maybe String
+  { configUserId  :: String
   , configLogPath :: FilePath
   , configCoqtop :: String
   }
   deriving (Read)
 
-serverConfig :: MonadSnap m => FilePath -> Maybe String -> String -> Config m a
-serverConfig logPath mUserId nowString =
+serverConfig :: MonadSnap m => FilePath -> String -> String -> Config m a
+serverConfig logPath userId nowString =
   setStartupHook hook -- this hook will figure out which port was used and print it
   . setPort 0 -- 0 means that unless specified, pick a random port
-  . setAccessLog (ConfigFileLog $ prefix mUserId ++ "access.log")
-  . setErrorLog (ConfigFileLog $ prefix mUserId ++ "error.log")
+  . setAccessLog (ConfigFileLog $ prefix userId ++ "access.log")
+  . setErrorLog (ConfigFileLog $ prefix userId ++ "error.log")
   $ defaultConfig
   where
-    prefix (Just userId) = logPath ++ "/" ++ userId ++ "-" ++ nowString ++ "-"
-    prefix Nothing       = logPath ++ "/" ++ nowString ++ "-"
+    prefix u = logPath ++ "/" ++ u ++ "-" ++ nowString ++ "-"
     hook dat = do
       port <- socketPort . head $ getStartupSockets dat
       putStrLn $ "Server listening on port: " ++ show port
@@ -83,20 +82,17 @@ mainUW = do
   homeDir <- getHomeDirectory
   fileString <- readFile (homeDir ++ "/" ++ configFile)
   let configString = unwords . filter (not <$> startswith "--") $ lines fileString
-  let PeaCoqConfig mUserId logPath coqtop = read configString
+  let PeaCoqConfig userId logPath coqtop = read configString
   now <- getZonedTime
   let nowString = formatTime defaultTimeLocale "%F-%H-%M-%S" now
-  case mUserId of
-    Just userId -> do
-      handler <- fileHandler (logPath ++ "/" ++ userId ++ "-" ++ nowString ++ ".log") loggingPriority
-      let format = simpleLogFormatter "[$time] $msg"
-      let fHandler = setFormatter handler format
-      updateGlobalLogger rootLoggerName (setLevel loggingPriority . addHandler fHandler)
-      logAction hash $ "USERIDENTIFIED " ++ userId
-    Nothing -> return ()
-  globRef <- newIORef $ GlobalState 0 IM.empty mUserId hash coqtop
+  handler <- fileHandler (logPath ++ "/" ++ userId ++ "-" ++ nowString ++ ".log") loggingPriority
+  let format = simpleLogFormatter "[$time] $msg"
+  let fHandler = setFormatter handler format
+  updateGlobalLogger rootLoggerName (setLevel loggingPriority . addHandler fHandler)
+  logAction hash $ "USERIDENTIFIED " ++ userId
+  globRef <- newIORef $ GlobalState 0 IM.empty userId hash coqtop
   forkIO $ cleanStaleSessions globRef -- parallel thread to regularly clean up
-  serveSnaplet (serverConfig logPath mUserId nowString) $ peacoqSnaplet globRef
+  serveSnaplet (serverConfig logPath userId nowString) $ peacoqSnaplet globRef
 
 sessionTimeoutMinutes :: Int
 sessionTimeoutMinutes = 15
