@@ -646,6 +646,11 @@ function onlyRightRewrite(s) {
     }
 }
 
+var tacticsLeftRight = false;
+var tacticsApply = false;
+var tacticsSplit = false;
+var tacticsCasesContradiction = false;
+
 /*
   This strategy tries many tactics, not trying to be smart.
 */
@@ -661,9 +666,10 @@ function studyTactics(pt) {
         makeGroup(
             "terminators",
             (pt.goalIsReflexive() ? ["reflexivity"] : [])
+                .concat(tacticsCasesContradiction ? ["contradiction"] : [])
                 .concat([
-                    "discriminate",
-                    "assumption",
+                    //"discriminate",
+                    //"assumption",
                 ])
         ),
 
@@ -703,8 +709,8 @@ function studyTactics(pt) {
 
         makeGroup(
             "constructors",
-            (pt.goalIsDisjunction() ? ["left", "right"] : [])
-                .concat(pt.goalIsConjunction() ? ["split"] : [])
+            ((tacticsLeftRight && pt.goalIsDisjunction()) ? ["left", "right"] : [])
+                .concat((tacticsSplit && pt.goalIsConjunction()) ? ["split"] : [])
                 .concat([
                     //"constructor",
                     //"econstructor",
@@ -716,15 +722,33 @@ function studyTactics(pt) {
             "destructors",
             []
                 .concat(
+                    tacticsCasesContradiction ?
                     _(curHypsFull).map(function(h) {
-                        return pt.hypIsDisjunction(h) ? ["destruct " + h.hName] : [];
+                        return pt.hypIsDisjunction(h) ? ["cases " + h.hName] : [];
                     }).value()
+                    : []
                 )
-                .concat(
-                    _(curHypsFull).map(function(h) {
-                        return pt.hypIsConjunction(h) ? ["destruct " + h.hName] : [];
-                    }).value()
-                )
+                // .concat(
+                //     _(curHypsFull).map(function(h) {
+                //         return pt.hypIsConjunction(h) ? ["destruct " + h.hName] : [];
+                //     }).value()
+                // )
+        ),
+
+        makeGroup(
+            "rewrites",
+            _(curNames)
+                .map(function(n) {
+                    if (onlyRightRewrite(n)) {
+                        return ["rewrite -> " + n];
+                    } else {
+                        return [
+                            "rewrite -> " + n,
+                            "rewrite <- " + n
+                        ];
+                    }
+                })
+                .flatten(true).value()
         ),
 
         // makeGroup(
@@ -761,26 +785,12 @@ function studyTactics(pt) {
 
         makeGroup(
             "applications",
-            _(curNames).map(function(n) { return "apply " + n; }).value()
+            tacticsApply ? (
+                _(curNames).map(function(n) { return "apply " + n; }).value()
                 // .concat(
                 //     _(curNames).map(function(n) { return "eapply " + n; }).value()
                 // )
-        ),
-
-        makeGroup(
-            "rewrites",
-            _(curNames)
-                .map(function(n) {
-                    if (onlyRightRewrite(n)) {
-                        return ["rewrite -> " + n];
-                    } else {
-                        return [
-                            "rewrite -> " + n,
-                            "rewrite <- " + n
-                        ];
-                    }
-                })
-                .flatten(true).value()
+            ) : []
         ),
 
         makeGroup(
@@ -1082,6 +1092,21 @@ function editorOnResponse(requestType, request, response) {
         switch(response.rResponse.tag) {
 
         case 'Good':
+
+            // activate study tactics
+            if (request.indexOf("New tactics: left, right") > -1) {
+                tacticsLeftRight = true;
+            }
+            if (request.indexOf("New tactic: apply") > -1) {
+                tacticsApply = true;
+            }
+            if (request.indexOf("New tactic: split") > -1) {
+                tacticsSplit = true;
+            }
+            if (request.indexOf("New tactics: cases, contradiction") > -1) {
+                tacticsCasesContradiction = true;
+            }
+
             var rProving = mProving.find();
             var proving = doc.getRange(rProving.from, rProving.to);
             if (coqTrim(proving) !== coqTrim(request)) {

@@ -134,25 +134,25 @@ Fixpoint rev (l: natlist) : natlist :=
 
 Theorem rev_snoc : forall x l,
   rev (snoc l x) = cons x (rev l).
-Proof. intros. induction l. apply concat_nil_left. simpl. rewrite -> IHl. apply concat_nil_left.
+Proof. intros. induction l. simpl. reflexivity. simpl. rewrite -> IHl. simpl. reflexivity. 
   (* FILL IN HERE *)
 Qed.
 
 Theorem rev_involutive : forall l : natlist,
   rev (rev l) = l.
-Proof. intros. induction l. apply concat_nil_left. simpl. rewrite -> rev_snoc. rewrite -> IHl. reflexivity.
+Proof. intros. induction l. simpl. reflexivity. simpl. rewrite -> rev_snoc. rewrite -> IHl. reflexivity.
   (* FILL IN HERE *)
 Qed.
 
 Theorem concat_cons_snoc : forall l1 x l2,
   concat l1 (cons x l2) = concat (snoc l1 x) l2.
-Proof. intros. induction l1. apply concat_nil_left. simpl. rewrite -> IHl1. reflexivity.
+Proof. intros. induction l1. simpl. reflexivity. simpl. rewrite -> IHl1. reflexivity.
   (* FILL IN HERE *)
 Qed.
 
 (* ###################################################### *)
 
-Module LogicExercises.
+Module LogicExercises1.
 
 (* We now use notations from logic:
   /\   stands for the logical conjunction (AND) of two propositions
@@ -193,12 +193,16 @@ Proof. intros. right. apply H.
   (* FILL IN HERE *)
 Qed.
 
+End LogicExercises1.
+
+Module LogicExercises2.
+
 (*
-  New tactic: each
+  New tactic: split
 
   When your goal looks like [A /\ B]
   You need to prove both [A] and [B].
-  The tactic [each.] lets you split your goal into these two goals.
+  The tactic [split.] lets you split your goal into these two goals.
 
   Here is an example:
 *)
@@ -220,7 +224,7 @@ Proof. intros. split. apply H. apply H0.
   (* FILL IN HERE *)
 Qed.
 
-End LogicExercises.
+End LogicExercises2.
 
 (* ###################################################### *)
 
@@ -230,9 +234,15 @@ Proof. intros. induction l. apply concat_nil_left. simpl. rewrite -> IHl. reflex
   (* FILL IN HERE *)
 Qed.
 
+Theorem snoc_concat : forall (l1 l2 : natlist) (x : nat),
+  snoc (concat l1 l2) x = concat l1 (snoc l2 x).
+Proof. intros. induction l1. apply concat_nil_left. simpl. rewrite -> IHl1. reflexivity.
+  (* FILL IN HERE *)
+Qed.
+
 Theorem rev_distributes_over_concat : forall l1 l2 : natlist,
   rev (concat l1 l2) = concat (rev l2) (rev l1).
-Proof. intros. induction l1. simpl. rewrite -> concat_nil_right. reflexivity. simpl. rewrite -> IHl1. rewrite -> snoc_concat_end. rewrite -> concat_associativity. rewrite -> snoc_concat_end. reflexivity.
+Proof. intros. induction l1. simpl. rewrite -> concat_nil_right. reflexivity. simpl. rewrite -> IHl1. apply snoc_concat.
   (* FILL IN HERE *)
 Qed.
 
@@ -293,11 +303,14 @@ Proof. intros. induction l. simpl. admit. rewrite -> map'_unroll. simpl. rewrite
   (* FILL IN HERE *)
 Qed.
 
+(* Just execute the next line, no need to understand it. *)
+Ltac cases H := match type of H with _ \/ _ => destruct H end.
+
 (*
-  New tactic: destruct
+  New tactics: cases, contradiction
 
   When a hypothesis looks like [H : A \/ B]
-  You have to prove the goal for each case, to do so, use the tactic [destruct H.]
+  You have to prove the goal for each case, to do so, use the tactic [cases H.]
   You will get two goals as a result, one with a [A] hypothesis, one with a [B] hypothesis.
 
   Finally, if you ever get a hypothesis like [H : False]
@@ -321,7 +334,7 @@ Qed.
 Theorem In_concat_left : forall x l1 l2,
   In x l1 ->
   In x (concat l1 l2).
-Proof. intros. induction l1. simpl in H. admit. simpl. simpl in H. destruct H.
+Proof. intros. induction l1. simpl in H. admit. simpl. simpl in H. cases H.
   left. assumption. right. apply IHl1. assumption.
   (* FILL IN HERE *)
 Qed.
