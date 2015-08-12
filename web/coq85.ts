@@ -5,10 +5,10 @@
 /// <reference path="interfaces/jquery/jquery.d.ts"/>
 /// <reference path="coqtop85.ts"/>
 
-var Anchor = ace.require('ace/anchor').Anchor;
-var Range = ace.require('ace/range').Range;
-var RangeList = ace.require('ace/range_list').RangeList;
-var Selection = ace.require('ace/selection').Selection;
+var AceAnchor = ace.require('ace/anchor').Anchor;
+var AceRange = ace.require('ace/range').Range;
+var AceRangeList = ace.require('ace/range_list').RangeList;
+var AceSelection = ace.require('ace/selection').Selection;
 
 var editor: AceAjax.Editor, session: AceAjax.IEditSession;
 var foreground, background, shelved, givenUp;
@@ -170,7 +170,7 @@ function onNext() {
   // the last anchor is how far we have processed
   var lastAnchor = _([beginAnchor]).concat(anchors).last();
   var unprocessedRange =
-    new Range(lastAnchor.row, lastAnchor.column,
+    new AceRange(lastAnchor.row, lastAnchor.column,
       endAnchor.row, endAnchor.column);
   var unprocessedText = session.getTextRange(unprocessedRange);
   if (coqTrimLeft(unprocessedText) === "") {
@@ -449,7 +449,7 @@ function coqTrimRight(s: string): string {
 function mkAnchor(
   row : number, column: number, klass: string, insertRight: boolean
 ): AceAjax.Anchor {
-  var a = new Anchor(session.getDocument(), row, column);
+  var a = new AceAnchor(session.getDocument(), row, column);
   if (insertRight) {
     a.$insertRight = true;
   }
