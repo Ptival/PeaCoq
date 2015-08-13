@@ -540,7 +540,8 @@ function createProofTree(response) {
         response,
         //replayTactics
         //replayAndStudyTactics
-        studyTactics
+        //studyTactics
+        studyTacticsV2
     );
 
     // only show up the tree automatically if the user is not processing to
@@ -640,6 +641,16 @@ function onlyRightRewrite(s) {
     switch (s) {
     case "concat_nil_left":
     case "concat_nil_right":
+    case "rev_involutive":
+        return true;
+    default:
+        return false;
+    }
+}
+
+function noApply(s) {
+    switch (s) {
+    case "concat_nil_left":
         return true;
     default:
         return false;
@@ -650,10 +661,85 @@ var tacticsLeftRight = false;
 var tacticsApply = false;
 var tacticsSplit = false;
 var tacticsCasesContradiction = false;
+var tacticsSimplInStar = false;
 
-/*
-  This strategy tries many tactics, not trying to be smart.
-*/
+function singleton(g) { return makeGroup(g, [g]); }
+
+function studyTacticsV2(pt) {
+    var curGoal = (isGoal(pt.curNode)) ? pt.curNode : pt.curNode.parent;
+    // reverse is in place, so clone is needed
+    var curHypsFull = _(curGoal.hyps).clone().reverse();
+    var curHyps = _(curHypsFull).map(function(h) { return h.hName; });
+    var curNames = _(curHyps).union(namesPossiblyInScope.reverse());
+
+    var falseInHyps = _(curHypsFull).some(function(h) {
+        return (h.hType.tag === "Var" && h.hType.contents === "False");
+    });
+
+    var res = [
+        singleton("simpl"),
+        singleton("intros"),
+    ];
+
+    if (pt.goalIsReflexive()) { res.push(singleton("reflexivity")); }
+
+    if (tacticsCasesContradiction) {
+        if (falseInHyps) {
+            res.push(singleton("contradiction"));
+        }
+        _(curHypsFull).each(function(h) {
+            if (pt.hypIsDisjunction(h)) {
+                res.push(singleton("cases " + h.hName));
+            }
+        });
+    }
+
+    if (tacticsLeftRight && pt.goalIsDisjunction()) {
+        res.push(singleton("left"));
+        res.push(singleton("right"));
+    }
+
+    if (tacticsSplit && pt.goalIsConjunction()) {
+        res.push(singleton("split"));
+    }
+
+    // TODO: not rewrite the exact opposite of last rewrite
+    _(curNames)
+        .each(function(n) {
+            if (onlyRightRewrite(n)) {
+                res.push(singleton("rewrite -> " + n));
+            } else {
+                res.push(singleton("rewrite -> " + n));
+                res.push(singleton("rewrite <- " + n));
+            }
+        })
+    ;
+
+    if (tacticsApply) {
+        _(curNames)
+            .each(function(n) {
+                if (!noApply(n)) {
+                    res.push(singleton("apply " + n));
+                }
+            });
+    }
+
+    if (tacticsSimplInStar) {
+        res.push(singleton("simpl in *", ["simpl in *"]));
+    }
+
+    _(curHypsFull)
+        .filter(function(h) {
+            return h.hType.tag === "Var" && h.hType.contents === "natlist";
+        })
+        .each(function(h) {
+            res.push(singleton("induction " + h.hName));
+        });
+
+    return res;
+
+}
+
 function studyTactics(pt) {
 
     var curGoal = (isGoal(pt.curNode)) ? pt.curNode : pt.curNode.parent;

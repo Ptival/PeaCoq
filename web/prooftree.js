@@ -3184,8 +3184,7 @@ GoalNode.prototype.getFocusedTacticGroup = function() {
 
 /*
  * [getViewChildren] returns the children of the considered node in the current
- * view. If the node is collapsed, it needs to have one child if it is an
- * ancestor of the current node, so that the current node is reachable.
+ * view.
  */
 
 GoalNode.prototype.getViewChildren = function() {
@@ -3198,6 +3197,8 @@ GoalNode.prototype.getViewChildren = function() {
     if (this.proofTree.isCurNode(this)) {
         return nonEmptyTacticGroups;
     } else if (this.isCurNodeAncestor()) {
+        /* If the node is collapsed, it needs to have one child if it is an
+           ancestor of the current node, so that the current node is reachable. */
         return [nonEmptyTacticGroups[this.tacticIndex]];
     } else {
         return [];
