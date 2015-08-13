@@ -97,9 +97,9 @@ Proof. intros. induction l. simpl. reflexivity. simpl. rewrite -> IHl. reflexivi
 Qed.
 
 (* In-class exercise! *)
-Theorem concat_associativity : forall l2 l1 l3 : natlist,
+Theorem concat_associativity : forall l1 l2 l3 : natlist,
   concat (concat l1 l2) l3 = concat l1 (concat l2 l3).
-Proof. intros. induction l1. apply concat_nil_left. simpl. rewrite -> IHl1. reflexivity.
+Proof. intros. induction l1. simpl. reflexivity. simpl. rewrite -> IHl1. reflexivity.
   (* FILL IN HERE *)
 Qed.
 
@@ -230,13 +230,13 @@ End LogicExercises2.
 
 Theorem snoc_concat_end : forall (l: natlist) (n: nat),
   snoc l n = concat l (cons n nil).
-Proof. intros. induction l. apply concat_nil_left. simpl. rewrite -> IHl. reflexivity.
+Proof. intros. induction l. simpl. reflexivity. simpl. rewrite -> IHl. reflexivity.
   (* FILL IN HERE *)
 Qed.
 
 Theorem snoc_concat : forall (l1 l2 : natlist) (x : nat),
   snoc (concat l1 l2) x = concat l1 (snoc l2 x).
-Proof. intros. induction l1. apply concat_nil_left. simpl. rewrite -> IHl1. reflexivity.
+Proof. intros. induction l1. simpl. reflexivity. simpl. rewrite -> IHl1. reflexivity.
   (* FILL IN HERE *)
 Qed.
 
