@@ -1438,12 +1438,13 @@ ProofTree.prototype.update = function() {
                 var tgt = swapXY(centerLeft0(d.target));
                 return self.diagonal({"source": src, "target": tgt});
             })
+        // initial stroke is blue for goals that don't finish
             .attr("stroke", function(d) {
                 if (isTacticGroup(d.target)
                     && d.target.getFocusedTactic().goals.length === 0) {
                     return "#00FF00";
                 } else {
-                    return "#000000";
+                    return "blue";
                 }
             })
         ;
@@ -1456,6 +1457,22 @@ ProofTree.prototype.update = function() {
                 var src = swapXY(centerRight(d.source));
                 var tgt = swapXY(centerLeft(d.target));
                 return self.diagonal({"source": src, "target": tgt});
+            })
+            .attr("stroke", function(d) {
+                if (isTacticGroup(d.target)
+                    && d.target.getFocusedTactic().goals.length === 0) {
+                    return "#00FF00";
+                } else {
+                    if ((isTacticGroup(d.source)
+                         && d.source.getFocusedTactic().visited)
+                        ||
+                        (isTacticGroup(d.target)
+                         && d.target.getFocusedTactic().visited)) {
+                        return "purple";
+                    } else {
+                        return "blue";
+                    }
+                }
             })
             .attr("stroke-width", self.linkWidth.bind(self))
         ;
@@ -3100,6 +3117,7 @@ function TacticNode(proofTree, parent, tactic, response) {
     var self = this;
     Node.call(this, proofTree, parent);
     this.tactic = tactic;
+    this.visited = false;
 
     var focusedBefore = getResponseFocused(parent.parent.response);
     var focusedAfter = getResponseFocused(response);
@@ -3274,6 +3292,7 @@ GoalNode.prototype.makeFocused = function() {
     var self = this;
     var parentTactic = this.parentTactic;
     if (parentTactic === undefined) { return; }
+    parentTactic.visited = true;
     parentTactic.goalIndex = _(parentTactic.goals)
         .findIndex(function(goal) { return goal.id === self.id; })
     ;
