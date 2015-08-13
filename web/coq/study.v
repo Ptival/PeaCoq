@@ -331,6 +331,13 @@ Proof. intros. simpl. right. assumption.
   (* FILL IN HERE *)
 Qed.
 
+(*
+  New tactic: simpl in *
+
+  Sometimes, you can simplify your hypotheses as well, the same way [simpl]
+  simplifies your goal only.
+*)
+
 Theorem In_concat_left : forall x l1 l2,
   In x l1 ->
   In x (concat l1 l2).

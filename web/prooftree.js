@@ -3193,9 +3193,36 @@ GoalNode.prototype.getViewChildren = function() {
         .filter(function(group) { return (group.tactics.length > 0); })
         .value()
     ;
+
     if (nonEmptyTacticGroups.length === 0) { return []; }
     if (this.proofTree.isCurNode(this)) {
+
+        // WARNING: this code creates bugs because it alters the view in ways
+        // the rest of the code was not robust to. For instance, if the user
+        // has scrolled to the n-th tactic group, but suddenly a finisher
+        // returns, this would remove non-finisher, and the cursor would be
+        // out of bounds.
+
+        /*
+        // if any tactic group contains a finisher, only keep tactic groups
+        // that contain a finisher
+
+        // if there exists a solving node, filter out the non-solving nodes
+        if (_(nonEmptyTacticGroups).some(function(group) {
+            return _(group.tactics).some(function(tactic) {
+                return tactic.goals.length === 0;
+            });
+        })) {
+            nonEmptyTacticGroups = _(nonEmptyTacticGroups).filter(function(group) {
+                return _(group.tactics).some(function(tactic) {
+                    return tactic.goals.length === 0;
+                });
+            }).value();
+        }
+        */
+
         return nonEmptyTacticGroups;
+
     } else if (this.isCurNodeAncestor()) {
         /* If the node is collapsed, it needs to have one child if it is an
            ancestor of the current node, so that the current node is reachable. */

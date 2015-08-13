@@ -665,6 +665,26 @@ var tacticsSimplInStar = false;
 
 function singleton(g) { return makeGroup(g, [g]); }
 
+function addRightRewrite(pt, res, name) {
+    if (pt.curNode.parentTactic === undefined) {
+        res.push(singleton("rewrite -> " + name));
+    } else {
+        if (pt.curNode.parentTactic.tactic !== "rewrite <- " + name + ".") {
+            res.push(singleton("rewrite -> " + name));
+        }
+    }
+}
+
+function addLeftRewrite(pt, res, name) {
+    if (pt.curNode.parentTactic === undefined) {
+        res.push(singleton("rewrite <- " + name));
+    } else {
+        if (pt.curNode.parentTactic.tactic !== "rewrite -> " + name + ".") {
+            res.push(singleton("rewrite <- " + name));
+        }
+    }
+}
+
 function studyTacticsV2(pt) {
     var curGoal = (isGoal(pt.curNode)) ? pt.curNode : pt.curNode.parent;
     // reverse is in place, so clone is needed
@@ -680,6 +700,8 @@ function studyTacticsV2(pt) {
         singleton("simpl"),
         singleton("intros"),
     ];
+
+    if (tacticsSimplInStar) { res.push(singleton("simpl in *")); }
 
     if (pt.goalIsReflexive()) { res.push(singleton("reflexivity")); }
 
@@ -707,10 +729,10 @@ function studyTacticsV2(pt) {
     _(curNames)
         .each(function(n) {
             if (onlyRightRewrite(n)) {
-                res.push(singleton("rewrite -> " + n));
+                addRightRewrite(pt, res, n);
             } else {
-                res.push(singleton("rewrite -> " + n));
-                res.push(singleton("rewrite <- " + n));
+                addRightRewrite(pt, res, n);
+                addLeftRewrite(pt, res, n);
             }
         })
     ;
@@ -1191,6 +1213,9 @@ function editorOnResponse(requestType, request, response) {
             }
             if (request.indexOf("New tactics: cases, contradiction") > -1) {
                 tacticsCasesContradiction = true;
+            }
+            if (request.indexOf("New tactic: simpl in *") > -1) {
+                tacticsSimplInStar = true;
             }
 
             var rProving = mProving.find();
