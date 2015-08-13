@@ -725,6 +725,15 @@ function studyTacticsV2(pt) {
         res.push(singleton("split"));
     }
 
+    if (tacticsApply) {
+        _(curNames)
+            .each(function(n) {
+                if (!noApply(n)) {
+                    res.push(singleton("apply " + n));
+                }
+            });
+    }
+
     // TODO: not rewrite the exact opposite of last rewrite
     _(curNames)
         .each(function(n) {
@@ -736,15 +745,6 @@ function studyTacticsV2(pt) {
             }
         })
     ;
-
-    if (tacticsApply) {
-        _(curNames)
-            .each(function(n) {
-                if (!noApply(n)) {
-                    res.push(singleton("apply " + n));
-                }
-            });
-    }
 
     if (tacticsSimplInStar) {
         res.push(singleton("simpl in *", ["simpl in *"]));
