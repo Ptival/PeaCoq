@@ -1517,3 +1517,19 @@ function recordDiff() {
         }));
     }
 }
+
+function editorOnUpdate(pt) {
+    var tactics = pt.getProcessedTactics();
+
+    var cost = _(tactics).reduce(function(sum, tac) {
+        var add = 1;
+        if (tac.tactic.startsWith("induction")) {
+            add = 50;
+        } else if (tac.tactic.startsWith("rewrite")) {
+            add = 10;
+        }
+        return sum + add;
+    }, 0);
+
+    cmResponse.setValue("Current cost: " + cost);
+}

@@ -1009,6 +1009,8 @@ ProofTree.prototype.update = function() {
 
     if (focusedOnEditor) { return Promise.resolve(); }
 
+    editorOnUpdate(this);
+
     var self = this;
 
     return new Promise(function (onFulfilled, onRejected) {
@@ -3977,4 +3979,56 @@ ProofTree.prototype.goalIsReflexive = function() {
             && goalTerm.contents[0].contents[0].contents === "eq"
             && _.isEqual(goalTerm.contents[1], goalTerm.contents[0].contents[1])
     );
+}
+
+ProofTree.prototype.getAncestorTactics = function() {
+    var ancestorTacticsOf = function(goalNode) {
+        if (goalNode.parentTactic !== undefined) {
+            var rec = ancestorTacticsOf(goalNode.parent.parent);
+            rec.push(goalNode.parentTactic);
+            return rec;
+        } else {
+            return [];
+        }
+    };
+
+    return ancestorTacticsOf(this.curNode);
+}
+
+function allDescendantTactics(tacticNode) {
+    return _(tacticNode.goals)
+        .reduce(function(acc, g) {
+            var focusedTacticGroup = g.getFocusedTacticGroup();
+            if (!focusedTacticGroup) { return acc; }
+            var processedTactic =
+                focusedTacticGroup.tactics[focusedTacticGroup.tacticIndex];
+            return acc.concat(allDescendantTactics(processedTactic));
+        }, [tacticNode])
+    ;
+}
+
+function priorDescedantTactics(tacticNode) {
+    if (!tacticNode.goals) { return []; }
+    var goalsToGatherFrom = _(tacticNode.goals).slice(0, tacticNode.goalIndex);
+    return goalsToGatherFrom
+        .reduce(function(acc, g) {
+            var focusedTacticGroup = g.getFocusedTacticGroup();
+            if (!focusedTacticGroup) { return acc; }
+            var processedTactic =
+                focusedTacticGroup.tactics[focusedTacticGroup.tacticIndex];
+            return acc.concat(allDescendantTactics(processedTactic));
+        }, [tacticNode])
+    ;
+}
+
+/*
+  Lists all the tactics that have been processed in the current proof state. This
+  includes all the ancestor tactics of the current node, and for each of those,
+  all their descendant tactics for goals inferior than the one at the current index
+*/
+ProofTree.prototype.getProcessedTactics = function() {
+    var ancestorTactics = this.getAncestorTactics();
+    return _(ancestorTactics).reduce(function(acc, a) {
+        return acc.concat(priorDescedantTactics(a));
+    }, []);
 }
