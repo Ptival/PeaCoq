@@ -134,7 +134,7 @@ Fixpoint rev (l: natlist) : natlist :=
 
 Theorem rev_snoc : forall x l,
   rev (snoc l x) = cons x (rev l).
-Proof. intros. induction l. simpl. reflexivity. simpl. rewrite -> IHl. simpl. reflexivity. 
+Proof. intros. induction l. simpl. reflexivity. simpl. rewrite -> IHl. simpl. reflexivity.
   (* FILL IN HERE *)
 Qed.
 
@@ -327,7 +327,7 @@ Fixpoint In n l :=
 Theorem In_cons : forall x h l,
   In x l ->
   In x (cons h l).
-Proof. intros. simpl. right. assumption.
+Proof. intros. simpl. right. apply H.
   (* FILL IN HERE *)
 Qed.
 
@@ -341,7 +341,6 @@ Qed.
 Theorem In_concat_left : forall x l1 l2,
   In x l1 ->
   In x (concat l1 l2).
-Proof. intros. induction l1. simpl in H. admit. simpl. simpl in H. cases H.
-  left. assumption. right. apply IHl1. assumption.
+Proof. intros. induction l1. simpl in *. contradiction. simpl in *. cases H. left. apply H. right. apply IHl1. apply H.
   (* FILL IN HERE *)
 Qed.
