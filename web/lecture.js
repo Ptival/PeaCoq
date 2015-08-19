@@ -651,6 +651,8 @@ function onlyRightRewrite(s) {
 function noApply(s) {
     switch (s) {
     case "concat_nil_left":
+    case "B_is_enough":
+    case "two_facts":
         return true;
     default:
         return false;
