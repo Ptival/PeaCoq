@@ -641,6 +641,7 @@ function onlyRightRewrite(s) {
     switch (s) {
     case "concat_nil_left":
     case "concat_nil_right":
+    case "map_fusion":
     case "rev_involutive":
         return true;
     default:
