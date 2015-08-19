@@ -4,15 +4,17 @@ HOME=$(echo ~)
 CONFIGPATH="${HOME}"
 LOGPATH="${HOME}/PeaCoq/logs"
 PEACOQCONFIG=".PeaCoqConfig.hs"
-STUDYID="group$1"
 
-if [ "$#" -ne 1 ]
+if [ "$#" -ne 2 ]
 then
-  echo "Usage: $0 GROUPNUMBER"
+  echo "Usage: $0 USERID PORT"
   exit 1
 fi
 
-echo "PeaCoqConfig { configUserId  = Just \"${STUDYID}\", configLogPath = \"${LOGPATH}\" }" > "${CONFIGPATH}/${PEACOQCONFIG}"
+USERID="$1"
+PORT="$2"
 
-peacoq -p "425$1"
+echo -e "PeaCoqConfig {\nconfigUserId  = \"${USERID}\",\nconfigLogPath = \"${LOGPATH}\",\nconfigCoqtop = \"coqtop -ideslave\"\n}" > "${CONFIGPATH}/${PEACOQCONFIG}"
+
+peacoq -p "$PORT"
 
