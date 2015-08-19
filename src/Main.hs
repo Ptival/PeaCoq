@@ -95,7 +95,7 @@ mainUW = do
   serveSnaplet (serverConfig logPath userId nowString) $ peacoqSnaplet globRef
 
 sessionTimeoutMinutes :: Int
-sessionTimeoutMinutes = 15
+sessionTimeoutMinutes = 60
 
 sessionTimeoutSeconds :: Int
 sessionTimeoutSeconds = 60 * sessionTimeoutMinutes
