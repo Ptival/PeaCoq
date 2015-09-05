@@ -539,9 +539,8 @@ function createProofTree(response) {
     activeProofTree.newAlreadyStartedTheorem(
         response,
         //replayTactics
-        //replayAndStudyTactics
-        //studyTactics
-        studyTacticsV2
+        masterTactics
+        //studyTacticsV2
     );
 
     // only show up the tree automatically if the user is not processing to
@@ -618,10 +617,6 @@ function safeIncomingTactic() {
         return undefined;
     }
     return res;
-}
-
-function replayAndStudyTactics(pt) {
-    return replayTactics(pt).concat(studyTactics(pt));
 }
 
 /*
@@ -765,7 +760,7 @@ function studyTacticsV2(pt) {
 
 }
 
-function studyTactics(pt) {
+function masterTactics(pt) {
 
     var curGoal = (isGoal(pt.curNode)) ? pt.curNode : pt.curNode.parent;
     var curHypsFull = _(curGoal.hyps).clone().reverse();
@@ -777,18 +772,18 @@ function studyTactics(pt) {
         makeGroup(
             "terminators",
             (pt.goalIsReflexive() ? ["reflexivity"] : [])
-                .concat(tacticsCasesContradiction ? ["contradiction"] : [])
                 .concat([
-                    //"discriminate",
-                    //"assumption",
+                    "contradiction",
+                    "discriminate",
+                    "assumption",
                 ])
         ),
 
         makeGroup(
             "autos",
             [
-                //"auto",
-                //"eauto",
+                "auto",
+                "eauto",
             ]
         ),
 
@@ -820,30 +815,22 @@ function studyTactics(pt) {
 
         makeGroup(
             "constructors",
-            ((tacticsLeftRight && pt.goalIsDisjunction()) ? ["left", "right"] : [])
-                .concat((tacticsSplit && pt.goalIsConjunction()) ? ["split"] : [])
+            ((pt.goalIsDisjunction()) ? ["left", "right"] : [])
+                .concat((pt.goalIsConjunction()) ? ["split"] : [])
                 .concat([
-                    //"constructor",
-                    //"econstructor",
-                    //"eexists",
+                    "constructor",
+                    "econstructor",
+                    "eexists",
                 ])
         ),
 
         makeGroup(
             "destructors",
-            []
-                .concat(
-                    tacticsCasesContradiction ?
-                    _(curHypsFull).map(function(h) {
-                        return pt.hypIsDisjunction(h) ? ["cases " + h.hName] : [];
-                    }).value()
-                    : []
-                )
-                // .concat(
-                //     _(curHypsFull).map(function(h) {
-                //         return pt.hypIsConjunction(h) ? ["destruct " + h.hName] : [];
-                //     }).value()
-                // )
+            [].concat(
+                _(curHypsFull).map(function(h) {
+                    return pt.hypIsConjunction(h) ? ["destruct " + h.hName] : [];
+                }).value()
+            )
         ),
 
         makeGroup(
@@ -862,13 +849,13 @@ function studyTactics(pt) {
                 .flatten(true).value()
         ),
 
-        // makeGroup(
-        //     "destructors",
-        //     _(curHyps)
-        //         .filter(function(h) { return isLowerCase(h[0]); })
-        //         .map(function(h) { return "destruct " + h; })
-        //         .value()
-        // ),
+        makeGroup(
+            "destructors",
+            _(curHyps)
+                .filter(function(h) { return isLowerCase(h[0]); })
+                .map(function(h) { return "destruct " + h; })
+                .value()
+        ),
 
         makeGroup(
             "inductions",
@@ -880,28 +867,26 @@ function studyTactics(pt) {
                 .value()
         ),
 
-        // makeGroup(
-        //     "inversions",
-        //     _(curHyps).map(function(h) { return "inversion " + h; }).value()
-        // ),
+        makeGroup(
+            "inversions",
+            _(curHyps).map(function(h) { return "inversion " + h; }).value()
+        ),
 
         makeGroup(
             "solvers",
             [
-                //"congruence",
-                //"omega",
-                //"firstorder"
+                "congruence",
+                "omega",
+                "firstorder"
             ]
         ),
 
         makeGroup(
             "applications",
-            tacticsApply ? (
-                _(curNames).map(function(n) { return "apply " + n; }).value()
-                // .concat(
-                //     _(curNames).map(function(n) { return "eapply " + n; }).value()
-                // )
-            ) : []
+            _(curNames).map(function(n) { return "apply " + n; }).value()
+                .concat(
+                    _(curNames).map(function(n) { return "eapply " + n; }).value()
+                )
         ),
 
         makeGroup(
@@ -912,7 +897,7 @@ function studyTactics(pt) {
                         if (h === n) { return []; }
                         return ([
                             "apply " + n + " in " + h,
-                            //"eapply " + n + " in " + h,
+                            "eapply " + n + " in " + h,
                         ]);
                     })
                     .flatten(true).value();
@@ -939,14 +924,14 @@ function studyTactics(pt) {
             }).flatten(true).value()
         ),
 
-        // makeGroup(
-        //     "reverts",
-        //     _(curHyps).map(function(h) { return "revert " + h; }).value()
-        // ),
+        makeGroup(
+            "reverts",
+            _(curHyps).map(function(h) { return "revert " + h; }).value()
+        ),
 
     ];
 
-    return (
+    return replayTactics(pt).concat(
         _(res)
             .map(function(elt) {
                 if ($.type(elt) === "string") {
