@@ -6,7 +6,7 @@ import qualified Data.Text             as T
 import           Data.XML.Types        (Event, Name)
 import           Text.XML.Stream.Parse
 
-import FromString
+import           FromString
 
 {- Unpacking and casting -}
 

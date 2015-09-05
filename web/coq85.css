@@ -42,10 +42,17 @@ a, button {
 
 .marker {
     position: absolute;
-    border-left: 2px solid blue;
+    /*border-left: 2px solid blue;*/
 }
 
 .end-marker {
     position: absolute;
     border-left: 2px solid red;
+}
+
+.processing {
+  background-color: rgba(255, 179, 71, 0.5);
+  border-radius: 0 !important;
+  position: absolute;
+  z-index: 5;
 }

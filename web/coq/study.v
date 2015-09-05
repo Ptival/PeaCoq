@@ -99,7 +99,7 @@ Qed.
 (* In-class exercise! *)
 Theorem concat_associativity : forall l2 l1 l3 : natlist,
   concat (concat l1 l2) l3 = concat l1 (concat l2 l3).
-Proof. intros. induction l1. apply concat_nil_left. simpl. rewrite -> IHl1. reflexivity.
+Proof. intros. induction l1. rewrite -> concat_nil_left. simpl. reflexivity. simpl. rewrite -> IHl1. reflexivity.
   (* FILL IN HERE *)
 Qed.
 
@@ -134,19 +134,19 @@ Fixpoint rev (l: natlist) : natlist :=
 
 Theorem rev_snoc : forall x l,
   rev (snoc l x) = cons x (rev l).
-Proof. intros. induction l. apply concat_nil_left. simpl. rewrite -> IHl. apply concat_nil_left.
+Proof. intros. induction l. simpl. reflexivity. simpl. rewrite -> IHl. simpl. reflexivity.
   (* FILL IN HERE *)
 Qed.
 
 Theorem rev_involutive : forall l : natlist,
   rev (rev l) = l.
-Proof. intros. induction l. apply concat_nil_left. simpl. rewrite -> rev_snoc. rewrite -> IHl. reflexivity.
+Proof. intros. induction l. simpl. reflexivity. simpl. rewrite -> rev_snoc. rewrite -> IHl. reflexivity.
   (* FILL IN HERE *)
 Qed.
 
 Theorem concat_cons_snoc : forall l1 x l2,
   concat l1 (cons x l2) = concat (snoc l1 x) l2.
-Proof. intros. induction l1. apply concat_nil_left. simpl. rewrite -> IHl1. reflexivity.
+Proof. intros. induction l1. simpl. reflexivity. simpl. rewrite -> IHl1. reflexivity.
   (* FILL IN HERE *)
 Qed.
 
@@ -194,11 +194,11 @@ Proof. intros. right. apply H.
 Qed.
 
 (*
-  New tactic: each
+  New tactic: split
 
   When your goal looks like [A /\ B]
   You need to prove both [A] and [B].
-  The tactic [each.] lets you split your goal into these two goals.
+  The tactic [split.] lets you split your goal into these two goals.
 
   Here is an example:
 *)
@@ -226,7 +226,7 @@ End LogicExercises.
 
 Theorem snoc_concat_end : forall (l: natlist) (n: nat),
   snoc l n = concat l (cons n nil).
-Proof. intros. induction l. apply concat_nil_left. simpl. rewrite -> IHl. reflexivity.
+Proof. intros. rewrite -> concat_cons_snoc. rewrite -> concat_nil_right. reflexivity.
   (* FILL IN HERE *)
 Qed.
 
@@ -282,22 +282,23 @@ Definition map' f l := fold (fun x fxs => cons (f x) fxs) l nil.
 
 (* We use [Lemma] instead of [Theorem] here to indicate that this theorem may
    help you in proving the next theorem. *)
-Lemma map'_unroll : forall f x xs,
+Axiom map'_unroll : forall f x xs,
   map' f (cons x xs) = cons (f x) (map' f xs).
-Proof. admit.
-  (* FILL IN HERE *)
-Qed.
+
+Axiom map'_nil : forall f, map' f nil = nil.
 
 Theorem map_map' : forall f l, map f l = map' f l.
-Proof. intros. induction l. simpl. admit. rewrite -> map'_unroll. simpl. rewrite -> IHl. reflexivity.
+Proof. intros. induction l. simpl. rewrite -> map'_nil. reflexivity. rewrite -> map'_unroll. simpl. rewrite -> IHl. reflexivity.
   (* FILL IN HERE *)
 Qed.
 
+Ltac cases H := match type of H with _ \/ _ => destruct H end.
+
 (*
-  New tactic: destruct
+  New tactics: cases, contradiction
 
   When a hypothesis looks like [H : A \/ B]
-  You have to prove the goal for each case, to do so, use the tactic [destruct H.]
+  You have to prove the goal for each case, to do so, use the tactic [cases H.]
   You will get two goals as a result, one with a [A] hypothesis, one with a [B] hypothesis.
 
   Finally, if you ever get a hypothesis like [H : False]
@@ -314,14 +315,20 @@ Fixpoint In n l :=
 Theorem In_cons : forall x h l,
   In x l ->
   In x (cons h l).
-Proof. intros. simpl. right. assumption.
+Proof. intros. simpl. right. apply H.
   (* FILL IN HERE *)
 Qed.
+
+(*
+  New tactic: simpl in *
+
+  Sometimes, you might want to simplify things in your hypotheses, the same way things
+  can be simplified in your conclusion.
+*)
 
 Theorem In_concat_left : forall x l1 l2,
   In x l1 ->
   In x (concat l1 l2).
-Proof. intros. induction l1. simpl in H. admit. simpl. simpl in H. destruct H.
-  left. assumption. right. apply IHl1. assumption.
+Proof. intros. induction l1. simpl in *. contradiction. simpl in *. cases H. left. apply H. right. apply IHl1. apply H.
   (* FILL IN HERE *)
 Qed.

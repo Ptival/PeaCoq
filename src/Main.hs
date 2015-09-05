@@ -64,8 +64,8 @@ peacoqRoutes =
   , ("stopworker", handlerStopWorker)
   ] ++
   -- Coqtop additional routes
-  [ ("add'",       handlerAdd')
-  , ("query'",     handlerQuery')
+  [ ("add'",   handlerAdd')
+  , ("query'", handlerQuery')
   ] ++
   -- PeaCoq-specific routes
   [ ("/", serveDirectoryWith myDirConfig "web/")
@@ -125,7 +125,7 @@ loggingPriority :: Priority
 loggingPriority = INFO
 
 closeSession :: String -> SessionState -> IO ()
-closeSession _hash (SessionState _ (hi, ho) ph _) = do
+closeSession _hash (SessionState _ (hi, ho, _, ph) _) = do
   --logAction hash $ "END SESSION " ++ show sessId
   hClose hi
   hClose ho

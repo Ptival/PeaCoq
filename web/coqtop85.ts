@@ -1,73 +1,93 @@
 /// <reference path="coq85.ts"/>
+/// <reference path="term.ts"/>
 
 function unbsp(s) {
   return s.replace(/ /g, ' ');
 }
 
-function coqtop(command: string, input: Object, callback: Function, silent?: boolean) {
-  $.ajax({
-    type: 'POST',
-    url: command,
-    data: {
-      data: JSON.stringify(input)
-    },
-    async: true,
-    error: function() {
-      console.log("Server did not respond!");
-    },
-    success: function(response) {
-      var result = response[0];
-      var stateId = response[1][0];
-      var editId = response[1][1];
-      var messages = response[2][0];
-      var feedback = response[2][1];
-      //if (!silent) { console.log("Response: ", response, feedback, messages); }
-      _(feedback).each(function(x) {
-        var f = new Feedback(x);
-        onFeedback(f);
-      });
-      _(messages).each(function(x) {
-        var m = new Message(x);
-        onMessage(m);
-      });
-      //console.log("Result: ", result);
-      switch (result.tag) {
-        case "ValueGood":
-          if (callback) {
-            callback(result.contents);
-          }
-          break;
-        case "ValueFail":
-          if (!silent) {
-            console.log("Error: ", new ValueFail(result.contents));
-          }
-          break;
-        default:
-          throw "result.tag was neither ValueGood nor ValueFail";
+function coqtop(command: string, input: Object, silent?: boolean): Promise<Object> {
+  return new Promise(function(onFulfilled, onRejected: (v: ValueFail) => any) {
+    $.ajax({
+      type: 'POST',
+      url: command,
+      data: {
+        data: JSON.stringify(input)
+      },
+      async: true,
+      error: function() {
+        console.log("Server did not respond!");
+      },
+      success: function(response) {
+        var result = response[0];
+        var stateId = response[1][0];
+        var editId = response[1][1];
+        var messages = response[2][0];
+        var feedback = response[2][1];
+        //if (!silent) { console.log("Response: ", response, feedback, messages); }
+        // This is slow, disabled until it is useful
+        // TODO: make this processing asynchronous to not hang UI
+        /*
+        _(feedback).each(function(x) {
+          var f = new Feedback(x);
+          onFeedback(f);
+        });
+        */
+        _(messages).each(function(x) {
+          var m = new Message(x);
+          onMessage(m);
+        });
+        //console.log("Result: ", result);
+        switch (result.tag) {
+          case "ValueGood":
+            onFulfilled(result.contents);
+            break;
+          case "ValueFail":
+            onRejected(new ValueFail(result.contents));
+            break;
+          default:
+            throw "result.tag was neither ValueGood nor ValueFail";
+        }
       }
-    }
+    });
   });
 }
 
-function peaCoqAddPrime(s: string, k: Function): void {
+function peaCoqAddPrime(s: string): Promise<Object> {
   console.log("Add'", s);
-  coqtop("add'", s, function(r) {
-    r = {
-      "stateId": r[0],
-      "eitherNullStateId": r[1][0],
-      "output": r[1][0],
-    };
-    if (k) {
-      k(r);
-    }
-    //console.log("[@" + stateId + "] Added", eitherNullStateId, output);
-  });
+  return (
+    coqtop("add'", s)
+      .then(function(r) {
+      r = {
+        "stateId": r[0],
+        "eitherNullStateId": r[1][0],
+        "output": r[1][0],
+      };
+      return r;
+      //console.log("[@" + stateId + "] Added", eitherNullStateId, output);
+    })
+    .catch(function(vf: ValueFail) {
+      
+    })
+  );
 }
 
-function peaCoqEditAt(sid: number): void {
+function peaCoqEditAt(sid: number): Promise<Object> {
   console.log("EditAt", sid);
-  coqtop("editat", sid, function(either) {
-    //console.log("EditAt: ", either);
+  return coqtop("editat", sid);
+}
+
+function peaCoqGetContext(): Promise<Term> {
+  return peaCoqQueryPrime("PeaCoqGetContext.").then(function(context) {
+    if (!context.startsWith("new")) {
+      console.log("Context");
+      console.log(context);
+      return;
+    }
+    /* ¯\_(ツ)_/¯ */
+    console.log(context);
+    var term = eval(context);
+    console.log("Context: ", term);
+    return term;
   });
 }
 
@@ -114,7 +134,7 @@ class Goals {
       this.bgGoals = _(maybeGoals[1]).map(function(ba) {
         return {
           "before": _(ba[0]).map(function(b) { return new Goal(b); }).value(),
-          "after":  _(ba[1]).map(function(b) { return new Goal(b); }).value(),
+          "after": _(ba[1]).map(function(b) { return new Goal(b); }).value(),
         };
       }).value();
       this.shelvedGoals = _(maybeGoals[2]).map(function(g) {
@@ -127,14 +147,14 @@ class Goals {
   }
 };
 
-function peaCoqGoal(k?: (Goals) => any): void {
+function peaCoqGoal(): Promise<Goals> {
   console.log("Goal");
-  coqtop("goal", [], function(maybeGoals){
-    console.log("maybeGoals", maybeGoals);
+  return coqtop("goal", []).then(function(maybeGoals) {
+    //console.log("maybeGoals", maybeGoals);
     var goals = new Goals(maybeGoals);
     // weird, maybeGoals is an array of length 4 with 3 empty
-    console.log("Goal", goals);
-    if (k) { k(goals); }
+    //console.log("Goal", goals);
+    return goals;
   })
 }
 
@@ -145,18 +165,17 @@ function peaCoqGoal(k?: (Goals) => any): void {
 //     });
 // }
 
-function peaCoqQueryPrime(s: string): void {
+function peaCoqQueryPrime(s: string): Promise<string> {
   console.log("Query'", s);
-  coqtop("query'", s, function(r) {
-    //console.log("Query output: " + r);
-  });
+  return coqtop("query'", s);
 }
 
-function peaCoqPrintAST(sid: number): void {
+function peaCoqPrintAST(sid: number): Promise<CoqXMLTree> {
   console.log("PrintAST", sid);
-  coqtop("printast", sid, function(r) {
-    r = new CoqXMLTree(r);
+  return coqtop("printast", sid).then(function(r) {
+    var tree = new CoqXMLTree(r);
     console.log("PrintAST\n", r.toString());
+    return tree;
   });
 }
 
@@ -166,25 +185,17 @@ class Status {
   statusAllProofs: string;
   statusProofNum: number;
   constructor(status) {
-    this.statusPath      = status[0];
+    this.statusPath = status[0];
     this.statusProofName = status[1];
     this.statusAllProofs = status[2];
-    this.statusProofNum  = status[3];
+    this.statusProofNum = status[3];
   }
 }
 
-function peaCoqStatus(b: boolean, k?: Function): void {
+function peaCoqStatus(b: boolean): Promise<Status> {
   console.log("Status");
-  coqtop("status", b, function(status) {
-    status = {
-      "statusPath": status[0],
-      "statusProofName": status[1],
-      "statusAllProofs": status[2],
-      "statusProofNum": status[3],
-    };
-    if (k) {
-      k(status);
-    }
+  return coqtop("status", b).then(function(s) {
+    return new Status(s);
   });
 }
 
@@ -216,7 +227,7 @@ function mkMessageLevel(m): MessageLevel {
   };
 }
 
-class MessageLevel {}
+class MessageLevel { }
 
 class Debug extends MessageLevel {
   debug: string;
@@ -259,7 +270,7 @@ class Message {
   toString() {
     return (
       "[" + this.level.toString() + "]\n" + this.content
-    );
+      );
   }
 }
 
@@ -287,7 +298,7 @@ class Feedback {
     return (
       "Feedback(" + this.editOrState + ", " + this.editOrStateId + ", " +
       this.feedbackContent + ", " + this.routeId + ")"
-    );
+      );
   }
 }
 
@@ -303,7 +314,7 @@ function mkFeedbackContent(f) {
     case "GlobRef":
     case "Goals":
     case "Message":
-      console.log("TODO: FeedbackContent for " + this.tag, f);
+      //console.log("TODO: FeedbackContent for " + this.tag, f);
       break;
     case "Processed":
       return new Processed();
@@ -312,13 +323,13 @@ function mkFeedbackContent(f) {
     case "WorkerStatus":
       console.log("TODO: FeedbackContent for " + this.tag, f);
       break;
-      // other tags don't need fields
+    // other tags don't need fields
     default:
       throw ("Unknown FeedbackContent tag: " + this.tag);
   }
 }
 
-class FeedbackContent {}
+class FeedbackContent { }
 
 class Processed extends FeedbackContent {
   toString() { return "Processed"; }
@@ -372,7 +383,7 @@ class LocatedCoqXMLTag {
   }
 }
 
-class CoqXMLTag {}
+class CoqXMLTag { }
 
 function mkCoqXMLTag(t): CoqXMLTag {
   var c = t.contents;

@@ -7,6 +7,7 @@
 module Coq where
 
 import           Control.Monad.Catch      (MonadThrow)
+import           Control.Monad.Loops      (whileM_)
 import           Control.Monad.RWS.Strict
 import           Data.Aeson               (FromJSON, ToJSON)
 import qualified Data.ByteString          as BS
@@ -19,6 +20,7 @@ import           Data.Tree
 import           Data.XML.Types
 import           GHC.Generics             (Generic)
 import           System.IO
+import           System.Process           (ProcessHandle)
 import           Text.XML
 import           Text.XML.Stream.Parse    hiding (tag)
 
@@ -38,27 +40,28 @@ A 'CoqIO':
 
 -}
 
-type CoqReader = (Handle, Handle)
+type Handles = (Handle, Handle, Handle, ProcessHandle)
+type CoqReader = Handles
 type CoqWriter = ([Message], [Feedback])
 type CoqState = (StateId, Int)
 type CoqIO = RWST CoqReader CoqWriter CoqState IO
 type CoqtopIO a = CoqIO (Value a)
 
 initialCoqState :: CoqState
-initialCoqState = (MkStateId 1, 0) -- 1 after auto-initialization
+initialCoqState = (StateId 1, 0) -- 1 after auto-initialization
 
 data StateId
-  = MkStateId Int
+  = StateId Int
   deriving (Generic, Show)
 
 instance FromJSON StateId
 instance ToJSON StateId
 
 instance ToXML StateId where
-  xml (MkStateId i) = "<state_id val=\"" ++ show i ++ "\"/>"
+  xml (StateId i) = "<state_id val=\"" ++ show i ++ "\"/>"
 
 instance FromString StateId where
-  fromString = MkStateId <$> read
+  fromString = StateId <$> read
 
 data MessageLevel
   = Debug String
@@ -105,7 +108,11 @@ data FeedbackContent
 
 instance ToJSON FeedbackContent
 
-type EditId = Int
+data EditId
+  = EditId Int
+  deriving (Generic, Show)
+
+instance ToJSON EditId
 
 data EditOrStateId
   = Edit EditId
@@ -227,14 +234,16 @@ instance ToXML OptionValue where
   xml (IntValue i)    = tagOptionValue "intvalue"    i
   xml (StringValue s) = tagOptionValue "stringvalue" s
 
-runCoqtopIO :: (Handle, Handle) -> CoqState -> CoqtopIO a -> IO (Value a, CoqState, CoqWriter)
+runCoqtopIO :: Handles -> CoqState -> CoqtopIO a -> IO (Value a, CoqState, CoqWriter)
 runCoqtopIO hs st io = runRWST io' hs st
   where
     io' = do
       v <- io
       case v of
         -- when coqtop fails, it tells which state it is now in
-        ValueFail sid _ _ -> setStateId sid
+        -- but apparently, 0 is a dummy value
+        ValueFail (StateId 0) _ _ -> return ()
+        ValueFail sid         _ _ -> setStateId sid
         ValueGood _ -> return ()
       return v
 
@@ -246,7 +255,7 @@ mkTag name val contents =
 
 hQuery :: (ToXML i) => String -> i -> CoqIO ()
 hQuery cmd input = do
-  (hi, _) <- ask
+  (hi, _, _, _) <- ask
   let queryStr = mkTag "call" cmd input
   liftIO . putStrLn $ queryStr
   liftIO $ hPutStr hi queryStr
@@ -273,6 +282,15 @@ instance FromXML FeedbackContent where
       "processingin" ->
         ProcessingIn <$> forceXML
       _ -> error $ "Unknown feedback_content: " ++ val
+
+instance FromXML EditId where
+  instanceName Proxy = "EditId"
+  parseXML =
+    tagName "edit_id"
+    (do
+         val <- castRequireAttr "val"
+         return (EditId val))
+    return
 
 instance FromXML Feedback where
   instanceName Proxy = "Feedback"
@@ -323,8 +341,13 @@ parseXMLEither =
 
 hResponse :: forall a. (FromXML a, Show a) => CoqtopIO a
 hResponse = do
-  (_, ho) <- ask
+  (_, ho, he, _) <- ask
   (messages, feedback, response) <- liftIO $ do
+
+    -- flush stderr if needed
+    -- TODO: report these errors
+    whileM_ (hReady he) (hGetLine he)
+
     (resumable, messagesAndFeedback) <- xmlSource ho $$+ many parseXMLEither
     let (messages, feedback) = partitionEithers messagesAndFeedback
     (source, _) <- unwrapResumable resumable
@@ -356,7 +379,7 @@ hCall cmd input = do
 hCallRawResponse :: (ToXML i) => String -> i -> CoqIO String
 hCallRawResponse cmd input = do
   hQuery cmd input
-  (_, ho) <- ask
+  (_, ho, _, _) <- ask
   liftIO $ hGetContents ho
 
 instance FromXML Status where
@@ -389,7 +412,7 @@ xmlSourcePos h =
 instance FromXML StateId where
   instanceName Proxy = "StateId"
   parseXML = tagName "state_id" (castRequireAttr "val") $ \ val ->
-    return $ MkStateId val
+    return $ StateId val
 
 instance FromXML Loc where
   instanceName Proxy = "Loc"

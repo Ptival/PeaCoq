@@ -37,8 +37,7 @@ type PeaCoqHandler a = Handler PeaCoq PeaCoq a
 Wrap any input-needing 'MonadSnap' into an input-less one, gathering input
 from the HTTP request.
 -}
-withParam :: (FromJSON i, MonadSnap m) =>
-            (i -> m o) -> m (Maybe o)
+withParam :: (FromJSON i, MonadSnap m) => (i -> m o) -> m (Maybe o)
 withParam k = do
   let paramName = "data"
   mp <- getParam paramName
@@ -62,7 +61,7 @@ and returning output through the HTTP response.
 liftCoqtopIO :: (FromJSON i, ToJSON o) =>
                (i -> CoqtopIO o) -> (i -> PeaCoqHandler ())
 liftCoqtopIO io i = do
-  (SessionState _ hs _ st) <- getSessionState
+  (SessionState _ hs st) <- getSessionState
   res@(_, st', _) <- liftIO . runCoqtopIO hs st $ io i
   setCoqState st'
   writeJSON res
@@ -71,16 +70,15 @@ handleCoqtopIO :: (FromJSON i, ToJSON o) =>
                  (i -> CoqtopIO o) -> PeaCoqHandler ()
 handleCoqtopIO = void . withParam . liftCoqtopIO
 
-startCoqtop :: String -> IO (Handle, Handle, ProcessHandle)
+startCoqtop :: String -> IO (Handle, Handle, Handle, ProcessHandle)
 startCoqtop coqtop = do
   (hi, ho, he, ph) <- runInteractiveCommand coqtop
-  hClose he
-  hSetBinaryMode hi False
-  hSetBuffering stdin LineBuffering
   hSetBuffering hi NoBuffering
+  hSetBuffering ho NoBuffering
+  hSetBuffering he NoBuffering
   --hInterp hi "Require Import Unicode.Utf8."
   --hForceValueResponse ho
-  return (hi, ho, ph)
+  return (hi, ho, he, ph)
 
 getGlobalState :: PeaCoqHandler GlobalState
 getGlobalState = do
@@ -98,9 +96,11 @@ modifySessionState f = do
   mapKey <- withSession lSession getSessionKey
   case IM.lookup mapKey m of
     Nothing -> do
-      (hi, ho, ph) <- liftIO $ startCoqtop coqtop
-      (_, st, _) <- liftIO $ runCoqtopIO (hi, ho) initialCoqState (init Nothing)
-      let (s, res) = f (SessionState True (hi, ho) ph st)
+      (hs, st) <- liftIO $ do
+        hs <- startCoqtop coqtop
+        (_, st, _) <- runCoqtopIO hs initialCoqState (init Nothing)
+        return (hs, st)
+      let (s, res) = f (SessionState True hs st)
       modifyGlobalState $ insertSession mapKey s
       --logAction hash $ "NEWSESSION " ++ show sessionIdentity
       return res
@@ -115,7 +115,7 @@ getSessionState = modifySessionState (\ s -> (s, s))
 
 setCoqState :: CoqState -> PeaCoqHandler ()
 setCoqState s =
-  modifySessionState (\ (SessionState a b c _) -> (SessionState a b c s, ()))
+  modifySessionState (\ (SessionState a b _) -> (SessionState a b s, ()))
 
 insertSession :: Int -> SessionState -> GlobalState -> (GlobalState, ())
 insertSession mapKey s gs@(GlobalState { gNextSession = c, gActiveSessions = m }) =

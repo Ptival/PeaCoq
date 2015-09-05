@@ -5,13 +5,13 @@ import Data.IntMap (adjust)
 import PeaCoq
 
 isAlive :: SessionState -> Bool
-isAlive (SessionState alive _ _ _) = alive
+isAlive (SessionState alive _ _) = alive
 
 markStale :: SessionState -> SessionState
-markStale (SessionState _ h ph st) = SessionState False h ph st
+markStale (SessionState _ hs st) = SessionState False hs st
 
 touchSession :: SessionState -> SessionState
-touchSession (SessionState _ h ph st) = SessionState True h ph st
+touchSession (SessionState _ hs st) = SessionState True hs st
 
 adjustSession :: (SessionState -> SessionState) -> Int -> GlobalState ->
                 (GlobalState, ())
