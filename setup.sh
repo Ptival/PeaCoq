@@ -35,10 +35,11 @@ $GET https://raw.github.com/lodash/lodash/2.4.1/dist/lodash.min.js > lodash.min.
 cd ..
 $LN lodash/lodash.min.js lodash.js
 
-$GET http://codemirror.net/codemirror.zip > codemirror.zip
-unzip -o codemirror.zip
-$LN codemirror-5.3 codemirror
-rm codemirror.zip
+CODEMIRROR="codemirror-5.6"
+$GET http://codemirror.net/$CODEMIRROR.zip > $CODEMIRROR.zip
+unzip -o $CODEMIRROR.zip
+$LN $CODEMIRROR codemirror
+rm $CODEMIRROR.zip
 
 #$GET https://github.com/niklasvh/html2canvas/releases/download/0.4.1/html2canvas.js > html2canvas.js
 $GET https://raw.githubusercontent.com/sampumon/SVG.toDataURL/master/svg_todataurl.js > svg_todataurl.js
