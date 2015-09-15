@@ -2,7 +2,7 @@
 
 MKDIR="mkdir -p"
 GET="wget -O - "
-LN="ln -sf"
+LN="ln -fns"
 
 cd web/
 
