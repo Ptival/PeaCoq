@@ -826,11 +826,9 @@ function masterTactics(pt) {
 
         makeGroup(
             "destructors",
-            [].concat(
-                _(curHypsFull).map(function(h) {
-                    return pt.hypIsConjunction(h) ? ["destruct " + h.hName] : [];
-                }).value()
-            )
+            _(curHypsFull)
+                .map(function(h) { return "destruct " + h.hName; })
+                .value()
         ),
 
         makeGroup(
@@ -860,9 +858,6 @@ function masterTactics(pt) {
         makeGroup(
             "inductions",
             _(curHypsFull)
-                .filter(function(h) {
-                    return h.hType.tag === "Var" && h.hType.contents === "natlist";
-                })
                 .map(function(h) { return "induction " + h.hName; })
                 .value()
         ),
