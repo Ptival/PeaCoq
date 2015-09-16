@@ -88,8 +88,8 @@ comment { TokComment $$ }
 %right '∧'
 %nonassoc '¬'
 %nonassoc '=' '≠'
-%right "::"
 %right "++"
+%right "::"
 %left "||"
 %left "&&"
 %nonassoc '<' '>' "<=" ">="
