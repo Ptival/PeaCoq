@@ -10,4 +10,5 @@
 * $ ./setup.sh
 
 ## 2. Build
-* $ cabal install peacoq
+From top level of this repo:
+* $ cabal install
