@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 
-USER=$(whoami)
+CONFIGPATH="$HOME"
+PEACOQCONFIG=".PeaCoqConfig.hs"
+USER="$USER"
 TMP="/tmp/"
 COQTOP=$(which coqtop)
 
-cat << EOF > ~/.PeaCoqConfig.hs
+cat << EOF > "$HOME/$PEACOQCONFIG"
 PeaCoqConfig
 { configUserId  = "$USER"
 , configLogPath = "$TMP"
