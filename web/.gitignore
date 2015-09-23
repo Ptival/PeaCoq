@@ -20,3 +20,11 @@ lodash/
 /ocaml.js
 octicons/
 /svg_todataurl.js
+
+highlight.css
+highlight.js
+highlight/
+rangy-core.js
+rangy-selectionsaverestore.js
+rangy-textrange.js
+rangy/
