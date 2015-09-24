@@ -3,4 +3,5 @@ dist/
 encryption_key
 log/
 logs/
+plugin/
 *.png
