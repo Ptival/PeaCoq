@@ -1,58 +1,67 @@
 html, body, #interface {
-    height: 100%;
-    margin: 0;
+  height: 100%;
+  margin: 0;
 }
 #interface, #main, #main-right, #context, #context-tabs, #coqtop, #coqtop-tabs {
-    display: flex; /* Flex container */
+  display: flex;
+  /* Flex container */
 }
 #interface, #main-right, #context, #coqtop {
-    flex-direction: column; /* Column layout */
+  flex-direction: column;
+  /* Column layout */
 }
 #main, #main-left, #main-right, #context, #context-tabs, #coqtop, #coqtop-tabs {
-    flex: 1; /* Distribute space equally among the flex items */
-    flex-basis: 0;
-    overflow: auto; /* Use scrollbars if necessary */
+  flex: 1;
+  /* Distribute space equally among the flex items */
+  flex-basis: 0;
+  overflow: auto;
+  /* Use scrollbars if necessary */
 }
-
 a, button {
-    border-radius: 0 !important;
-    padding: 2px 4px !important;
+  border-radius: 0 !important;
+  padding: 2px 4px !important;
 }
-
 .tab-pane {
-    display: flex;
-    width: 100%;
+  display: flex;
+  width: 100%;
 }
-
 .tab-pane > .ace_editor {
-    display: flex;
-    flex-grow: 1;
+  display: flex;
+  flex-grow: 1;
 }
-
 .coq-command {
-    background: #00AA00;
-    position: absolute;
-    z-index: 5;
+  background: #00AA00;
+  position: absolute;
+  z-index: 5;
 }
-
 .begin-marker {
-    position: absolute;
-    border-left: 2px solid green;
+  position: absolute;
+  border-left: 2px solid green;
 }
-
 .marker {
-    position: absolute;
-    /*border-left: 2px solid blue;*/
+  position: absolute;
+  /*border-left: 2px solid blue;*/
 }
-
 .end-marker {
-    position: absolute;
-    border-left: 2px solid red;
+  position: absolute;
+  border-left: 2px solid red;
 }
-
-.processing {
-  background-color: rgba(255, 179, 71, 0.5);
+.processing, .processed {
   border-radius: 0 !important;
   position: absolute;
   z-index: 5;
 }
+
+.processing {
+  background-color: rgba(255, 179, 71, 1);
+}
+.processed {
+  background-color: rgba(144, 238, 144, 1);
+}
+
+/* Syntax highlighting */
+.ace_coqcomment { color: rgb(165, 42, 42); }
+.ace_gallina { color: rgb(0, 0, 255); }
+.ace_tactic { color: rgb(147, 112, 219); }
+.ace_terminator { color: rgb(255, 0, 0); }
+.ace_vernacular { color: rgb(255, 69, 0); }

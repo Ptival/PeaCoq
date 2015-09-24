@@ -14,7 +14,7 @@ import           Data.Time.Format
 import           Data.Time.LocalTime
 import           Network.Socket
 import           Prelude                                     hiding (log)
-import           Snap.Core                                   (MonadSnap)
+import           Snap.Core
 import           Snap.Http.Server.Config
 import           Snap.Snaplet
 import           Snap.Snaplet.Session                        hiding (touchSession)
@@ -40,6 +40,12 @@ configFile = ".PeaCoqConfig.hs"
 
 sessionTimeoutMinutes :: Int
 sessionTimeoutMinutes = 15
+
+disableCaching :: Handler b v a -> Handler b v a
+disableCaching h = do
+  modifyResponse $ setHeader "Cache-Control" "no-cache, no-store, must-revalidate"
+  modifyResponse $ setHeader "Expires" "0"
+  h
 
 peacoqRoutes :: [(ByteString, PeaCoqHandler ())]
 peacoqRoutes =
@@ -68,7 +74,7 @@ peacoqRoutes =
   , ("query'", handlerQuery')
   ] ++
   -- PeaCoq-specific routes
-  [ ("/", serveDirectoryWith myDirConfig "web/")
+  [ ("/", disableCaching $ serveDirectoryWith myDirConfig "web/")
   ]
 
 {- End of configuration -}

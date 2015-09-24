@@ -19,9 +19,16 @@ main = do
     io (_, _, _he, _ph) = do
       init Nothing
       --add' "Require Import PeaCoq.PeaCoq."
-      add' "Require Import List."
-      add' "Import ListNotations."
-      add' "Theorem t : [0] = [1]."
+      --add' "Require Import List."
+      --add' "Import ListNotations."
+      --add' "Theorem t : [0] = [1]."
+      add' "Theorem test : True."
+      add' "Proof."
+      add' "foo."
+      add' "bar."
+      status False
+      add' "idtac."
+      status False
       return (ValueGood ())
 
 {-

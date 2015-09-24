@@ -1,0 +1,23 @@
+{
+  "version": "1.5.0-alpha",
+  "compilerOptions": {
+    "target": "es5",
+    "module": "commonjs",
+    "declaration": false,
+    "noImplicitAny": false,
+    "removeComments": true,
+    "noLib": false,
+    "preserveConstEnums": true,
+    "suppressImplicitAnyIndexErrors": true
+  },
+  "files": [
+    "coq85.ts",
+    "coqtop85.ts",
+    "term.ts",
+    "DefinitelyTyped/ace/ace.d.ts",
+    "DefinitelyTyped/bootstrap/bootstrap.d.ts",
+    "DefinitelyTyped/es6-shim/es6-shim.d.ts",
+    "DefinitelyTyped/lodash/lodash.d.ts",
+    "DefinitelyTyped/jquery/jquery.d.ts"
+  ]
+}

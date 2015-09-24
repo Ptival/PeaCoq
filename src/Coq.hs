@@ -234,17 +234,20 @@ instance ToXML OptionValue where
   xml (IntValue i)    = tagOptionValue "intvalue"    i
   xml (StringValue s) = tagOptionValue "stringvalue" s
 
+-- when coqtop fails, it tells which state it is now in
+-- but apparently, 0 is a dummy value
+setStateIdFromValue :: Value a -> CoqIO ()
+setStateIdFromValue (ValueFail (StateId 0) _ _) = return ()
+-- apparently, backtracking to this sid make coqtop unhappy
+setStateIdFromValue (ValueFail _sid        _ _) = return () --setStateId sid
+setStateIdFromValue (ValueGood _)               = return ()
+
 runCoqtopIO :: Handles -> CoqState -> CoqtopIO a -> IO (Value a, CoqState, CoqWriter)
 runCoqtopIO hs st io = runRWST io' hs st
   where
     io' = do
       v <- io
-      case v of
-        -- when coqtop fails, it tells which state it is now in
-        -- but apparently, 0 is a dummy value
-        ValueFail (StateId 0) _ _ -> return ()
-        ValueFail sid         _ _ -> setStateId sid
-        ValueGood _ -> return ()
+      setStateIdFromValue v
       return v
 
 mkTag :: ToXML a => String -> String -> a -> String
@@ -339,6 +342,9 @@ parseXMLEither =
         ((Left  <$>) <$> (parseXML :: Parser (Maybe a)))
   `orE` ((Right <$>) <$> (parseXML :: Parser (Maybe b)))
 
+hResponseDebug :: String -> IO ()
+hResponseDebug s = if True then putStrLn s else return ()
+
 hResponse :: forall a. (FromXML a, Show a) => CoqtopIO a
 hResponse = do
   (_, ho, he, _) <- ask
@@ -353,22 +359,24 @@ hResponse = do
     (source, _) <- unwrapResumable resumable
 
     let messageStr = unlines . map show $ messages
-    putStrLn $ "Message:\n" ++ take messageMaxLen messageStr
+    hResponseDebug $ "Message:\n" ++ take messageMaxLen messageStr
     if length messageStr > messageMaxLen
       then putStrLn "..."
       else return ()
 
     let feedbackStr = unlines . map show $ feedback
-    putStrLn $ "Feedback:\n" ++ take feedbackMaxLen feedbackStr
+    hResponseDebug $ "Feedback:\n" ++ take feedbackMaxLen feedbackStr
     if length feedbackStr > feedbackMaxLen
       then putStrLn "..."
       else return ()
 
     response <- source $$ (forceXML :: Parser (Value a))
-    putStrLn $ "Value: " ++ show response
-    putStrLn $ replicate 60 '='
+    hResponseDebug $ "Value: " ++ show response
+    hResponseDebug $ replicate 60 '='
+
     return (messages, feedback, response)
   tell (messages, feedback)
+  setStateIdFromValue response
   return response
 
 hCall :: (ToXML i, FromXML o, Show o) => String -> i -> CoqtopIO o

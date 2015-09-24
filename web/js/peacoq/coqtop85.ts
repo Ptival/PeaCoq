@@ -1,12 +1,38 @@
 /// <reference path="coq85.ts"/>
 /// <reference path="term.ts"/>
 
-function unbsp(s) {
+/*
+  This queue guarantees that requests are pushed one after the other, and that
+  failure of a request cascades and cancels the following ones.
+*/
+class RequestQueue {
+  queue: Promise<any>;
+  constructor() {
+    this.queue = Promise.resolve();
+  }
+  push(f: () => Promise<any>) {
+    var self = this;
+    var res = this.queue.then(function() { return f(); });
+    this.queue = res.catch(function() { self.queue = Promise.resolve(); });
+    return res;
+  }
+}
+
+var requests = new RequestQueue();
+
+function unbsp(s: string): string {
   return s.replace(/ /g, ' ');
 }
 
+function trimSpacesAround(s: string): string {
+  return s.replace(/^\s+|\s+$/g, '');
+}
+
+// TODO: This should be made robust to multiple calls (sequencing should be
+// enforced)
+
 function coqtop(command: string, input: Object, silent?: boolean): Promise<Object> {
-  return new Promise(function(onFulfilled, onRejected: (v: ValueFail) => any) {
+  return requests.push(() => new Promise(function(onFulfilled, onRejected: (v: ValueFail) => any) {
     $.ajax({
       type: 'POST',
       url: command,
@@ -36,6 +62,7 @@ function coqtop(command: string, input: Object, silent?: boolean): Promise<Objec
           var m = new Message(x);
           onMessage(m);
         });
+
         //console.log("Result: ", result);
         switch (result.tag) {
           case "ValueGood":
@@ -49,26 +76,25 @@ function coqtop(command: string, input: Object, silent?: boolean): Promise<Objec
         }
       }
     });
-  });
+  }));
 }
 
-function peaCoqAddPrime(s: string): Promise<Object> {
+function peaCoqAddPrime(s: string): Promise<any> {
   console.log("Add'", s);
-  return (
+  var res =
     coqtop("add'", s)
-      .then(function(r) {
-      r = {
-        "stateId": r[0],
-        "eitherNullStateId": r[1][0],
-        "output": r[1][0],
-      };
-      return r;
-      //console.log("[@" + stateId + "] Added", eitherNullStateId, output);
-    })
-    .catch(function(vf: ValueFail) {
-      
-    })
-  );
+      .then(
+      (r) => {
+        r = {
+          "stateId": r[0],
+          "eitherNullStateId": r[1][0],
+          "output": r[1][0],
+        };
+        return r;
+        //console.log("[@" + stateId + "] Added", eitherNullStateId, output);
+      })
+    ;
+  return res;
 }
 
 function peaCoqEditAt(sid: number): Promise<Object> {
@@ -206,7 +232,7 @@ class ValueFail {
   constructor(v) {
     this.stateId = v[0];
     this.location = v[1];
-    this.message = v[2];
+    this.message = trimSpacesAround(unbsp(v[2]));
   }
 }
 

@@ -1,18 +1,20 @@
-/// <reference path="interfaces/ace.d.ts"/>
-/// <reference path="interfaces/bootstrap/bootstrap.d.ts"/>
-/// <reference path="interfaces/es6-shim.d.ts"/>
-/// <reference path="interfaces/lodash.d.ts"/>
-/// <reference path="interfaces/jquery/jquery.d.ts"/>
+/// <reference path="DefinitelyTyped/ace/ace.d.ts"/>
+/// <reference path="DefinitelyTyped/bootstrap/bootstrap.d.ts"/>
+/// <reference path="DefinitelyTyped/es6-shim/es6-shim.d.ts"/>
+/// <reference path="DefinitelyTyped/lodash/lodash.d.ts"/>
+/// <reference path="DefinitelyTyped/jquery/jquery.d.ts"/>
 /// <reference path="coqtop85.ts"/>
 /// <reference path="term.ts"/>
 
-var AceAnchor = ace.require('ace/anchor').Anchor;
-var AceRange = ace.require('ace/range').Range;
-var AceRangeList = ace.require('ace/range_list').RangeList;
-var AceSelection = ace.require('ace/selection').Selection;
+var AceAnchor = ace.require("ace/anchor").Anchor;
+var AceRange = ace.require("ace/range").Range;
+var AceRangeList = ace.require("ace/range_list").RangeList;
+var AceSelection = ace.require("ace/selection").Selection;
 
 var foreground, background, shelved, givenUp;
 var notices, warnings, errors, feedback, jobs;
+
+var nbsp = "\u00A0";
 
 class CoqDocument {
   editor: AceAjax.Editor;
@@ -21,9 +23,12 @@ class CoqDocument {
   beginAnchor: AceAjax.Anchor;
   endAnchor: AceAjax.Anchor;
   constructor(editor: AceAjax.Editor) {
+    this.editor = editor;
+    this.edits = [];
+    // WARNING: This line must stay over calls to mkAnchor
+    this.session = editor.getSession();
     this.beginAnchor = mkAnchor(this, 0, 0, "begin-marker", true);
     this.endAnchor = mkAnchor(this, 0, 0, "end-marker", false);
-
   }
   getStopPositions(): Array<AceAjax.Position> {
     return _(this.edits).map(function(e) { return e.stopPos; }).value();
@@ -37,6 +42,14 @@ class CoqDocument {
     this.edits = [];
     this.session.setValue(text);
     this.editor.focus();
+    this.editor.scrollToLine(0, true, true, () => { });
+  }
+  removeEdits(p: (e: Edit) => boolean) {
+    _.remove(this.edits, function(e) {
+      var toBeRemoved = p(e);
+      if (toBeRemoved) { e.removeMarker(); }
+      return toBeRemoved;
+    });
   }
 }
 
@@ -50,13 +63,14 @@ function onFeedback(f: Feedback) {
   var current = session.getValue().substring(0, maxLength);
   var now = new Date();
   session.setValue("[" + now.toString().substring(16, 24) + "] " + f.toString() +
-    '\n' + current);
+    "\n" + current);
 }
 
 function isQueryWarning(m: Message) {
   return (
     m.level.constructor === Warning && m.content.indexOf(
-      'Query commands should not be inserted in scripts') > -1
+      "Query commands should not be inserted in scripts"
+      ) > -1
     );
 }
 
@@ -111,6 +125,11 @@ function setupNavigation() {
   $("a[href=#foreground-tab]").click();
 }
 
+function resetCoqtop() {
+  peaCoqEditAt(1)
+    .then(() => peaCoqAddPrime("Require Import PeaCoq.PeaCoq."));
+}
+
 $(document).ready(function() {
 
   $(window).resize(function() {
@@ -119,18 +138,26 @@ $(document).ready(function() {
     $("#coqtop").css("height", halfParentHeight);
   });
 
-  $(document).bind("keydown", "ctrl+g", () => onNext(coqDocument));
+  //$(document).bind("keydown", "ctrl+g", () => onNext(coqDocument));
 
-  peaCoqEditAt(1)
-    .then(() => peaCoqAddPrime("Require Import PeaCoq.PeaCoq."));
+  resetCoqtop();
 
   //periodicallyStatus();
 
   var buttonGroup = $("#toolbar > .btn-group");
   addLoadLocal(buttonGroup);
+  addPrevious(buttonGroup);
   addNext(buttonGroup);
 
-  var editor = ace.edit("editor");
+  var editor: AceAjax.Editor = ace.edit("editor");
+  editor.session.on("change", function(c) {
+    var start = c.start;
+    var end = c.end;
+    coqDocument.removeEdits(function(e) {
+      return isAfter(e.stopPos, start);
+    });
+    // TODO: should probably send an EditAt to coqtop
+  });
 
   foreground = addEditorTab("foreground", "context");
   background = addEditorTab("background", "context");
@@ -153,7 +180,7 @@ $(document).ready(function() {
 
   editor.focus();
   session.on("change", function(change) {
-    killAnchorsAfterPosition(minPos(change.start, change.end));
+    killEditsAfterPosition(coqDocument, minPos(change.start, change.end));
   });
 
   coqDocument = new CoqDocument(editor);
@@ -170,7 +197,7 @@ $(document).ready(function() {
   //var text = ed.getSession().getTextRange(s.getRange());
   //console.log(text);
 
-  editor.setValue("Require Import List.\nImport ListNotations.\nTheorem test : [0] = [1; 2].\n");
+  //editor.setValue("Require Import List.\nImport ListNotations.\nTheorem test : [0] = [1; 2].\n", 1);
 
   $(window).resize();
 
@@ -180,7 +207,7 @@ var unlockedAnchor;
 var unlockedMarker;
 
 function clearCoqtopTabs() {
-  _([foreground, background, shelved, givenUp, notices, warnings])
+  _([foreground, background, shelved, givenUp, notices, warnings, errors])
     .each(function(editor) {
     editor.setValue("");
   });
@@ -192,10 +219,21 @@ class EditToProcess extends EditState { }
 class EditProcessing extends EditState { }
 class EditProcessed extends EditState { }
 
+var freshEditId = (function() {
+  var editCounter = 2; // TODO: pick the correct number
+  return function() {
+    return editCounter++;
+  }
+})();
+
 class Edit {
   document: CoqDocument;
   editState: EditState;
+  editId: number;
   markerId: number;
+  previousStateId: number;
+  stateId: number;
+  markerRange: AceAjax.Range;
   startPos: AceAjax.Position;
   stopPos: AceAjax.Position;
 
@@ -204,14 +242,41 @@ class Edit {
     this.startPos = start;
     this.stopPos = stop;
 
-    var markerRange =
-      new AceRange(start.row, start.column, stop.row, stop.column);
+    this.markerRange = new AceRange(start.row, start.column, stop.row, stop.column);
 
-    this.markerId = doc.session.addMarker(markerRange, "processing", "text", false);
+    this.editId = freshEditId();
+    if (doc.edits.length > 0) {
+      this.previousStateId = _.last(doc.edits).stateId;
+    } else {
+      this.previousStateId = 1;
+    }
+    this.stateId = undefined;
+    this.markerId = doc.session.addMarker(this.markerRange, "processing", "text", false);
 
     this.document = doc;
     doc.pushEdit(this);
   }
+
+  markProcessed() {
+    this.document.session.removeMarker(this.markerId);
+    this.markerId = this.document.session.addMarker(this.markerRange, "processed", "text", false);
+  }
+
+  removeMarker(): void {
+    this.document.session.removeMarker(this.markerId);
+  }
+
+  remove(): void {
+    this.removeMarker();
+    _.remove(this.document.edits, this);
+  }
+
+}
+
+function reportError(e: string, switchTab: boolean) {
+  errors.getSession().setValue(e);
+  $("#errors-badge").css("display", "");
+  if (switchTab) { $("a[href=#errors-tab]").click(); }
 }
 
 function onNext(doc: CoqDocument) {
@@ -223,15 +288,55 @@ function onNext(doc: CoqDocument) {
     new AceRange(
       lastEditStopPos.row, lastEditStopPos.column,
       endPos.row, endPos.column
-    );
+      );
   var unprocessedText = doc.session.getTextRange(unprocessedRange);
   if (coqTrimLeft(unprocessedText) === "") {
     return;
   }
   var nextIndex = next(unprocessedText);
-  var newStopPos = movePosRight(lastEditStopPos, nextIndex);
+  var newStopPos = movePosRight(doc, lastEditStopPos, nextIndex);
   var e = new Edit(coqDocument, lastEditStopPos, newStopPos);
-  peaCoqAddThenRefresh(unprocessedText.substring(0, nextIndex));
+  peaCoqAddPrime(unprocessedText.substring(0, nextIndex))
+    .then(function(response) {
+    e.stateId = response.stateId;
+  })
+    .then(() => {
+    updateForeground();
+    e.markProcessed();
+    doc.session.selection.clearSelection();
+    doc.editor.moveCursorToPosition(newStopPos);
+    doc.editor.scrollToLine(newStopPos.row, true, true, () => { });
+    doc.editor.focus();
+  })
+    .catch(
+    (vf: ValueFail) => {
+      e.remove();
+      reportError(vf.message, true);
+      errors.getSession().setValue(vf.message);
+      updateForeground();
+    })
+  ;
+}
+
+function onPrevious(doc: CoqDocument) {
+  clearCoqtopTabs();
+  var lastEdit = _.last(doc.edits);
+  peaCoqEditAt(lastEdit.previousStateId)
+    .then(() => {
+    lastEdit.remove();
+    doc.session.selection.clearSelection();
+    doc.editor.moveCursorToPosition(lastEdit.startPos);
+    doc.editor.scrollToLine(lastEdit.startPos.row, true, true, () => { });
+    doc.editor.focus();
+    updateForeground();
+  })
+    .catch(
+    (vf: ValueFail) => {
+      reportError(vf.message, true);
+      errors.getSession().setValue(vf.message);
+      updateForeground();
+    })
+  ;
 }
 
 type AddResult = {
@@ -240,24 +345,31 @@ type AddResult = {
   goals: Goals;
 };
 
-function peaCoqAddThenRefresh(q): Promise<void> {
-  return peaCoqAddPrime(q).then(function(response) {
-    return peaCoqStatus(false).then(function(status) {
-      if (status.statusProofName !== null) {
-        //peaCoqPrintAST(response.stateId);
-        return peaCoqGoal().then(function(goals) {
-          if (goals.fgGoals.length > 0) {
-            foreground.getSession().setValue(goals.fgGoals[0].toString());
-          }
-          return Promise.resolve();
-        });
-      }
+function updateForeground() {
+  return peaCoqStatus(false).then(function(status) {
+    if (status.statusProofName !== null) {
+      return peaCoqGoal().then(function(goals) {
+        if (goals.fgGoals.length > 0) {
+          foreground.getSession().setValue(goals.fgGoals[0].toString());
+        }
+        return Promise.resolve();
+      });
+    }
+  })
+    .catch(
+    (vf: ValueFail) => {
+      var lastEdit = _.last(coqDocument.edits);
+      lastEdit.remove();
+      reportError(vf.message, true);
+      errors.getSession().setValue(vf.message);
+      return peaCoqEditAt(vf.stateId);
     });
-  });
 }
 
 function onLoad(text) {
+  coqDocument.removeEdits(() => true);
   coqDocument.resetEditor(text);
+  resetCoqtop();
 }
 
 function loadFile() {
@@ -265,7 +377,7 @@ function loadFile() {
   var reader = new FileReader();
   reader.onload = function(e) {
     onLoad(reader.result);
-  }
+  };
   reader.readAsText(file);
 }
 
@@ -284,7 +396,7 @@ function addLoadLocal(buttonGroup) {
     // TODO: warning about resetting Coq/saving file
     loadFile();
     $(this).val(""); // forces change when same file is picked
-  })
+  });
 
   $("<button>", {
     "class": "btn btn-primary",
@@ -296,8 +408,6 @@ function addLoadLocal(buttonGroup) {
     .appendTo(buttonGroup)
     .on("click", loadLocal);
 }
-
-var nbsp = "\u00A0";
 
 function mkGlyph(name) {
   return $("<i>", {
@@ -318,7 +428,20 @@ function addNext(buttonGroup) {
     .append(nbsp + "Next");
 }
 
-var delimiters = ['.'];
+function addPrevious(buttonGroup) {
+  $("<button>", {
+    "id": "previous",
+    "class": "btn btn-primary",
+  })
+    .appendTo(buttonGroup)
+    .on("click", function() {
+    onPrevious(coqDocument);
+  })
+    .append(mkGlyph("arrow-up"))
+    .append(nbsp + "Prev");
+}
+
+var delimiters = ["."];
 
 function my_index(str) {
   var index = +Infinity;
@@ -350,7 +473,7 @@ function next(str) {
 // TODO: this is a bit hacky
 function prev(str) {
   // remove the last delimiter, since we are looking for the previous one
-  var str = str.substring(0, str.length - 1);
+  str = str.substring(0, str.length - 1);
   var lastDotPosition = coq_find_last_dot(coq_undot(str), 0);
   // now, it could be the case that there is a bullet after that dot
   var strAfterDot = str.substring(lastDotPosition + 1, str.length);
@@ -369,9 +492,9 @@ function count(str, pat) {
 
 // highlight dot that are terminators as opposed to the others
 function coq_undot(str) {
-  str = str.replace(/[.][.][.]/g, '__.'); // emphasize the last dot of ...
-  str = str.replace(/[.][.]/g, '__'); // hides .. in notations
-  str = str.replace(/[.][a-zA-Z1-9_\(]/g, '__'); // hides qualified identifiers
+  str = str.replace(/[.][.][.]/g, "__."); // emphasize the last dot of ...
+  str = str.replace(/[.][.]/g, "__"); // hides .. in notations
+  str = str.replace(/[.][a-zA-Z1-9_\(]/g, "__"); // hides qualified identifiers
   // hide curly braces that are implicit arguments
   //str = str.replace(/\{((?:[^\.\}]|\.(?!\s))*)\}/g, "_$1_");
   // make other braces look like periods
@@ -390,7 +513,7 @@ function coq_find_dot(str, toclose) {
     return index;
   } else {
     var newindex = coq_find_dot(str.substring(index + 1), opened);
-    if (newindex == -1) return -1;
+    if (newindex == -1) { return -1; }
     return index + newindex + 1;
   }
 }
@@ -463,7 +586,7 @@ function coqTrimLeft(s) {
       pos += 2;
     } else if (commentDepth > 0) {
       pos++;
-    } else if (sub[0] === ' ' || sub[0] === '\n') {
+    } else if (sub[0] === " " || sub[0] === "\n") {
       pos++;
     } else {
       return sub;
@@ -486,7 +609,7 @@ function coqTrimRight(s: string): string {
       pos -= 2;
     } else if (commentDepth > 0) {
       pos--;
-    } else if (lastChar === ' ' || lastChar === '\n') {
+    } else if (lastChar === " " || lastChar === "\n") {
       pos--;
     } else {
       return sub;
@@ -495,15 +618,43 @@ function coqTrimRight(s: string): string {
   return "";
 }
 
+class Anchor {
+  anchor: AceAjax.Anchor;
+  marker: any;
+  constructor(
+    doc: CoqDocument,
+    row: number, column: number, klass: string, insertRight: boolean
+    ) {
+    this.anchor = new AceAnchor(doc.session.getDocument(), row, column);
+    if (insertRight) { this.anchor.$insertRight = true; }
+    this.marker = {};
+    this.marker.update = function(html, markerLayer, session, config) {
+      var screenPos = session.documentToScreenPosition(this.anchor);
+      var height = config.lineHeight;
+      var width = config.characterWidth;
+      var top = markerLayer.$getTop(screenPos.row, config);
+      var left = markerLayer.$padding + screenPos.column * width;
+      html.push(
+        "<div class='", klass, "' style='",
+        "height:", height, "px;",
+        "top:", top, "px;",
+        "left:", left, "px; width:", width, "px'></div>"
+        );
+    };
+    this.marker = doc.session.addDynamicMarker(this.marker, true);
+    this.anchor.on("change", function() {
+      doc.session._signal("changeFrontMarker");
+    });
+  }
+}
+
 function mkAnchor(
   doc: CoqDocument,
   row: number, column: number, klass: string, insertRight: boolean
   ): AceAjax.Anchor {
   var a = new AceAnchor(doc.session.getDocument(), row, column);
-  if (insertRight) {
-    a.$insertRight = true;
-  }
-  a.marker = {}
+  if (insertRight) { a.$insertRight = true; }
+  a.marker = {};
   a.marker.update = function(html, markerLayer, session, config) {
     var screenPos = session.documentToScreenPosition(a);
     var height = config.lineHeight;
@@ -517,44 +668,48 @@ function mkAnchor(
       "left:", left, "px; width:", width, "px'></div>"
       );
   };
-  a.marker = session.addDynamicMarker(a.marker, true);
+  a.marker = doc.session.addDynamicMarker(a.marker, true);
   a.on("change", function(change, anchor) {
-    session._signal("changeFrontMarker");
+    doc.session._signal("changeFrontMarker");
   });
   return a;
 }
 
-function rmAnchor(a) {
-  a.detach();
-  session.removeMarker(a.marker.id);
+/*
+function rmAnchor(doc: CoqDocument, a: Anchor) {
+  a.anchor.detach();
+  doc.session.removeMarker(a.marker.id);
+}
+*/
+
+function isAfter(pos1: AceAjax.Position, pos2: AceAjax.Position): boolean {
+  if (pos1.row > pos2.row) { return true; }
+  if (pos1.row < pos2.row) { return false; }
+  return (pos1.column > pos2.column);
 }
 
-function killAnchorsAfterPosition(pos) {
-  _.remove(anchors, function(a) {
-    var predicate = (
-      a.row > pos.row || (a.row == pos.row && a.column > pos.column)
-      );
-    if (predicate) {
-      rmAnchor(a);
-    }
-    return predicate;
+function killEditsAfterPosition(doc: CoqDocument, pos: AceAjax.Position) {
+  _.remove(doc.edits, function(edit: Edit) {
+    var isAfterPosition = isAfter(edit.startPos, pos);
+    //if (isAfterPosition) { rmAnchor(doc, edit.anchor); }
+    return isAfterPosition;
   });
 }
 
-function movePosRight(pos, n) {
+function movePosRight(doc: CoqDocument, pos: AceAjax.Position, n: number) {
   if (n === 0) {
     return pos;
   }
   var row = pos.row;
   var column = pos.column;
-  var line = session.getLine(row);
+  var line = doc.session.getLine(row);
   if (column < line.length) {
-    return movePosRight({
+    return movePosRight(doc, {
       "row": row,
       "column": column + 1
     }, n - 1);
-  } else if (row < session.getLength()) {
-    return movePosRight({
+  } else if (row < doc.session.getLength()) {
+    return movePosRight(doc, {
       "row": row + 1,
       "column": 0
     }, n - 1);
@@ -580,10 +735,15 @@ function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-function setupEditor(e) {
-  e.setTheme("ace/theme/monokai");
-  e.getSession().setMode("ace/mode/ocaml");
-  e.getSession().setUseSoftTabs(true);
+function setupEditor(e: AceAjax.Editor) {
+  //e.setTheme("ace/theme/monokai");
+  //var OCamlMode = ace.require("ace/mode/ocaml").Mode;
+  var CoqMode = ace.require("peacoq/mode-coq").Mode;
+  e.session.setMode(new CoqMode());
+  //e.getSession().setMode("coq");
+  e.setOption("tabSize", 2);
+  e.setHighlightActiveLine(false);
+  e.session.setUseSoftTabs(true);
   e.$blockScrolling = Infinity; // pestering warning
 }
 
@@ -632,7 +792,7 @@ function addEditorTab(name: string, containerName: string): AceAjax.Editor {
   anchor.click(function(e) {
     e.preventDefault();
     badge.css("display", "none");
-    $(this).tab('show');
+    $(this).tab("show");
     $("#" + containerName + "-tabs").children(".tab-pane").css("display", "none");
     tabPanel.css("display", "flex");
     editor.resize();
