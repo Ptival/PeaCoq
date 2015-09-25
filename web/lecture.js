@@ -613,7 +613,7 @@ function incomingTactic() {
 
 function safeIncomingTactic() {
     var res = incomingTactic();
-    if (isVernacularCommand(res)) {
+    if (isVernacularCommand(res) || isLtacBullet(res)) {
         return undefined;
     }
     return res;
