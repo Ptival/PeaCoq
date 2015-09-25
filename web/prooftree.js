@@ -3501,20 +3501,15 @@ GoalNode.prototype.reactTo = function(query, response) {
         return;
     }
 
-    // don't create nodes for commands/bullets, but keep track of last response
-    if (isVernacularCommand(trimmed) || isLtacBullet(trimmed)) {
+    // don't create nodes for commands
+    if (isVernacularCommand(trimmed)) {
         this.response = response;
         this.proofTree.refreshTactics();
         return;
     }
 
+    // don't create nodes for bullets
     switch (trimmed) {
-
-    case "Proof.":
-        this.response = response;
-        this.proofTree.refreshTactics();
-        //proofTreeQueryWish('{');
-        return;
 
     case '{':
         this.response = response;
