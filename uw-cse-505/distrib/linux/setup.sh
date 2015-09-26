@@ -4,7 +4,7 @@ VERSION=0.2-alpha
 DIR=PeaCoq-${VERSION}
 TGZ=v${VERSION}.tar.gz
 
-wget -N https://github.com/Ptival/PeaCoq/archive/v${TGZ}
+wget -N https://github.com/Ptival/PeaCoq/archive/${TGZ}
 tar -xzvf ${TGZ}
 cd ${DIR}
 wget -N https://github.com/Ptival/PeaCoq/releases/download/v0.2-alpha/peacoq
