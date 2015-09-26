@@ -4,24 +4,31 @@ PeaCoq
 Building PeaCoq
 ---------------
 
-You will need a somewhat recent `ghc` and `cabal`. You can find them in the Haskell Platform ( https://www.haskell.org/platform/ ).
+To build PeaCoq, first ensure you have a recent
+[GHC](https://www.haskell.org/downloads) (at least 7.10), and
+[Coq 8.4](https://coq.inria.fr/download).
+Ensure that `coqtop` is somewhere in your `PATH`.
+You will also need `wget` to fetch
+all the necessary JavaScript libraries.
 
-You will also need `wget` to run `setup.sh`. You should be able to find it in your software distribution.
-
-Finally, you will need an installation of `coq` to be visible in your `PATH`, in particular you should be able to run `coqtop`.
-
+Once all dependencies are satisfied,
+the following sequence of commands should
+download and build PeaCoq:
 ```
-  git clone https://github.com/Ptival/PeaCoq.git
-  cd PeaCoq
-  ./setup.sh
-  cabal install
+  $ git clone https://github.com/Ptival/PeaCoq.git
+  $ cd PeaCoq
+  $ ./setup.sh
+  $ cabal install
 ```
-  
+
 Running PeaCoq
 --------------
 
 ```
   peacoq -p <PORT>
 ```
-  
-Then open your browser at `http://localhost:<PORT>/<FILE>.html` if you want to access `web/<FILE>.html`.
+
+Then open `http://localhost:<PORT>` to start using PeaCoq!
+You can also navigate your browser to
+`http://localhost:<PORT>/<FILE>.html`
+to access `web/<FILE>.html` from this repo.
