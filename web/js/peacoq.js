@@ -8,11 +8,14 @@ requirejs.config({
     'bootstrap': {
       deps: ['jquery']
     },
+    'jquery.hotkeys': {
+      deps: ['jquery']
+    }
   }
 });
 
 // Start the main app logic.
-requirejs(['ace/ace', 'jquery', 'bootstrap', 'lodash'],
+requirejs(['ace/ace', 'jquery', 'jquery.hotkeys', 'bootstrap', 'lodash'],
   function(ace, $, bootstrap, lodash) {
     window.ace = ace;
     requirejs([

@@ -139,6 +139,7 @@ $(document).ready(function() {
   });
 
   //$(document).bind("keydown", "ctrl+g", () => onNext(coqDocument));
+  $(document).bind("keydown", "alt+ctrl+l", () => onAltCtrlL());
 
   resetCoqtop();
 
@@ -379,6 +380,10 @@ function loadFile() {
     onLoad(reader.result);
   };
   reader.readAsText(file);
+}
+
+function onAltCtrlL() {
+  loadLocal();
 }
 
 function loadLocal() {
@@ -745,6 +750,12 @@ function setupEditor(e: AceAjax.Editor) {
   e.setHighlightActiveLine(false);
   e.session.setUseSoftTabs(true);
   e.$blockScrolling = Infinity; // pestering warning
+  // need to add keyboard shortcuts everywhere because Ace captures them
+  e.commands.addCommand({
+    name: "load",
+    bindKey: {win: "Alt-Ctrl-L", mac: "Command-Option-L"},
+    exec: function() { onAltCtrlL(); }
+  })
 }
 
 function addEditorTab(name: string, containerName: string): AceAjax.Editor {
