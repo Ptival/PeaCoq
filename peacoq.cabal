@@ -2,7 +2,7 @@ Name:                peacoq
 Version:             0.1
 Synopsis:            PeaCoq is a web front-end to Coq
 Description:         PeaCoq is still a web front-end to Coq
-License:             AllRightsReserved
+License:             BSD3
 Author:              Valentin Robert
 Maintainer:          vrobert@cs.ucsd.edu
 Stability:           Experimental
