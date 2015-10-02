@@ -50,5 +50,5 @@ PEACOQCONFIG=".PeaCoqConfig.hs"
 FILE="${CONFIGPATH}/${PEACOQCONFIG}"
 
 if [ ! -f $FILE ]; then
-    echo "PeaCoqConfig { configUserId  = Nothing, configLogPath = \"/tmp\" }" > "${FILE}"
+    echo "PeaCoqConfig { configUserId  = Nothing, configLogPath = \"/tmp\", configCoqtop = \"coqtop -ideslave\" }" > "${FILE}"
 fi
