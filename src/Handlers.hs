@@ -5,7 +5,7 @@ module Handlers where
 import           Control.Monad.IO.Class (liftIO)
 import           Data.ByteString.UTF8 (toString)
 import qualified Data.IntMap as IM
-import           Data.String.Utils
+--import           Data.String.Utils
 import qualified Data.Text as T
 import           Snap.Core
 import           Snap.Extras.JSON
@@ -13,9 +13,10 @@ import           Snap.Snaplet
 import           Snap.Snaplet.Session hiding (touchSession)
 import           Snap.Snaplet.Session.SessionManager ()
 import           System.FilePath.Find ((==?), always, extension, find)
+import           System.Directory                    (doesFileExist)
 import           System.IO
 import           System.Log.Logger
-import           System.Process
+--import           System.Process
 import           System.Random
 
 import           CoqTypes
@@ -41,7 +42,14 @@ keyField :: T.Text
 keyField = "key"
 
 getGitCommitHash :: IO String
-getGitCommitHash = strip <$> readProcess "git" ["rev-parse", "HEAD"] ""
+getGitCommitHash = do
+  -- let's not use git to be more portable
+  --strip <$> readProcess "git" ["rev-parse", "HEAD"] ""
+  let fileName = ".git/refs/heads/master"
+  b <- doesFileExist fileName
+  if b
+  then readFile fileName
+  else return "Commit # unavailable"
 
 getSessionKey :: Handler PeaCoq PeaCoq IM.Key
 getSessionKey = with lSession $ do

@@ -24,9 +24,6 @@ download and build PeaCoq:
 Running PeaCoq
 --------------
 
-In addition to the build dependencies,
-running the server also requires git.
-
 ```
   peacoq -p <PORT>
 ```
