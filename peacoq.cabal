@@ -40,7 +40,6 @@ Executable peacoq
     random                    >= 1.0   && < 1.2,
     snap                      >= 0.14  && < 0.15,
     snap-core                 >= 0.9   && < 0.10,
-    snap-extras               >= 0.11  && < 0.12,
     snap-server               >= 0.9   && < 0.10,
     tagsoup                   >= 0.13  && < 0.14,
     text                      >= 1.2   && < 1.3,

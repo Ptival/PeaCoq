@@ -5,3 +5,5 @@ log/
 logs/
 plugin/
 *.png
+*.svg
+.stack-work/
