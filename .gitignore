@@ -4,3 +4,5 @@ encryption_key
 log/
 logs/
 *.png
+*.svg
+.stack-work/
