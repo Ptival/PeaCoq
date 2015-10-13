@@ -3,6 +3,7 @@ open Constrexpr
 open Globnames
 open Glob_term
 open Libnames
+open Misctypes
 open Notation
 open Notation_term
 open Ppextend
@@ -123,7 +124,6 @@ let string_of_ppcut p =
       | PpFnl -> "PpFnl()"
     )
 
-
 let string_of_ppbox p =
   mk_new (
       match p with
@@ -150,6 +150,7 @@ let rec string_of_unparsing u =
          "UnpBox(" ^ string_of_ppbox b ^ ", " ^ string_of_unparsing_list l ^ ")"
       | UnpCut(c) -> "UnpCut(" ^ string_of_ppcut c ^ ")"
     )
+
 and string_of_unparsing_list l = string_of_list string_of_unparsing l
 
 let string_of_prim_token t =
@@ -190,6 +191,18 @@ let string_of_reference r =
       | Ident(il) -> "Ident(" ^ string_of_located string_of_id il ^ ")"
     )
 
+let string_of_glob_sort_gen string_of_x gs =
+  mk_new (
+      match gs with
+      | GProp -> "GProp()"
+      | GSet -> "GSet()"
+      | GType(x) -> "GType(" ^ string_of_x x ^ ")"
+    )
+
+let string_of_sort_info = string_of_list (fun s -> s)
+
+let string_of_glob_sort gs = string_of_glob_sort_gen string_of_sort_info gs
+
 let rec string_of_constr_expr ce =
   mk_new (
       match ce with
@@ -210,6 +223,7 @@ let rec string_of_constr_expr ce =
          "CProdN(" ^ string_of_list string_of_binder_expr bl
          ^ ", " ^ string_of_constr_expr c ^ ")"
       | CRef(r, _) -> "CRef(" ^ string_of_reference r ^ ")"
+      | CSort(_, gs) -> "CSort(" ^ string_of_glob_sort gs ^ ")"
       | _ -> "string_of_constr_expr_TODO"
     )
     and
@@ -330,7 +344,7 @@ let rec string_of_glob_constr gc =
       | GLetTuple(_, _, _, _, _) -> "GLetTuple(TODO)"
       | GIf(_, _, _, _, _) -> "GIf(TODO)"
       | GRec(_, _, _, _, _, _) -> "GRec(TODO)"
-      | GSort(_, _) -> "GSort(TODO)"
+      | GSort(_, gs) -> "GSort(" ^ string_of_glob_sort gs ^ ")"
       | GHole(_, _, _, _) -> "GHole(TODO)"
       | GCast(_, _, _) -> "GCast(TODO)"
     )
@@ -421,7 +435,10 @@ let rec find_matching_notations glob_constr
      end
         *)
 
-(* pretty much glob_constr, but extensible and with only the information we want *)
+(*
+This type should be similar to constr_expr, but carry information only
+available in glob_constr.
+ *)
 type 'a preterm =
   | Ref      of 'a * global_reference * reference * Names.Id.t
   | Var      of 'a * Names.Id.t
@@ -430,6 +447,7 @@ type 'a preterm =
   | App      of 'a * 'a preterm * ('a preterm) list
   | Lambda   of 'a
   | Prod     of 'a * 'a preterm * 'a preterm
+  (* * Names.Name.t Loc.located list * binder_kind *)
   | LetIn    of 'a
   | Cases    of 'a
   | LetTuple of 'a
@@ -464,10 +482,14 @@ let rec string_of_preterm sa pt =
          ^ ", " ^ string_of_list (string_of_preterm sa) tl
          ^ ")"
       | Lambda(a) -> "Lambda(" ^ sa a ^ ")"
-      | Prod(a, t1, t2) ->
+      | Prod(a, t1, t2(*, nal, bk*)) ->
          "Prod(" ^ sa a
          ^ ", " ^ string_of_preterm sa t1
          ^ ", " ^ string_of_preterm sa t2
+(*
+         ^ ", " ^ string_of_list (string_of_located string_of_name) nal
+         ^ ", " ^ string_of_binder_kind bk
+*)
          ^ ")"
       | LetIn(a) -> "LetIn(" ^ sa a ^ ")"
       | Cases(a) -> "Cases(" ^ sa a ^ ")"
@@ -632,7 +654,23 @@ let rec mkNat (n: Bigint.bigint) glob_constr: term =
     | Some(zero) -> mk_Ref(NotationPiece, zero)
     | None -> failwith "mkNat zero"
 
+let string_of_pre_env e =
+  "{\n"
+  ^ "}"
+
+let string_of_env e = string_of_pre_env (Environ.pre_env e)
+
 let rec mk_term env (glob_constr, constr_expr): term =
+
+  (*
+  print_string("mk_term:\n\n");
+  print_string (string_of_glob_constr glob_constr);
+  print_newline ();
+  print_string (string_of_constr_expr constr_expr);
+  print_newline ();
+  print_newline ();
+   *)
+
   match constr_expr with
   | CNotation(_, notation, subst) ->
      let notation_constr =
@@ -640,20 +678,30 @@ let rec mk_term env (glob_constr, constr_expr): term =
      in
      let candidate_rules = Notation.uninterp_notations glob_constr in
      let correct_rule =
-       List.find
-         (fun (ir, _, _) ->
-          match ir with
-          | NotationRule(_, n) -> notation = n
-          | _ -> false
-         )
-         candidate_rules
+       try
+         List.find
+           (fun (ir, _, _) ->
+             match ir with
+             | NotationRule(_, n) -> notation = n
+             | _ -> false
+           )
+           candidate_rules
+       with Not_found ->
+         print_string ("Looking for " ^ notation ^ "\n");
+         List.iter (fun (ir, _, _) ->
+             match ir with
+             | NotationRule(_, n) -> print_string n
+             | _ -> ()
+           ) candidate_rules;
+         print_newline ();
+         failwith "Beepboop"
      in
      begin
        let term_option =
          mk_notation ~root:(Some(correct_rule, subst)) (glob_constr, notation_constr)
        in
        match term_option with
-       | None -> failwith "mk_notation failed"
+       | None -> failwith "mk_term: mk_notation failed"
        | Some(term) -> term
      end
   | _ ->
@@ -672,14 +720,18 @@ let rec mk_term env (glob_constr, constr_expr): term =
           App(NotNotation, mk_term env (gc, ce), List.map (mk_term env) (List.combine gcl cel))
        | GLambda(_, _, _, _, _), _ ->
           Lambda(NotNotation)
-       | GProd(_, _, _, gc1, gc2), CProdN(loc, bel, ce2) ->
+       | _, CProdN(loc, bel, ce2) ->
           begin
             match bel with
             | [] -> mk_term env (glob_constr, ce2)
-            | (_, _, ce1) :: bel ->
-               Prod(NotNotation,
-                    mk_term env (gc1, ce1),
-                    mk_term env (gc2, CProdN(loc, bel, ce2)))
+            | (nal, bk, ce1) :: bel ->
+               match glob_constr with
+               | GProd(_, _, _, gc1, gc2) ->
+                  Prod(NotNotation,
+                       mk_term env (gc1, ce1),
+                       mk_term env (gc2, CProdN(loc, bel, ce2))(*,
+                       nal, bk*))
+               | _ -> failwith "mk_term: non-empty CProd, not a GProd"
           end
        | GLetIn(_, _, _, _), _ ->
           LetIn(NotNotation)
@@ -703,10 +755,12 @@ let rec mk_term env (glob_constr, constr_expr): term =
           let _ = mkNat bi g in
           Prim(NotNotation, n)
        | _, _ ->
-          failwith (
-              "OOPS" ^ string_of_glob_constr glob_constr
-              ^ ", " ^ string_of_constr_expr constr_expr
-            )
+          print_string (
+              "OOPS\n" ^ string_of_glob_constr glob_constr
+              ^ "\n,\n" ^ string_of_constr_expr constr_expr
+              ^ "\n"
+            );
+          failwith "mk_term failed"
      end
 
 and notation root =
@@ -715,6 +769,14 @@ and notation root =
   | Some(notation, subst) -> NotationRoot(notation, subst)
 
 and mk_notation ?root:(root=None) (glob_constr, notation_constr): term option =
+  let fail () =
+    print_string "mk_notation failing:\n";
+    print_string (string_of_glob_constr glob_constr);
+    print_newline ();
+    print_string (string_of_notation_constr notation_constr);
+    print_newline ();
+    None
+  in
   match (glob_constr, notation_constr) with
   | GApp(_, gc, gcl), NApp(nc, ncl) ->
      begin
@@ -722,7 +784,7 @@ and mk_notation ?root:(root=None) (glob_constr, notation_constr): term option =
        let match_arguments = map_may_fail mk_notation (List.combine gcl ncl) in
        match match_function, match_arguments with
        | Some(f), Some(args) -> Some(App(notation root, f, args))
-       | _, _ -> None
+       | _, _ -> fail ()
      end
   | GRef(_, gr, _), NRef(gr') ->
      if Globnames.eq_gr gr gr'
@@ -732,24 +794,42 @@ and mk_notation ?root:(root=None) (glob_constr, notation_constr): term option =
   | GHole(_, ek, ipne, ggao), NHole(ek', ipne', ggao') ->
      (* TODO: check equality of some arguments? *)
      Some(Hole(NotationPiece))
-  | GProd(_, n, bk, gc1, gc2), NProd(n', nc1, nc2) ->
+  | GProd(loc, n, bk, gc1, gc2), NProd(n', nc1, nc2) ->
      if Names.Name.equal n n'
      then
        let match1 = mk_notation (gc1, nc1) in
        let match2 = mk_notation (gc2, nc2) in
        match match1, match2 with
-       | Some(t1), Some(t2) -> Some(Prod(notation root, t1, t2))
-       | _, _ -> None
+       | Some(t1), Some(t2) ->
+          Some(Prod(notation root, t1, t2(*, [(loc, n)], Default(bk)*)))
+       | _, _ -> fail ()
      else None
+  | GVar(_, s1), NVar(s2) ->
+     if s1 = s2
+     then Some(Var(notation root, s2))
+     else fail ()
   | gc, NVar(_) ->
-     None
+     fail ()
   | _, _ -> failwith "TODO"
 
 and string_of_term env = string_of_preterm (string_of_notation_marker env)
 
+(*
+This should turn a constr_expr into a term, and then print that term
+ *)
 and string_of_constr_expr' env constr_expr =
+  (* I don't remember why I did the bottom one and it doesn't work
+   when the environment gets extended... *)
+  string_of_constr_expr constr_expr
+  (*
+  print_string "string_of_constr_expr'\n";
+  print_string (string_of_constr_expr constr_expr);
+  let pre_env = Environ.pre_env env in
+
   let glob_constr = Constrintern.intern_constr env constr_expr in
+  print_string "After intern_constr\n";
   string_of_term env (mk_term env (glob_constr, constr_expr))
+   *)
 
 and string_of_local_binder (env: Environ.env) lb =
   let s = string_of_constr_expr' env in
@@ -769,9 +849,10 @@ and string_of_local_binder (env: Environ.env) lb =
 and string_of_subst env ((cel, cell, lbll) as subst) =
   let s = string_of_constr_expr' env in
   mk_new (
-      "Substitutions(" ^ string_of_list s cel
-      ^ ", " ^ string_of_list (string_of_list s) cell
-      ^ ", " ^ string_of_list (string_of_list (string_of_local_binder env)) lbll
+      "Substitutions("
+      (* ^ string_of_list s cel *)
+      (* ^ ", " ^ string_of_list (string_of_list s) cell *)
+      (* ^ ", " ^ string_of_list (string_of_list (string_of_local_binder env)) lbll *)
       ^ ")"
     )
 

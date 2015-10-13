@@ -53,15 +53,25 @@ VERNAC COMMAND EXTEND PeaCoqQuery CLASSIFIED AS QUERY
      let goals_constr = concl.fg_goals in
      let goals_constr_expr = List.map (constr_expr_of_constr env evm) goals_constr in
      let constr_expr = List.hd goals_constr_expr in
+
+     (* print (string_of_constr_expr constr_expr); *)
+     (* print_newline (); *)
+     (* print_newline (); *)
+
      let glob_constr = Constrintern.intern_constr env constr_expr in
-     let s = string_of_term env (mk_term env (glob_constr, constr_expr)) in
-     (*
-     print "\n\n\n";
-     print (string_of_constr_expr constr_expr);
-     print "\n\n\n";
-     print (string_of_glob_constr glob_constr);
-     print "\n\n\n";
-      *)
+
+     (* print (string_of_glob_constr glob_constr); *)
+     (* print_newline (); *)
+     (* print_newline (); *)
+
+     let term = mk_term env (glob_constr, constr_expr) in
+
+     (* print ("Term computed\n\n"); *)
+
+     let s = string_of_term env term in
+
+     (* print ("String computed\n\n"); *)
+
      print s;
 
 (*
