@@ -1,18 +1,10 @@
-/// <reference path="DefinitelyTyped/ace/ace.d.ts"/>
-/// <reference path="DefinitelyTyped/bootstrap/bootstrap.d.ts"/>
-/// <reference path="DefinitelyTyped/es6-shim/es6-shim.d.ts"/>
-/// <reference path="DefinitelyTyped/lodash/lodash.d.ts"/>
-/// <reference path="DefinitelyTyped/jquery/jquery.d.ts"/>
-/// <reference path="coqtop85.ts"/>
-/// <reference path="term.ts"/>
-
 var AceAnchor = ace.require("ace/anchor").Anchor;
 var AceRange = ace.require("ace/range").Range;
 var AceRangeList = ace.require("ace/range_list").RangeList;
 var AceSelection = ace.require("ace/selection").Selection;
 
 var foreground, background, shelved, givenUp;
-var notices, warnings, errors, feedback, jobs;
+var notices, warnings, errors, infos, feedback, jobs;
 
 var nbsp = "\u00A0";
 
@@ -75,34 +67,26 @@ function isQueryWarning(m: Message) {
 }
 
 function onMessage(m: Message) {
+  var level = m.level;
+
   var session;
-  switch (m.level.constructor) {
-    case Error:
-      session = errors.getSession();
-      break;
-    case Notice:
-      session = notices.getSession();
-      break;
-    case Warning:
-      session = warnings.getSession();
-      break;
-    default:
-      throw "Unknown message level";
-  };
+  if (level instanceof Error) { session = errors.getSession(); }
+  else if (level instanceof Notice) { session = notices.getSession(); }
+  else if (level instanceof Warning) { session = warnings.getSession(); }
+  else if (level instanceof Info) { session = infos.getSession(); }
+  else {
+    throw MatchFailure("onMessage", level);
+  }
+
   session.setValue(m.content);
-  switch (m.level.constructor) {
-    case Notice:
-      $("#notices-badge").css("display", "");
-      $("a[href=#notices-tab]").click();
-      break;
-    case Warning:
-      $("#warnings-badge").css("display", "");
-      if (isQueryWarning(m)) {
-        coqtop("status", false, true);
-      }
-      break;
-    default:
-      break;
+  if (level instanceof Notice) {
+    $("#notices-badge").css("display", "");
+    $("a[href=#notices-tab]").click();
+  } else if (level instanceof Warning) {
+    $("#warnings-badge").css("display", "");
+    if (isQueryWarning(m)) {
+      coqtop("status", false, true);
+    }
   }
 }
 
@@ -168,6 +152,7 @@ $(document).ready(function() {
   notices = addEditorTab("notices", "coqtop");
   warnings = addEditorTab("warnings", "coqtop");
   errors = addEditorTab("errors", "coqtop");
+  infos = addEditorTab("infos", "coqtop");
   jobs = addEditorTab("jobs", "coqtop");
   feedback = addEditorTab("feedback", "coqtop");
 
@@ -208,7 +193,7 @@ var unlockedAnchor;
 var unlockedMarker;
 
 function clearCoqtopTabs() {
-  _([foreground, background, shelved, givenUp, notices, warnings, errors])
+  _([foreground, background, shelved, givenUp, notices, warnings, errors, infos])
     .each(function(editor) {
     editor.setValue("");
   });
@@ -280,6 +265,15 @@ function reportError(e: string, switchTab: boolean) {
   if (switchTab) { $("a[href=#errors-tab]").click(); }
 }
 
+function onNextEditFail(e: Edit): (_1: ValueFail) => Promise<any> {
+  return (vf: ValueFail) => {
+    e.remove();
+    reportError(vf.message, true);
+    errors.getSession().setValue(vf.message);
+    return peaCoqEditAt(vf.stateId);
+  };
+}
+
 function onNext(doc: CoqDocument) {
   clearCoqtopTabs();
   // the last anchor is how far we have processed
@@ -298,24 +292,20 @@ function onNext(doc: CoqDocument) {
   var newStopPos = movePosRight(doc, lastEditStopPos, nextIndex);
   var e = new Edit(coqDocument, lastEditStopPos, newStopPos);
   peaCoqAddPrime(unprocessedText.substring(0, nextIndex))
-    .then(function(response) {
-    e.stateId = response.stateId;
-  })
-    .then(() => {
-    updateForeground();
-    e.markProcessed();
-    doc.session.selection.clearSelection();
-    doc.editor.moveCursorToPosition(newStopPos);
-    doc.editor.scrollToLine(newStopPos.row, true, true, () => { });
-    doc.editor.focus();
-  })
-    .catch(
-    (vf: ValueFail) => {
-      e.remove();
-      reportError(vf.message, true);
-      errors.getSession().setValue(vf.message);
-      updateForeground();
+    .catch(onNextEditFail(e))
+    .then(
+    function(response) {
+      e.stateId = response.stateId;
+      e.markProcessed();
+      doc.session.selection.clearSelection();
+      doc.editor.moveCursorToPosition(newStopPos);
+      doc.editor.scrollToLine(newStopPos.row, true, true, () => { });
+      doc.editor.focus();
     })
+    .then(updateForeground)
+  // Note: it might be the case that peaCoqAddPrime succeeds, but then
+  // the errors arises asynchronously in updateForeground
+    .catch(onNextEditFail(e))
   ;
 }
 
@@ -346,25 +336,49 @@ type AddResult = {
   goals: Goals;
 };
 
-function updateForeground() {
-  return peaCoqStatus(false).then(function(status) {
-    if (status.statusProofName !== null) {
-      return peaCoqGoal().then(function(goals) {
-        if (goals.fgGoals.length > 0) {
-          foreground.getSession().setValue(goals.fgGoals[0].toString());
-        }
-        return Promise.resolve();
-      });
+function appendPrettyPrintingToForeground() {
+  return peaCoqGetContext()
+    .then(
+    (constrExpr) => {
+      var pp =
+        prettyPrint(constrExpr)
+          .trim()
+          .replace(/\u00A0\u00A0+/g, '\u00A0')
+          .replace(/(\()\u00A0+/g, '$1')
+          .replace(/\u00A0/g, ' ')
+        ;
+      var fg = foreground.getSession();
+      var old = fg.getValue();
+      fg.setValue(old + "\nAs computed by PeaCoq:\n" + pp);
     }
-  })
+    )
     .catch(
-    (vf: ValueFail) => {
-      var lastEdit = _.last(coqDocument.edits);
-      lastEdit.remove();
-      reportError(vf.message, true);
-      errors.getSession().setValue(vf.message);
-      return peaCoqEditAt(vf.stateId);
-    });
+    (error) => {
+      console.log(error);
+      return Promise.resolve();
+    }
+    )
+    ;
+}
+
+function updateForeground(): Promise<any> {
+  return peaCoqStatus(false)
+    .then(
+    (status) => {
+      if (status.statusProofName !== null) {
+        return peaCoqGoal()
+          .then(
+          (goals) => {
+            if (goals.fgGoals.length > 0) {
+              foreground.getSession().setValue(goals.fgGoals[0].toString());
+            }
+          })
+          .then(appendPrettyPrintingToForeground);
+      } else {
+        return Promise.resolve();
+      }
+    })
+    ;
 }
 
 function onLoad(text) {
@@ -743,7 +757,7 @@ function capitalize(s: string): string {
 function setupEditor(e: AceAjax.Editor) {
   //e.setTheme("ace/theme/monokai");
   //var OCamlMode = ace.require("ace/mode/ocaml").Mode;
-  var CoqMode = ace.require("peacoq/mode-coq").Mode;
+  var CoqMode = ace.require("peacoq-js/mode-coq").Mode;
   e.session.setMode(new CoqMode());
   //e.getSession().setMode("coq");
   e.setOption("tabSize", 2);
@@ -753,7 +767,7 @@ function setupEditor(e: AceAjax.Editor) {
   // need to add keyboard shortcuts everywhere because Ace captures them
   e.commands.addCommand({
     name: "load",
-    bindKey: {win: "Alt-Ctrl-L", mac: "Command-Option-L"},
+    bindKey: { win: "Alt-Ctrl-L", mac: "Command-Option-L" },
     exec: function() { onAltCtrlL(); }
   })
 }

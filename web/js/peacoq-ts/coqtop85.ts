@@ -102,9 +102,9 @@ function peaCoqEditAt(sid: number): Promise<Object> {
   return coqtop("editat", sid);
 }
 
-function peaCoqGetContext(): Promise<Term> {
+function peaCoqGetContext(): Promise<ConstrExpr> {
   return peaCoqQueryPrime("PeaCoqGetContext.").then(function(context) {
-    if (!context.startsWith("new")) {
+    if (!context.trim().startsWith("new")) {
       console.log("Context");
       console.log(context);
       return;

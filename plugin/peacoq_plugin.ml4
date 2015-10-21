@@ -33,7 +33,7 @@ let print_named_declaration (ident, maybeValue, ttype) =
   in
   print (Names.Id.to_string ident ^ valueStr ^ " : " ^ string_of_constr ttype)
 
-let rec print_notations_aux ((((_, (_, notation_constr), _), rest)) as n) =
+let rec print_notations_aux ((((_, (_, notation_constr), _), rest))) =
      print (string_of_notation_constr notation_constr);
      List.iter print_notations_aux rest
 
@@ -58,21 +58,23 @@ VERNAC COMMAND EXTEND PeaCoqQuery CLASSIFIED AS QUERY
      (* print_newline (); *)
      (* print_newline (); *)
 
-     let glob_constr = Constrintern.intern_constr env constr_expr in
+     (* let glob_constr = Constrintern.intern_constr env constr_expr in *)
 
      (* print (string_of_glob_constr glob_constr); *)
      (* print_newline (); *)
      (* print_newline (); *)
 
-     let term = mk_term env (glob_constr, constr_expr) in
+     (* let term = mk_expr env (glob_constr, constr_expr) in *)
 
-     (* print ("Term computed\n\n"); *)
+     (* (\* print ("Term computed\n\n"); *\) *)
 
-     let s = string_of_term env term in
+     (* let s = string_of_expr env term in *)
 
-     (* print ("String computed\n\n"); *)
+     (* (\* print ("String computed\n\n"); *\) *)
 
-     print s;
+     (* print s; *)
+
+     print (string_of_constr_expr constr_expr);
 
 (*
      print "Goals";

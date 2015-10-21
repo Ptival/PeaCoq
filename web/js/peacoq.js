@@ -2,7 +2,8 @@ requirejs.config({
   baseUrl: 'js/lib',
   paths: {
     ace: './ace',
-    peacoq: '../peacoq',
+    "peacoq-js": '../peacoq-js',
+    "peacoq-ts": '../peacoq-ts',
   },
   shim: {
     'bootstrap': {
@@ -20,10 +21,13 @@ requirejs(['ace/ace', 'jquery', 'jquery.hotkeys', 'bootstrap', 'lodash'],
     window.ace = ace;
     requirejs([
       'ace/mode/ocaml',
-      'peacoq/highlight-coq',
-      'peacoq/mode-coq',
-      'peacoq/coqtop85',
+      'peacoq-js/highlight-coq',
+      'peacoq-js/mode-coq',
+      'peacoq-ts/coqtop85',
     ], function() {
-      requirejs(['peacoq/coq85']);
+      requirejs(['peacoq-ts/coq85']);
+      //requirejs(['peacoq-ts/term']);
+      requirejs(['peacoq-ts/coq-misc']);
+      requirejs(['peacoq-ts/coq-constr-expr']);
     });
   });

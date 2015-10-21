@@ -13,6 +13,8 @@
   "files": [
     "coq85.ts",
     "coqtop85.ts",
+    "coq-misc.ts",
+    "coq-constr-expr.ts",
     "term.ts",
     "DefinitelyTyped/ace/ace.d.ts",
     "DefinitelyTyped/bootstrap/bootstrap.d.ts",
