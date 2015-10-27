@@ -52,58 +52,19 @@ VERNAC COMMAND EXTEND PeaCoqQuery CLASSIFIED AS QUERY
      let concl = Proof.map_structured_proof proof Goal.V82.concl in
      let goals_constr = concl.fg_goals in
      let goals_constr_expr = List.map (constr_expr_of_constr env evm) goals_constr in
-     let constr_expr = List.hd goals_constr_expr in
 
-     (* print (string_of_constr_expr constr_expr); *)
-     (* print_newline (); *)
-     (* print_newline (); *)
+     begin
+       match goals_constr_expr with
+       | [] ->
 
-     (* let glob_constr = Constrintern.intern_constr env constr_expr in *)
+          print "undefined";
 
-     (* print (string_of_glob_constr glob_constr); *)
-     (* print_newline (); *)
-     (* print_newline (); *)
+       | constr_expr :: _ ->
 
-     (* let term = mk_expr env (glob_constr, constr_expr) in *)
+          (*let glob_constr = Constrintern.intern_constr env constr_expr in*)
+          print (string_of_constr_expr constr_expr);
 
-     (* (\* print ("Term computed\n\n"); *\) *)
+     end
 
-     (* let s = string_of_expr env term in *)
-
-     (* (\* print ("String computed\n\n"); *\) *)
-
-     (* print s; *)
-
-     print (string_of_constr_expr constr_expr);
-
-(*
-     print "Goals";
-     print "\nconstr:";
-     List.iter print_constr goals_constr;
-     print "\nconstr_expr:";
-     List.iter print_constr_expr goals_constr_expr;
-     List.iter
-       (fun g ->
-        let glob_constr = Constrintern.intern_constr env g in
-        print "\nglob_constr:";
-        print (string_of_glob_constr glob_constr);
-        print "\nnotations:";
-        (*print_notations glob_constr;*)
-        print (string_of_term (mk_term glob_constr));
-        print "";
-       )
-       goals_constr_expr;
-     let (fg, bg, sh, gu, _) = Proof.proof proof in
-     let pre_env = Environ.pre_env env in
-     print "";
-     print "Named context";
-     List.map print_named_declaration (pre_env.env_named_context);
-     *)
-(*
-     let xml = Xml_datatype.Element("peacoqterm", [("term", s)], []) in
-     (* doesn't seem like Interface gets exported, so faking it *)
-     let value = Xml_datatype.Element("value", [("val", "good")], [xml]) in
-     print (Xml_printer.to_string value);
-     *)
    ]
 END;;

@@ -102,19 +102,19 @@ function peaCoqEditAt(sid: number): Promise<Object> {
   return coqtop("editat", sid);
 }
 
-function peaCoqGetContext(): Promise<ConstrExpr> {
-  return peaCoqQueryPrime("PeaCoqGetContext.").then(function(context) {
-    if (!context.trim().startsWith("new")) {
-      console.log("Context");
-      console.log(context);
-      return;
-    }
-    /* ¯\_(ツ)_/¯ */
-    console.log(context);
-    var term = eval(context);
-    console.log("Context: ", term);
-    return term;
-  });
+function peaCoqGetContext(): Promise<Maybe<ConstrExpr>> {
+  return peaCoqQueryPrime("PeaCoqGetContext.")
+    .then(
+    function(context) {
+      if (!context.trim().startsWith("new")) {
+        console.log("Context did not start with new");
+        console.log(context);
+        return new None();
+      }
+      // TODO: don't use eval
+      var term = eval(context);
+      return new Some(term);
+    });
 }
 
 class Goal {

@@ -336,25 +336,26 @@ type AddResult = {
   goals: Goals;
 };
 
-function appendPrettyPrintingToForeground() {
+function appendPrettyPrintingToForeground(): Promise<void> {
   return peaCoqGetContext()
     .then(
-    (constrExpr) => {
-      var pp =
-        prettyPrint(constrExpr)
-          .trim()
-          .replace(/\u00A0\u00A0+/g, '\u00A0')
-          .replace(/(\()\u00A0+/g, '$1')
-          .replace(/\u00A0/g, ' ')
-        ;
+    (maybeConstrExpr: Maybe<ConstrExpr>) => {
+      if (maybeConstrExpr instanceof Some) {
+        var ppCmds = prConstrExpr(maybeConstrExpr.some);
+        console.log(ppCmds);
+        console.log(dumbPrintPpCmds(ppCmds));
+      }
+      /*
       var fg = foreground.getSession();
       var old = fg.getValue();
       fg.setValue(old + "\nAs computed by PeaCoq:\n" + pp);
+      */
     }
     )
     .catch(
     (error) => {
       console.log(error);
+      if (error.stack) { console.log(error.stack); }
       return Promise.resolve();
     }
     )

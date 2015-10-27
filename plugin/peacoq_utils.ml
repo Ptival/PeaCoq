@@ -140,7 +140,7 @@ let string_of_ppbox p =
   mk_new (
       match p with
       | PpHB(a) -> "PpHB(" ^ string_of_int a ^ ")"
-      | PpHOVB(a) -> "PpHOVB(" ^ string_of_int a ^ ")"
+      | PpHOVB(a) -> "PpHoVB(" ^ string_of_int a ^ ")"
       | PpHVB(a) -> "PpHVB(" ^ string_of_int a ^ ")"
       | PpVB(a) -> "PpVB(" ^ string_of_int a ^ ")"
       | PpTB -> "PpTB()"
@@ -275,6 +275,51 @@ let string_of_cases_pattern_expr e =
       | CPatRecord(_) -> "TODO_CPatRecord"
       | CPatDelimiters(_) -> "TODO_CPatDelimiters"
     )
+
+let string_of_constructor (ind, i) =
+  mk_new ("Constructor(" ^ string_of_inductive ind ^ ", " ^ string_of_int i ^ ")")
+
+let string_of_global_reference gr =
+  mk_new (
+      match gr with
+      | VarRef(v) -> "VarRef(" ^ string_of_id v ^ ")"
+      | ConstRef(c) -> "ConstRef(" ^ quote(string_of_constant c) ^ ")"
+      | IndRef(i) -> "IndRef(" ^ string_of_inductive i ^ ")"
+      | ConstructRef(c) -> "ConstructRef(" ^ string_of_constructor c ^ ")"
+    )
+
+let rec string_of_glob_constr gc =
+  mk_new (
+      match gc with
+      | GRef(_, gr, gllo) ->
+         "GRef(" ^ string_of_global_reference gr
+         ^ ", " ^ string_of_option (string_of_list string_of_glob_level) gllo ^ ")"
+      | GVar(_, id) -> "GVar(" ^ string_of_id id ^ ")"
+      | GEvar(_, _, _) -> "GEvar(TODO)"
+      | GPatVar(_, _) -> "GPatVar(TODO)"
+      | GApp(_, gc, gcl) ->
+         "GApp(" ^ string_of_glob_constr gc
+         ^ ", " ^ string_of_list string_of_glob_constr gcl ^ ")"
+      | GLambda(_, _, _, _, _) -> "GLambda(TODO)"
+      | GProd(_, name, _, gc1, gc2) ->
+         "GProd(" ^ string_of_name name
+         ^ ", " ^ string_of_glob_constr gc1
+         ^ ", " ^ string_of_glob_constr gc2 ^ ")"
+      | GLetIn(_, _, _, _) -> "GLetIn(TODO)"
+      | GCases(_, _, _, _, _) -> "GCases(TODO)"
+      | GLetTuple(_, _, _, _, _) -> "GLetTuple(TODO)"
+      | GIf(_, _, _, _, _) -> "GIf(TODO)"
+      | GRec(_, _, _, _, _, _) -> "GRec(TODO)"
+      | GSort(_, gs) -> "GSort(" ^ string_of_glob_sort gs ^ ")"
+      | GHole(_, _, _, _) -> "GHole(TODO)"
+      | GCast(_, _, _) -> "GCast(TODO)"
+    )
+
+let default_env () = {
+  Notation_term.ninterp_var_type = Names.Id.Map.empty;
+  ninterp_rec_vars = Names.Id.Map.empty;
+  ninterp_only_parse = false;
+}
 
 let rec string_of_constr_expr ce = "\n" ^
   mk_new (
@@ -422,18 +467,6 @@ let string_of_interp_rule ir =
          "SynDefRule(" ^ quote(Names.KerName.to_string kernel_name) ^ ")"
     )
 
-let string_of_constructor (ind, i) =
-  mk_new ("Constructor(" ^ string_of_inductive ind ^ ", " ^ string_of_int i ^ ")")
-
-let string_of_global_reference gr =
-  mk_new (
-      match gr with
-      | VarRef(v) -> "VarRef(" ^ string_of_id v ^ ")"
-      | ConstRef(c) -> "ConstRef(" ^ quote(string_of_constant c) ^ ")"
-      | IndRef(i) -> "IndRef(" ^ string_of_inductive i ^ ")"
-      | ConstructRef(c) -> "ConstructRef(" ^ string_of_constructor c ^ ")"
-    )
-
 let rec string_of_notation_constr nc = "\n" ^
   mk_new (
       match nc with
@@ -487,33 +520,6 @@ let string_of_interpretation (l, notation_constr) =
 let string_of_loc loc =
   let (start, stop) = Loc.unloc loc in
   mk_new ("Loc(" ^ string_of_int start ^ ", " ^ string_of_int stop ^ ")")
-
-let rec string_of_glob_constr gc =
-  mk_new (
-      match gc with
-      | GRef(_, gr, gllo) ->
-         "GRef(" ^ string_of_global_reference gr
-         ^ ", " ^ string_of_option (string_of_list string_of_glob_level) gllo ^ ")"
-      | GVar(_, id) -> "GVar(" ^ string_of_id id ^ ")"
-      | GEvar(_, _, _) -> "GEvar(TODO)"
-      | GPatVar(_, _) -> "GPatVar(TODO)"
-      | GApp(_, gc, gcl) ->
-         "GApp(" ^ string_of_glob_constr gc
-         ^ ", " ^ string_of_list string_of_glob_constr gcl ^ ")"
-      | GLambda(_, _, _, _, _) -> "GLambda(TODO)"
-      | GProd(_, name, _, gc1, gc2) ->
-         "GProd(" ^ string_of_name name
-         ^ ", " ^ string_of_glob_constr gc1
-         ^ ", " ^ string_of_glob_constr gc2 ^ ")"
-      | GLetIn(_, _, _, _) -> "GLetIn(TODO)"
-      | GCases(_, _, _, _, _) -> "GCases(TODO)"
-      | GLetTuple(_, _, _, _, _) -> "GLetTuple(TODO)"
-      | GIf(_, _, _, _, _) -> "GIf(TODO)"
-      | GRec(_, _, _, _, _, _) -> "GRec(TODO)"
-      | GSort(_, gs) -> "GSort(" ^ string_of_glob_sort gs ^ ")"
-      | GHole(_, _, _, _) -> "GHole(TODO)"
-      | GCast(_, _, _) -> "GCast(TODO)"
-    )
 
 let map_option f = function
   | None -> None
@@ -638,12 +644,6 @@ let rec first_some_map f = function
        | None -> first_some_map f t
        | Some(fh) -> Some((h, fh))
      end
-
-let default_env () = {
-  Notation_term.ninterp_var_type = Names.Id.Map.empty;
-  ninterp_rec_vars = Names.Id.Map.empty;
-  ninterp_only_parse = false;
-}
 
 (*
 let natInd = "Coq.Init.Datatypes.nat"

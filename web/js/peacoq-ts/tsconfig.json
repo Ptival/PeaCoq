@@ -16,10 +16,12 @@
     "coq-misc.ts",
     "coq-constr-expr.ts",
     "term.ts",
+    "mathjax.ts",
     "DefinitelyTyped/ace/ace.d.ts",
     "DefinitelyTyped/bootstrap/bootstrap.d.ts",
     "DefinitelyTyped/es6-shim/es6-shim.d.ts",
     "DefinitelyTyped/lodash/lodash.d.ts",
-    "DefinitelyTyped/jquery/jquery.d.ts"
+    "DefinitelyTyped/jquery/jquery.d.ts",
+    "DefinitelyTyped/mathjax/mathjax.d.ts"
   ]
 }
