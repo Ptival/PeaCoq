@@ -51,7 +51,6 @@ a, button {
   position: absolute;
   z-index: 5;
 }
-
 .processing {
   background-color: rgba(255, 179, 71, 1);
 }
@@ -60,8 +59,46 @@ a, button {
 }
 
 /* Syntax highlighting */
-.ace_coqcomment { color: rgb(165, 42, 42); }
-.ace_gallina { color: rgb(0, 0, 255); }
-.ace_tactic { color: rgb(147, 112, 219); }
-.ace_terminator { color: rgb(255, 0, 0); }
-.ace_vernacular { color: rgb(255, 69, 0); }
+
+.ace_coqcomment {
+  color: rgb(165, 42, 42);
+}
+.ace_gallina {
+  color: rgb(0, 0, 255);
+}
+.ace_tactic {
+  color: rgb(147, 112, 219);
+}
+.ace_terminator {
+  color: rgb(255, 0, 0);
+}
+.ace_vernacular {
+  color: rgb(255, 69, 0);
+}
+
+/* Visualization */
+
+#pretty {
+  display: inline-block;
+  font-family: monospace;
+  font-size: 12px;
+  width: 100%;
+}
+#pretty hr {
+  border-top: 1px solid black;
+  margin-bottom: 4px;
+  margin-top: 4px;
+}
+.hyp {
+  display: flex;
+  vertical-align: top;
+}
+.tag-keyword {
+  color: red;
+}
+.tag-notation {
+  color: brown;
+}
+.tag-variable {
+  color: blue;
+}

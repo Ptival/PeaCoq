@@ -26,8 +26,10 @@ requirejs(['ace/ace', 'jquery', 'jquery.hotkeys', 'bootstrap', 'lodash'],
       'peacoq-ts/coqtop85',
     ], function() {
       requirejs(['peacoq-ts/coq85']);
-      //requirejs(['peacoq-ts/term']);
-      requirejs(['peacoq-ts/coq-misc']);
+      requirejs(['peacoq-ts/utils']);
       requirejs(['peacoq-ts/coq-constr-expr']);
+      requirejs(['peacoq-ts/coq-definitions']);
+      requirejs(['peacoq-ts/coq-pretty-printer']);
+      requirejs(['peacoq-ts/visualizations']);
     });
   });

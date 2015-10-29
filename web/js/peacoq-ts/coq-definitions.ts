@@ -1,13 +1,6 @@
-class Maybe<T> { }
-class Some<T> extends Maybe<T> {
-  some: T;
-  constructor(t: T) { super(); this.some = t; }
-}
-class None<T> extends Maybe<T> { }
-
-class ParenRelation { }
-class E extends ParenRelation { }
-class L extends ParenRelation { }
+class ParenRelation {}
+class E extends ParenRelation {}
+class L extends ParenRelation {}
 class Prec extends ParenRelation {
   precedence: number;
   constructor(prec: number) {
@@ -15,15 +8,15 @@ class Prec extends ParenRelation {
     this.precedence = prec;
   }
 }
-class Any extends ParenRelation { }
+class Any extends ParenRelation {}
 
 type PrecAssoc =[number, ParenRelation];
 
 type CoqLocation =[number, number];
 
-class GlobSortGen<T> { }
-class GProp<T> extends GlobSortGen<T> { }
-class GSet<T> extends GlobSortGen<T> { }
+class GlobSortGen<T> {}
+class GProp<T> extends GlobSortGen<T> {}
+class GSet<T> extends GlobSortGen<T> {}
 class GType<T> extends GlobSortGen<T> {
   type: T;
   constructor(t: T) {
@@ -34,12 +27,14 @@ class GType<T> extends GlobSortGen<T> {
 
 type LevelInfo = Maybe<string>;
 type GlobLevel = GlobSortGen<LevelInfo>;
+type SortInfo = string[];
+type GlobSort = GlobSortGen<SortInfo>;
 
 type InstanceExpr = Array<GlobLevel>;
 
 type Located<T> = [CoqLocation, T];
 
-class Reference { }
+class Reference {}
 
 type QualId =[Array<string>, string];
 
@@ -59,7 +54,7 @@ class Ident extends Reference {
   }
 }
 
-class BinderKind { }
+class BinderKind {}
 
 class Default extends BinderKind {
   kind: BindingKind;
@@ -81,7 +76,7 @@ class Generalized extends BinderKind {
   }
 }
 
-class NameBase { }
+class NameBase {}
 
 class Name extends NameBase {
   id: string;
@@ -91,9 +86,9 @@ class Name extends NameBase {
   }
 }
 
-class Anonymous extends NameBase { }
+class Anonymous extends NameBase {}
 
-class LocalBinder { }
+class LocalBinder {}
 
 class LocalRawDef extends LocalBinder {
   binderName: Located<NameBase>;
@@ -117,11 +112,11 @@ class LocalRawAssum extends LocalBinder {
   }
 }
 
-class BindingKind { }
-class Explicit extends BindingKind { }
-class Implicit extends BindingKind { }
+class BindingKind {}
+class Explicit extends BindingKind {}
+class Implicit extends BindingKind {}
 
-class Unparsing { }
+class Unparsing {}
 
 class UnpMetaVar extends Unparsing {
   index: number;
@@ -177,7 +172,7 @@ class UnpBox extends Unparsing {
   }
 }
 
-class PpBox { }
+class PpBox {}
 
 class PpHB extends PpBox {
   n: number;
@@ -199,7 +194,7 @@ class PpVB extends PpBox {
   constructor(n: number) { super(); this.n = n; }
 }
 
-class PpTB extends PpBox { }
+class PpTB extends PpBox {}
 
 class UnpCut extends Unparsing {
   cut: PpCut;
@@ -209,7 +204,7 @@ class UnpCut extends Unparsing {
   }
 }
 
-class PpCut { }
+class PpCut {}
 
 class PpBrk extends PpCut {
   n1: number; n2: number;
@@ -221,11 +216,14 @@ class PpTbrk extends PpCut {
   constructor(a: number, b: number) { super(); this.n1 = a; this.n2 = b; }
 }
 
-class PpTab extends PpCut { }
+class PpTab extends PpCut {}
 
-class PpFnl extends PpCut { }
+class PpFnl extends PpCut {}
 
-function tagUnparsing(unp, pp1): string {
+function tagUnparsing(unp: Unparsing, pp1: PpCmds): PpCmds {
+  if (unp instanceof UnpTerminal) {
+    return tagNotation(pp1);
+  }
   return pp1;
 }
 
@@ -257,7 +255,7 @@ function PpCmdOfCut(c: PpCut): PpCmds {
   throw MatchFailure("PpCmdOfCut", c);
 }
 
-class PrimToken { }
+class PrimToken {}
 
 class Numeral extends PrimToken {
   numeral: number;
@@ -275,17 +273,17 @@ class CoqString extends PrimToken {
   }
 }
 
-class CaseStyle { }
-class LetStyle extends CaseStyle { }
-class IfStyle extends CaseStyle { }
-class LetPatternStyle extends CaseStyle { }
-class MatchStyle extends CaseStyle { }
-class RegularStyle extends CaseStyle { }
+class CaseStyle {}
+class LetStyle extends CaseStyle {}
+class IfStyle extends CaseStyle {}
+class LetPatternStyle extends CaseStyle {}
+class MatchStyle extends CaseStyle {}
+class RegularStyle extends CaseStyle {}
 
-class CasesPatternExpr { }
+class CasesPatternExpr {}
 // TODO
 
-class BlockType { }
+class BlockType {}
 class PpHBox extends BlockType {
   constructor(x: number) {
     super();
@@ -306,169 +304,4 @@ class PpHoVBox extends BlockType {
     super();
   }
 }
-class PpTBox extends BlockType { }
-
-class StrToken {}
-class StrDef extends StrToken {
-  string: string;
-  constructor(s: string) {
-    super();
-    this.string = s;
-  }
-}
-class StrLen extends StrToken {
-  string: string;
-  length: number;
-  constructor(s: string, l: number) {
-    super();
-    this.string = s;
-    this.length = l;
-  }
-}
-
-class PpCmdToken<T> {
-}
-
-class PpCmdPrint<T> extends PpCmdToken<T> {
-  token: T;
-  constructor(t: T) {
-    super();
-    this.token = t;
-  }
-}
-
-class PpCmdBox<T> extends PpCmdToken<T> {
-  blockType: BlockType;
-  contents: PpCmdToken<T>[];
-  constructor(b: BlockType, x: PpCmdToken<T>[]) {
-    super();
-    this.blockType = b;
-    this.contents = x;
-  }
-}
-
-class PpCmdPrintBreak<T> extends PpCmdToken<T> {
-  nspaces: number;
-  offset: number;
-  constructor(x: number, y: number) {
-    super();
-    this.nspaces = x;
-    this.offset = y;
-  }
-}
-
-class PpCmdSetTab<T> extends PpCmdToken<T> { }
-
-class PpCmdPrintTbreak<T> extends PpCmdToken<T> {
-  constructor(x: number, y: number) {
-    super();
-  }
-}
-
-class PpCmdWhiteSpace<T> extends PpCmdToken<T> {
-  constructor(x: number) {
-    super();
-  }
-}
-
-class PpCmdForceNewline<T> extends PpCmdToken<T> { }
-
-class PpCmdPrintIfBroken<T> extends PpCmdToken<T> { }
-
-class PpCmdOpenBox<T> extends PpCmdToken<T> {
-  blockType: BlockType;
-  constructor(b: BlockType) {
-    this.blockType = b;
-    super();
-  }
-}
-
-class PpCmdCloseBox<T> extends PpCmdToken<T> { }
-
-class PpCmdCloseTBox<T> extends PpCmdToken<T> { }
-
-class PpCmdComment<T> extends PpCmdToken<T> {
-  constructor(x: number) {
-    super();
-  }
-}
-
-class PpCmdOpenTag<T> extends PpCmdToken<T> {
-  constructor(/* TODO: tag */) {
-    super();
-  }
-}
-
-class PpCmdCloseTag<T> extends PpCmdToken<T> { }
-
-type PpCmd = PpCmdToken<StrToken>;
-type PpCmds = PpCmd[];
-
-function dumbPrintPpCmd(p: PpCmd): string {
-  if (p instanceof PpCmdPrint) {
-    return dumbPrintStrToken(p.token);
-  }
-  if (p instanceof PpCmdBox) {
-    // FIXME: use blockType
-    return _.reduce(
-      p.contents,
-      (acc, x) => { return acc + dumbPrintPpCmd(x); },
-      ""
-      );
-  }
-  if (p instanceof PpCmdPrintBreak) {
-    return " ".repeat(p.nspaces);
-  }
-  if (p instanceof PpCmdSetTab) {
-    return "TODO: PpCmdSetTab";
-  }
-  if (p instanceof PpCmdPrintTbreak) {
-    return "TODO: PpCmdPrintTbreak";
-  }
-  if (p instanceof PpCmdWhiteSpace) {
-    return "TODO: PpCmdWhiteSpace";
-  }
-  if (p instanceof PpCmdForceNewline) {
-    return "TODO: PpCmdForceNewline";
-  }
-  if (p instanceof PpCmdPrintIfBroken) {
-    return "TODO: PpCmdPrintIfBroken";
-  }
-  if (p instanceof PpCmdOpenBox) {
-    return "TODO: PpCmdOpenBox";
-  }
-  if (p instanceof PpCmdCloseBox) {
-    return "TODO: PpCmdCloseBox";
-  }
-  if (p instanceof PpCmdCloseTBox) {
-    return "TODO: PpCmdCloseTBox";
-  }
-  if (p instanceof PpCmdComment) {
-    return "TODO: PpCmdComment";
-  }
-  if (p instanceof PpCmdOpenTag) {
-    return "TODO: PpCmdOpenTag";
-  }
-  if (p instanceof PpCmdCloseTag) {
-    return "TODO: PpCmdCloseTag";
-  }
-  throw MatchFailure("dumbPrintPpCmd", p);
-}
-
-function dumbPrintStrToken(t: StrToken) {
-  if (t instanceof StrDef) {
-    return t.string;
-  }
-  if (t instanceof StrLen) {
-    return t.string;
-  }
-  throw MatchFailure("dumbPrintStrToken", t);
-}
-
-function dumbPrintPpCmds(l: PpCmds): string {
-  return _.reduce(
-    l,
-    (acc: string, p: PpCmd) => { return acc + dumbPrintPpCmd(p); },
-    ""
-    );
-}
+class PpTBox extends BlockType {}

@@ -44,27 +44,44 @@ let rec print_notations glob_constr = ()
   | Some(n) -> print_notations_aux n
    *)
 
+let map_option f = function None -> None | Some(x) -> Some(f x)
+
+let string_of_named_declaration convert (name, maybeTerm, typ) =
+  "{ name: "  ^ string_of_id name
+  ^ ", maybeTerm: "
+  ^ string_of_option
+      string_of_constr_expr
+      (map_option convert maybeTerm)
+  ^ ", type: "
+  ^ string_of_constr_expr (convert typ)
+  ^ " }"
+
 VERNAC COMMAND EXTEND PeaCoqQuery CLASSIFIED AS QUERY
 | [ "PeaCoqGetContext" ] ->
    [
      let (evm, env) = Lemmas.get_current_context () in
      let proof = Pfedit.get_pftreestate () in
-     let concl = Proof.map_structured_proof proof Goal.V82.concl in
-     let goals_constr = concl.fg_goals in
-     let goals_constr_expr = List.map (constr_expr_of_constr env evm) goals_constr in
 
-     begin
-       match goals_constr_expr with
-       | [] ->
+     let goals =
+       Proof.map_structured_proof
+         proof
+         (fun evm g ->
+           (Environ.named_context_of_val (Goal.V82.nf_hyps evm g),
+            Goal.V82.concl evm g))
+     in
 
-          print "undefined";
+     let convert = constr_expr_of_constr env evm in
 
-       | constr_expr :: _ ->
+     let string_of_goal (hyps, concl) =
+       "{ hyps:\n"
+       ^ string_of_list (string_of_named_declaration convert) hyps
+       ^ "\n, concl:\n" ^ string_of_constr_expr (convert concl)
+       ^ "\n}"
+     in
 
-          (*let glob_constr = Constrintern.intern_constr env constr_expr in*)
-          print (string_of_constr_expr constr_expr);
+     print (string_of_list string_of_goal goals.fg_goals);
 
-     end
+     (*let glob_constr = Constrintern.intern_constr env constr_expr in*)
 
    ]
 END;;

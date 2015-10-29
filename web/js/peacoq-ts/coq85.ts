@@ -3,7 +3,7 @@ var AceRange = ace.require("ace/range").Range;
 var AceRangeList = ace.require("ace/range_list").RangeList;
 var AceSelection = ace.require("ace/selection").Selection;
 
-var foreground, background, shelved, givenUp;
+var pretty, foreground, background, shelved, givenUp;
 var notices, warnings, errors, infos, feedback, jobs;
 
 var nbsp = "\u00A0";
@@ -105,13 +105,29 @@ function halfParentHeight(): string {
 }
 
 function setupNavigation() {
+  $("a[href=#pretty-tab]").click();
+  //$("a[href=#foreground-tab]").click();
   $("a[href=#notices-tab]").click();
-  $("a[href=#foreground-tab]").click();
 }
 
 function resetCoqtop() {
   peaCoqEditAt(1)
     .then(() => peaCoqAddPrime("Require Import PeaCoq.PeaCoq."));
+}
+
+function setupSyntaxHovering() {
+
+  $(document)
+    .on('mouseenter mouseover', '.syntax', function(e) {
+    $(this).css('background-color', 'lightblue');
+    e.stopImmediatePropagation();
+  })
+    .on('mouseout mouseleave', '.syntax', function(e) {
+    $(this).css('background-color', 'transparent');
+    e.stopImmediatePropagation();
+  })
+  ;
+
 }
 
 $(document).ready(function() {
@@ -123,7 +139,12 @@ $(document).ready(function() {
   });
 
   //$(document).bind("keydown", "ctrl+g", () => onNext(coqDocument));
-  $(document).bind("keydown", "alt+ctrl+l", () => onAltCtrlL());
+  $(document).bind("keydown", "alt+ctrl+l",
+    () => onAltCtrlL());
+  $(document).bind("keydown", "alt+ctrl+down",
+    () => onPrevious(coqDocument));
+  $(document).bind("keydown", "alt+ctrl+up",
+    () => onNext(coqDocument));
 
   resetCoqtop();
 
@@ -131,8 +152,10 @@ $(document).ready(function() {
 
   var buttonGroup = $("#toolbar > .btn-group");
   addLoadLocal(buttonGroup);
+  addSaveLocal(buttonGroup);
   addPrevious(buttonGroup);
   addNext(buttonGroup);
+  addDebug(buttonGroup);
 
   var editor: AceAjax.Editor = ace.edit("editor");
   editor.session.on("change", function(c) {
@@ -144,6 +167,8 @@ $(document).ready(function() {
     // TODO: should probably send an EditAt to coqtop
   });
 
+  pretty = addTab("pretty", "context");
+  setupSyntaxHovering();
   foreground = addEditorTab("foreground", "context");
   background = addEditorTab("background", "context");
   shelved = addEditorTab("shelved", "context");
@@ -270,7 +295,14 @@ function onNextEditFail(e: Edit): (_1: ValueFail) => Promise<any> {
     e.remove();
     reportError(vf.message, true);
     errors.getSession().setValue(vf.message);
-    return peaCoqEditAt(vf.stateId);
+    console.log(vf.stateId);
+    if (vf.stateId !== 0) {
+      alert("TODO: onNextEditFail");
+      // TODO: also need to cancel edits > vf.stateId
+      // return peaCoqEditAt(vf.stateId);
+    } else {
+      return Promise.resolve();
+    }
   };
 }
 
@@ -292,7 +324,6 @@ function onNext(doc: CoqDocument) {
   var newStopPos = movePosRight(doc, lastEditStopPos, nextIndex);
   var e = new Edit(coqDocument, lastEditStopPos, newStopPos);
   peaCoqAddPrime(unprocessedText.substring(0, nextIndex))
-    .catch(onNextEditFail(e))
     .then(
     function(response) {
       e.stateId = response.stateId;
@@ -336,15 +367,36 @@ type AddResult = {
   goals: Goals;
 };
 
+function htmlPrintConstrExpr(c: ConstrExpr): string {
+  return htmlPrintPpCmds(prConstrExpr(c));
+}
+
+function htmlPrintHyp(h: PeaCoqHyp): string {
+  let result = '<span class="tag-variable">' + h.name + "</span>";
+  let maybeTerm = h.maybeTerm;
+  if (maybeTerm instanceof Some) {
+    result += "<span> := </span><span>" + htmlPrintConstrExpr(maybeTerm.some) + "</span>";
+  }
+  result += "<span>:\u00A0</span><span>" + htmlPrintConstrExpr(h.type) + "</span>";
+  return result;
+}
+
+function htmlPrintHyps(hyps: PeaCoqHyp[]): string {
+  return _.reduce(hyps, (acc, elt) => {
+    return acc + '<div class="hyp">' + htmlPrintHyp(elt) + "</div>";
+  }, "");
+}
+
 function appendPrettyPrintingToForeground(): Promise<void> {
   return peaCoqGetContext()
     .then(
-    (maybeConstrExpr: Maybe<ConstrExpr>) => {
-      if (maybeConstrExpr instanceof Some) {
-        var ppCmds = prConstrExpr(maybeConstrExpr.some);
-        console.log(ppCmds);
-        console.log(dumbPrintPpCmds(ppCmds));
-      }
+    (context: PeaCoqContext) => {
+      var currentGoal = context[0];
+      pretty.html(
+        htmlPrintHyps(currentGoal.hyps)
+        + "<hr/>"
+        + htmlPrintPpCmds(prConstrExpr(currentGoal.concl))
+        );
       /*
       var fg = foreground.getSession();
       var old = fg.getValue();
@@ -429,6 +481,39 @@ function addLoadLocal(buttonGroup) {
     .on("click", loadLocal);
 }
 
+function saveLocal() {
+  var editor = coqDocument.editor;
+  var text = editor.getValue();
+  var blob = new Blob([text], { type: 'text/plain;charset=UTF-8' });
+  var url = window.URL.createObjectURL(blob);
+  $("#save-local-link").attr("href", url);
+  $("#save-local-link")[0].click();
+  editor.focus();
+}
+
+function addSaveLocal(buttonGroup) {
+
+  $("<button>", {
+    "class": "btn btn-primary",
+    "id": "save-local-button",
+    "html": $("<span>")
+      .append(mkGlyph("floppy-save"))
+      .append(nbsp + "Save"),
+  })
+    .appendTo(buttonGroup)
+    .on("click", saveLocal)
+  ;
+
+  $("<a>", {
+    "download": "output.v",
+    "id": "save-local-link",
+  })
+    .css("display", "none")
+    .appendTo(buttonGroup)
+  ;
+
+}
+
 function mkGlyph(name) {
   return $("<i>", {
     "class": "glyphicon glyphicon-" + name,
@@ -446,6 +531,18 @@ function addNext(buttonGroup) {
   })
     .append(mkGlyph("arrow-down"))
     .append(nbsp + "Next");
+}
+
+function addDebug(buttonGroup) {
+  $("<button>", {
+    "id": "debug",
+    "class": "btn btn-primary",
+  })
+    .appendTo(buttonGroup)
+    .on("click", function() {
+    // Do nothing
+  })
+    .append("Debug: ");
 }
 
 function addPrevious(buttonGroup) {
@@ -826,4 +923,56 @@ function addEditorTab(name: string, containerName: string): AceAjax.Editor {
   });
 
   return editor;
+}
+
+
+function addTab(name: string, containerName: string): JQuery {
+
+  var item = $("<li>", {
+    "role": "presentation",
+  }).appendTo($("#" + containerName + "-pills > ul"));
+
+  var anchor = $("<a>", {
+    "href": "#" + name + "-tab",
+    //"aria-controls": name + "-tab",
+    //"role": "tab",
+    //"data-toggle": "pill",
+    "text": capitalize(name),
+  })
+    .appendTo(item)
+    ;
+
+  var badge = $("<span>", {
+    "class": "badge",
+    "id": name + "-badge",
+    "html": mkGlyph("exclamation-sign"),
+  })
+    .css("display", "none")
+    .appendTo(anchor)
+    ;
+
+  var tabPanel = $("<div>", {
+    "role": "tabpanel",
+    "class": "tab-pane",
+    "id": name + "-tab",
+  })
+    .css("display", "none")
+    .appendTo($("#" + containerName + "-tabs"))
+    ;
+
+  var div = $("<div>", {
+    "id": name,
+  })
+    .appendTo(tabPanel);
+
+  anchor.click(function(e) {
+    e.preventDefault();
+    badge.css("display", "none");
+    $(this).tab("show");
+    $("#" + containerName + "-tabs").children(".tab-pane").css("display", "none");
+    tabPanel.css("display", "flex");
+    return false;
+  });
+
+  return div;
 }

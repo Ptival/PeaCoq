@@ -1,5 +1,4 @@
 /// <reference path="coq85.ts"/>
-/// <reference path="term.ts"/>
 
 /*
   This queue guarantees that requests are pushed one after the other, and that
@@ -102,18 +101,24 @@ function peaCoqEditAt(sid: number): Promise<Object> {
   return coqtop("editat", sid);
 }
 
-function peaCoqGetContext(): Promise<Maybe<ConstrExpr>> {
+type PeaCoqHyp = {
+  name: string;
+  maybeTerm: Maybe<ConstrExpr>;
+  type: ConstrExpr;
+};
+type PeaCoqGoal = {
+  hyps: PeaCoqHyp[];
+  concl: ConstrExpr;
+};
+type PeaCoqContext = Array<PeaCoqGoal>;
+
+function peaCoqGetContext(): Promise<PeaCoqContext> {
   return peaCoqQueryPrime("PeaCoqGetContext.")
     .then(
     function(context) {
-      if (!context.trim().startsWith("new")) {
-        console.log("Context did not start with new");
-        console.log(context);
-        return new None();
-      }
       // TODO: don't use eval
       var term = eval(context);
-      return new Some(term);
+      return term;
     });
 }
 
@@ -253,7 +258,7 @@ function mkMessageLevel(m): MessageLevel {
   };
 }
 
-class MessageLevel { }
+class MessageLevel {}
 
 class Debug extends MessageLevel {
   debug: string;
@@ -355,7 +360,7 @@ function mkFeedbackContent(f) {
   }
 }
 
-class FeedbackContent { }
+class FeedbackContent {}
 
 class Processed extends FeedbackContent {
   toString() { return "Processed"; }
@@ -409,7 +414,7 @@ class LocatedCoqXMLTag {
   }
 }
 
-class CoqXMLTag { }
+class CoqXMLTag {}
 
 function mkCoqXMLTag(t): CoqXMLTag {
   var c = t.contents;
