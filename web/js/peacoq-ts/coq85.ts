@@ -130,6 +130,38 @@ function setupSyntaxHovering() {
 
 }
 
+/*
+I can't seem to make Ace properly bubble key events, or when they bubble,
+jQuery somehow does not recognize them. So fuck it, keybindings are added
+to both the page and each editor...
+*/
+type KeyBinding = {
+  jQ: string;
+  aceWin: string;
+  aceMac: string;
+  handler: () => void
+};
+let keybindings: KeyBinding[] = [
+  {
+    jQ: "alt+ctrl+l",
+    aceWin: "Alt-Ctrl-L",
+    aceMac: "Option-Command-L",
+    handler: onAltCtrlL,
+  },
+  {
+    jQ: "alt+ctrl+down",
+    aceWin: "Alt-Ctrl-Down",
+    aceMac: "Option-Command-Down",
+    handler: () => onNext(coqDocument)
+  },
+  {
+    jQ: "alt+ctrl+up",
+    aceWin: "Alt-Ctrl-Up",
+    aceMac: "Option-Command-Down",
+    handler: () => onPrevious(coqDocument)
+  },
+];
+
 $(document).ready(function() {
 
   $(window).resize(function() {
@@ -138,13 +170,9 @@ $(document).ready(function() {
     $("#coqtop").css("height", halfParentHeight);
   });
 
-  //$(document).bind("keydown", "ctrl+g", () => onNext(coqDocument));
-  $(document).bind("keydown", "alt+ctrl+l",
-    () => onAltCtrlL());
-  $(document).bind("keydown", "alt+ctrl+down",
-    () => onPrevious(coqDocument));
-  $(document).bind("keydown", "alt+ctrl+up",
-    () => onNext(coqDocument));
+  _(keybindings).each(function(binding) {
+    $(document).bind("keydown", binding.jQ, binding.handler);
+  });
 
   resetCoqtop();
 
@@ -223,6 +251,7 @@ function clearCoqtopTabs() {
     editor.setValue("");
   });
   $(".badge").css("display", "none");
+  pretty.html("");
 }
 
 class EditState { }
@@ -368,16 +397,25 @@ type AddResult = {
 };
 
 function htmlPrintConstrExpr(c: ConstrExpr): string {
-  return htmlPrintPpCmds(prConstrExpr(c));
+  var ppCmds = prConstrExpr(c);
+  console.log(ppCmds);
+  return htmlPrintPpCmds(ppCmds);
 }
 
 function htmlPrintHyp(h: PeaCoqHyp): string {
-  let result = '<span class="tag-variable">' + h.name + "</span>";
+  let result = '<span><span class="tag-variable">' + h.name + "</span></span>";
   let maybeTerm = h.maybeTerm;
   if (maybeTerm instanceof Some) {
-    result += "<span> := </span><span>" + htmlPrintConstrExpr(maybeTerm.some) + "</span>";
+    result += (
+      "<span>\u00A0:=\u00A0</span><span>"
+      + htmlPrintConstrExpr(maybeTerm.some) + "</span>"
+      );
   }
-  result += "<span>:\u00A0</span><span>" + htmlPrintConstrExpr(h.type) + "</span>";
+  result += (
+    "<span>:\u00A0</span><span>"
+    + htmlPrintConstrExpr(h.type)
+    + "</span>"
+    );
   return result;
 }
 
@@ -387,7 +425,23 @@ function htmlPrintHyps(hyps: PeaCoqHyp[]): string {
   }, "");
 }
 
-function appendPrettyPrintingToForeground(): Promise<void> {
+function sameBodyAndType(hyp1: HTMLElement, hyp2: HTMLElement): boolean {
+  let children1 = $(hyp1).children().slice(1);
+  let children2 = $(hyp2).children().slice(1);
+  if (children1.length !== children2.length) { return false; }
+  for (let i in _.range(children1.length)) {
+    if ($(children1[i]).html() !== $(children2[i]).html()) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function appendPrettyPrintingToForeground(status: Status): Promise<void> {
+  if (status.statusProofName === null) {
+    pretty.html("");
+    return Promise.resolve();
+  }
   return peaCoqGetContext()
     .then(
     (context: PeaCoqContext) => {
@@ -395,8 +449,29 @@ function appendPrettyPrintingToForeground(): Promise<void> {
       pretty.html(
         htmlPrintHyps(currentGoal.hyps)
         + "<hr/>"
-        + htmlPrintPpCmds(prConstrExpr(currentGoal.concl))
+        + htmlPrintConstrExpr(currentGoal.concl)
         );
+
+      /*
+      Now, let's merge redundant variables on a single line
+        a: nat, b: nat
+      becomes:
+        a, b: nat
+      */
+
+      let hyps = $(".hyp");
+      // if the previous hyp has the same body/type, incorporate it
+      _.forEach(hyps, function(elt, ndx) {
+        if (ndx === 0) { return; }
+        var prevElt = hyps[ndx - 1];
+        if (sameBodyAndType(elt, prevElt)) {
+          // prepend the names of the previous hyp, then delete previous
+          var spanToPrependTo = $(elt).children("span")[0];
+          var spanToPrependFrom = $(prevElt).children("span")[0];
+          $(spanToPrependTo).html($(spanToPrependFrom).html() + ", " + $(spanToPrependTo).html());
+          $(prevElt).remove();
+        }
+      });
       /*
       var fg = foreground.getSession();
       var old = fg.getValue();
@@ -418,18 +493,20 @@ function updateForeground(): Promise<any> {
   return peaCoqStatus(false)
     .then(
     (status) => {
+      let promise = Promise.resolve();
       if (status.statusProofName !== null) {
-        return peaCoqGoal()
+        promise = promise
+          .then(peaCoqGoal)
           .then(
           (goals) => {
             if (goals.fgGoals.length > 0) {
               foreground.getSession().setValue(goals.fgGoals[0].toString());
             }
           })
-          .then(appendPrettyPrintingToForeground);
       } else {
-        return Promise.resolve();
       }
+      promise = promise.then(() => appendPrettyPrintingToForeground(status));
+      return promise;
     })
     ;
 }
@@ -856,18 +933,25 @@ function setupEditor(e: AceAjax.Editor) {
   //e.setTheme("ace/theme/monokai");
   //var OCamlMode = ace.require("ace/mode/ocaml").Mode;
   var CoqMode = ace.require("peacoq-js/mode-coq").Mode;
+  //ace.require("ace/keyboard/textarea");
   e.session.setMode(new CoqMode());
   //e.getSession().setMode("coq");
   e.setOption("tabSize", 2);
   e.setHighlightActiveLine(false);
   e.session.setUseSoftTabs(true);
   e.$blockScrolling = Infinity; // pestering warning
-  // need to add keyboard shortcuts everywhere because Ace captures them
-  e.commands.addCommand({
-    name: "load",
-    bindKey: { win: "Alt-Ctrl-L", mac: "Command-Option-L" },
-    exec: function() { onAltCtrlL(); }
-  })
+
+  // I should be able to use this but it is broken
+  //e.setKeyboardHandler("ace/keyboard/textarea");
+
+  _(keybindings).each(function(binding) {
+    e.commands.addCommand({
+      name: binding.aceWin,
+      bindKey: { win: binding.aceWin, mac: binding.aceMac },
+      exec: binding.handler,
+    })
+  });
+
 }
 
 function addEditorTab(name: string, containerName: string): AceAjax.Editor {

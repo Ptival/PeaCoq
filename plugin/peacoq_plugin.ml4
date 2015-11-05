@@ -73,6 +73,8 @@ VERNAC COMMAND EXTEND PeaCoqQuery CLASSIFIED AS QUERY
      let convert = constr_expr_of_constr env evm in
 
      let string_of_goal (hyps, concl) =
+       (* hyps are stored in reverse order *)
+       let hyps = List.rev hyps in
        "{ hyps:\n"
        ^ string_of_list (string_of_named_declaration convert) hyps
        ^ "\n, concl:\n" ^ string_of_constr_expr (convert concl)

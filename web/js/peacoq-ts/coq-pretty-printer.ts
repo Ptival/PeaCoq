@@ -168,6 +168,14 @@ function isMt(p: PpCmds): boolean {
   return (p.length === 0);
 }
 
+/*
+peaCoqBox should not disrupt the pretty-printing flow, but add a
+<span> so that sub-expression highlighting is more accurate
+*/
+function peaCoqBox(l: PpCmds): PpCmds {
+  return [new PpCmdBox(new PpHoVBox(0), l)];
+}
+
 function beginOfBinder(b: LocalBinder): number {
   if (b instanceof LocalRawDef) {
     return b.binderName[0][0];
@@ -207,11 +215,11 @@ function prName(n) {
   throw MatchFailure("prName", n);
 }
 
-function prLName([l, n]) {
+function prLName([l, n]: [PpCmds, NameBase]): PpCmds {
   if (n instanceof Name) {
-    return prLIdent([l, n.id]);
+    return peaCoqBox(prLIdent([l, n.id]));
   } else {
-    return prLocated(prName, [l, n]);
+    return peaCoqBox(prLocated(prName, [l, n]));
   }
 }
 
@@ -247,9 +255,9 @@ function prBinder(
         pr(t)
         );
       if (many) {
-        return surroundImpl(b, s);
+        return peaCoqBox(surroundImpl(b, s));
       } else {
-        return surroundImplicit(b, s);
+        return peaCoqBox(surroundImplicit(b, s));
       }
     }
   }
@@ -474,8 +482,8 @@ function prQualid(sp: QualId): PpCmds {
 }
 
 function prReference(r: Reference): PpCmds {
-  if (r instanceof Qualid) { return prQualid(r.lQualid[1]); }
-  if (r instanceof Ident) { return tagVariable(str(r.id[1])); }
+  if (r instanceof Qualid) { return peaCoqBox(prQualid(r.lQualid[1])); }
+  if (r instanceof Ident) { return peaCoqBox(tagVariable(str(r.id[1]))); }
   throw MatchFailure("prReference", r);
 }
 
@@ -577,7 +585,7 @@ function precOfPrimToken(t: PrimToken): number {
   if (t instanceof Numeral) {
     if (t.numeral >= 0) { return lPosInt; } else { return lNegInt; }
   }
-  if (t instanceof CoqString) {
+  if (t instanceof PrimTokenString) {
     return lAtom;
   }
   throw MatchFailure("precOfPrimToken", t);
@@ -589,7 +597,7 @@ function prPrimToken(t: PrimToken): PpCmds {
   if (t instanceof Numeral) {
     return str(t.numeral.toString());
   }
-  if (t instanceof CoqString) {
+  if (t instanceof PrimTokenString) {
     return qs(t.string);
   }
   throw MatchFailure("prPrimToken", t);
@@ -627,6 +635,14 @@ function prGlobSort(s: GlobSort): PpCmds {
   throw MatchFailure("prGlobSort", s);
 }
 
+function prDelimiters(key: string, strm: PpCmds): PpCmds {
+  return peaCoqBox([].concat(strm, str("%" + key)));
+}
+
+function tagConstrExpr(ce: ConstrExpr, cmds: PpCmds) {
+  return peaCoqBox(cmds);
+}
+
 function prGen(
   pr: (_1: () => PpCmds, _2: PrecAssoc, _3: ConstrExpr) => PpCmds
   ): (_1: () => PpCmds, _2: PrecAssoc, _3: ConstrExpr) => PpCmds {
@@ -635,6 +651,10 @@ function prGen(
     inherited: PrecAssoc,
     a: ConstrExpr
     ): PpCmds {
+
+    function ret(cmds: PpCmds, prec: number): PpResult {
+      return [tagConstrExpr(a, cmds), prec];
+    }
 
     function match(a: ConstrExpr): PpResult {
 
@@ -649,7 +669,7 @@ function prGen(
           // TODO: assert c[1] is empty option?
           let p = prProj(prmt, prApp, c[0], f, rest);
           if (l2.length > 0) {
-            return [
+            return ret(
               [].concat(
                 p,
                 prList(
@@ -660,22 +680,30 @@ function prGen(
                   )
                 ),
               lApp
-            ];
+            );
           } else {
             return [p, lProj];
           }
         }
         if (pf instanceof None) {
           let [f, l] = [a.function[1], a.arguments];
-          return [prApp(prmt, f, l), lApp];
+          return ret(prApp(prmt, f, l), lApp);
         }
         throw MatchFailure("pr -> match -> CApp", pf);
+      }
+
+      if (a instanceof CDelimiters) {
+        let [sc, e] = [a.string, a.expr];
+        return ret(
+          prDelimiters(sc, pr(mt, [lDelim, new E()], e)),
+          lDelim
+        );
       }
 
       if (a instanceof CNotation) {
         if (a.notation === "( _ )") {
           let [[t], [], []] = a.substitution;
-          return [
+          return ret(
             [].concat(
               pr(
                 () => { return str("("); },
@@ -685,7 +713,7 @@ function prGen(
               str(")")
               ),
             lAtom
-          ];
+          );
         } else {
           let [s, env] = [a.notation, a.substitution];
           return prNotation(
@@ -700,15 +728,15 @@ function prGen(
       }
 
       if (a instanceof CPrim) {
-        return [
+        return ret(
           prPrimToken(a.token),
           precOfPrimToken(a.token)
-        ];
+        );
       }
 
       if (a instanceof CProdN) {
         let [bl, aRest] = extractProdBinders(a);
-        return [
+        return ret(
           [].concat(
             prDelimitedBinders(
               prForall,
@@ -719,19 +747,19 @@ function prGen(
             pr(spc, lTop, aRest)
             ),
           lProd
-        ];
+        );
       }
 
       if (a instanceof CRef) {
         let [r, us] = [a.ref, a.universeInstance];
-        return [
+        return ret(
           prCRef(r, us),
           lAtom
-        ]
+        );
       }
 
       if (a instanceof CSort) {
-        return [prGlobSort(a.globSort), lAtom];
+        return ret(prGlobSort(a.globSort), lAtom);
       }
 
       throw MatchFailure("pr > match", a);
@@ -863,7 +891,7 @@ function htmlPrintPpCmd(p: PpCmd): string {
   }
   if (p instanceof PpCmdBox) {
     // FIXME: use blockType
-    return htmlPrintPpCmds(p.contents);
+    return syntax(htmlPrintPpCmds(p.contents));
   }
   if (p instanceof PpCmdPrintBreak) {
     return " ".repeat(p.nspaces);
@@ -905,12 +933,12 @@ function htmlPrintPpCmd(p: PpCmd): string {
 }
 
 function htmlPrintPpCmds(l: PpCmds): string {
-  l = patternPlus(l);
-  l = patternPow(l);
-  l = patternForall(l);
-  return syntax(_.reduce(
+  _(patterns).each(function(pattern) {
+    l = pattern(l);
+  });
+  return _.reduce(
     l,
     (acc: string, p: PpCmd) => { return acc + htmlPrintPpCmd(p); },
     ""
-    ));
+    );
 }

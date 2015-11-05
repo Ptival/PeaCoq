@@ -268,6 +268,10 @@ instance FromXML FeedbackContent where
   instanceName Proxy = "FeedbackContent"
   parseXML = tagName "feedback_content" (unpackRequireAttr "val") $ \ val -> do
     case val of
+      "addedaxiom" ->
+        return AddedAxiom
+      "complete" ->
+        return Complete
       "errormsg" -> do
         loc <- forceXML
         err <- forceXML

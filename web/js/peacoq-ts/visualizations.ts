@@ -1,74 +1,112 @@
 
-/* Visualization for: forall x, ...
-0: OpenTag("keyword")
-1: forall
-2: CloseTag
-...
-*/
-function patternForall(l: PpCmds): PpCmds {
-  if (l.length > 3) {
-    let p = l[1];
-    if (p instanceof PpCmdPrint) {
-      let token = p.token;
-      if (token.string === "forall") {
-        return [].concat(
-          [l[0]],
-          str("∀"),
-          [l[2]],
-          l.slice(3)
-        );
-      }
-    }
-  }
-  return l;
+function findPpCmdSuchThat(
+  l: PpCmds,
+  predicate: (_1: PpCmd) => boolean
+  ): number {
+  return _.findIndex(l, predicate);
 }
 
-function patternPlus(l: PpCmds): PpCmds {
-  if (l.length === 4) {
-    let plusSign = l[1];
-    if (plusSign instanceof PpCmdPrint) {
-      let token = plusSign.token;
-      if (token instanceof StrDef) {
-        if (token.string === "\u00A0+") {
-          return [].concat(
-            [l[0]],
-            str(" + "),
-            [l[2], l[3]]
-            );
-        }
-      }
-    }
+function ppCmdIsStringSuchThat(
+  predicate: (_1: string) => boolean
+  ): (_1: PpCmd) => boolean {
+  return (token: PpCmd) => {
+    return (
+      token instanceof PpCmdPrint
+      && token.token instanceof StrDef
+      && predicate(token.token.string)
+      );
   }
-  return l;
 }
+
+function ppCmdIsString(s: string): (_1: PpCmd) => boolean {
+  return ppCmdIsStringSuchThat((s1) => s === s1);
+}
+
+function replacePpCmd(
+  match: (_1: PpCmd) => boolean,
+  replace: (_1: PpCmd) => PpCmds,
+  l: PpCmds
+  ): PpCmds {
+  let pos = findPpCmdSuchThat(l, match);
+  if (pos < 0) { return l; }
+  return [].concat(
+    l.slice(0, pos),
+    replace(l[pos]),
+    l.slice(pos + 1)
+    );
+}
+
+function replaceToken(s1: string, s2: string, l: PpCmds): PpCmds {
+  return replacePpCmd(
+    ppCmdIsString(s1),
+    (t) => str(s2),
+    l
+    );
+}
+
+function patternScopeDelimiters(l: PpCmds): PpCmds {
+  return replacePpCmd(
+    ppCmdIsStringSuchThat((s) => s.startsWith("%")),
+    (t) => [].concat(
+      str('<span style="vertical-align: sub;">'),
+      t,
+      str('</span>')
+      ),
+    l
+    );
+}
+
+function patternForall(l: PpCmds): PpCmds {
+  return replaceToken("forall", "∀", l);
+}
+
+function patternArrow(l: PpCmds): PpCmds {
+  return replaceToken("\u00A0->", "\u00A0→", l);
+}
+
+function patternMult(l: PpCmds): PpCmds {
+  return replaceToken("\u00A0*", "\u00A0×", l);
+}
+
+function patternAnd(l: PpCmds): PpCmds {
+  return replaceToken("\u00A0/\\", "\u00A0∧", l);
+}
+
+function patternOr(l: PpCmds): PpCmds {
+  return replaceToken("\u00A0\\/", "\u00A0∨", l);
+}
+
+function patternEquiv(l: PpCmds): PpCmds {
+  return replaceToken("\u00A0<->", "\u00A0⇔", l);
+}
+
+let patterns: Array<(_1: PpCmds) => PpCmds> = [
+  patternPow,
+  patternForall,
+  patternArrow,
+  patternMult,
+  patternScopeDelimiters,
+  patternAnd,
+  patternOr,
+  patternEquiv,
+];
 
 /* Visualization for: x ^ y
-0: OpenTag("variable")
-1: x
-2: CloseTag("variable")
-3: Break
-4: OpenTag("notation")
-5: ^
-6: CloseTag
-7: y
+...
+OpenTag("notation")
+"^ "
+CloseTag
+...
 */
 function patternPow(l: PpCmds): PpCmds {
-  let signPosition = 5;
-  if (l.length === 8) {
-    let powSign = l[signPosition];
-    if (powSign instanceof PpCmdPrint) {
-      let token = powSign.token;
-      if (token instanceof StrDef) {
-        if (token.string === "^\u00A0") {
-          return [].concat(
-            l.slice(0, 3),
-            str('<span style="vertical-align: super;">'),
-            l.slice(7),
-            str('</span>')
-            );
-        }
-      }
-    }
+  let pos = findPpCmdSuchThat(l, ppCmdIsString("^\u00A0"));
+  if (pos > 0) {
+    return [].concat(
+      l.slice(0, pos - 2),
+      str('<span style="vertical-align: super;">'),
+      l.slice(pos + 2),
+      str('</span>')
+      );
   }
   return l;
 }

@@ -395,7 +395,11 @@ let rec string_of_constr_expr ce = "\n" ^
       | CEvar(_) -> "TODO_CEvar"
       | CCast(_) -> "TODO_CCast"
       | CGeneralization(_) -> "TODO_CGeneralization"
-      | CDelimiters(_) -> "TODO_CDelimiters"
+      | CDelimiters(loc, s, ce) ->
+         "CDelimiters(" ^ string_of_location loc
+         ^ ", " ^ quote(s)
+         ^ ", " ^ string_of_constr_expr ce
+         ^ ")"
     )
 
 and string_of_binder_expr (nll, bk, c) =

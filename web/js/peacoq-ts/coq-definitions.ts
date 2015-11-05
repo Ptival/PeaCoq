@@ -265,7 +265,7 @@ class Numeral extends PrimToken {
   }
 }
 
-class CoqString extends PrimToken {
+class PrimTokenString extends PrimToken {
   string: string;
   constructor(s: string) {
     super();

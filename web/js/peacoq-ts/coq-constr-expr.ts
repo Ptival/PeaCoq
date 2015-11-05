@@ -79,6 +79,18 @@ class CCases extends ConstrExpr {
   }
 }
 
+class CDelimiters extends ConstrExpr {
+  location: Location;
+  string: string;
+  expr: ConstrExpr;
+  constructor(l, s, e) {
+    super();
+    this.location = l;
+    this.string = s;
+    this.expr = e;
+  }
+}
+
 class CHole extends ConstrExpr {
   location: Location;
   // evarKinds

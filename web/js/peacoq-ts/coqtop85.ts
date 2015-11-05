@@ -117,6 +117,7 @@ function peaCoqGetContext(): Promise<PeaCoqContext> {
     .then(
     function(context) {
       // TODO: don't use eval
+      console.log(context);
       var term = eval(context);
       return term;
     });

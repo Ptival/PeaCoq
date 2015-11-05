@@ -14,8 +14,7 @@ html, body, #interface {
   flex: 1;
   /* Distribute space equally among the flex items */
   flex-basis: 0;
-  overflow: auto;
-  /* Use scrollbars if necessary */
+  overflow: hidden;
 }
 a, button {
   border-radius: 0 !important;
@@ -88,6 +87,9 @@ a, button {
   border-top: 1px solid black;
   margin-bottom: 4px;
   margin-top: 4px;
+}
+.syntax {
+  display: inline-block;
 }
 .hyp {
   display: flex;

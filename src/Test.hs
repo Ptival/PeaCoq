@@ -8,7 +8,7 @@ import Handlers
 import XMLProtocol
 
 coqtop :: String
-coqtop = "/home/vrobert/coq-build/bin/coqtop -ideslave -main-channel stdfds -I /home/vrobert/PeaCoq/plugin -Q /home/vrobert/PeaCoq/plugin PeaCoq"
+coqtop = "/home/ptival/.nix-profile/bin/coqtop -ideslave -main-channel stdfds -I /home/vrobert/PeaCoq/plugin -Q /home/vrobert/PeaCoq/plugin PeaCoq"
 
 main :: IO ()
 main = do
@@ -22,12 +22,8 @@ main = do
       --add' "Require Import List."
       --add' "Import ListNotations."
       --add' "Theorem t : [0] = [1]."
-      add' "Theorem test : True."
-      add' "Proof."
-      add' "foo."
-      add' "bar."
-      status False
-      add' "idtac."
+      add' "Definition admit {T : Type} : T."
+      add' "Admitted."
       status False
       return (ValueGood ())
 
