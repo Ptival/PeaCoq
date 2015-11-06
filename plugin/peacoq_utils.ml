@@ -378,7 +378,13 @@ let rec string_of_constr_expr ce = "\n" ^
       | CFix(_) -> "TODO_CFix"
       | CCoFix(_) -> "TODO_CCoFix"
       | CLambdaN(_) -> "TODO_CLambdaN"
-      | CLetIn(_) -> "TODO_CLetIn"
+      | CLetIn(loc, lname, ce1, ce2) ->
+         "CLetIn("
+         ^ string_of_location loc
+         ^ ", " ^ string_of_located string_of_name lname
+         ^ ", " ^ string_of_constr_expr ce1
+         ^ ", " ^ string_of_constr_expr ce2
+         ^ ")"
       | CAppExpl(_) -> "TODO_CAppExpl"
       | CRecord(_) -> "TODO_CRecord"
       | CCases(loc, style, ceo, casel, branchl) ->

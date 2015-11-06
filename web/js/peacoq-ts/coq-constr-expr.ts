@@ -1,6 +1,6 @@
 type Notation = string;
 
-class ConstrExpr { }
+class ConstrExpr {}
 
 type BinderExpr =[
   Array<Located<NameBase>>,
@@ -16,7 +16,7 @@ type ConstrNotationSubstitution =[
 
 type ProjFlag = Maybe<number>;
 
-class Explicitation { }
+class Explicitation {}
 
 class ExplByPos extends Explicitation {
   number: number;
@@ -79,6 +79,10 @@ class CCases extends ConstrExpr {
   }
 }
 
+class CCoFix extends ConstrExpr {
+  // TODO
+}
+
 class CDelimiters extends ConstrExpr {
   location: Location;
   string: string;
@@ -91,6 +95,10 @@ class CDelimiters extends ConstrExpr {
   }
 }
 
+class CFix extends ConstrExpr {
+  // TODO
+}
+
 class CHole extends ConstrExpr {
   location: Location;
   // evarKinds
@@ -99,6 +107,20 @@ class CHole extends ConstrExpr {
   constructor(loc: Location, eko, ipne, rgao) {
     super();
     this.location = loc;
+  }
+}
+
+class CLetIn extends ConstrExpr {
+  location: Location;
+  name: Located<Name>;
+  bound: ConstrExpr;
+  body: ConstrExpr;
+  constructor(loc, n, ce1, ce2) {
+    super();
+    this.location = location;
+    this.name = n;
+    this.bound = ce1;
+    this.body = ce2;
   }
 }
 

@@ -9,7 +9,7 @@ import           Data.Aeson
 import qualified Data.ByteString.UTF8                as BSU
 import           Data.IORef
 import qualified Data.IntMap                         as IM
-import           Data.String.Utils                   (strip)
+--import           Data.String.Utils                   (strip)
 import qualified Data.Text                           as T
 import           Prelude                             hiding (init)
 
@@ -18,6 +18,7 @@ import           Snap.Extras.JSON
 import           Snap.Snaplet
 import           Snap.Snaplet.Session                hiding (touchSession)
 import           Snap.Snaplet.Session.SessionManager ()
+import           System.Directory                    (doesFileExist)
 import           System.IO
 --import           System.Log.Logger
 import           System.Process
@@ -127,7 +128,14 @@ insertSession mapKey s gs@(GlobalState { gNextSession = c, gActiveSessions = m }
 --logAction hash message = infoM rootLoggerName (hash ++ " " ++ message)
 
 getGitCommitHash :: IO String
-getGitCommitHash = strip <$> readProcess "git" ["rev-parse", "HEAD"] ""
+getGitCommitHash = do
+  -- let's not use git to be more portable
+  --strip <$> readProcess "git" ["rev-parse", "HEAD"] ""
+  let fileName = ".git/refs/heads/master"
+  b <- doesFileExist fileName
+  if b
+  then readFile fileName
+  else return "Commit # unavailable"
 
 getSessionKey :: PeaCoqHandler IM.Key
 getSessionKey = with lSession $ do

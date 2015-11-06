@@ -19,7 +19,7 @@ function ppCmdIsStringSuchThat(
 }
 
 function ppCmdIsString(s: string): (_1: PpCmd) => boolean {
-  return ppCmdIsStringSuchThat((s1) => s === s1);
+  return ppCmdIsStringSuchThat((s1) => s === s1.trim());
 }
 
 function replacePpCmd(
@@ -36,10 +36,18 @@ function replacePpCmd(
     );
 }
 
+/*
+In practice the tokens come with their spacing incorporated, which is
+sometimes \u00A0<token> or sometimes <token>\u00A0, so we perform the
+replacement with a regexp to preserve the \u00A0.
+*/
 function replaceToken(s1: string, s2: string, l: PpCmds): PpCmds {
   return replacePpCmd(
     ppCmdIsString(s1),
-    (t) => str(s2),
+    (t: PpCmdPrint<StrDef>) => {
+      let r = s1.replace(/\\/, "\\\\");
+      return str(t.token.string.replace(new RegExp(r), s2));
+    },
     l
     );
 }
@@ -61,23 +69,23 @@ function patternForall(l: PpCmds): PpCmds {
 }
 
 function patternArrow(l: PpCmds): PpCmds {
-  return replaceToken("\u00A0->", "\u00A0→", l);
+  return replaceToken("->", "→", l);
 }
 
 function patternMult(l: PpCmds): PpCmds {
-  return replaceToken("\u00A0*", "\u00A0×", l);
+  return replaceToken("*", "×", l);
 }
 
 function patternAnd(l: PpCmds): PpCmds {
-  return replaceToken("\u00A0/\\", "\u00A0∧", l);
+  return replaceToken("/\\", "∧", l);
 }
 
 function patternOr(l: PpCmds): PpCmds {
-  return replaceToken("\u00A0\\/", "\u00A0∨", l);
+  return replaceToken("\\/", "∨", l);
 }
 
 function patternEquiv(l: PpCmds): PpCmds {
-  return replaceToken("\u00A0<->", "\u00A0⇔", l);
+  return replaceToken("<->", "⇔", l);
 }
 
 let patterns: Array<(_1: PpCmds) => PpCmds> = [
@@ -99,7 +107,7 @@ CloseTag
 ...
 */
 function patternPow(l: PpCmds): PpCmds {
-  let pos = findPpCmdSuchThat(l, ppCmdIsString("^\u00A0"));
+  let pos = findPpCmdSuchThat(l, ppCmdIsString("^"));
   if (pos > 0) {
     return [].concat(
       l.slice(0, pos - 2),

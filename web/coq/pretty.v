@@ -16,6 +16,5 @@ Proof.
   + rewrite Bool.andb_comm. reflexivity.
 Qed.
 
-(* Note: there is a bug in subterm highlighting here *)
 Theorem test_nesting : forall x, x ^ x ^ x = x ^ x ^ x.
 

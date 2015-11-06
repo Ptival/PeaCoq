@@ -34,7 +34,7 @@ class CoqDocument {
     this.edits = [];
     this.session.setValue(text);
     this.editor.focus();
-    this.editor.scrollToLine(0, true, true, () => { });
+    this.editor.scrollToLine(0, true, true, () => {});
   }
   removeEdits(p: (e: Edit) => boolean) {
     _.remove(this.edits, function(e) {
@@ -149,6 +149,12 @@ let keybindings: KeyBinding[] = [
     handler: onAltCtrlL,
   },
   {
+    jQ: "alt+ctrl+s",
+    aceWin: "Alt-Ctrl-S",
+    aceMac: "Option-Command-S",
+    handler: saveLocal,
+  },
+  {
     jQ: "alt+ctrl+down",
     aceWin: "Alt-Ctrl-Down",
     aceMac: "Option-Command-Down",
@@ -159,6 +165,12 @@ let keybindings: KeyBinding[] = [
     aceWin: "Alt-Ctrl-Up",
     aceMac: "Option-Command-Down",
     handler: () => onPrevious(coqDocument)
+  },
+  {
+    jQ: "alt+ctrl+right",
+    aceWin: "Alt-Ctrl-Right",
+    aceMac: "Option-Command-Right",
+    handler: () => onGotoCursor(coqDocument)
   },
 ];
 
@@ -254,10 +266,10 @@ function clearCoqtopTabs() {
   pretty.html("");
 }
 
-class EditState { }
-class EditToProcess extends EditState { }
-class EditProcessing extends EditState { }
-class EditProcessed extends EditState { }
+class EditState {}
+class EditToProcess extends EditState {}
+class EditProcessing extends EditState {}
+class EditProcessed extends EditState {}
 
 var freshEditId = (function() {
   var editCounter = 2; // TODO: pick the correct number
@@ -335,7 +347,7 @@ function onNextEditFail(e: Edit): (_1: ValueFail) => Promise<any> {
   };
 }
 
-function onNext(doc: CoqDocument) {
+function onNext(doc: CoqDocument): Promise<void> {
   clearCoqtopTabs();
   // the last anchor is how far we have processed
   var lastEditStopPos = doc.getLastEditStop();
@@ -352,14 +364,14 @@ function onNext(doc: CoqDocument) {
   var nextIndex = next(unprocessedText);
   var newStopPos = movePosRight(doc, lastEditStopPos, nextIndex);
   var e = new Edit(coqDocument, lastEditStopPos, newStopPos);
-  peaCoqAddPrime(unprocessedText.substring(0, nextIndex))
+  return peaCoqAddPrime(unprocessedText.substring(0, nextIndex))
     .then(
     function(response) {
       e.stateId = response.stateId;
       e.markProcessed();
       doc.session.selection.clearSelection();
       doc.editor.moveCursorToPosition(newStopPos);
-      doc.editor.scrollToLine(newStopPos.row, true, true, () => { });
+      doc.editor.scrollToLine(newStopPos.row, true, true, () => {});
       doc.editor.focus();
     })
     .then(updateForeground)
@@ -369,15 +381,63 @@ function onNext(doc: CoqDocument) {
   ;
 }
 
-function onPrevious(doc: CoqDocument) {
+// TODO: there is a better way to rewind with the new STM machinery!
+function rewindToPosition(
+  doc: CoqDocument,
+  targetPos: AceAjax.Position
+  ): Promise<void> {
+  var lastEditStopPos = doc.getLastEditStop();
+  if (isAfter(targetPos, lastEditStopPos)) {
+    return Promise.resolve();
+  } else {
+    return (
+      onPrevious(doc)
+        .then(() => rewindToPosition(doc, targetPos))
+      );
+  }
+}
+
+function forwardToPosition(
+  doc: CoqDocument,
+  targetPos: AceAjax.Position
+): Promise<void> {
+  var lastEditStopPos = doc.getLastEditStop();
+  if (isAfter(lastEditStopPos, targetPos)) { return Promise.resolve(); }
+
+  // don't move forward if there is only spaces/comments
+  var range = AceRange.fromPoints(lastEditStopPos, targetPos);
+  var textRange = doc.session.getDocument().getTextRange(range);
+  if (coqTrim(textRange) === "") { return Promise.resolve(); }
+
+  //console.log(lastEditStopPos, targetPos, coqTrim(textRange), textRange);
+
+  return onNext(doc).then(() => forwardToPosition(doc, targetPos));
+}
+
+function onGotoCursor(doc: CoqDocument): Promise<void> {
+  // first, check if this is going forward or backward from the end
+  // of the last edit
+  var cursorPos = doc.editor.getCursorPosition();
+  var lastEditStopPos = doc.getLastEditStop();
+  if (isAfter(cursorPos, lastEditStopPos)) {
+    return forwardToPosition(doc, cursorPos);
+  } else if (isAfter(lastEditStopPos, cursorPos)) {
+    return rewindToPosition(doc, cursorPos);
+  } else {
+    // no need to move
+    return;
+  }
+}
+
+function onPrevious(doc: CoqDocument): Promise<void> {
   clearCoqtopTabs();
   var lastEdit = _.last(doc.edits);
-  peaCoqEditAt(lastEdit.previousStateId)
+  return peaCoqEditAt(lastEdit.previousStateId)
     .then(() => {
     lastEdit.remove();
     doc.session.selection.clearSelection();
     doc.editor.moveCursorToPosition(lastEdit.startPos);
-    doc.editor.scrollToLine(lastEdit.startPos.row, true, true, () => { });
+    doc.editor.scrollToLine(lastEdit.startPos.row, true, true, () => {});
     doc.editor.focus();
     updateForeground();
   })
@@ -398,7 +458,7 @@ type AddResult = {
 
 function htmlPrintConstrExpr(c: ConstrExpr): string {
   var ppCmds = prConstrExpr(c);
-  console.log(ppCmds);
+  //console.log(ppCmds);
   return htmlPrintPpCmds(ppCmds);
 }
 
@@ -445,6 +505,8 @@ function appendPrettyPrintingToForeground(status: Status): Promise<void> {
   return peaCoqGetContext()
     .then(
     (context: PeaCoqContext) => {
+      // context can be empty (if you finished a focused subgoal)
+      if (context.length === 0) { return Promise.resolve(); }
       var currentGoal = context[0];
       pretty.html(
         htmlPrintHyps(currentGoal.hyps)

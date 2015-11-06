@@ -30,7 +30,11 @@ function trimSpacesAround(s: string): string {
 // TODO: This should be made robust to multiple calls (sequencing should be
 // enforced)
 
-function coqtop(command: string, input: Object, silent?: boolean): Promise<Object> {
+function coqtop(
+  command: string,
+  input: Object,
+  silent?: boolean
+  ): Promise<any> {
   return requests.push(() => new Promise(function(onFulfilled, onRejected: (v: ValueFail) => any) {
     $.ajax({
       type: 'POST',
@@ -117,7 +121,7 @@ function peaCoqGetContext(): Promise<PeaCoqContext> {
     .then(
     function(context) {
       // TODO: don't use eval
-      console.log(context);
+      //console.log(context);
       var term = eval(context);
       return term;
     });
@@ -259,7 +263,7 @@ function mkMessageLevel(m): MessageLevel {
   };
 }
 
-class MessageLevel {}
+class MessageLevel { }
 
 class Debug extends MessageLevel {
   debug: string;
@@ -361,7 +365,7 @@ function mkFeedbackContent(f) {
   }
 }
 
-class FeedbackContent {}
+class FeedbackContent { }
 
 class Processed extends FeedbackContent {
   toString() { return "Processed"; }
@@ -415,7 +419,7 @@ class LocatedCoqXMLTag {
   }
 }
 
-class CoqXMLTag {}
+class CoqXMLTag { }
 
 function mkCoqXMLTag(t): CoqXMLTag {
   var c = t.contents;

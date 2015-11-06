@@ -1,4 +1,4 @@
-class StrToken { }
+class StrToken {}
 class StrDef extends StrToken {
   string: string;
   constructor(s: string) {
@@ -16,7 +16,7 @@ class StrLen extends StrToken {
   }
 }
 
-class PpCmdToken<T> { }
+class PpCmdToken<T> {}
 
 class PpCmdPrint<T> extends PpCmdToken<T> {
   token: T;
@@ -46,7 +46,7 @@ class PpCmdPrintBreak<T> extends PpCmdToken<T> {
   }
 }
 
-class PpCmdSetTab<T> extends PpCmdToken<T> { }
+class PpCmdSetTab<T> extends PpCmdToken<T> {}
 
 class PpCmdPrintTbreak<T> extends PpCmdToken<T> {
   constructor(x: number, y: number) {
@@ -60,9 +60,9 @@ class PpCmdWhiteSpace<T> extends PpCmdToken<T> {
   }
 }
 
-class PpCmdForceNewline<T> extends PpCmdToken<T> { }
+class PpCmdForceNewline<T> extends PpCmdToken<T> {}
 
-class PpCmdPrintIfBroken<T> extends PpCmdToken<T> { }
+class PpCmdPrintIfBroken<T> extends PpCmdToken<T> {}
 
 class PpCmdOpenBox<T> extends PpCmdToken<T> {
   blockType: BlockType;
@@ -72,9 +72,9 @@ class PpCmdOpenBox<T> extends PpCmdToken<T> {
   }
 }
 
-class PpCmdCloseBox<T> extends PpCmdToken<T> { }
+class PpCmdCloseBox<T> extends PpCmdToken<T> {}
 
-class PpCmdCloseTBox<T> extends PpCmdToken<T> { }
+class PpCmdCloseTBox<T> extends PpCmdToken<T> {}
 
 class PpCmdComment<T> extends PpCmdToken<T> {
   constructor(x: number) {
@@ -100,7 +100,7 @@ class PpCmdOpenTag<T> extends PpCmdToken<T> {
   }
 }
 
-class PpCmdCloseTag<T> extends PpCmdToken<T> { }
+class PpCmdCloseTag<T> extends PpCmdToken<T> {}
 
 type PpCmd = PpCmdToken<StrToken>;
 type PpCmds = PpCmd[];
@@ -697,6 +697,23 @@ function prGen(
         return ret(
           prDelimiters(sc, pr(mt, [lDelim, new E()], e)),
           lDelim
+        );
+      }
+
+      if (a instanceof CLetIn) {
+        let bound = a.bound;
+        if (bound instanceof CFix || bound instanceof CCoFix) {
+          throw("TODO: pr CLetIn with CFix/CcoFix");
+        }
+        return ret(
+          hv(0, [].concat(
+            hov(2, [].concat(
+              keyword("let"), spc(), prLName(a.name), str(" :="),
+              pr(spc, lTop, a.bound), spc(), keyword("in")
+            )),
+            pr(spc, lTop, a.body)
+          )),
+          lLetIn
         );
       }
 
