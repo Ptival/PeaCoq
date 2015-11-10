@@ -1,12 +1,12 @@
-var AceAnchor = ace.require("ace/anchor").Anchor;
-var AceRange = ace.require("ace/range").Range;
-var AceRangeList = ace.require("ace/range_list").RangeList;
-var AceSelection = ace.require("ace/selection").Selection;
+let AceAnchor = ace.require("ace/anchor").Anchor;
+let AceRange = ace.require("ace/range").Range;
+let AceRangeList = ace.require("ace/range_list").RangeList;
+let AceSelection = ace.require("ace/selection").Selection;
 
-var pretty, foreground, background, shelved, givenUp;
-var notices, warnings, errors, infos, feedback, jobs;
+let pretty, foreground, background, shelved, givenUp;
+let notices, warnings, errors, infos, feedback, jobs;
 
-var nbsp = "\u00A0";
+let nbsp = "\u00A0";
 
 class CoqDocument {
   editor: AceAjax.Editor;
@@ -34,26 +34,26 @@ class CoqDocument {
     this.edits = [];
     this.session.setValue(text);
     this.editor.focus();
-    this.editor.scrollToLine(0, true, true, () => {});
+    this.editor.scrollToLine(0, true, true, () => { });
   }
   removeEdits(p: (e: Edit) => boolean) {
     _.remove(this.edits, function(e) {
-      var toBeRemoved = p(e);
+      let toBeRemoved = p(e);
       if (toBeRemoved) { e.removeMarker(); }
       return toBeRemoved;
     });
   }
 }
 
-var coqDocument: CoqDocument;
+let coqDocument: CoqDocument;
 
-var statusPeriod = 3000;
-var maxLength = 2000;
+let statusPeriod = 3000;
+let maxLength = 2000;
 
 function onFeedback(f: Feedback) {
-  var session = feedback.getSession();
-  var current = session.getValue().substring(0, maxLength);
-  var now = new Date();
+  let session = feedback.getSession();
+  let current = session.getValue().substring(0, maxLength);
+  let now = new Date();
   session.setValue("[" + now.toString().substring(16, 24) + "] " + f.toString() +
     "\n" + current);
 }
@@ -67,9 +67,9 @@ function isQueryWarning(m: Message) {
 }
 
 function onMessage(m: Message) {
-  var level = m.level;
+  let level = m.level;
 
-  var session;
+  let session;
   if (level instanceof Error) { session = errors.getSession(); }
   else if (level instanceof Notice) { session = notices.getSession(); }
   else if (level instanceof Warning) { session = warnings.getSession(); }
@@ -190,17 +190,17 @@ $(document).ready(function() {
 
   //periodicallyStatus();
 
-  var buttonGroup = $("#toolbar > .btn-group");
+  let buttonGroup = $("#toolbar > .btn-group");
   addLoadLocal(buttonGroup);
   addSaveLocal(buttonGroup);
   addPrevious(buttonGroup);
   addNext(buttonGroup);
   addDebug(buttonGroup);
 
-  var editor: AceAjax.Editor = ace.edit("editor");
+  let editor: AceAjax.Editor = ace.edit("editor");
   editor.session.on("change", function(c) {
-    var start = c.start;
-    var end = c.end;
+    let start = c.start;
+    let end = c.end;
     coqDocument.removeEdits(function(e) {
       return isAfter(e.stopPos, start);
     });
@@ -225,7 +225,7 @@ $(document).ready(function() {
 
   setupNavigation();
 
-  var session = editor.getSession();
+  let session = editor.getSession();
 
   setupEditor(editor);
 
@@ -236,16 +236,16 @@ $(document).ready(function() {
 
   coqDocument = new CoqDocument(editor);
 
-  //var nbRows = ed.getSession().getLength();
-  //var r0 = new Range(0, 2, 0, 5);
+  //let nbRows = ed.getSession().getLength();
+  //let r0 = new Range(0, 2, 0, 5);
   //console.log(r0.toString());
 
-  //var s = new Selection(ed.getSession());
+  //let s = new Selection(ed.getSession());
   //s.fromOrientedRange(r0);
   //s.moveCursorBy(0, 5);
   //console.log(s.getRange().toString());
   //ed.getSession().addMarker(s.getRange(), 'coq-command', 'text');
-  //var text = ed.getSession().getTextRange(s.getRange());
+  //let text = ed.getSession().getTextRange(s.getRange());
   //console.log(text);
 
   //editor.setValue("Require Import List.\nImport ListNotations.\nTheorem test : [0] = [1; 2].\n", 1);
@@ -254,8 +254,8 @@ $(document).ready(function() {
 
 });
 
-var unlockedAnchor;
-var unlockedMarker;
+let unlockedAnchor;
+let unlockedMarker;
 
 function clearCoqtopTabs() {
   _([foreground, background, shelved, givenUp, notices, warnings, errors, infos])
@@ -266,13 +266,13 @@ function clearCoqtopTabs() {
   pretty.html("");
 }
 
-class EditState {}
-class EditToProcess extends EditState {}
-class EditProcessing extends EditState {}
-class EditProcessed extends EditState {}
+class EditState { }
+class EditToProcess extends EditState { }
+class EditProcessing extends EditState { }
+class EditProcessed extends EditState { }
 
-var freshEditId = (function() {
-  var editCounter = 2; // TODO: pick the correct number
+let freshEditId = (function() {
+  let editCounter = 2; // TODO: pick the correct number
   return function() {
     return editCounter++;
   }
@@ -288,6 +288,11 @@ class Edit {
   markerRange: AceAjax.Range;
   startPos: AceAjax.Position;
   stopPos: AceAjax.Position;
+
+  // to be filled later than initialization
+  status: Status;
+  goals: Goals;
+  context: PeaCoqContext;
 
   constructor(doc: CoqDocument, start: AceAjax.Position, stop: AceAjax.Position) {
     this.editState = EditToProcess;
@@ -331,7 +336,7 @@ function reportError(e: string, switchTab: boolean) {
   if (switchTab) { $("a[href=#errors-tab]").click(); }
 }
 
-function onNextEditFail(e: Edit): (_1: ValueFail) => Promise<any> {
+function onNextEditFail(e: Edit): (_1: ValueFail) => Promise<void> {
   return (vf: ValueFail) => {
     e.remove();
     reportError(vf.message, true);
@@ -339,46 +344,64 @@ function onNextEditFail(e: Edit): (_1: ValueFail) => Promise<any> {
     console.log(vf.stateId);
     if (vf.stateId !== 0) {
       alert("TODO: onNextEditFail");
+      return Promise.reject(vf);
       // TODO: also need to cancel edits > vf.stateId
       // return peaCoqEditAt(vf.stateId);
     } else {
-      return Promise.resolve();
+      return Promise.reject(vf);
     }
   };
 }
 
+/*
+rejects if the command was rejected (the catch only cleans up, but
+throws the error again)
+*/
 function onNext(doc: CoqDocument): Promise<void> {
   clearCoqtopTabs();
   // the last anchor is how far we have processed
-  var lastEditStopPos = doc.getLastEditStop();
-  var endPos = doc.endAnchor.getPosition();
-  var unprocessedRange =
+  let lastEditStopPos = doc.getLastEditStop();
+  let endPos = doc.endAnchor.getPosition();
+  let unprocessedRange =
     new AceRange(
       lastEditStopPos.row, lastEditStopPos.column,
       endPos.row, endPos.column
       );
-  var unprocessedText = doc.session.getTextRange(unprocessedRange);
+  let unprocessedText = doc.session.getTextRange(unprocessedRange);
   if (coqTrimLeft(unprocessedText) === "") {
     return;
   }
-  var nextIndex = next(unprocessedText);
-  var newStopPos = movePosRight(doc, lastEditStopPos, nextIndex);
-  var e = new Edit(coqDocument, lastEditStopPos, newStopPos);
-  return peaCoqAddPrime(unprocessedText.substring(0, nextIndex))
-    .then(
-    function(response) {
-      e.stateId = response.stateId;
-      e.markProcessed();
-      doc.session.selection.clearSelection();
-      doc.editor.moveCursorToPosition(newStopPos);
-      doc.editor.scrollToLine(newStopPos.row, true, true, () => {});
-      doc.editor.focus();
-    })
-    .then(updateForeground)
-  // Note: it might be the case that peaCoqAddPrime succeeds, but then
-  // the errors arises asynchronously in updateForeground
-    .catch(onNextEditFail(e))
-  ;
+  let nextIndex = next(unprocessedText);
+  let newStopPos = movePosRight(doc, lastEditStopPos, nextIndex);
+  let e = new Edit(coqDocument, lastEditStopPos, newStopPos);
+  return (
+    peaCoqAddPrime(unprocessedText.substring(0, nextIndex))
+      .then(
+      (response) => {
+        e.stateId = response.stateId;
+        e.markProcessed();
+        doc.session.selection.clearSelection();
+        doc.editor.moveCursorToPosition(newStopPos);
+        doc.editor.scrollToLine(newStopPos.row, true, true, () => { });
+        doc.editor.focus();
+      })
+      .catch(onNextEditFail(e))
+      .then(
+      () => {
+        let s = peaCoqStatus(false);
+        let g = s.then(peaCoqGoal);
+        let c = g.then(peaCoqGetContext);
+        return Promise.all<any>([s, g, c]).then(
+          ([s, g, c]) => {
+            e.status = s;
+            e.goals = g;
+            e.context = c;
+            updateForeground(s, g);
+            updatePretty(s, c);
+            return Promise.resolve();
+          });
+      })
+    );
 }
 
 // TODO: there is a better way to rewind with the new STM machinery!
@@ -386,7 +409,7 @@ function rewindToPosition(
   doc: CoqDocument,
   targetPos: AceAjax.Position
   ): Promise<void> {
-  var lastEditStopPos = doc.getLastEditStop();
+  let lastEditStopPos = doc.getLastEditStop();
   if (isAfter(targetPos, lastEditStopPos)) {
     return Promise.resolve();
   } else {
@@ -400,13 +423,13 @@ function rewindToPosition(
 function forwardToPosition(
   doc: CoqDocument,
   targetPos: AceAjax.Position
-): Promise<void> {
-  var lastEditStopPos = doc.getLastEditStop();
+  ): Promise<void> {
+  let lastEditStopPos = doc.getLastEditStop();
   if (isAfter(lastEditStopPos, targetPos)) { return Promise.resolve(); }
 
   // don't move forward if there is only spaces/comments
-  var range = AceRange.fromPoints(lastEditStopPos, targetPos);
-  var textRange = doc.session.getDocument().getTextRange(range);
+  let range = AceRange.fromPoints(lastEditStopPos, targetPos);
+  let textRange = doc.session.getDocument().getTextRange(range);
   if (coqTrim(textRange) === "") { return Promise.resolve(); }
 
   //console.log(lastEditStopPos, targetPos, coqTrim(textRange), textRange);
@@ -417,8 +440,8 @@ function forwardToPosition(
 function onGotoCursor(doc: CoqDocument): Promise<void> {
   // first, check if this is going forward or backward from the end
   // of the last edit
-  var cursorPos = doc.editor.getCursorPosition();
-  var lastEditStopPos = doc.getLastEditStop();
+  let cursorPos = doc.editor.getCursorPosition();
+  let lastEditStopPos = doc.getLastEditStop();
   if (isAfter(cursorPos, lastEditStopPos)) {
     return forwardToPosition(doc, cursorPos);
   } else if (isAfter(lastEditStopPos, cursorPos)) {
@@ -431,23 +454,37 @@ function onGotoCursor(doc: CoqDocument): Promise<void> {
 
 function onPrevious(doc: CoqDocument): Promise<void> {
   clearCoqtopTabs();
-  var lastEdit = _.last(doc.edits);
-  return peaCoqEditAt(lastEdit.previousStateId)
-    .then(() => {
-    lastEdit.remove();
-    doc.session.selection.clearSelection();
-    doc.editor.moveCursorToPosition(lastEdit.startPos);
-    doc.editor.scrollToLine(lastEdit.startPos.row, true, true, () => {});
-    doc.editor.focus();
-    updateForeground();
-  })
-    .catch(
-    (vf: ValueFail) => {
-      reportError(vf.message, true);
-      errors.getSession().setValue(vf.message);
-      updateForeground();
-    })
-  ;
+  let lastEdit = _.last(doc.edits);
+  return (
+    peaCoqEditAt(lastEdit.previousStateId)
+      .then(
+      () => {
+        lastEdit.remove();
+        doc.session.selection.clearSelection();
+        doc.editor.moveCursorToPosition(lastEdit.startPos);
+        doc.editor.scrollToLine(lastEdit.startPos.row, true, true, () => { });
+        doc.editor.focus();
+        let prevEdit = _.last(doc.edits);
+        if (prevEdit !== undefined) {
+          updateForeground(prevEdit.status, prevEdit.goals);
+          updatePretty(prevEdit.status, prevEdit.context);
+        }
+      })
+      .catch(
+      (vf: ValueFail) => {
+        reportError(vf.message, true);
+        errors.getSession().setValue(vf.message);
+        let s = peaCoqStatus(false);
+        let g = s.then(peaCoqGoal);
+        return (
+          Promise.all<any>([s, g])
+            .then(
+            ([s, g]: [Status, Goals]) => { return updateForeground(s, g); }
+            )
+          );
+      }
+      )
+    );
 }
 
 type AddResult = {
@@ -457,7 +494,7 @@ type AddResult = {
 };
 
 function htmlPrintConstrExpr(c: ConstrExpr): string {
-  var ppCmds = prConstrExpr(c);
+  let ppCmds = prConstrExpr(c);
   //console.log(ppCmds);
   return htmlPrintPpCmds(ppCmds);
 }
@@ -497,80 +534,47 @@ function sameBodyAndType(hyp1: HTMLElement, hyp2: HTMLElement): boolean {
   return true;
 }
 
-function appendPrettyPrintingToForeground(status: Status): Promise<void> {
-  if (status.statusProofName === null) {
-    pretty.html("");
-    return Promise.resolve();
-  }
-  return peaCoqGetContext()
-    .then(
-    (context: PeaCoqContext) => {
-      // context can be empty (if you finished a focused subgoal)
-      if (context.length === 0) { return Promise.resolve(); }
-      var currentGoal = context[0];
-      pretty.html(
-        htmlPrintHyps(currentGoal.hyps)
-        + "<hr/>"
-        + htmlPrintConstrExpr(currentGoal.concl)
-        );
+function updatePretty(status: Status, context: PeaCoqContext): Promise<void> {
+  // context can be empty (if you finished a focused subgoal)
+  if (context.length === 0) { return Promise.resolve(); }
+  let currentGoal = context[0];
+  pretty.html(
+    htmlPrintHyps(currentGoal.hyps)
+    + "<hr/>"
+    + htmlPrintConstrExpr(currentGoal.concl)
+    );
 
-      /*
-      Now, let's merge redundant variables on a single line
-        a: nat, b: nat
-      becomes:
-        a, b: nat
-      */
+  /*
+  Now, let's merge redundant variables on a single line
+    a: nat, b: nat
+  becomes:
+    a, b: nat
+  */
 
-      let hyps = $(".hyp");
-      // if the previous hyp has the same body/type, incorporate it
-      _.forEach(hyps, function(elt, ndx) {
-        if (ndx === 0) { return; }
-        var prevElt = hyps[ndx - 1];
-        if (sameBodyAndType(elt, prevElt)) {
-          // prepend the names of the previous hyp, then delete previous
-          var spanToPrependTo = $(elt).children("span")[0];
-          var spanToPrependFrom = $(prevElt).children("span")[0];
-          $(spanToPrependTo).html($(spanToPrependFrom).html() + ", " + $(spanToPrependTo).html());
-          $(prevElt).remove();
-        }
-      });
-      /*
-      var fg = foreground.getSession();
-      var old = fg.getValue();
-      fg.setValue(old + "\nAs computed by PeaCoq:\n" + pp);
-      */
+  let hyps = $(".hyp");
+  // if the previous hyp has the same body/type, incorporate it
+  _.forEach(hyps, function(elt, ndx) {
+    if (ndx === 0) { return; }
+    let prevElt = hyps[ndx - 1];
+    if (sameBodyAndType(elt, prevElt)) {
+      // prepend the names of the previous hyp, then delete previous
+      let spanToPrependTo = $(elt).children("span")[0];
+      let spanToPrependFrom = $(prevElt).children("span")[0];
+      $(spanToPrependTo).html($(spanToPrependFrom).html() + ", " + $(spanToPrependTo).html());
+      $(prevElt).remove();
     }
-    )
-    .catch(
-    (error) => {
-      console.log(error);
-      if (error.stack) { console.log(error.stack); }
-      return Promise.resolve();
-    }
-    )
-    ;
+  });
+  /*
+  let fg = foreground.getSession();
+  let old = fg.getValue();
+  fg.setValue(old + "\nAs computed by PeaCoq:\n" + pp);
+  */
 }
 
-function updateForeground(): Promise<any> {
-  return peaCoqStatus(false)
-    .then(
-    (status) => {
-      let promise = Promise.resolve();
-      if (status.statusProofName !== null) {
-        promise = promise
-          .then(peaCoqGoal)
-          .then(
-          (goals) => {
-            if (goals.fgGoals.length > 0) {
-              foreground.getSession().setValue(goals.fgGoals[0].toString());
-            }
-          })
-      } else {
-      }
-      promise = promise.then(() => appendPrettyPrintingToForeground(status));
-      return promise;
-    })
-    ;
+function updateForeground(status: Status, goals): void {
+  if (goals.fgGoals.length > 0) {
+    foreground.getSession().setValue(goals.fgGoals[0].toString());
+  }
 }
 
 function onLoad(text) {
@@ -580,8 +584,8 @@ function onLoad(text) {
 }
 
 function loadFile() {
-  var file = (<HTMLInputElement>$("#filepicker")[0]).files[0];
-  var reader = new FileReader();
+  let file = (<HTMLInputElement>$("#filepicker")[0]).files[0];
+  let reader = new FileReader();
   reader.onload = function(e) {
     onLoad(reader.result);
   };
@@ -621,10 +625,10 @@ function addLoadLocal(buttonGroup) {
 }
 
 function saveLocal() {
-  var editor = coqDocument.editor;
-  var text = editor.getValue();
-  var blob = new Blob([text], { type: 'text/plain;charset=UTF-8' });
-  var url = window.URL.createObjectURL(blob);
+  let editor = coqDocument.editor;
+  let text = editor.getValue();
+  let blob = new Blob([text], { type: 'text/plain;charset=UTF-8' });
+  let url = window.URL.createObjectURL(blob);
   $("#save-local-link").attr("href", url);
   $("#save-local-link")[0].click();
   editor.focus();
@@ -697,12 +701,12 @@ function addPrevious(buttonGroup) {
     .append(nbsp + "Prev");
 }
 
-var delimiters = ["."];
+let delimiters = ["."];
 
 function my_index(str) {
-  var index = +Infinity;
+  let index = +Infinity;
   _(delimiters).each(function(delimiter) {
-    var pos = str.indexOf(delimiter);
+    let pos = str.indexOf(delimiter);
     if (pos >= 0 && pos < index) {
       index = pos;
     }
@@ -714,11 +718,11 @@ function my_index(str) {
   }
 }
 
-var bullets = ["{", "}", "+", "-", "*"];
+let bullets = ["{", "}", "+", "-", "*"];
 
 function next(str) {
   // if the very next thing is one of {, }, +, -, *, it is the next
-  var trimmed = coqTrimLeft(str);
+  let trimmed = coqTrimLeft(str);
   if (_(bullets).contains(trimmed[0])) {
     return str.length - trimmed.length + 1;
   }
@@ -730,10 +734,10 @@ function next(str) {
 function prev(str) {
   // remove the last delimiter, since we are looking for the previous one
   str = str.substring(0, str.length - 1);
-  var lastDotPosition = coq_find_last_dot(coq_undot(str), 0);
+  let lastDotPosition = coq_find_last_dot(coq_undot(str), 0);
   // now, it could be the case that there is a bullet after that dot
-  var strAfterDot = str.substring(lastDotPosition + 1, str.length);
-  var firstCharAfterDot = coqTrimLeft(strAfterDot)[0];
+  let strAfterDot = str.substring(lastDotPosition + 1, str.length);
+  let firstCharAfterDot = coqTrimLeft(strAfterDot)[0];
   if (_(bullets).contains(firstCharAfterDot)) {
     return lastDotPosition + 1 + strAfterDot.indexOf(firstCharAfterDot) + 1;
   }
@@ -742,7 +746,7 @@ function prev(str) {
 }
 
 function count(str, pat) {
-  var arr = str.split(pat);
+  let arr = str.split(pat);
   return (arr.length);
 }
 
@@ -759,24 +763,24 @@ function coq_undot(str) {
 }
 
 function coq_find_dot(str, toclose) {
-  var index = my_index(str);
+  let index = my_index(str);
   if (index == -1) {
     return index;
   }
-  var tocheck = str.substring(0, index);
-  var opened = count(tocheck, "(*") + toclose - count(tocheck, "*)");
+  let tocheck = str.substring(0, index);
+  let opened = count(tocheck, "(*") + toclose - count(tocheck, "*)");
   if (opened <= 0) {
     return index;
   } else {
-    var newindex = coq_find_dot(str.substring(index + 1), opened);
+    let newindex = coq_find_dot(str.substring(index + 1), opened);
     if (newindex == -1) { return -1; }
     return index + newindex + 1;
   }
 }
 
 function coq_get_last_dot(str) {
-  var modified = str;
-  var index = -1;
+  let modified = str;
+  let index = -1;
   while (my_index(modified) >= 0) {
     index = my_index(modified);
     modified = modified.substring(0, index) + " " +
@@ -786,26 +790,26 @@ function coq_get_last_dot(str) {
 }
 
 function coq_find_last_dot(str, toopen) {
-  var index = coq_get_last_dot(str);
+  let index = coq_get_last_dot(str);
   if (index == -1) {
     return index;
   }
-  var tocheck = str.substring(index + 1);
-  var closed = count(tocheck, "*)") + toopen - count(tocheck, "(*");
+  let tocheck = str.substring(index + 1);
+  let closed = count(tocheck, "*)") + toopen - count(tocheck, "(*");
   if (closed <= 0) {
     return index;
   } else {
-    var newindex = coq_find_last_dot(str.substring(0, index), closed);
+    let newindex = coq_find_last_dot(str.substring(0, index), closed);
     return newindex;
   }
 }
 
 function stripComments(s) {
-  var output = "";
-  var commentDepth = 0;
-  var pos = 0;
+  let output = "";
+  let commentDepth = 0;
+  let pos = 0;
   while (pos < s.length) {
-    var sub = s.substring(pos);
+    let sub = s.substring(pos);
     if (sub.startsWith("(*")) {
       commentDepth++;
       pos += 2;
@@ -830,10 +834,10 @@ function coqTrim(s) {
 }
 
 function coqTrimLeft(s) {
-  var commentDepth = 0;
-  var pos = 0;
+  let commentDepth = 0;
+  let pos = 0;
   while (pos < s.length) {
-    var sub = s.substring(pos);
+    let sub = s.substring(pos);
     if (sub.startsWith("(*")) {
       commentDepth++;
       pos += 2;
@@ -852,11 +856,11 @@ function coqTrimLeft(s) {
 }
 
 function coqTrimRight(s: string): string {
-  var commentDepth = 0;
-  var pos = s.length - 1;
+  let commentDepth = 0;
+  let pos = s.length - 1;
   while (pos > 0) {
-    var sub = s.substring(0, pos);
-    var lastChar = sub[sub.length - 1];
+    let sub = s.substring(0, pos);
+    let lastChar = sub[sub.length - 1];
     if (sub.endsWith("*)")) {
       commentDepth++;
       pos -= 2;
@@ -885,11 +889,11 @@ class Anchor {
     if (insertRight) { this.anchor.$insertRight = true; }
     this.marker = {};
     this.marker.update = function(html, markerLayer, session, config) {
-      var screenPos = session.documentToScreenPosition(this.anchor);
-      var height = config.lineHeight;
-      var width = config.characterWidth;
-      var top = markerLayer.$getTop(screenPos.row, config);
-      var left = markerLayer.$padding + screenPos.column * width;
+      let screenPos = session.documentToScreenPosition(this.anchor);
+      let height = config.lineHeight;
+      let width = config.characterWidth;
+      let top = markerLayer.$getTop(screenPos.row, config);
+      let left = markerLayer.$padding + screenPos.column * width;
       html.push(
         "<div class='", klass, "' style='",
         "height:", height, "px;",
@@ -908,15 +912,15 @@ function mkAnchor(
   doc: CoqDocument,
   row: number, column: number, klass: string, insertRight: boolean
   ): AceAjax.Anchor {
-  var a = new AceAnchor(doc.session.getDocument(), row, column);
+  let a = new AceAnchor(doc.session.getDocument(), row, column);
   if (insertRight) { a.$insertRight = true; }
   a.marker = {};
   a.marker.update = function(html, markerLayer, session, config) {
-    var screenPos = session.documentToScreenPosition(a);
-    var height = config.lineHeight;
-    var width = config.characterWidth;
-    var top = markerLayer.$getTop(screenPos.row, config);
-    var left = markerLayer.$padding + screenPos.column * width;
+    let screenPos = session.documentToScreenPosition(a);
+    let height = config.lineHeight;
+    let width = config.characterWidth;
+    let top = markerLayer.$getTop(screenPos.row, config);
+    let left = markerLayer.$padding + screenPos.column * width;
     html.push(
       "<div class='", klass, "' style='",
       "height:", height, "px;",
@@ -946,7 +950,7 @@ function isAfter(pos1: AceAjax.Position, pos2: AceAjax.Position): boolean {
 
 function killEditsAfterPosition(doc: CoqDocument, pos: AceAjax.Position) {
   _.remove(doc.edits, function(edit: Edit) {
-    var isAfterPosition = isAfter(edit.startPos, pos);
+    let isAfterPosition = isAfter(edit.startPos, pos);
     //if (isAfterPosition) { rmAnchor(doc, edit.anchor); }
     return isAfterPosition;
   });
@@ -956,9 +960,9 @@ function movePosRight(doc: CoqDocument, pos: AceAjax.Position, n: number) {
   if (n === 0) {
     return pos;
   }
-  var row = pos.row;
-  var column = pos.column;
-  var line = doc.session.getLine(row);
+  let row = pos.row;
+  let column = pos.column;
+  let line = doc.session.getLine(row);
   if (column < line.length) {
     return movePosRight(doc, {
       "row": row,
@@ -993,8 +997,8 @@ function capitalize(s: string): string {
 
 function setupEditor(e: AceAjax.Editor) {
   //e.setTheme("ace/theme/monokai");
-  //var OCamlMode = ace.require("ace/mode/ocaml").Mode;
-  var CoqMode = ace.require("peacoq-js/mode-coq").Mode;
+  //let OCamlMode = ace.require("ace/mode/ocaml").Mode;
+  let CoqMode = ace.require("peacoq-js/mode-coq").Mode;
   //ace.require("ace/keyboard/textarea");
   e.session.setMode(new CoqMode());
   //e.getSession().setMode("coq");
@@ -1018,11 +1022,11 @@ function setupEditor(e: AceAjax.Editor) {
 
 function addEditorTab(name: string, containerName: string): AceAjax.Editor {
 
-  var item = $("<li>", {
+  let item = $("<li>", {
     "role": "presentation",
   }).appendTo($("#" + containerName + "-pills > ul"));
 
-  var anchor = $("<a>", {
+  let anchor = $("<a>", {
     "href": "#" + name + "-tab",
     //"aria-controls": name + "-tab",
     //"role": "tab",
@@ -1032,7 +1036,7 @@ function addEditorTab(name: string, containerName: string): AceAjax.Editor {
     .appendTo(item)
     ;
 
-  var badge = $("<span>", {
+  let badge = $("<span>", {
     "class": "badge",
     "id": name + "-badge",
     "html": mkGlyph("exclamation-sign"),
@@ -1041,7 +1045,7 @@ function addEditorTab(name: string, containerName: string): AceAjax.Editor {
     .appendTo(anchor)
     ;
 
-  var tabPanel = $("<div>", {
+  let tabPanel = $("<div>", {
     "role": "tabpanel",
     "class": "tab-pane",
     "id": name + "-tab",
@@ -1050,12 +1054,12 @@ function addEditorTab(name: string, containerName: string): AceAjax.Editor {
     .appendTo($("#" + containerName + "-tabs"))
     ;
 
-  var editorDiv = $("<div>", {
+  let editorDiv = $("<div>", {
     "id": name,
   })
     .appendTo(tabPanel);
 
-  var editor = ace.edit(name);
+  let editor = ace.edit(name);
   setupEditor(editor);
 
   anchor.click(function(e) {
@@ -1074,11 +1078,11 @@ function addEditorTab(name: string, containerName: string): AceAjax.Editor {
 
 function addTab(name: string, containerName: string): JQuery {
 
-  var item = $("<li>", {
+  let item = $("<li>", {
     "role": "presentation",
   }).appendTo($("#" + containerName + "-pills > ul"));
 
-  var anchor = $("<a>", {
+  let anchor = $("<a>", {
     "href": "#" + name + "-tab",
     //"aria-controls": name + "-tab",
     //"role": "tab",
@@ -1088,7 +1092,7 @@ function addTab(name: string, containerName: string): JQuery {
     .appendTo(item)
     ;
 
-  var badge = $("<span>", {
+  let badge = $("<span>", {
     "class": "badge",
     "id": name + "-badge",
     "html": mkGlyph("exclamation-sign"),
@@ -1097,7 +1101,7 @@ function addTab(name: string, containerName: string): JQuery {
     .appendTo(anchor)
     ;
 
-  var tabPanel = $("<div>", {
+  let tabPanel = $("<div>", {
     "role": "tabpanel",
     "class": "tab-pane",
     "id": name + "-tab",
@@ -1106,7 +1110,7 @@ function addTab(name: string, containerName: string): JQuery {
     .appendTo($("#" + containerName + "-tabs"))
     ;
 
-  var div = $("<div>", {
+  let div = $("<div>", {
     "id": name,
   })
     .appendTo(tabPanel);

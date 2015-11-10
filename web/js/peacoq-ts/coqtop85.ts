@@ -117,14 +117,22 @@ type PeaCoqGoal = {
 type PeaCoqContext = Array<PeaCoqGoal>;
 
 function peaCoqGetContext(): Promise<PeaCoqContext> {
-  return peaCoqQueryPrime("PeaCoqGetContext.")
-    .then(
-    function(context) {
-      // TODO: don't use eval
-      //console.log(context);
-      var term = eval(context);
-      return term;
-    });
+  return (
+    peaCoqQueryPrime("PeaCoqGetContext.")
+      .then(
+      (context) => {
+        // TODO: don't use eval
+        //console.log(context);
+        var term = eval(context);
+        return term;
+      })
+      .catch(
+        (vf: ValueFail) => {
+          // most likely not in proof mode
+          return [];
+        }
+      )
+    );
 }
 
 class Goal {
@@ -181,17 +189,26 @@ class Goals {
       }).value();
     }
   }
-};
+}
 
 function peaCoqGoal(): Promise<Goals> {
   console.log("Goal");
-  return coqtop("goal", []).then(function(maybeGoals) {
-    //console.log("maybeGoals", maybeGoals);
-    var goals = new Goals(maybeGoals);
-    // weird, maybeGoals is an array of length 4 with 3 empty
-    //console.log("Goal", goals);
-    return goals;
-  })
+  return (
+    coqtop("goal", [])
+      .then(
+      (maybeGoals) => {
+        //console.log("maybeGoals", maybeGoals);
+        var goals = new Goals(maybeGoals);
+        // weird, maybeGoals is an array of length 4 with 3 empty
+        //console.log("Goal", goals);
+        return goals;
+      })
+      .catch(
+      (vf: ValueFail) => {
+        return [];
+      }
+      )
+    );
 }
 
 // function peaCoqInit() {
@@ -230,9 +247,18 @@ class Status {
 
 function peaCoqStatus(b: boolean): Promise<Status> {
   console.log("Status");
-  return coqtop("status", b).then(function(s) {
-    return new Status(s);
-  });
+  return (
+    coqtop("status", b)
+      .then(
+      (s) => {
+        return new Status(s);
+      })
+      .catch(
+      (vf: ValueFail) => {
+        throw "OOPS: peaCoqStatus";
+      }
+      )
+    );
 }
 
 class ValueFail {
