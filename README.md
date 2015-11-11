@@ -3,7 +3,7 @@ PeaCoq
 
 [![Build Status](https://travis-ci.org/Ptival/PeaCoq.svg)](https://travis-ci.org/Ptival/PeaCoq)
 
-[![Docker Hub](https://www.docker.com/sites/default/files/legal/small_h.png =100x)](https://hub.docker.com/r/ptival/peacoq/)
+[![Docker Hub](https://www.docker.com/sites/default/files/legal/small_h.png)](https://hub.docker.com/r/ptival/peacoq/)
 
 Building PeaCoq
 ---------------
