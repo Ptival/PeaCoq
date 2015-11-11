@@ -1,6 +1,9 @@
 PeaCoq
 ======
 
+[![Build Status](https://travis-ci.org/Ptival/PeaCoq.svg)](https://travis-ci.org/Ptival/PeaCoq)
+[Docker Hub](https://hub.docker.com/r/ptival/peacoq/)
+
 Building PeaCoq
 ---------------
 
