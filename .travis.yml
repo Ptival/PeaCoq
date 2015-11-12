@@ -1,0 +1,15 @@
+language: haskell
+
+# explicitly request container-based infrastructure
+sudo: false
+
+matrix:
+  include:
+    - env: CABALVER=1.22 GHCVER=7.10.2
+      addons: {apt: {packages: [cabal-install-1.22,ghc-7.10.2,alex-3.1.4,happy-1.19.5],sources: [hvr-ghc]}}
+
+before_install:
+  - export ALEXVER=3.1.4
+  - export HAPPYVER=1.19.5
+  - export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:/opt/happy/$HAPPYVER/bin:/opt/alex/$ALEXVER/bin:$PATH
+
