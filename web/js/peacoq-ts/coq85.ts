@@ -1020,62 +1020,6 @@ function setupEditor(e: AceAjax.Editor) {
 
 }
 
-function addEditorTab(name: string, containerName: string): AceAjax.Editor {
-
-  let item = $("<li>", {
-    "role": "presentation",
-  }).appendTo($("#" + containerName + "-pills > ul"));
-
-  let anchor = $("<a>", {
-    "href": "#" + name + "-tab",
-    //"aria-controls": name + "-tab",
-    //"role": "tab",
-    //"data-toggle": "pill",
-    "text": capitalize(name),
-  })
-    .appendTo(item)
-    ;
-
-  let badge = $("<span>", {
-    "class": "badge",
-    "id": name + "-badge",
-    "html": mkGlyph("exclamation-sign"),
-  })
-    .css("display", "none")
-    .appendTo(anchor)
-    ;
-
-  let tabPanel = $("<div>", {
-    "role": "tabpanel",
-    "class": "tab-pane",
-    "id": name + "-tab",
-  })
-    .css("display", "none")
-    .appendTo($("#" + containerName + "-tabs"))
-    ;
-
-  let editorDiv = $("<div>", {
-    "id": name,
-  })
-    .appendTo(tabPanel);
-
-  let editor = ace.edit(name);
-  setupEditor(editor);
-
-  anchor.click(function(e) {
-    e.preventDefault();
-    badge.css("display", "none");
-    $(this).tab("show");
-    $("#" + containerName + "-tabs").children(".tab-pane").css("display", "none");
-    tabPanel.css("display", "flex");
-    editor.resize();
-    return false;
-  });
-
-  return editor;
-}
-
-
 function addTab(name: string, containerName: string): JQuery {
 
   let item = $("<li>", {
@@ -1125,4 +1069,19 @@ function addTab(name: string, containerName: string): JQuery {
   });
 
   return div;
+}
+
+function addEditorTab(name: string, containerName: string): AceAjax.Editor {
+
+  let editorDiv = addTab(name, containerName);
+
+  let editor = ace.edit(name);
+  setupEditor(editor);
+
+  editorDiv.find("a").click(function(e) {
+    editor.resize();
+  });
+
+  return editor;
+
 }
