@@ -2,6 +2,7 @@ module XMLProtocol where
 
 import Control.Monad.IO.Class
 import Coq
+import CoqParse
 
 {- Interface -}
 
