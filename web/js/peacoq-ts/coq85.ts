@@ -34,7 +34,7 @@ class CoqDocument {
     this.edits = [];
     this.session.setValue(text);
     this.editor.focus();
-    this.editor.scrollToLine(0, true, true, () => {});
+    this.editor.scrollToLine(0, true, true, () => { });
   }
   removeEdits(p: (e: Edit) => boolean) {
     _.remove(this.edits, function(e) {
@@ -266,10 +266,10 @@ function clearCoqtopTabs() {
   pretty.html("");
 }
 
-class EditState {}
-class EditToProcess extends EditState {}
-class EditProcessing extends EditState {}
-class EditProcessed extends EditState {}
+class EditState { }
+class EditToProcess extends EditState { }
+class EditProcessing extends EditState { }
+class EditProcessed extends EditState { }
 
 let freshEditId = (function() {
   let editCounter = 2; // TODO: pick the correct number
@@ -314,9 +314,9 @@ class Edit {
     this.document = doc;
     this.previousEdit = (
       doc.edits.length === 0
-      ? new None()
-      : new Some(_(doc.edits).last())
-    );
+        ? new None()
+        : new Some(_(doc.edits).last())
+      );
     doc.pushEdit(this);
 
     this.goals = new Goals(undefined);
@@ -400,7 +400,7 @@ function onNext(doc: CoqDocument): Promise<void> {
         e.markProcessed();
         doc.session.selection.clearSelection();
         doc.editor.moveCursorToPosition(newStopPos);
-        doc.editor.scrollToLine(newStopPos.row, true, true, () => {});
+        doc.editor.scrollToLine(newStopPos.row, true, true, () => { });
         doc.editor.focus();
       })
       .catch(onNextEditFail(e))
@@ -414,7 +414,7 @@ function onNext(doc: CoqDocument): Promise<void> {
             e.status = s;
             e.goals = g;
             e.context = c;
-            updateForeground(e);
+            updateGoals(e);
             updatePretty(e);
             return Promise.resolve();
           });
@@ -480,11 +480,11 @@ function onPrevious(doc: CoqDocument): Promise<void> {
         lastEdit.remove();
         doc.session.selection.clearSelection();
         doc.editor.moveCursorToPosition(lastEdit.startPos);
-        doc.editor.scrollToLine(lastEdit.startPos.row, true, true, () => {});
+        doc.editor.scrollToLine(lastEdit.startPos.row, true, true, () => { });
         doc.editor.focus();
         let prevEdit = _.last(doc.edits);
         if (prevEdit !== undefined) {
-          updateForeground(prevEdit);
+          updateGoals(prevEdit);
           updatePretty(prevEdit);
         }
       })
@@ -567,8 +567,14 @@ function updatePretty(edit: Edit): Promise<void> {
   let context = edit.context;
   // context can be empty (if you finished a focused subgoal)
   if (context.length === 0) {
-    // TODO: message about whether there are remaining unfocused subgoals.
-    pretty.html("TODO: empty context");
+    if (edit.status.statusProofName === null) {
+      pretty.html("");
+    }
+    else if (countBackgroundGoals(edit.goals) > 0) {
+      pretty.html("Subgoal solved, but background goals remain.");
+    } else {
+      pretty.html("All subgoals solved!");
+    }
     return Promise.resolve();
   }
   let currentGoal = context[0];
@@ -576,9 +582,9 @@ function updatePretty(edit: Edit): Promise<void> {
   let oldContext = getPreviousEditContext(edit);
   let conclHTML = (
     oldContext instanceof Some && oldContext.some.length > 0
-    ? htmlPrintConstrExprDiff(currentGoal.concl, oldContext.some[0].concl)
-    : htmlPrintConstrExpr(currentGoal.concl)
-  );
+      ? htmlPrintConstrExprDiff(currentGoal.concl, oldContext.some[0].concl)
+      : htmlPrintConstrExpr(currentGoal.concl)
+    );
   pretty.html(hypsHTML + "<hr/>" + conclHTML);
 
   /*
@@ -608,8 +614,20 @@ function updatePretty(edit: Edit): Promise<void> {
   */
 }
 
-function updateForeground(edit: Edit): void {
+function countBackgroundGoals(goals: Goals): number {
+  return _.reduce(
+    goals.bgGoals,
+    (acc, elt) => acc + elt.before.length + elt.after.length,
+    0
+    );
+}
+
+function updateGoals(edit: Edit): void {
   let goals = edit.goals;
+  $("#foreground-counter").text(" (" + goals.fgGoals.length + ")");
+  $("#background-counter").text(" (" + countBackgroundGoals(goals) + ")");
+  $("#shelved-counter").text(" (" + goals.shelvedGoals.length + ")");
+  $("#givenup-counter").text(" (" + goals.givenUpGoals.length + ")");
   if (goals.fgGoals.length > 0) {
     foreground.getSession().setValue(goals.fgGoals[0].toString());
   }
@@ -1069,10 +1087,12 @@ function addTab(name: string, containerName: string): JQuery {
     //"aria-controls": name + "-tab",
     //"role": "tab",
     //"data-toggle": "pill",
-    "text": capitalize(name),
   })
     .appendTo(item)
     ;
+
+  $("<span>", { "text": capitalize(name) }).appendTo(anchor);
+  $("<span>", { "id": name + "-counter" }).appendTo(anchor);
 
   let badge = $("<span>", {
     "class": "badge",

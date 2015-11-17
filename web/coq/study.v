@@ -99,7 +99,9 @@ Qed.
 (* In-class exercise! *)
 Theorem concat_associativity : forall l2 l1 l3 : natlist,
   concat (concat l1 l2) l3 = concat l1 (concat l2 l3).
-Proof. intros. induction l1. rewrite -> concat_nil_left. simpl. reflexivity. simpl. rewrite -> IHl1. reflexivity.
+Proof.
+  intros. induction l1. rewrite -> concat_nil_left. simpl. reflexivity.
+  simpl. rewrite -> IHl1. reflexivity.
   (* FILL IN HERE *)
 Qed.
 
@@ -134,19 +136,23 @@ Fixpoint rev (l: natlist) : natlist :=
 
 Theorem rev_snoc : forall x l,
   rev (snoc l x) = cons x (rev l).
-Proof. intros. induction l. simpl. reflexivity. simpl. rewrite -> IHl. simpl. reflexivity.
+Proof.
+  intros. induction l. simpl. reflexivity.
+  simpl. rewrite -> IHl. simpl. reflexivity.
   (* FILL IN HERE *)
 Qed.
 
 Theorem rev_involutive : forall l : natlist,
   rev (rev l) = l.
-Proof. intros. induction l. simpl. reflexivity. simpl. rewrite -> rev_snoc. rewrite -> IHl. reflexivity.
+Proof. intros. induction l. simpl. reflexivity.
+simpl. rewrite -> rev_snoc. rewrite -> IHl. reflexivity.
   (* FILL IN HERE *)
 Qed.
 
 Theorem concat_cons_snoc : forall l1 x l2,
   concat l1 (cons x l2) = concat (snoc l1 x) l2.
-Proof. intros. induction l1. simpl. reflexivity. simpl. rewrite -> IHl1. reflexivity.
+Proof. intros. induction l1. simpl. reflexivity.
+simpl. rewrite -> IHl1. reflexivity.
   (* FILL IN HERE *)
 Qed.
 
@@ -232,7 +238,9 @@ Qed.
 
 Theorem rev_distributes_over_concat : forall l1 l2 : natlist,
   rev (concat l1 l2) = concat (rev l2) (rev l1).
-Proof. intros. induction l1. simpl. rewrite -> concat_nil_right. reflexivity. simpl. rewrite -> IHl1. rewrite -> snoc_concat_end. rewrite -> concat_associativity. rewrite -> snoc_concat_end. reflexivity.
+Proof. intros. induction l1. simpl. rewrite -> concat_nil_right. reflexivity.
+simpl. rewrite -> IHl1. rewrite -> snoc_concat_end.
+rewrite -> concat_associativity. rewrite -> snoc_concat_end. reflexivity.
   (* FILL IN HERE *)
 Qed.
 
