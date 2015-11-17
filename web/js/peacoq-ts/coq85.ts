@@ -34,7 +34,7 @@ class CoqDocument {
     this.edits = [];
     this.session.setValue(text);
     this.editor.focus();
-    this.editor.scrollToLine(0, true, true, () => { });
+    this.editor.scrollToLine(0, true, true, () => {});
   }
   removeEdits(p: (e: Edit) => boolean) {
     _.remove(this.edits, function(e) {
@@ -119,11 +119,11 @@ function setupSyntaxHovering() {
 
   $(document)
     .on('mouseenter mouseover', '.syntax', function(e) {
-    $(this).css('background-color', 'lightblue');
+    $(this).toggleClass('peacoq-highlight', true);
     e.stopImmediatePropagation();
   })
     .on('mouseout mouseleave', '.syntax', function(e) {
-    $(this).css('background-color', 'transparent');
+    $(this).toggleClass('peacoq-highlight', false);
     e.stopImmediatePropagation();
   })
   ;
@@ -266,10 +266,10 @@ function clearCoqtopTabs() {
   pretty.html("");
 }
 
-class EditState { }
-class EditToProcess extends EditState { }
-class EditProcessing extends EditState { }
-class EditProcessed extends EditState { }
+class EditState {}
+class EditToProcess extends EditState {}
+class EditProcessing extends EditState {}
+class EditProcessed extends EditState {}
 
 let freshEditId = (function() {
   let editCounter = 2; // TODO: pick the correct number
@@ -288,8 +288,9 @@ class Edit {
   markerRange: AceAjax.Range;
   startPos: AceAjax.Position;
   stopPos: AceAjax.Position;
+  previousEdit: Maybe<Edit>;
 
-  // to be filled later than initialization
+  // to be updated later than initialization
   status: Status;
   goals: Goals;
   context: PeaCoqContext;
@@ -311,7 +312,15 @@ class Edit {
     this.markerId = doc.session.addMarker(this.markerRange, "processing", "text", false);
 
     this.document = doc;
+    this.previousEdit = (
+      doc.edits.length === 0
+      ? new None()
+      : new Some(_(doc.edits).last())
+    );
     doc.pushEdit(this);
+
+    this.goals = new Goals(undefined);
+    this.context = [];
   }
 
   markProcessed() {
@@ -353,6 +362,15 @@ function onNextEditFail(e: Edit): (_1: ValueFail) => Promise<void> {
   };
 }
 
+function getPreviousEditContext(e: Edit): Maybe<PeaCoqContext> {
+  let prevEdit = e.previousEdit;
+  let oldC = new None();
+  if (prevEdit instanceof Some) {
+    oldC = new Some(prevEdit.some.context);
+  }
+  return oldC;
+}
+
 /*
 rejects if the command was rejected (the catch only cleans up, but
 throws the error again)
@@ -382,7 +400,7 @@ function onNext(doc: CoqDocument): Promise<void> {
         e.markProcessed();
         doc.session.selection.clearSelection();
         doc.editor.moveCursorToPosition(newStopPos);
-        doc.editor.scrollToLine(newStopPos.row, true, true, () => { });
+        doc.editor.scrollToLine(newStopPos.row, true, true, () => {});
         doc.editor.focus();
       })
       .catch(onNextEditFail(e))
@@ -396,8 +414,8 @@ function onNext(doc: CoqDocument): Promise<void> {
             e.status = s;
             e.goals = g;
             e.context = c;
-            updateForeground(s, g);
-            updatePretty(s, c);
+            updateForeground(e);
+            updatePretty(e);
             return Promise.resolve();
           });
       })
@@ -462,18 +480,20 @@ function onPrevious(doc: CoqDocument): Promise<void> {
         lastEdit.remove();
         doc.session.selection.clearSelection();
         doc.editor.moveCursorToPosition(lastEdit.startPos);
-        doc.editor.scrollToLine(lastEdit.startPos.row, true, true, () => { });
+        doc.editor.scrollToLine(lastEdit.startPos.row, true, true, () => {});
         doc.editor.focus();
         let prevEdit = _.last(doc.edits);
         if (prevEdit !== undefined) {
-          updateForeground(prevEdit.status, prevEdit.goals);
-          updatePretty(prevEdit.status, prevEdit.context);
+          updateForeground(prevEdit);
+          updatePretty(prevEdit);
         }
       })
       .catch(
       (vf: ValueFail) => {
         reportError(vf.message, true);
         errors.getSession().setValue(vf.message);
+        // Hopefully, the goals have not changed?
+        /*
         let s = peaCoqStatus(false);
         let g = s.then(peaCoqGoal);
         return (
@@ -482,6 +502,7 @@ function onPrevious(doc: CoqDocument): Promise<void> {
             ([s, g]: [Status, Goals]) => { return updateForeground(s, g); }
             )
           );
+        */
       }
       )
     );
@@ -497,6 +518,14 @@ function htmlPrintConstrExpr(c: ConstrExpr): string {
   let ppCmds = prConstrExpr(c);
   //console.log(ppCmds);
   return htmlPrintPpCmds(ppCmds);
+}
+
+function htmlPrintConstrExprDiff(c: ConstrExpr, old: ConstrExpr): string {
+  let ppCmds = prConstrExpr(c);
+  let oldPpCmds = prConstrExpr(old);
+  //console.log(ppCmds);
+  //return htmlPrintPpCmds(ppCmds);
+  return htmlPrintPpCmdsDiff(ppCmds, oldPpCmds);
 }
 
 function htmlPrintHyp(h: PeaCoqHyp): string {
@@ -534,15 +563,23 @@ function sameBodyAndType(hyp1: HTMLElement, hyp2: HTMLElement): boolean {
   return true;
 }
 
-function updatePretty(status: Status, context: PeaCoqContext): Promise<void> {
+function updatePretty(edit: Edit): Promise<void> {
+  let context = edit.context;
   // context can be empty (if you finished a focused subgoal)
-  if (context.length === 0) { return Promise.resolve(); }
+  if (context.length === 0) {
+    // TODO: message about whether there are remaining unfocused subgoals.
+    pretty.html("TODO: empty context");
+    return Promise.resolve();
+  }
   let currentGoal = context[0];
-  pretty.html(
-    htmlPrintHyps(currentGoal.hyps)
-    + "<hr/>"
-    + htmlPrintConstrExpr(currentGoal.concl)
-    );
+  let hypsHTML = htmlPrintHyps(currentGoal.hyps);
+  let oldContext = getPreviousEditContext(edit);
+  let conclHTML = (
+    oldContext instanceof Some && oldContext.some.length > 0
+    ? htmlPrintConstrExprDiff(currentGoal.concl, oldContext.some[0].concl)
+    : htmlPrintConstrExpr(currentGoal.concl)
+  );
+  pretty.html(hypsHTML + "<hr/>" + conclHTML);
 
   /*
   Now, let's merge redundant variables on a single line
@@ -571,7 +608,8 @@ function updatePretty(status: Status, context: PeaCoqContext): Promise<void> {
   */
 }
 
-function updateForeground(status: Status, goals): void {
+function updateForeground(edit: Edit): void {
+  let goals = edit.goals;
   if (goals.fgGoals.length > 0) {
     foreground.getSession().setValue(goals.fgGoals[0].toString());
   }

@@ -104,3 +104,9 @@ a, button {
 .tag-variable {
   color: blue;
 }
+.peacoq-diff {
+  background-color: #FFE0B2;
+}
+.peacoq-highlight {
+  background-color: lightblue;
+}

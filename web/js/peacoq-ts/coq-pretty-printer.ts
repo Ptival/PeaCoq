@@ -1,4 +1,4 @@
-class StrToken {}
+class StrToken { }
 class StrDef extends StrToken {
   string: string;
   constructor(s: string) {
@@ -16,7 +16,7 @@ class StrLen extends StrToken {
   }
 }
 
-class PpCmdToken<T> {}
+class PpCmdToken<T> { }
 
 class PpCmdPrint<T> extends PpCmdToken<T> {
   token: T;
@@ -46,7 +46,7 @@ class PpCmdPrintBreak<T> extends PpCmdToken<T> {
   }
 }
 
-class PpCmdSetTab<T> extends PpCmdToken<T> {}
+class PpCmdSetTab<T> extends PpCmdToken<T> { }
 
 class PpCmdPrintTbreak<T> extends PpCmdToken<T> {
   constructor(x: number, y: number) {
@@ -60,9 +60,9 @@ class PpCmdWhiteSpace<T> extends PpCmdToken<T> {
   }
 }
 
-class PpCmdForceNewline<T> extends PpCmdToken<T> {}
+class PpCmdForceNewline<T> extends PpCmdToken<T> { }
 
-class PpCmdPrintIfBroken<T> extends PpCmdToken<T> {}
+class PpCmdPrintIfBroken<T> extends PpCmdToken<T> { }
 
 class PpCmdOpenBox<T> extends PpCmdToken<T> {
   blockType: BlockType;
@@ -72,9 +72,9 @@ class PpCmdOpenBox<T> extends PpCmdToken<T> {
   }
 }
 
-class PpCmdCloseBox<T> extends PpCmdToken<T> {}
+class PpCmdCloseBox<T> extends PpCmdToken<T> { }
 
-class PpCmdCloseTBox<T> extends PpCmdToken<T> {}
+class PpCmdCloseTBox<T> extends PpCmdToken<T> { }
 
 class PpCmdComment<T> extends PpCmdToken<T> {
   constructor(x: number) {
@@ -100,7 +100,7 @@ class PpCmdOpenTag<T> extends PpCmdToken<T> {
   }
 }
 
-class PpCmdCloseTag<T> extends PpCmdToken<T> {}
+class PpCmdCloseTag<T> extends PpCmdToken<T> { }
 
 type PpCmd = PpCmdToken<StrToken>;
 type PpCmds = PpCmd[];
@@ -668,6 +668,8 @@ function prGen(
           let [c, rest] = sepLast(l1);
           // TODO: assert c[1] is empty option?
           let p = prProj(prmt, prApp, c[0], f, rest);
+          // TODO: it might be nice if we could highlight the structure
+          // nested applications, rather than having a flat n-ary one
           if (l2.length > 0) {
             return ret(
               [].concat(
@@ -680,7 +682,7 @@ function prGen(
                   )
                 ),
               lApp
-            );
+              );
           } else {
             return [p, lProj];
           }
@@ -697,24 +699,24 @@ function prGen(
         return ret(
           prDelimiters(sc, pr(mt, [lDelim, new E()], e)),
           lDelim
-        );
+          );
       }
 
       if (a instanceof CLetIn) {
         let bound = a.bound;
         if (bound instanceof CFix || bound instanceof CCoFix) {
-          throw("TODO: pr CLetIn with CFix/CcoFix");
+          throw ("TODO: pr CLetIn with CFix/CcoFix");
         }
         return ret(
           hv(0, [].concat(
             hov(2, [].concat(
               keyword("let"), spc(), prLName(a.name), str(" :="),
               pr(spc, lTop, a.bound), spc(), keyword("in")
-            )),
+              )),
             pr(spc, lTop, a.body)
-          )),
+            )),
           lLetIn
-        );
+          );
       }
 
       if (a instanceof CNotation) {
@@ -730,7 +732,7 @@ function prGen(
               str(")")
               ),
             lAtom
-          );
+            );
         } else {
           let [s, env] = [a.notation, a.substitution];
           return prNotation(
@@ -748,7 +750,7 @@ function prGen(
         return ret(
           prPrimToken(a.token),
           precOfPrimToken(a.token)
-        );
+          );
       }
 
       if (a instanceof CProdN) {
@@ -764,7 +766,7 @@ function prGen(
             pr(spc, lTop, aRest)
             ),
           lProd
-        );
+          );
       }
 
       if (a instanceof CRef) {
@@ -772,7 +774,7 @@ function prGen(
         return ret(
           prCRef(r, us),
           lAtom
-        );
+          );
       }
 
       if (a instanceof CSort) {
@@ -956,6 +958,103 @@ function htmlPrintPpCmds(l: PpCmds): string {
   return _.reduce(
     l,
     (acc: string, p: PpCmd) => { return acc + htmlPrintPpCmd(p); },
+    ""
+    );
+}
+
+function markDifferent(s: string): string {
+  return '<span class="syntax peacoq-diff">' + s + '</span>';
+}
+
+function htmlPrintPpCmdDiff(p: PpCmd, old: PpCmd): string {
+  if (p.constructor !== old.constructor) {
+    return markDifferent(htmlPrintPpCmd(p));
+  }
+  if (p instanceof PpCmdPrint && old instanceof PpCmdPrint) {
+    let res = htmlPrintStrToken(p.token);
+    if (p.token.string !== old.token.string) { res = markDifferent(res); }
+    return res;
+  }
+  if (p instanceof PpCmdBox && old instanceof PpCmdBox) {
+    // FIXME: use blockType
+    return syntax(htmlPrintPpCmdsDiff(p.contents, old.contents));
+  }
+  if (p instanceof PpCmdPrintBreak) {
+    return " ".repeat(p.nspaces);
+  }
+  if (p instanceof PpCmdSetTab) {
+    return "TODO: PpCmdSetTab";
+  }
+  if (p instanceof PpCmdPrintTbreak) {
+    return "TODO: PpCmdPrintTbreak";
+  }
+  if (p instanceof PpCmdWhiteSpace) {
+    return "TODO: PpCmdWhiteSpace";
+  }
+  if (p instanceof PpCmdForceNewline) {
+    return "TODO: PpCmdForceNewline";
+  }
+  if (p instanceof PpCmdPrintIfBroken) {
+    return "TODO: PpCmdPrintIfBroken";
+  }
+  if (p instanceof PpCmdOpenBox) {
+    return "TODO: PpCmdOpenBox";
+  }
+  if (p instanceof PpCmdCloseBox) {
+    return "TODO: PpCmdCloseBox";
+  }
+  if (p instanceof PpCmdCloseTBox) {
+    return "TODO: PpCmdCloseTBox";
+  }
+  if (p instanceof PpCmdComment) {
+    return "TODO: PpCmdComment";
+  }
+  if (p instanceof PpCmdOpenTag) {
+    return "<span class=tag-" + p.tag + ">";
+  }
+  if (p instanceof PpCmdCloseTag) {
+    return "</span>";
+  }
+  throw MatchFailure("htmlPrintPpCmd", p);
+}
+
+function ppCmdSameShape(p: PpCmd, old: PpCmd): boolean {
+  return (p.constructor === old.constructor);
+}
+
+function ppCmdsSameShape(l: PpCmds, old: PpCmds): boolean {
+  if (l.length === 0 && old.length === 0) { return true; }
+  if (l.length > 0 && old.length > 0) {
+    return (
+      ppCmdSameShape(l[0], old[0])
+      && ppCmdsSameShape(l.slice(1), old.slice(1))
+      );
+  }
+  return false;
+}
+
+function htmlPrintPpCmdsDiff(l: PpCmds, old: PpCmds): string {
+  _(patterns).each(function(pattern) {
+    l = pattern(l);
+    old = pattern(old);
+  });
+  if (!ppCmdsSameShape(l, old)) {
+    return markDifferent(
+      _.reduce(
+        l,
+        (acc: string, p: PpCmd) => {
+          return acc + htmlPrintPpCmd(p);
+        },
+        ""
+        )
+      );
+  }
+  var z = _.zip(l, old);
+  return _.reduce(
+    z,
+    (acc: string, [p, oldP]: [PpCmd, PpCmd]) => {
+      return acc + htmlPrintPpCmdDiff(p, oldP);
+    },
     ""
     );
 }

@@ -158,7 +158,7 @@ class Goal {
 type BeforeAfter = {
   before: Array<Goal>;
   after: Array<Goal>;
-}
+};
 
 class Goals {
   "fgGoals": Array<Goal>;
