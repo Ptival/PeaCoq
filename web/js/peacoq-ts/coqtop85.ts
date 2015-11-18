@@ -255,6 +255,7 @@ function peaCoqStatus(b: boolean): Promise<Status> {
       })
       .catch(
       (vf: ValueFail) => {
+        console.log("OOPS", vf);
         throw "OOPS: peaCoqStatus";
       }
       )
@@ -452,46 +453,32 @@ function mkCoqXMLTag(t): CoqXMLTag {
   switch (t.tag) {
     case "Apply":
       return new Apply();
-      break;
     case "Constant":
       return new Constant(c);
-      break;
     case "Definition":
       return new Definition(c[0], c[1]);
-      break;
     case "Gallina":
       return new Gallina();
-      break;
     case "Ltac":
       return new Ltac(c);
-      break;
     case "Operator":
       return new Operator(c[0], c[1]);
-      break;
     case "Proof":
       return new Proof();
-      break;
     case "QED":
       return new QED();
-      break;
     case "Recurse":
       return new Recurse();
-      break;
     case "SectionSubsetDescr":
       return new SectionSubsetDescr(c);
-      break;
     case "Theorem":
       return new Theorem(c[0], c[1]);
-      break;
     case "Token":
       return new Token(c);
-      break;
     case "Typed":
       return new Typed();
-      break;
     default:
       throw ("Unknown CoqXMLTag: " + t.tag);
-      break;
   };
 }
 

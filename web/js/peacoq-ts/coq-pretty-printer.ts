@@ -348,11 +348,15 @@ function prBinderAmongMany(prC, b): PpCmds {
   if (b instanceof LocalRawDef) {
     let [na, c] = [b.binderName, b.binderType];
     let cp, topt;
-    if (true) {//c instanceof CCast) {
+
+    /* TODO:
+    if (c instanceof CCast) {
       throw "TODO: prBinderAmongMany then";
     } else {
       throw "TODO: prBinderAmongMany else"
     }
+    */
+
     throw "TODO: prBinderAmongMany";
   }
 }
