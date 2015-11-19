@@ -345,17 +345,15 @@ function reportError(e: string, switchTab: boolean) {
   if (switchTab) { $("a[href=#errors-tab]").click(); }
 }
 
-function onNextEditFail(e: Edit): (_1: ValueFail) => Promise<void> {
+function onNextEditFail(e: Edit): (_1: ValueFail) => Promise<any> {
   return (vf: ValueFail) => {
     e.remove();
     reportError(vf.message, true);
     errors.getSession().setValue(vf.message);
     console.log(vf.stateId);
     if (vf.stateId !== 0) {
-      alert("TODO: onNextEditFail");
-      return Promise.reject(vf);
       // TODO: also need to cancel edits > vf.stateId
-      // return peaCoqEditAt(vf.stateId);
+      return peaCoqEditAt(vf.stateId);
     } else {
       return Promise.reject(vf);
     }
@@ -402,10 +400,6 @@ function onNext(doc: CoqDocument): Promise<void> {
         doc.editor.moveCursorToPosition(newStopPos);
         doc.editor.scrollToLine(newStopPos.row, true, true, () => { });
         doc.editor.focus();
-      })
-      .catch(onNextEditFail(e))
-      .then(
-      () => {
         let s = peaCoqStatus(false);
         let g = s.then(peaCoqGoal);
         let c = g.then(peaCoqGetContext);
@@ -419,6 +413,7 @@ function onNext(doc: CoqDocument): Promise<void> {
             return Promise.resolve();
           });
       })
+      .catch(onNextEditFail(e))
     );
 }
 

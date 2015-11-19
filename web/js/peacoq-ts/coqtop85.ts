@@ -253,12 +253,6 @@ function peaCoqStatus(b: boolean): Promise<Status> {
       (s) => {
         return new Status(s);
       })
-      .catch(
-      (vf: ValueFail) => {
-        console.log("OOPS", vf);
-        throw "OOPS: peaCoqStatus";
-      }
-      )
     );
 }
 
