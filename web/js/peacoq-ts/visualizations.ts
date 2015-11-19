@@ -55,8 +55,8 @@ function patternScopeDelimiters(l: PpCmds): PpCmds {
   return replacePpCmd(
     ppCmdIsStringSuchThat((s) => s.startsWith("%")),
     (t) => [].concat(
-      str('<span style="vertical-align: sub;">'),
-      t,
+      str('<span style="vertical-align: sub; color: #9C27B0; font-size: xx-small;">'),
+      str((<any>t).token.string.replace("%", "")),
       str('</span>')
       ),
     l
