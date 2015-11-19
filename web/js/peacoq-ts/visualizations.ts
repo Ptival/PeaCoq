@@ -45,8 +45,7 @@ function replaceToken(s1: string, s2: string, l: PpCmds): PpCmds {
   return replacePpCmd(
     ppCmdIsString(s1),
     (t: PpCmdPrint<StrDef>) => {
-      let r = s1.replace(/\\/, "\\\\");
-      return str(t.token.string.replace(new RegExp(r), s2));
+      return str(t.token.string.replace(s1, s2));
     },
     l
     );
