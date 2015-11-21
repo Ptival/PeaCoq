@@ -347,6 +347,9 @@ function reportError(e: string, switchTab: boolean) {
 
 function onNextEditFail(e: Edit): (_1: ValueFail) => Promise<any> {
   return (vf: ValueFail) => {
+    if (!(vf instanceof ValueFail)) {
+      throw vf;
+    }
     e.remove();
     reportError(vf.message, true);
     errors.getSession().setValue(vf.message);
