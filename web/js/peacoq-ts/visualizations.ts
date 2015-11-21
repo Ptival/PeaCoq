@@ -101,7 +101,36 @@ let patterns: Array<(_1: PpCmds) => PpCmds> = [
   patternAnd,
   patternOr,
   patternEquiv,
+  patternDivides,
+  patternAbs,
 ];
+
+function patternAbs(l: PpCmds): PpCmds {
+  if (l.length === 3) {
+    let first = l[0];
+    let arg = l[2];
+    if (first instanceof PpCmdBox && first.contents.length === 1) {
+      let second = first.contents[0];
+      if (second instanceof PpCmdBox && second.contents.length === 7) {
+        let printZ = second.contents[1];
+        let printDot = second.contents[3];
+        let printAbs = second.contents[5];
+        if (printZ instanceof PpCmdPrint && printZ.token.string === "Z"
+          && printDot instanceof PpCmdPrint && printDot.token.string === "."
+          && printAbs instanceof PpCmdPrint && printAbs.token.string === "abs"
+          ) {
+          return [].concat(
+            str("|"),
+            l[2],
+            str("|")
+          );
+        }
+      }
+    }
+    return l;
+  }
+  return l;
+}
 
 /* Visualization for: x ^ y
 ...
@@ -121,4 +150,38 @@ function patternPow(l: PpCmds): PpCmds {
       );
   }
   return l;
+}
+
+// for "divides": \u2223
+// for "does not divide": \u2224
+function patternDivides(l: PpCmds): PpCmds {
+  if (l.length !== 5) { return l; }
+  let box1 = l[0];
+  if (box1 instanceof PpCmdBox && box1.contents.length === 1) {
+    let box2 = box1.contents[0];
+    if (box2 instanceof PpCmdBox && box2.contents.length === 3) {
+      let print = box2.contents[1];
+      if (print instanceof PpCmdPrint && print.token.string === "divides") {
+        return [].concat(
+          [l[2]],
+          [l[1]], // space
+          str("\u2223"),
+          [l[3]], // space
+          [boxDropParentheses(l[4])]
+          );
+      }
+    }
+  }
+  return l;
+}
+
+function boxDropParentheses(p: PpCmd): PpCmd {
+  if (p instanceof PpCmdBox && p.contents.length === 3) {
+    let open = p.contents[0];
+    let close = p.contents[2];
+    if (open instanceof PpCmdPrint && open.token.string === "("
+      && close instanceof PpCmdPrint && close.token.string === ")")
+      return p.contents[1];
+  }
+  return p;
 }
