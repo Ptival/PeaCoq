@@ -67,6 +67,10 @@ function patternForall(l: PpCmds): PpCmds {
   return replaceToken("forall", "∀", l);
 }
 
+function patternExists(l: PpCmds): PpCmds {
+  return replaceToken("exists", "∃", l);
+}
+
 function patternArrow(l: PpCmds): PpCmds {
   return replaceToken("->", "→", l);
 }
@@ -90,6 +94,7 @@ function patternEquiv(l: PpCmds): PpCmds {
 let patterns: Array<(_1: PpCmds) => PpCmds> = [
   patternPow,
   patternForall,
+  patternExists,
   patternArrow,
   patternMult,
   patternScopeDelimiters,
