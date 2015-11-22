@@ -41,10 +41,10 @@ type AppArg =[ConstrExpr, Maybe<Located<Explicitation>>];
 type AppArgs = AppArg[];
 
 class CApp extends ConstrExpr {
-  location: Location;
+  location: CoqLocation;
   function: AppFun;
   arguments: AppArgs;
-  constructor(loc: Location, f, args) {
+  constructor(loc: CoqLocation, f, args) {
     super();
     this.location = loc;
     this.function = f;
@@ -58,22 +58,22 @@ type CaseExpr =[
 ];
 
 type BranchExpr =[
-  Location,
+  CoqLocation,
   Array<Located<Array<CasesPatternExpr>>>,
   ConstrExpr
 ];
 
 class CCases extends ConstrExpr {
-  location: Location;
+  location: CoqLocation;
   caseStyle: CaseStyle;
-  constrExpr: Maybe<ConstrExpr>;
+  returnType: Maybe<ConstrExpr>;
   cases: CaseExpr[];
   branches: BranchExpr[];
   constructor(loc, style, ceo, casel, branchl) {
     super();
     this.location = loc;
     this.caseStyle = style;
-    this.constrExpr = ceo;
+    this.returnType = ceo;
     this.cases = casel;
     this.branches = branchl;
   }
@@ -84,7 +84,7 @@ class CCoFix extends ConstrExpr {
 }
 
 class CDelimiters extends ConstrExpr {
-  location: Location;
+  location: CoqLocation;
   string: string;
   expr: ConstrExpr;
   constructor(l, s, e) {
@@ -100,24 +100,24 @@ class CFix extends ConstrExpr {
 }
 
 class CHole extends ConstrExpr {
-  location: Location;
+  location: CoqLocation;
   // evarKinds
   // introPatternNamingExpr
   // rawGenericArgument
-  constructor(loc: Location, eko, ipne, rgao) {
+  constructor(loc: CoqLocation, eko, ipne, rgao) {
     super();
     this.location = loc;
   }
 }
 
 class CLetIn extends ConstrExpr {
-  location: Location;
+  location: CoqLocation;
   name: Located<Name>;
   bound: ConstrExpr;
   body: ConstrExpr;
-  constructor(loc, n, ce1, ce2) {
+  constructor(loc: CoqLocation, n, ce1, ce2) {
     super();
-    this.location = location;
+    this.location = loc;
     this.name = n;
     this.bound = ce1;
     this.body = ce2;
@@ -125,13 +125,13 @@ class CLetIn extends ConstrExpr {
 }
 
 class CNotation extends ConstrExpr {
-  location: Location;
+  location: CoqLocation;
   notation: Notation;
   substitution: ConstrNotationSubstitution;
   precedence: number;
   unparsing: Array<Unparsing>;
   constructor(
-    l: Location, n: Notation, cns: ConstrNotationSubstitution,
+    l: CoqLocation, n: Notation, cns: ConstrNotationSubstitution,
     prec: number, unpl: Array<Unparsing>
     ) {
     super();
@@ -144,10 +144,10 @@ class CNotation extends ConstrExpr {
 }
 
 class CProdN extends ConstrExpr {
-  location: Location;
+  location: CoqLocation;
   binderList: Array<BinderExpr>;
   returnExpr: ConstrExpr;
-  constructor(l: Location, bel: Array<BinderExpr>, ce: ConstrExpr) {
+  constructor(l: CoqLocation, bel: Array<BinderExpr>, ce: ConstrExpr) {
     super();
     this.location = l;
     this.binderList = bel;
@@ -156,9 +156,9 @@ class CProdN extends ConstrExpr {
 }
 
 class CPrim extends ConstrExpr {
-  location: Location;
+  location: CoqLocation;
   token: PrimToken;
-  constructor(l: Location, pt: PrimToken) {
+  constructor(l: CoqLocation, pt: PrimToken) {
     super();
     this.location = l;
     this.token = pt;
@@ -176,9 +176,9 @@ class CRef extends ConstrExpr {
 }
 
 class CSort extends ConstrExpr {
-  location: Location;
+  location: CoqLocation;
   globSort: GlobSort;
-  constructor(l: Location, gs: GlobSort) {
+  constructor(l: CoqLocation, gs: GlobSort) {
     super();
     this.location = l;
     this.globSort = gs;

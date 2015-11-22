@@ -127,10 +127,14 @@ function peaCoqGetContext(): Promise<PeaCoqContext> {
         return term;
       })
       .catch(
-        (vf: ValueFail) => {
-          // most likely not in proof mode
+      (vf: ValueFail) => {
+        if (vf instanceof ValueFail) {
+          // most likely we are not in proof mode
           return [];
         }
+        // otherwise, could be an exception from eval()
+        throw vf;
+      }
       )
     );
 }

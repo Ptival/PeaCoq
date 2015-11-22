@@ -647,6 +647,233 @@ function tagConstrExpr(ce: ConstrExpr, cmds: PpCmds) {
   return peaCoqBox(cmds);
 }
 
+function prDanglingWithFor(
+  sep: () => PpCmds,
+  pr: (_1: () => PpCmds, _2: PrecAssoc, _3: ConstrExpr) => PpCmds,
+  inherited: PrecAssoc,
+  a: ConstrExpr
+  ): PpCmds {
+  // TODO CFix and CCoFix
+  return pr(sep, inherited, a);
+}
+
+function casesPatternExprLoc(p): CoqLocation {
+  // if (p instanceof CPatAlias) { return p.location; }
+  if (p instanceof CPatCstr) { return p.location; }
+  if (p instanceof CPatAtom) { return p.location; }
+  // if (p instanceof CPatOr) { return p.location; }
+  // if (p instanceof CPatNotation) { return p.location; }
+  // if (p instanceof CPatRecord) { return p.location; }
+  if (p instanceof CPatPrim) { return p.location; }
+  if (p instanceof CPatDelimiters) { return p.location; }
+  throw MatchFailure("casesPatternExprLoc", p);
+}
+
+function prWithComments(
+  loc: CoqLocation,
+  pp
+  ): PpCmds {
+  return prLocated((x) => x, [loc, pp]);
+}
+
+function prPatt(
+  sep: () => PpCmds,
+  inh: PrecAssoc,
+  p: ConstrExpr
+  ): PpCmds {
+  let match = (p: ConstrExpr): [PpCmds, number]=> {
+    // TODO CPatRecord
+    // TODO CPatAlias
+    if (p instanceof CPatCstr) {
+      if (p.cases1.length === 0 && p.cases2.length === 0) {
+        return [prReference(p.reference), lAtom];
+      }
+      if (p.cases1.length === 0) {
+        return [
+          [].concat(
+            prReference(p.reference),
+            prList(
+              (x) => prPatt(spc, [lApp, new L()], x),
+              p.cases2
+              )
+            ),
+          lApp
+        ];
+      }
+      if (p.cases2.length === 0) {
+        return [
+          [].concat(
+            str("@"),
+            prReference(p.reference),
+            prList(
+              (x) => prPatt(spc, [lApp, new L()], x),
+              p.cases1
+              )
+            ),
+          lApp
+        ];
+      }
+      return [
+        [].concat(
+          surround([].concat(
+            str("@"),
+            prReference(p.reference),
+            prList(
+              (x) => prPatt(spc, [lApp, new L()], x),
+              p.cases1
+              )
+            )),
+          prList(
+            (x) => prPatt(spc, [lApp, new L()], x),
+            p.cases2
+            )
+          ),
+        lApp
+      ];
+    }
+  }
+  let [strm, prec]: [PpCmds, number] = match(p);
+  let loc = casesPatternExprLoc(p);
+  return prWithComments(loc, [].concat(
+    sep(),
+    precLess(prec, inh) ? strm : surround(strm)
+    ));
+}
+
+function prAsin(
+  pr: (_1: PrecAssoc, _2: ConstrExpr) => PpCmds,
+  [na, indnalopt]
+  ): PpCmds {
+  let prefix;
+  if (na instanceof Some) {
+    prefix = [].concat(
+      spc(),
+      keyword("as"),
+      spc(),
+      prLName(na.some)
+      );
+  }
+  else if (na instanceof None) {
+    prefix = mt();
+  } else {
+    throw MatchFailure("prAsin", na);
+  }
+  let suffix;
+  if (indnalopt instanceof None) {
+    suffix = mt();
+  }
+  else if (indnalopt instanceof Some) {
+    suffix = [].concat(
+      spc(),
+      keyword("in"),
+      spc(),
+      prPatt(mt, lSimplePatt, indnalopt.some)
+      );
+  } else {
+    throw MatchFailure("prAsin", indnalopt);
+  }
+  return [].concat(
+    prefix,
+    suffix
+    );
+}
+
+function prCaseItem(
+  pr: (_1: PrecAssoc, _2: ConstrExpr) => PpCmds,
+  [tm, asin]
+  ): PpCmds {
+  return hov(0, [].concat(
+    pr([lCast, new E()], tm),
+    prAsin(pr, asin)
+    ));
+}
+
+function sepV(): PpCmds { return [].concat(str(","), spc()); }
+
+function constrLoc(c: ConstrExpr): CoqLocation {
+  if (c instanceof CRef) {
+    let ref = c.ref;
+    if (ref instanceof Ident) {
+      return ref.id[0];
+    }
+    if (ref instanceof Qualid) {
+      return ref.lQualid[0];
+    }
+    throw MatchFailure("constrLoc", ref);
+  }
+  //if (c instanceof CFix) { return c.location; }
+  //if (c instanceof CCoFix) { return c.location; }
+  if (c instanceof CProdN) { return c.location; }
+  //if (c instanceof CLambdaN) { return c.location; }
+  if (c instanceof CLetIn) { return c.location; }
+  //if (c instanceof CAppExpl) { return c.location; }
+  if (c instanceof CApp) { return c.location; }
+  //if (c instanceof CRecord) { return c.location; }
+  if (c instanceof CCases) { return c.location; }
+  //if (c instanceof CLetTuple) { return c.location; }
+  //if (c instanceof CIf) { return c.location; }
+  if (c instanceof CHole) { return c.location; }
+  //if (c instanceof CPatVar) { return c.location; }
+  //if (c instanceof CEvar) { return c.location; }
+  if (c instanceof CSort) { return c.location; }
+  //if (c instanceof CCast) { return c.location; }
+  if (c instanceof CNotation) { return c.location; }
+  //if (c instanceof CGeneralization) { return c.location; }
+  if (c instanceof CPrim) { return c.location; }
+  if (c instanceof CDelimiters) { return c.location; }
+  throw MatchFailure("constrLoc", c);
+}
+
+function prSepCom(sep, f, c): PpCmds {
+  return prWithComments(constrLoc(c), [].concat(sep(), f(c)));
+}
+
+function prCaseType(
+  pr: (_1: PrecAssoc, _2: ConstrExpr) => PpCmds,
+  po: Maybe<ConstrExpr>
+  ): PpCmds {
+  // TODO: po instanceof CHole with IntroAnonymous
+  if (po instanceof None) { return mt(); }
+  if (po instanceof Some) {
+    return [].concat(
+      spc(),
+      hov(2, [].concat(
+        keyword("return"),
+        prSepCom(spc, (x) => pr(lSimpleConstr, x), po.some)
+        ))
+      );
+  }
+}
+
+function prBar() { return [].concat(str(";"), spc()); }
+
+function prEqn(
+  pr: (_1: PrecAssoc, _2: ConstrExpr) => PpCmds,
+  [loc, pl0, rhs]: BranchExpr
+  ): PpCmds {
+  let pl1 = _(pl0).map((located: Located<Array<CasesPatternExpr>>) => located[1]).value();
+  return [].concat(
+    spc(),
+    hov(4,
+      prWithComments(
+        loc,
+        [].concat(
+          str("| "),
+          hov(0, [].concat(
+            prListWithSep(
+              prBar,
+              (x) => prListWithSep(sepV, (y) => prPatt(mt, lTop, y), x),
+              pl1
+              ),
+            str(" =>")
+            )),
+          prSepCom(spc, (x) => pr(lTop, x), rhs)
+          )
+        )
+      )
+    );
+}
+
 function prGen(
   pr: (_1: () => PpCmds, _2: PrecAssoc, _3: ConstrExpr) => PpCmds
   ): (_1: () => PpCmds, _2: PrecAssoc, _3: ConstrExpr) => PpCmds {
@@ -696,6 +923,36 @@ function prGen(
           return ret(prApp(prmt, f, l), lApp);
         }
         throw MatchFailure("pr -> match -> CApp", pf);
+      }
+
+      if (a instanceof CCases) {
+        if (a.caseStyle instanceof LetPatternStyle) {
+          throw "TODO: LetPatternStyle";
+        }
+        let prDangling = (pa, c) => prDanglingWithFor(mt, pr, pa, c);
+        return ret(
+          v(0, hv(0, [].concat(
+            keyword("match"),
+            brk(1, 2),
+            hov(0,
+              prListWithSep(
+                sepV,
+                (x) => prCaseItem(prDangling, x),
+                a.cases
+                )
+              ),
+            prCaseType(prDangling, a.returnType),
+            spc(),
+            keyword("with"),
+            prList(
+              (e: BranchExpr) => prEqn((x, y) => pr(mt, x, y), e),
+              a.branches
+              ),
+            spc(),
+            keyword("end")
+            ))),
+          lAtom
+          );
       }
 
       if (a instanceof CDelimiters) {

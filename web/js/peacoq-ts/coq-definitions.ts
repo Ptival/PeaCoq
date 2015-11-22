@@ -1,6 +1,6 @@
-class ParenRelation {}
-class E extends ParenRelation {}
-class L extends ParenRelation {}
+class ParenRelation { }
+class E extends ParenRelation { }
+class L extends ParenRelation { }
 class Prec extends ParenRelation {
   precedence: number;
   constructor(prec: number) {
@@ -8,15 +8,15 @@ class Prec extends ParenRelation {
     this.precedence = prec;
   }
 }
-class Any extends ParenRelation {}
+class Any extends ParenRelation { }
 
-type PrecAssoc =[number, ParenRelation];
+type PrecAssoc = [number, ParenRelation];
 
-type CoqLocation =[number, number];
+type CoqLocation = [number, number];
 
-class GlobSortGen<T> {}
-class GProp<T> extends GlobSortGen<T> {}
-class GSet<T> extends GlobSortGen<T> {}
+class GlobSortGen<T> { }
+class GProp<T> extends GlobSortGen<T> { }
+class GSet<T> extends GlobSortGen<T> { }
 class GType<T> extends GlobSortGen<T> {
   type: T;
   constructor(t: T) {
@@ -34,7 +34,7 @@ type InstanceExpr = Array<GlobLevel>;
 
 type Located<T> = [CoqLocation, T];
 
-class Reference {}
+class Reference { }
 
 type QualId =[Array<string>, string];
 
@@ -54,7 +54,7 @@ class Ident extends Reference {
   }
 }
 
-class BinderKind {}
+class BinderKind { }
 
 class Default extends BinderKind {
   kind: BindingKind;
@@ -76,7 +76,7 @@ class Generalized extends BinderKind {
   }
 }
 
-class NameBase {}
+class NameBase { }
 
 class Name extends NameBase {
   id: string;
@@ -86,9 +86,9 @@ class Name extends NameBase {
   }
 }
 
-class Anonymous extends NameBase {}
+class Anonymous extends NameBase { }
 
-class LocalBinder {}
+class LocalBinder { }
 
 class LocalRawDef extends LocalBinder {
   binderName: Located<NameBase>;
@@ -112,11 +112,11 @@ class LocalRawAssum extends LocalBinder {
   }
 }
 
-class BindingKind {}
-class Explicit extends BindingKind {}
-class Implicit extends BindingKind {}
+class BindingKind { }
+class Explicit extends BindingKind { }
+class Implicit extends BindingKind { }
 
-class Unparsing {}
+class Unparsing { }
 
 class UnpMetaVar extends Unparsing {
   index: number;
@@ -172,7 +172,7 @@ class UnpBox extends Unparsing {
   }
 }
 
-class PpBox {}
+class PpBox { }
 
 class PpHB extends PpBox {
   n: number;
@@ -194,7 +194,7 @@ class PpVB extends PpBox {
   constructor(n: number) { super(); this.n = n; }
 }
 
-class PpTB extends PpBox {}
+class PpTB extends PpBox { }
 
 class UnpCut extends Unparsing {
   cut: PpCut;
@@ -204,7 +204,7 @@ class UnpCut extends Unparsing {
   }
 }
 
-class PpCut {}
+class PpCut { }
 
 class PpBrk extends PpCut {
   n1: number; n2: number;
@@ -216,9 +216,9 @@ class PpTbrk extends PpCut {
   constructor(a: number, b: number) { super(); this.n1 = a; this.n2 = b; }
 }
 
-class PpTab extends PpCut {}
+class PpTab extends PpCut { }
 
-class PpFnl extends PpCut {}
+class PpFnl extends PpCut { }
 
 function tagUnparsing(unp: Unparsing, pp1: PpCmds): PpCmds {
   if (unp instanceof UnpTerminal) {
@@ -255,7 +255,7 @@ function PpCmdOfCut(c: PpCut): PpCmds {
   throw MatchFailure("PpCmdOfCut", c);
 }
 
-class PrimToken {}
+class PrimToken { }
 
 class Numeral extends PrimToken {
   numeral: number;
@@ -273,17 +273,72 @@ class PrimTokenString extends PrimToken {
   }
 }
 
-class CaseStyle {}
-class LetStyle extends CaseStyle {}
-class IfStyle extends CaseStyle {}
-class LetPatternStyle extends CaseStyle {}
-class MatchStyle extends CaseStyle {}
-class RegularStyle extends CaseStyle {}
+class CaseStyle { }
+class LetStyle extends CaseStyle { }
+class IfStyle extends CaseStyle { }
+class LetPatternStyle extends CaseStyle { }
+class MatchStyle extends CaseStyle { }
+class RegularStyle extends CaseStyle { }
 
-class CasesPatternExpr {}
-// TODO
+class CasesPatternExpr { }
 
-class BlockType {}
+// TODO CPatAlias
+
+class CPatCstr extends CasesPatternExpr {
+  location: Location;
+  reference: Reference;
+  cases1: CasesPatternExpr[];
+  cases2: CasesPatternExpr[];
+  constructor(
+    l: Location, r: Reference, c1: CasesPatternExpr[], c2: CasesPatternExpr[]
+    ) {
+    super();
+    this.location = l;
+    this.reference = r;
+    this.cases1 = c1;
+    this.cases2 = c2;
+  }
+}
+
+class CPatAtom extends CasesPatternExpr {
+  location: Location;
+  reference: Maybe<Reference>;
+  constructor(l: Location, r: Maybe<Reference>) {
+    super();
+    this.location = l;
+    this.reference = r;
+  }
+}
+
+// TODO CPatAtom
+// TODO CPatOr
+// TODO CPatNotation
+
+class CPatPrim extends CasesPatternExpr {
+  location: Location;
+  token: PrimToken;
+  constructor(l: Location, t: PrimToken) {
+    super();
+    this.location = l;
+    this.token = t;
+  }
+}
+
+// TODO CPatRecord
+
+class CPatDelimiters extends CasesPatternExpr {
+  location: Location;
+  string: string;
+  cases: CasesPatternExpr;
+  constructor(l: Location, s: string, c: CasesPatternExpr) {
+    super();
+    this.location = l;
+    this.string = s;
+    this.cases = c;
+  }
+}
+
+class BlockType { }
 class PpHBox extends BlockType {
   constructor(x: number) {
     super();
@@ -304,4 +359,4 @@ class PpHoVBox extends BlockType {
     super();
   }
 }
-class PpTBox extends BlockType {}
+class PpTBox extends BlockType { }

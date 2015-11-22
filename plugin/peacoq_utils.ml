@@ -263,17 +263,32 @@ let string_of_case_style cs =
       | RegularStyle -> "RegularStyle()"
     )
 
-let string_of_cases_pattern_expr e =
+let rec string_of_cases_pattern_expr e =
   mk_new (
       match e with
       | CPatAlias(_) -> "TODO_CPatAlias"
-      | CPatCstr(_) -> "TODO_CPatCstr"
-      | CPatAtom(_) -> "TODO_CPatAtom"
+      | CPatCstr(loc, r, cl1, cl2) ->
+         "CPatCstr(" ^ string_of_location loc
+         ^ ", " ^ string_of_reference r
+         ^ ", " ^ string_of_list string_of_cases_pattern_expr cl1
+         ^ ", " ^ string_of_list string_of_cases_pattern_expr cl2
+         ^ ")"
+      | CPatAtom(loc, ro) ->
+         "CPatAtom(" ^ string_of_location loc
+         ^ ", " ^ string_of_option string_of_reference ro
+         ^ ")"
       | CPatOr(_) -> "TODO_CPatOr"
       | CPatNotation(_) -> "TODO_CPatNotation"
-      | CPatPrim(_) -> "TODO_CPatPrim"
+      | CPatPrim(loc, tok) ->
+         "CPatPrim(" ^ string_of_location loc
+         ^ ", " ^ string_of_prim_token tok
+         ^ ")"
       | CPatRecord(_) -> "TODO_CPatRecord"
-      | CPatDelimiters(_) -> "TODO_CPatDelimiters"
+      | CPatDelimiters(loc, s, cases) ->
+         "CPatDelimiters(" ^ string_of_location loc
+         ^ ", " ^ quote(s)
+         ^ ", " ^ string_of_cases_pattern_expr cases
+         ^ ")"
     )
 
 let string_of_constructor (ind, i) =
