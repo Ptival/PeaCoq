@@ -14,7 +14,7 @@ Proof.
   unfold divides.
   exists (- x)%Z.
   rewrite -> Z.mul_opp_opp.
-  exact H.
+  assumption.
 Qed.
 
 Theorem interaction_with_sign_A_odd : forall n, odd n -> odd (- n).
@@ -29,7 +29,7 @@ Proof.
   unfold divides.
   exists (- x)%Z.
   rewrite <- Z.mul_opp_comm.
-  exact H.
+  assumption.
 Qed.
 
 Theorem interaction_with_sign_B_1 :
@@ -41,7 +41,7 @@ Proof.
   destruct H.
   exists (- x)%Z.
   rewrite <- Z.mul_opp_comm.
-  exact H.
+  assumption.
 Qed.
 
 Theorem interaction_with_sign_B_2 :
@@ -54,7 +54,7 @@ Proof.
   exists (- x)%Z.
   rewrite -> Z.mul_opp_r.
   apply Z.opp_inj_wd.
-  exact H.
+  assumption.
 Qed.
 
 Theorem interaction_with_sign_B_3 :
@@ -65,10 +65,14 @@ Proof.
   unfold divides in *.
   destruct H.
   unfold Z.abs.
-  exists (- x)%Z.
-  rewrite -> Z.mul_opp_r.
-  apply Z.opp_inj_wd.
-  exact H.
+  destruct a.
+  + exists x. assumption.
+  + exists x. assumption.
+  + exists (- x)%Z.
+    rewrite -> Z.mul_opp_r.
+    apply Z.opp_inj_wd in H.
+    rewrite -> Pos2Z.opp_neg in H.
+    assumption.
 Qed.
 
 
