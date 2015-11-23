@@ -360,10 +360,16 @@ let rec string_of_constr_expr ce = "\n" ^
              l
          ^ ")"
       | CNotation(loc, notation, cns) ->
-         let (unp, prec) = Notation.find_notation_printing_rule notation in
+         let (unp, prec) =
+           begin
+             match notation with
+             | "( _ )" -> ([], 0)
+             | _       -> Notation.find_notation_printing_rule notation
+           end
+         in
          "CNotation("
          ^ string_of_location loc
-         ^ ", " ^ quote(notation)
+         ^ ", " ^ quote notation
          ^ ", " ^ string_of_constr_notation_substitution cns
          (* added for PeaCoq *)
          ^ ", " ^ string_of_int prec
@@ -475,7 +481,6 @@ and string_of_branch_expr (loc, cpelll, ce) =
   ^ ", "
   ^ string_of_constr_expr ce
   ^ "]"
-
 
 let string_of_interp_rule ir =
   mk_new (

@@ -1005,7 +1005,7 @@ function prGen(
       }
 
       if (a instanceof CNotation) {
-        if (a.notation === "( _ )") {
+        if (a.notation === "(\u00A0_\u00A0)") {
           let [[t], [], []] = a.substitution;
           return ret(
             [].concat(
