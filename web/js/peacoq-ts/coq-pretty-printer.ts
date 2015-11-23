@@ -681,7 +681,8 @@ function prPatt(
   inh: PrecAssoc,
   p: ConstrExpr
   ): PpCmds {
-  let match = (p: ConstrExpr): [PpCmds, number]=> {
+
+  function match(p: ConstrExpr): [PpCmds, number] {
     // TODO CPatRecord
     // TODO CPatAlias
     if (p instanceof CPatCstr) {
@@ -730,8 +731,31 @@ function prPatt(
           ),
         lApp
       ];
+    } else if (p instanceof CPatAtom) {
+      let r = p.reference;
+      if (r instanceof None) {
+        return [str("_"), lAtom];
+      } else if (r instanceof Some) {
+        return [prReference(r.some), lAtom];
+      } else {
+        throw MatchFailure("prPatt > match", p);
+      }
+    //} else if (p instanceof CPatOr) {
+      // TODO
+    //} else if (p instanceof CPatNotation) {
+      // TODO
+    } else if (p instanceof CPatPrim) {
+      return [prPrimToken(p.token), lAtom];
+    } else if (p instanceof CPatDelimiters) {
+      return [
+        prDelimiters(p.string, prPatt(mt, lSimplePatt, p.cases)),
+        1
+      ];
+    } else {
+      throw MatchFailure("prPatt > match", p);
     }
   }
+
   let [strm, prec]: [PpCmds, number] = match(p);
   let loc = casesPatternExprLoc(p);
   return prWithComments(loc, [].concat(
