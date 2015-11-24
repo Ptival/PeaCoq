@@ -415,7 +415,14 @@ let rec string_of_constr_expr ce = "\n" ^
          ^ ", " ^ string_of_list string_of_case_expr casel
          ^ ", " ^ string_of_list string_of_branch_expr branchl
          ^ ")"
-      | CLetTuple(_) -> "TODO_CLetTuple"
+      | CLetTuple(loc, nll, (nlo, ceo), ce1, ce2) ->
+         "CLetTuple(" ^ string_of_location loc
+         ^ ", " ^ string_of_list (string_of_located string_of_name) nll
+         ^ ", [" ^ string_of_option (string_of_located string_of_name) nlo
+         ^ ", " ^ string_of_option string_of_constr_expr ceo
+         ^ "], " ^ string_of_constr_expr ce1
+         ^ ", " ^ string_of_constr_expr ce2
+         ^ ")"
       | CIf(_) -> "TODO_CIf"
       | CHole(_) -> "TODO_CHole"
       | CPatVar(_) -> "TODO_CPatVar"

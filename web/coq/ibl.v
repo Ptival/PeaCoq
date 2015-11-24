@@ -170,4 +170,73 @@ Proof.
   reflexivity.
 Qed.
 
+Theorem interaction_parity_addition_D2 :
+  forall d x y,
+  d | x -> d | y -> d | (x - y)%Z.
+Proof.
+  intros d x y dx dy.
+  destruct dx as [kx dx].
+  destruct dy as [ky dy].
+  exists (kx - ky)%Z.
+  rewrite Z.mul_sub_distr_l.
+  rewrite dx.
+  rewrite dy.
+  reflexivity.
+Qed.
+
+Theorem interaction_parity_multiplication_A1 :
+  forall x y,
+  even x -> even y -> even (x * y)%Z.
+Proof.
+  intros x y evenx eveny.
+  destruct evenx as [kx evenx].
+  destruct eveny as [ky eveny].
+  exists (2 * kx * ky)%Z.
+  rewrite evenx.
+  rewrite Z.mul_assoc.
+  rewrite Z.mul_shuffle0.
+  rewrite eveny.
+  rewrite Z.mul_comm.
+  reflexivity.
+Qed.
+
+Theorem interaction_parity_multiplication_A2 :
+  forall d x y,
+  d | x -> d | y -> d | (x * y)%Z.
+Proof.
+  intros d x y dx dy.
+  destruct dx as [kx dx].
+  destruct dy as [ky dy].
+  exists (d * kx * ky)%Z.
+  rewrite dx.
+  rewrite Z.mul_assoc.
+  rewrite Z.mul_shuffle0.
+  rewrite dy.
+  rewrite Z.mul_comm.
+  reflexivity.
+Qed.
+
+Lemma even2 : even 2.
+Proof. exists 1%Z. reflexivity. Qed.
+
+Theorem interaction_parity_multiplication_B :
+  ~ (
+  forall x y,
+  even x -> even y -> even (x / y)%Z
+  ).
+Proof.
+  intros wrong.
+  specialize (wrong _ _ even2 even2).
+  destruct wrong as [k wrong].
+  unfold Z.div in wrong.
+  simpl in wrong.
+  unfold even in wrong.
+  unfold divides in wrong.
+  inversion wrong.
+  apply wrong.
+
+
+
+
+
 

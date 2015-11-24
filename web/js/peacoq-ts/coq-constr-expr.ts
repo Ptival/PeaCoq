@@ -124,6 +124,22 @@ class CLetIn extends ConstrExpr {
   }
 }
 
+class CLetTuple extends ConstrExpr {
+  location: CoqLocation;
+  names: Array<Located<Name>>;
+  returnType: [Maybe<Located<Name>>, Maybe<ConstrExpr>];
+  bound: ConstrExpr;
+  body: ConstrExpr;
+  constructor(l, nll, p, ce1, ce2) {
+    super();
+    this.location = l;
+    this.names = nll;
+    this.returnType = p;
+    this.bound = ce1;
+    this.body = ce2;
+  }
+}
+
 class CNotation extends ConstrExpr {
   location: CoqLocation;
   notation: Notation;

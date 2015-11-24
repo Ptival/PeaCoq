@@ -1,4 +1,5 @@
 class StrToken { }
+
 class StrDef extends StrToken {
   string: string;
   constructor(s: string) {
@@ -6,6 +7,7 @@ class StrDef extends StrToken {
     this.string = s;
   }
 }
+
 class StrLen extends StrToken {
   string: string;
   length: number;
@@ -834,7 +836,7 @@ function constrLoc(c: ConstrExpr): CoqLocation {
   if (c instanceof CApp) { return c.location; }
   //if (c instanceof CRecord) { return c.location; }
   if (c instanceof CCases) { return c.location; }
-  //if (c instanceof CLetTuple) { return c.location; }
+  if (c instanceof CLetTuple) { return c.location; }
   //if (c instanceof CIf) { return c.location; }
   if (c instanceof CHole) { return c.location; }
   //if (c instanceof CPatVar) { return c.location; }
@@ -898,6 +900,22 @@ function prEqn(
     );
 }
 
+function prSimpleReturnType(pr, na, po): PpCmds {
+  let res = [];
+  // TODO: annoying control-flow
+  /*
+  if (na instanceof Some && (
+    let [_1, n] = na.some in n instanceof Name
+  )) {
+    let [_1, n] = na.some;
+    if (n instanceof Name) {
+      res = res.concat(spc(), keyword("as"), spc(), prId(id));
+    }
+  }
+  */
+  return [];
+}
+
 function prGen(
   pr: (_1: () => PpCmds, _2: PrecAssoc, _3: ConstrExpr) => PpCmds
   ): (_1: () => PpCmds, _2: PrecAssoc, _3: ConstrExpr) => PpCmds {
@@ -911,12 +929,13 @@ function prGen(
       return [tagConstrExpr(a, cmds), prec];
     }
 
+    let prmt = (x, y) => pr(mt, x, y);
+
     function match(a: ConstrExpr): PpResult {
 
       if (a instanceof CApp) {
         // TODO: ldots_var
         let pf = a.function[0];
-        let prmt = (x, y) => pr(mt, x, y);
         if (pf instanceof Some) {
           let [i, f, l] = [pf.some, a.function[1], a.arguments];
           let [l1, l2] = chop(i, l);
@@ -1002,6 +1021,26 @@ function prGen(
             )),
           lLetIn
           );
+      }
+
+      if (a instanceof CLetTuple) {
+        return ret(
+          hv(0, [].concat(
+            keyword("let"),
+            spc(),
+            hov(0, [].concat(
+              str("("),
+              prListWithSep(sepV, prLName, a.names),
+              str(")"),
+              prSimpleReturnType(prmt, a.returnType[0], a.returnType[1]),
+              str(" :="),
+              pr(spc, lTop, a.bound),
+              spc(),
+              keyword("in")
+            ))
+          )),
+          lLetIn
+        );
       }
 
       if (a instanceof CNotation) {
