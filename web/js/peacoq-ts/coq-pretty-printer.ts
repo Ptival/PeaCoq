@@ -293,6 +293,10 @@ function prForall(): PpCmds {
   return [].concat(keyword("forall"), spc());
 }
 
+function prFun(): PpCmds {
+  return [].concat(keyword("fun"), spc());
+}
+
 let maxInt = 9007199254740991;
 
 function prListSepLastSep<T>(
@@ -830,7 +834,7 @@ function constrLoc(c: ConstrExpr): CoqLocation {
   //if (c instanceof CFix) { return c.location; }
   //if (c instanceof CCoFix) { return c.location; }
   if (c instanceof CProdN) { return c.location; }
-  //if (c instanceof CLambdaN) { return c.location; }
+  if (c instanceof CLambdaN) { return c.location; }
   if (c instanceof CLetIn) { return c.location; }
   //if (c instanceof CAppExpl) { return c.location; }
   if (c instanceof CApp) { return c.location; }
@@ -900,20 +904,42 @@ function prEqn(
     );
 }
 
-function prSimpleReturnType(pr, na, po): PpCmds {
+function prSimpleReturnType(
+    pr: (_1: PrecAssoc, _2: ConstrExpr) => PpCmds,
+    na: Maybe<Located<Name>>,
+    po: Maybe<ConstrExpr>
+): PpCmds {
   let res = [];
-  // TODO: annoying control-flow
-  /*
-  if (na instanceof Some && (
-    let [_1, n] = na.some in n instanceof Name
-  )) {
-    let [_1, n] = na.some;
-    if (n instanceof Name) {
-      res = res.concat(spc(), keyword("as"), spc(), prId(id));
+  if (na instanceof Some) {
+    let name = na.some[1];
+    if (name instanceof Name) {
+      res = res.concat(spc(), keyword("as"), spc(), prId(name.id));
+    } else {
+      res = res.concat(mt);
     }
+  } else {
+    res = res.concat(mt());
   }
-  */
-  return [];
+
+  res = res.concat(prCaseType(pr, po));
+
+  return res;
+}
+
+function extractLamBinders(a: ConstrExpr): [LocalBinder[], ConstrExpr] {
+  if (a instanceof CLambdaN) {
+    if (a.binders.length === 0) {
+      return extractLamBinders(a.body);
+    } else {
+      let [nal, bk, t] = a[0];
+      let [bl, c] = extractLamBinders(a.body);
+      let res : LocalBinder[] = [new LocalRawAssum(nal, bk, t)]
+      return [res.concat(bl), c];
+
+    }
+  } else {
+    return [[], a];
+  }
 }
 
 function prGen(
@@ -1006,6 +1032,17 @@ function prGen(
           );
       }
 
+      if (a instanceof CLambdaN) {
+        let [bl, a1] = extractLamBinders(a);
+        return ret(
+          hov(0, [].concat(
+            hov(2, prDelimitedBinders(prFun, spc, (x) => pr(spc, lTop, x), bl)),
+            pr(spc, lTop, a1)
+          )),
+          lLambda
+        );
+      }
+
       if (a instanceof CLetIn) {
         let bound = a.bound;
         if (bound instanceof CFix || bound instanceof CCoFix) {
@@ -1037,7 +1074,8 @@ function prGen(
               pr(spc, lTop, a.bound),
               spc(),
               keyword("in")
-            ))
+            )),
+            pr(spc, lTop, a.body)
           )),
           lLetIn
         );

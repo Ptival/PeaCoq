@@ -1,10 +1,12 @@
 Require Import ZArith.
 
-Definition divides (d n : Z) := exists k, (d * k = n)%Z.
+Open Scope Z.
 
-Notation "a | b" := (divides a b) (at level 50).
+Definition divides (d n : Z) := exists k, d * k = n.
 
-Definition even n := 2 | n.
+Notation "a `| b" := (divides a b) (at level 50, only parsing).
+
+Definition even n := 2 `| n.
 
 Definition odd n := ~ (even n).
 
@@ -14,7 +16,7 @@ Proof.
   unfold even in *.
   unfold divides in *.
   destruct evenn as [kn evenn].
-  exists (- kn)%Z.
+  exists (- kn).
   rewrite -> Z.mul_opp_r.
   apply Z.opp_inj_wd.
   assumption.
@@ -32,19 +34,19 @@ Qed.
 
 Theorem interaction_with_sign_B1 :
   forall d a,
-  - d | a -> d | a.
+  - d `| a -> d `| a.
 Proof.
   intros d a da.
   unfold divides in *.
   destruct da as [kd da].
-  exists (- kd)%Z.
+  exists (- kd).
   rewrite <- Z.mul_opp_comm.
   assumption.
 Qed.
 
 Theorem interaction_with_sign_B2 :
   forall d a,
-  d | a -> d | - a.
+  d `| a -> d `| - a.
 Proof.
   intros d a da.
   apply interaction_with_sign_B1.
@@ -58,7 +60,7 @@ Qed.
 
 Theorem interaction_with_sign_B3 :
   forall d a,
-  d | a -> d | Z.abs a.
+  d `| a -> d `| Z.abs a.
 Proof.
   intros d a da.
   unfold Z.abs.
@@ -67,7 +69,7 @@ Proof.
   + assumption.
   + unfold divides in *.
     destruct da as [kd da].
-    exists (- kd)%Z.
+    exists (- kd).
     rewrite -> Z.mul_opp_r.
     apply Z.opp_inj_wd in da.
     rewrite -> Pos2Z.opp_neg in da.
@@ -82,7 +84,7 @@ Proof.
   unfold divides in *.
   destruct evenx as [kx evenx].
   destruct eveny as [ky eveny].
-  exists (kx + ky)%Z.
+  exists (kx + ky).
   rewrite Z.mul_add_distr_l.
   rewrite evenx.
   rewrite eveny.
@@ -118,7 +120,7 @@ Proof.
   intros wrong.
   specialize (wrong _ _ odd1 odd1).
   contradiction wrong.
-  exists 1%Z.
+  exists 1.
   reflexivity.
 Qed.
 
@@ -128,7 +130,7 @@ Proof.
   intros wrong.
   specialize (wrong _ _ odd1 odd1).
   contradiction wrong.
-  exists 0%Z.
+  exists 0.
   reflexivity.
 Qed.
 
@@ -140,7 +142,7 @@ Proof.
   split.
   + intros evenab.
     destruct evenab as [kab evenab].
-    exists (kab - b)%Z.
+    exists (kab - b).
     rewrite Z.mul_sub_distr_l.
     rewrite evenab.
     rewrite <- Z.add_diag.
@@ -148,7 +150,7 @@ Proof.
     reflexivity.
   + intros evenab.
     destruct evenab as [kab evenab].
-    exists (kab + b)%Z.
+    exists (kab + b).
     rewrite Z.mul_add_distr_l.
     rewrite evenab.
     rewrite <- Z.add_diag.
@@ -158,12 +160,12 @@ Qed.
 
 Theorem interaction_parity_addition_D1 :
   forall d x y,
-  d | x -> d | y -> d | (x + y)%Z.
+  d `| x -> d `| y -> d `| (x + y).
 Proof.
   intros d x y dx dy.
   destruct dx as [kx dx].
   destruct dy as [ky dy].
-  exists (kx + ky)%Z.
+  exists (kx + ky).
   rewrite Z.mul_add_distr_l.
   rewrite dx.
   rewrite dy.
@@ -172,12 +174,12 @@ Qed.
 
 Theorem interaction_parity_addition_D2 :
   forall d x y,
-  d | x -> d | y -> d | (x - y)%Z.
+  d `| x -> d `| y -> d `| (x - y).
 Proof.
   intros d x y dx dy.
   destruct dx as [kx dx].
   destruct dy as [ky dy].
-  exists (kx - ky)%Z.
+  exists (kx - ky).
   rewrite Z.mul_sub_distr_l.
   rewrite dx.
   rewrite dy.
@@ -186,12 +188,12 @@ Qed.
 
 Theorem interaction_parity_multiplication_A1 :
   forall x y,
-  even x -> even y -> even (x * y)%Z.
+  even x -> even y -> even (x * y).
 Proof.
   intros x y evenx eveny.
   destruct evenx as [kx evenx].
   destruct eveny as [ky eveny].
-  exists (2 * kx * ky)%Z.
+  exists (2 * kx * ky).
   rewrite evenx.
   rewrite Z.mul_assoc.
   rewrite Z.mul_shuffle0.
@@ -202,12 +204,12 @@ Qed.
 
 Theorem interaction_parity_multiplication_A2 :
   forall d x y,
-  d | x -> d | y -> d | (x * y)%Z.
+  d `| x -> d `| y -> d `| (x * y).
 Proof.
   intros d x y dx dy.
   destruct dx as [kx dx].
   destruct dy as [ky dy].
-  exists (d * kx * ky)%Z.
+  exists (d * kx * ky).
   rewrite dx.
   rewrite Z.mul_assoc.
   rewrite Z.mul_shuffle0.
@@ -217,26 +219,118 @@ Proof.
 Qed.
 
 Lemma even2 : even 2.
-Proof. exists 1%Z. reflexivity. Qed.
+Proof. exists 1. reflexivity. Qed.
 
 Theorem interaction_parity_multiplication_B :
   ~ (
   forall x y,
-  even x -> even y -> even (x / y)%Z
+  even x -> even y -> even (x / y)
   ).
 Proof.
   intros wrong.
   specialize (wrong _ _ even2 even2).
   destruct wrong as [k wrong].
-  unfold Z.div in wrong.
-  simpl in wrong.
-  unfold even in wrong.
-  unfold divides in wrong.
-  inversion wrong.
-  apply wrong.
+  rewrite Z.div_same in wrong.
+  + destruct k.
+    - discriminate.
+    - discriminate.
+    - discriminate.
+  + discriminate.
+Qed.
+
+Theorem divisibility_reflexivity : forall x, x `| x.
+Proof.
+  exists 1. rewrite Z.mul_1_r. reflexivity.
+Qed.
+
+Theorem every_number_divides_zero :
+  forall d, d `| 0.
+Proof.
+  exists 0. rewrite Z.mul_0_r. reflexivity.
+Qed.
+
+Theorem zero_only_divides_itself :
+  forall x, 0 `| x -> x = 0.
+Proof.
+  intros z zd.
+  destruct zd as [k zd].
+  subst.
+  rewrite Z.mul_0_l.
+  reflexivity.
+Qed.
+
+Theorem divisibility_transitivity : forall d n m,
+  d `| n -> n `| m -> d `| m.
+Proof.
+  intros d n m dn nm.
+  destruct dn as [kdn dn].
+  destruct nm as [knm nm].
+  exists (kdn * knm).
+  rewrite Z.mul_assoc.
+  rewrite dn.
+  rewrite nm.
+  reflexivity.
+Qed.
+
+Theorem divisibility_cancellation : forall d n a,
+  a <> 0 ->
+  a * d `| a * n ->
+  d `| n.
+Proof.
+  intros d n a a0 adan.
+  destruct adan as [kadan adan].
+  rewrite <- Z.mul_assoc in adan.
+  apply Z.mul_cancel_l in adan.
+  + exists kadan.
+    assumption.
+  + assumption.
+Qed.
+
+Theorem divisibility_cancellation_converse : forall d n a,
+  d `| n ->
+  a * d `| a * n.
+Proof.
+  intros d n a [kdn dn].
+  exists kdn.
+  rewrite <- Z.mul_assoc.
+  rewrite dn.
+  reflexivity.
+Qed.
+
+Theorem divisibility_comparison : forall d n,
+  d > 0 ->
+  n > 0 ->
+  d `| n ->
+  n >= d.
+Proof.
+  intros d n d0 n0 [k dn].
+  subst.
+  pose proof Zmult_ge_compat_l as H.
+  specialize (H k 1 d).
+  rewrite Z.mul_1_r in H.
+  apply H.
+  + admit. (* sign reasoning *)
+  + admit. (* should be easy *)
+Admitted.
+
+(* Skipping to the induction chapter *)
+
+Fixpoint sum (f : Z -> Z) (n : nat) : Z :=
+  match n with
+  | O => f 0
+  | S n => f (Z.of_nat (S n)) + (sum f n)
+  end.
+
+Theorem thm_1_9_Z : forall n, sum (fun n => 2 * n + 1) n = Z.square (Z.of_nat n + 1).
+Proof.
+  intros.
 
 
 
 
 
+
+
+
+  
 

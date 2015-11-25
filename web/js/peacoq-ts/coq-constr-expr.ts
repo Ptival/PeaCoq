@@ -110,6 +110,18 @@ class CHole extends ConstrExpr {
   }
 }
 
+class CLambdaN extends ConstrExpr {
+  location: CoqLocation;
+  binders: Array<BinderExpr>;
+  body: ConstrExpr;
+  constructor(loc: CoqLocation, bel: Array<BinderExpr>, ce: ConstrExpr) {
+    super();
+    this.location = loc;
+    this.binders = bel;
+    this.body = ce;
+  }
+}
+
 class CLetIn extends ConstrExpr {
   location: CoqLocation;
   name: Located<Name>;

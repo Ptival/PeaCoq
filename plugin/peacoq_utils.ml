@@ -398,7 +398,11 @@ let rec string_of_constr_expr ce = "\n" ^
          ^ ")"
       | CFix(_) -> "TODO_CFix"
       | CCoFix(_) -> "TODO_CCoFix"
-      | CLambdaN(_) -> "TODO_CLambdaN"
+      | CLambdaN(loc, bel, ce) ->
+         "CLambdaN(" ^ string_of_location loc
+         ^ ", " ^ string_of_list string_of_binder_expr bel
+         ^ ", " ^ string_of_constr_expr ce
+         ^ ")"
       | CLetIn(loc, lname, ce1, ce2) ->
          "CLetIn("
          ^ string_of_location loc
