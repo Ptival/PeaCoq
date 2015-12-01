@@ -253,7 +253,7 @@ function prBinder(
     } else {
       let s = [].concat(
         prListWithSep(spc, prLName, nal),
-        str("\u00A0:\u00A0"),
+        str(" : "),
         pr(t)
         );
       if (many) {
@@ -931,16 +931,17 @@ function extractLamBinders(a: ConstrExpr): [LocalBinder[], ConstrExpr] {
     if (a.binders.length === 0) {
       return extractLamBinders(a.body);
     } else {
-      let [nal, bk, t] = a[0];
+      let [nal, bk, t] = a.binders[0];
       let [bl, c] = extractLamBinders(a.body);
       let res : LocalBinder[] = [new LocalRawAssum(nal, bk, t)]
       return [res.concat(bl), c];
-
     }
   } else {
     return [[], a];
   }
 }
+
+let prFunSep: PpCmds = [].concat(spc(), str("=>"));
 
 function prGen(
   pr: (_1: () => PpCmds, _2: PrecAssoc, _3: ConstrExpr) => PpCmds
@@ -1037,6 +1038,7 @@ function prGen(
         return ret(
           hov(0, [].concat(
             hov(2, prDelimitedBinders(prFun, spc, (x) => pr(spc, lTop, x), bl)),
+            prFunSep,
             pr(spc, lTop, a1)
           )),
           lLambda
@@ -1226,10 +1228,10 @@ function dumbPrintPpCmd(p: PpCmd): string {
     return "TODO: PpCmdComment";
   }
   if (p instanceof PpCmdOpenTag) {
-    return "TODO: PpCmdOpenTag";
+    return "";
   }
   if (p instanceof PpCmdCloseTag) {
-    return "TODO: PpCmdCloseTag";
+    return "";
   }
   throw MatchFailure("dumbPrintPpCmd", p);
 }

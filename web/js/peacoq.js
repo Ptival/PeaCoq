@@ -11,12 +11,15 @@ requirejs.config({
     },
     'jquery.hotkeys': {
       deps: ['jquery']
+    },
+    'MathJax-master/MathJax': {
+      deps: ['jquery']
     }
   }
 });
 
 // Start the main app logic.
-requirejs(['ace/ace', 'jquery', 'jquery.hotkeys', 'bootstrap', 'lodash'],
+requirejs(['ace/ace', 'jquery', 'jquery.hotkeys', 'bootstrap', 'lodash', 'MathJax-master/MathJax'],
   function(ace, $, bootstrap, lodash) {
     window.ace = ace;
     requirejs([

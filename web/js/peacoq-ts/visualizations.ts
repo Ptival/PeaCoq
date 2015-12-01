@@ -91,6 +91,10 @@ function patternEquiv(l: PpCmds): PpCmds {
   return replaceToken("<->", "⇔", l);
 }
 
+function patternNat(l: PpCmds): PpCmds {
+  return replaceToken("nat", "\u2115", l);
+}
+
 let patterns: Array<(_1: PpCmds) => PpCmds> = [
   patternPow,
   patternForall,
@@ -103,33 +107,32 @@ let patterns: Array<(_1: PpCmds) => PpCmds> = [
   patternEquiv,
   patternDivides,
   patternAbs,
+  patternZSquare,
+  patternZOfNat,
+  patternSum,
+  patternNat,
 ];
 
 function patternAbs(l: PpCmds): PpCmds {
-  if (l.length === 3) {
-    let first = l[0];
-    let arg = l[2];
-    if (first instanceof PpCmdBox && first.contents.length === 1) {
-      let second = first.contents[0];
-      if (second instanceof PpCmdBox && second.contents.length === 7) {
-        let printZ = second.contents[1];
-        let printDot = second.contents[3];
-        let printAbs = second.contents[5];
-        if (printZ instanceof PpCmdPrint && printZ.token.string === "Z"
-          && printDot instanceof PpCmdPrint && printDot.token.string === "."
-          && printAbs instanceof PpCmdPrint && printAbs.token.string === "abs"
-          ) {
-          return [].concat(
-            str("|"),
-            l[2],
-            str("|")
-          );
-        }
-      }
+  return matchPattern(
+    l,
+    [
+      box([
+        box([
+          any, tok("Z"), any, tok("."), any, tok("abs")
+        ])
+      ]),
+      any,
+      any
+    ],
+    (match) => {
+      return [].concat(
+        str("|"),
+        l[2],
+        str("|")
+        );
     }
-    return l;
-  }
-  return l;
+    );
 }
 
 /* Visualization for: x ^ y
@@ -152,27 +155,197 @@ function patternPow(l: PpCmds): PpCmds {
   return l;
 }
 
+function matchPattern(
+  l: PpCmds,
+  pat: Pattern[],
+  h: (_1: any) => PpCmds)
+  : PpCmds {
+  let match = ppCmdsMatch(pat, l);
+  if (match instanceof Some) { return h(match.some); }
+  return l;
+}
+
 // for "divides": \u2223
 // for "does not divide": \u2224
 function patternDivides(l: PpCmds): PpCmds {
-  if (l.length !== 5) { return l; }
-  let box1 = l[0];
-  if (box1 instanceof PpCmdBox && box1.contents.length === 1) {
-    let box2 = box1.contents[0];
-    if (box2 instanceof PpCmdBox && box2.contents.length === 3) {
-      let print = box2.contents[1];
-      if (print instanceof PpCmdPrint && print.token.string === "divides") {
-        return [].concat(
-          [l[2]],
-          [l[1]], // space
-          str("\u2223"),
-          [l[3]], // space
-          [boxDropParentheses(l[4])]
-          );
-      }
+  return matchPattern(
+    l,
+    [
+      box([box([any, tok("divides"), any])]),
+      any, any, any, any
+    ],
+    (match) => {
+      return [].concat(
+        [l[2]],
+        [l[1]], // space
+        str("\u2223"),
+        [l[3]], // space
+        [boxDropParentheses(l[4])]
+        );
     }
+    );
+}
+
+function patternZSquare(l: PpCmds): PpCmds {
+  return matchPattern(l,
+    [
+      box([
+        box([
+          any, tok("Z"), any, tok("."), any, tok("square"), any
+        ])
+      ]),
+      any, any
+    ],
+    (match) => {
+      return [].concat(
+        [l[2]],
+        str("²")
+        );
+    }
+    );
+}
+
+let anything: any = undefined;
+
+class Pattern { }
+
+class Anything extends Pattern { }
+
+class ArrayPattern extends Pattern {
+  array: Pattern[];
+  constructor(a: Pattern[]) { super(); this.array = a; }
+}
+
+class Binder extends Pattern {
+  binder: string;
+  constructor(name: string) { super(); this.binder = name; }
+}
+
+class Constructor extends Pattern {
+  name: Function;
+  fields: Object;
+  constructor(name: Function, fields: Object) {
+    super();
+    this.name = name;
+    this.fields = fields;
   }
-  return l;
+}
+
+class StringPattern extends Pattern {
+  string: string;
+  constructor(s: string) { super(); this.string = s; }
+}
+
+function box(contents: Pattern[]): Pattern {
+  return new Constructor(PpCmdBox, { contents: new ArrayPattern(contents) });
+}
+
+function tok(s: string): Pattern {
+  return new Constructor(PpCmdPrint, {
+    token: new Constructor(StrDef, { string: new StringPattern(s) })
+  });
+}
+
+let any: Pattern = new Anything();
+
+function ppCmdsMatchGen(p: Pattern[], l: PpCmds, o: Object): Maybe<Object> {
+  if (p.length !== l.length) { return new None(); }
+  let zip = _.zip(p, l);
+  for (let index in zip) {
+    let [pat, cmd] = zip[index];
+    let mo = ppCmdMatchGen(pat, cmd, o);
+    if (mo instanceof None) { return mo; }
+    if (mo instanceof Some) { o = mo.some; }
+  }
+  return new Some(o);
+}
+
+function reduceMaybe<IN, ACC>(
+  a: Array<IN>,
+  f: (_1: ACC, _2: IN) => Maybe<ACC>,
+  acc: ACC
+  ): Maybe<ACC> {
+  if (acc instanceof Some) {
+    alert("Called reduceMaybe with a Maybe type, most likely a mistake?");
+  }
+  return _.reduce(
+    a,
+    (acc: Maybe<ACC>, elt: IN) => {
+      if (acc instanceof None) {
+        return acc;
+      } else if (acc instanceof Some) {
+        return f(acc.some, elt);
+      } else {
+        throw MatchFailure("reduceMaybe", acc);
+      }
+    },
+    new Some(acc)
+    );
+}
+
+function ppCmdMatchGen(pat: Pattern, p: PpCmd|any, o: Object): Maybe<Object> {
+  if (pat instanceof Anything) {
+    return new Some(o);
+  } else if (pat instanceof ArrayPattern) {
+    if (!(p instanceof Array)) { throw MatchFailure("ppCmdMatchGen > ArrayPattern", p); }
+    return ppCmdsMatchGen(pat.array, p, o);
+  } else if (pat instanceof Binder) {
+    let binder = pat.binder;
+    o[binder] = p;
+    return new Some(o);
+  } else if (pat instanceof Constructor) {
+    if (p instanceof pat.name) {
+      return reduceMaybe(
+        Object.keys(pat.fields),
+        (acc, field) => {
+          if (field in p) {
+            return ppCmdMatchGen(pat.fields[field], p[field], acc);
+          } else {
+            return new None();
+          }
+        },
+        o
+        );
+    } else {
+      return new None();
+    }
+  } else if (pat instanceof StringPattern) {
+    if (!(typeof p === "string")) {
+      throw MatchFailure("ppCmdMatchGen > StringPattern", p);
+    }
+    if (pat.string === p) {
+      return new Some(o);
+    } else {
+      return new None();
+    }
+  } else {
+    throw MatchFailure("patternMatch > rec", pat);
+  }
+}
+
+function ppCmdsMatch(p: Pattern[], l: PpCmds): Maybe<Object> {
+  return ppCmdsMatchGen(p, l, {});
+}
+
+function patternZOfNat(l: PpCmds): PpCmds {
+  return matchPattern(l,
+    // TODO: we could have a pattern like this one removing outer parentheses
+    [
+      box([
+        box([any, tok("Z"), any, any, any, tok("of_nat"), any])
+      ]),
+      any,
+      any
+    ],
+    (match) => {
+      return [].concat(
+        [l[2]],
+        str('<span style="vertical-align: sub; font-size: xx-small;">'),
+        str("\u2115"),
+        str('</span>')
+        );
+    }
+    );
 }
 
 function boxDropParentheses(p: PpCmd): PpCmd {
@@ -184,4 +357,58 @@ function boxDropParentheses(p: PpCmd): PpCmd {
       return p.contents[1];
   }
   return p;
+}
+
+function patternSum(l: PpCmds): PpCmds {
+  return matchPattern(
+    l,
+    [
+      box([box([any, tok("sum"), any])]),
+      any,
+      box([
+        tok("("),
+        box([box([
+          box([
+            any,
+            tok("fun"),
+            any,
+            any,
+            box([
+              box([new Binder("binder")]), // Binder binder
+              any, //tok("\u00A0:"),
+              any,
+              box([new Binder("type")]) // Binder type
+            ])
+          ]),
+          any,
+          any,
+          any,
+          new Binder("body") // Binder body
+        ])]),
+        tok(")")
+      ]),
+      any,
+      new Binder("upperBound") //new Binder("upperBound")
+    ],
+    (match) => {
+      return [].concat(
+        str('<span style="display: flex; flex-flow: row; align-items: center;">'),
+        str('<span style="display: flex; flex-flow: column; margin-right: 0.5em;">'),
+        str('<span style="display: flex; flex-flow: row; justify-content: center;">'),
+        str('<span>'),
+        boxDropParentheses(match.upperBound),
+        str('</span></span>'),
+        str('<span style="display:flex; flex-flow: row; justify-content: center; font-family: MathJax_Size2; line-height: 1.6em;">∑</span>'),
+        str('<span style="display: flex; flex-flow: row; justify-content: center;">'),
+        str('<span>'),
+        match.binder,
+        str(' = 0'),
+        str('</span></span></span>'),
+        str('<span><span>'),
+        match.body,
+        str('</span>'),
+        str('</span></span>')
+        );
+    }
+    );
 }

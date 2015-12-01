@@ -90,10 +90,11 @@ a, button {
 }
 .syntax {
   display: inline-block;
+  vertical-align: middle;
 }
 .hyp {
   display: flex;
-  vertical-align: top;
+  align-items: center;
 }
 .tag-keyword {
   color: red;

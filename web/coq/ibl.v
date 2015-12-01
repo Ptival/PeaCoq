@@ -312,25 +312,3 @@ Proof.
   + admit. (* sign reasoning *)
   + admit. (* should be easy *)
 Admitted.
-
-(* Skipping to the induction chapter *)
-
-Fixpoint sum (f : Z -> Z) (n : nat) : Z :=
-  match n with
-  | O => f 0
-  | S n => f (Z.of_nat (S n)) + (sum f n)
-  end.
-
-Theorem thm_1_9_Z : forall n, sum (fun n => 2 * n + 1) n = Z.square (Z.of_nat n + 1).
-Proof.
-  intros.
-
-
-
-
-
-
-
-
-  
-

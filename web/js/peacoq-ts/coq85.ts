@@ -526,7 +526,7 @@ function htmlPrintConstrExpr(c: ConstrExpr): string {
 function htmlPrintConstrExprDiff(c: ConstrExpr, old: ConstrExpr): string {
   let ppCmds = prConstrExpr(c);
   let oldPpCmds = prConstrExpr(old);
-  //console.log(ppCmds);
+  console.log(ppCmds);
   //return htmlPrintPpCmds(ppCmds);
   return htmlPrintPpCmdsDiff(ppCmds, oldPpCmds);
 }
