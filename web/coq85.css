@@ -90,7 +90,7 @@ a, button {
 }
 .syntax {
   display: inline-block;
-  vertical-align: middle;
+  /*vertical-align: middle;*/
 }
 .hyp {
   display: flex;
