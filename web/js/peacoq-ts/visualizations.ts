@@ -95,6 +95,10 @@ function patternNat(l: PpCmds): PpCmds {
   return replaceToken("nat", "\u2115", l);
 }
 
+function patternZ(l: PpCmds): PpCmds {
+  return replaceToken("Z", "\u2124", l);
+}
+
 let patterns: Array<(_1: PpCmds) => PpCmds> = [
   patternPow,
   patternForall,
@@ -109,8 +113,10 @@ let patterns: Array<(_1: PpCmds) => PpCmds> = [
   patternAbs,
   patternZSquare,
   patternZOfNat,
-  patternSum,
+  patternSumLambda,
+  patternSum, // keep this one after patternSumLambda as it is less general
   patternNat,
+  patternZ,
 ];
 
 function patternAbs(l: PpCmds): PpCmds {
@@ -359,7 +365,7 @@ function boxDropParentheses(p: PpCmd): PpCmd {
   return p;
 }
 
-function patternSum(l: PpCmds): PpCmds {
+function patternSumLambda(l: PpCmds): PpCmds {
   return matchPattern(
     l,
     [
@@ -393,12 +399,13 @@ function patternSum(l: PpCmds): PpCmds {
     (match) => {
       return [].concat(
         str('<span style="display: flex; flex-flow: row; align-items: center;">'),
+        str('<span style="font-family: MathJax_Size4; font-size:120%;">(</span>'),
         str('<span style="display: flex; flex-flow: column; margin-right: 0.5em;">'),
         str('<span style="display: flex; flex-flow: row; justify-content: center;">'),
         str('<span>'),
         boxDropParentheses(match.upperBound),
         str('</span></span>'),
-        str('<span style="display:flex; flex-flow: row; justify-content: center; font-family: MathJax_Size2; line-height: 1.6em;">∑</span>'),
+        str('<span style="display:flex; flex-flow: row; justify-content: center; font-family: MathJax_Size2; font-size: 120%;">∑</span>'),
         str('<span style="display: flex; flex-flow: row; justify-content: center;">'),
         str('<span>'),
         match.binder,
@@ -407,7 +414,38 @@ function patternSum(l: PpCmds): PpCmds {
         str('<span><span>'),
         match.body,
         str('</span>'),
-        str('</span></span>')
+        str('</span><span style="font-family: MathJax_Size4; font-size:120%;">)</span></span>')
+        );
+    }
+    );
+}
+
+function patternSum(l: PpCmds): PpCmds {
+  return matchPattern(
+    l,
+    [
+      box([box([any, tok("sum"), any])]),
+      any,
+      new Binder("summand"),
+      any,
+      new Binder("upperBound") //new Binder("upperBound")
+    ],
+    (match) => {
+      return [].concat(
+        str('<span style="display: flex; flex-flow: row; align-items: center;">'),
+        str('<span style="font-family: MathJax_Size4; font-size:120%;">(</span>'),
+        str('<span style="display: flex; flex-flow: column; margin-right: 0.5em;">'),
+        str('<span style="display: flex; flex-flow: row; justify-content: center;">'),
+        str('<span>'),
+        boxDropParentheses(match.upperBound),
+        str('</span></span>'),
+        str('<span style="display:flex; flex-flow: row; justify-content: center; font-family: MathJax_Size2; font-size: 120%;">∑</span>'),
+        str('<span style="display: flex; flex-flow: row; justify-content: center;">'),
+        str('<span>0</span></span></span>'),
+        str('<span><span>'),
+        match.summand,
+        str('</span>'),
+        str('</span><span style="font-family: MathJax_Size4; font-size:120%;">)</span></span>')
         );
     }
     );

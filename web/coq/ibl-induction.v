@@ -19,6 +19,13 @@ Qed.
 Axiom square_plus :
   forall a b, Z.square (a + b) = Z.square a + 2 * a * b + Z.square b.
 
+Lemma Z_of_nat_succ : forall n, Z.of_nat (S n) = Z.of_nat n + 1.
+Proof.
+  intros n.
+  rewrite -> Nat2Z.inj_succ.
+  reflexivity.
+Qed.
+
 Theorem thm_1_9_Z : forall n, sum (fun n => 2 * n + 1) n = Z.square (Z.of_nat n + 1).
 Proof.
   intros.
@@ -29,15 +36,10 @@ Proof.
     rewrite IHn.
     rewrite square_plus.
     rewrite square_plus.
-    (* well it's a PITA but it should work *)
-
-
-
-
-
-
-
-
-  
-
-
+    rewrite Z_of_nat_succ.
+    rewrite square_plus.
+    rewrite Z.mul_1_r.
+    rewrite Z.add_assoc.
+    rewrite Z.mul_1_r.
+    reflexivity.
+Qed.
