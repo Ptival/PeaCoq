@@ -36,10 +36,16 @@ class CoqDocument {
     this.editor.focus();
     this.editor.scrollToLine(0, true, true, () => { });
   }
-  removeEdits(p: (e: Edit) => boolean) {
+  removeEdits(
+    predicate: (e: Edit) => boolean,
+    beforeRemoval?: (e: Edit) => void
+    ) {
     _.remove(this.edits, function(e) {
-      let toBeRemoved = p(e);
-      if (toBeRemoved) { e.removeMarker(); }
+      let toBeRemoved = predicate(e);
+      if (toBeRemoved) {
+        if (beforeRemoval) { beforeRemoval(e); }
+        e.removeMarker();
+      }
       return toBeRemoved;
     });
   }
@@ -198,14 +204,6 @@ $(document).ready(function() {
   addDebug(buttonGroup);
 
   let editor: AceAjax.Editor = ace.edit("editor");
-  editor.session.on("change", function(c) {
-    let start = c.start;
-    let end = c.end;
-    coqDocument.removeEdits(function(e) {
-      return isAfter(e.stopPos, start);
-    });
-    // TODO: should probably send an EditAt to coqtop
-  });
 
   pretty = addTab("pretty", "context");
   setupSyntaxHovering();
@@ -1008,11 +1006,32 @@ function isAfter(pos1: AceAjax.Position, pos2: AceAjax.Position): boolean {
 }
 
 function killEditsAfterPosition(doc: CoqDocument, pos: AceAjax.Position) {
-  _.remove(doc.edits, function(edit: Edit) {
-    let isAfterPosition = isAfter(edit.startPos, pos);
-    //if (isAfterPosition) { rmAnchor(doc, edit.anchor); }
-    return isAfterPosition;
-  });
+  // we will need to rewind to the state before the oldest edit we remove
+  let editToRewindTo = undefined;
+  // we remove all the edits that are after the position that was edited
+  doc.removeEdits(
+    (edit: Edit) => isAfter(edit.stopPos, pos),
+    (edit: Edit) => {
+    let maybeEdit = edit.previousEdit;
+      if (maybeEdit instanceof Some
+        && (
+          editToRewindTo === undefined
+          ||
+          maybeEdit.some.stateId < editToRewindTo.stateId
+          )
+        ) {
+        editToRewindTo = maybeEdit.some;
+      }
+    }
+  );
+  if (editToRewindTo !== undefined) {
+    peaCoqEditAt(editToRewindTo.stateId)
+      .then(
+      () => {
+        updateGoals(editToRewindTo);
+        updatePretty(editToRewindTo);
+      });
+  }
 }
 
 function movePosRight(doc: CoqDocument, pos: AceAjax.Position, n: number) {
