@@ -176,7 +176,7 @@ let keybindings: KeyBinding[] = [
     jQ: "alt+ctrl+right",
     aceWin: "Alt-Ctrl-Right",
     aceMac: "Option-Command-Right",
-    handler: () => onGotoCursor(coqDocument)
+    handler: () => onGotoCaret(coqDocument)
   },
 ];
 
@@ -201,6 +201,7 @@ $(document).ready(function() {
   addSaveLocal(buttonGroup);
   addPrevious(buttonGroup);
   addNext(buttonGroup);
+  addGoToCaret(buttonGroup);
   addDebug(buttonGroup);
 
   let editor: AceAjax.Editor = ace.edit("editor");
@@ -456,7 +457,7 @@ TODO: This should add all the necessary edits to be proven immediately
 TODO: Currently, this loops forever if a command fails
 TODO: Ideally, the cursor would not jump on completion of these edits
 */
-function onGotoCursor(doc: CoqDocument): Promise<void> {
+function onGotoCaret(doc: CoqDocument): Promise<void> {
   // first, check if this is going forward or backward from the end
   // of the last edit
   let cursorPos = doc.editor.getCursorPosition();
@@ -756,6 +757,19 @@ function addPrevious(buttonGroup) {
   })
     .append(mkGlyph("arrow-up"))
     .append(nbsp + "Prev");
+}
+
+function addGoToCaret(buttonGroup) {
+  $("<button>", {
+    "id": "previous",
+    "class": "btn btn-primary",
+  })
+    .appendTo(buttonGroup)
+    .on("click", function() {
+    onGotoCaret(coqDocument);
+  })
+    .append(mkGlyph("arrow-right"))
+    .append(nbsp + "To Caret");
 }
 
 let delimiters = ["."];
