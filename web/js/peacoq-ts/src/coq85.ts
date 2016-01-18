@@ -1,7 +1,9 @@
 let AceAnchor = ace.require("ace/anchor").Anchor;
 let AceRange = ace.require("ace/range").Range;
-let AceRangeList = ace.require("ace/range_list").RangeList;
-let AceSelection = ace.require("ace/selection").Selection;
+// let AceRangeList = ace.require("ace/range_list").RangeList;
+// let AceSelection = ace.require("ace/selection").Selection;
+
+let autoLayout = false;
 
 let pretty, foreground, background, shelved, givenUp;
 let notices, warnings, errors, infos, feedback, jobs;
@@ -1179,3 +1181,7 @@ function addEditorTab(name: string, containerName: string): AceAjax.Editor {
   return editor;
 
 }
+
+function focusProofTreeUI() { throw "TODO"; }
+function getToprove(): string { throw "TODO"; }
+function studyTactics(pt: ProofTree) { throw "TODO"; }

@@ -1254,10 +1254,6 @@ function dumbPrintPpCmds(l: PpCmds): string {
     );
 }
 
-function syntax(s: string): string {
-  return '<span class="syntax">' + s + "</span>";
-}
-
 function htmlPrintStrToken(t: StrToken): string {
   if (t instanceof StrDef) {
     return (t.string);

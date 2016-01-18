@@ -16,6 +16,10 @@ html, body, #interface {
   flex-basis: 0;
   overflow: hidden;
 }
+#prooftree {
+  display: flex;
+  height: 50%;
+}
 a, button {
   border-radius: 0 !important;
   padding: 2px 4px !important;

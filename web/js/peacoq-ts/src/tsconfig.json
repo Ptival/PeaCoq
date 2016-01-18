@@ -1,14 +1,15 @@
 {
   "version": "1.5.0-alpha",
   "compilerOptions": {
-    "target": "es5",
-    "module": "commonjs",
     "declaration": false,
+    "module": "commonjs",
     "noImplicitAny": false,
-    "removeComments": true,
     "noLib": false,
+    "outDir": "..",
     "preserveConstEnums": true,
-    "suppressImplicitAnyIndexErrors": true
+    "removeComments": true,
+    "suppressImplicitAnyIndexErrors": true,
+    "target": "es5"
   },
   "files": [
     "coq85.ts",
@@ -18,9 +19,18 @@
     "coq-pretty-printer.ts",
     "mathjax.ts",
     "utils.ts",
+    "gallina.ts",
+    "fakenode.ts",
+    "goalnode.ts",
+    "prooftreenode.ts",
+    "tacticgroupnode.ts",
+    "tacticnode.ts",
+    "goalnode.ts",
+    "prooftree.ts",
     "visualizations.ts",
     "DefinitelyTyped/ace/ace.d.ts",
     "DefinitelyTyped/bootstrap/bootstrap.d.ts",
+    "DefinitelyTyped/d3/d3.d.ts",
     "DefinitelyTyped/es6-shim/es6-shim.d.ts",
     "DefinitelyTyped/lodash/lodash.d.ts",
     "DefinitelyTyped/jquery/jquery.d.ts",

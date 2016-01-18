@@ -222,7 +222,7 @@ class ArrayPattern extends Pattern {
   constructor(a: Pattern[]) { super(); this.array = a; }
 }
 
-class Binder extends Pattern {
+class BinderPattern extends Pattern {
   binder: string;
   constructor(name: string) { super(); this.binder = name; }
 }
@@ -295,7 +295,7 @@ function ppCmdMatchGen(pat: Pattern, p: PpCmd|any, o: Object): Maybe<Object> {
   } else if (pat instanceof ArrayPattern) {
     if (!(p instanceof Array)) { throw MatchFailure("ppCmdMatchGen > ArrayPattern", p); }
     return ppCmdsMatchGen(pat.array, p, o);
-  } else if (pat instanceof Binder) {
+  } else if (pat instanceof BinderPattern) {
     let binder = pat.binder;
     o[binder] = p;
     return new Some(o);
@@ -380,10 +380,10 @@ function patternSumLambda(l: PpCmds): PpCmds {
             any,
             any,
             box([
-              box([new Binder("binder")]), // Binder binder
+              box([new BinderPattern("binder")]), // Binder binder
               any, //tok("\u00A0:"),
               any,
-              box([new Binder("type")]) // Binder type
+              box([new BinderPattern("type")]) // Binder type
             ])
           ]),
           any,

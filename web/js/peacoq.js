@@ -19,7 +19,15 @@ requirejs.config({
 });
 
 // Start the main app logic.
-requirejs(['ace/ace', 'jquery', 'jquery.hotkeys', 'bootstrap', 'lodash', 'MathJax-master/MathJax'],
+requirejs([
+    'ace/ace',
+    'd3',
+    'jquery',
+    'jquery.hotkeys',
+    'bootstrap',
+    'lodash',
+    'MathJax-master/MathJax',
+  ],
   function(ace, $, bootstrap, lodash) {
     window.ace = ace;
     requirejs([
@@ -34,5 +42,12 @@ requirejs(['ace/ace', 'jquery', 'jquery.hotkeys', 'bootstrap', 'lodash', 'MathJa
       requirejs(['peacoq-ts/coq-definitions']);
       requirejs(['peacoq-ts/coq-pretty-printer']);
       requirejs(['peacoq-ts/visualizations']);
+      requirejs(['peacoq-ts/gallina']);
+      requirejs(['peacoq-ts/prooftreenode']);
+      requirejs(['peacoq-ts/fakenode']);
+      requirejs(['peacoq-ts/goalnode']);
+      requirejs(['peacoq-ts/tacticgroupnode']);
+      requirejs(['peacoq-ts/tacticnode']);
+      requirejs(['peacoq-ts/prooftree']);
     });
   });

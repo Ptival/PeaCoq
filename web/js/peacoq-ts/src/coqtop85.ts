@@ -1,4 +1,4 @@
-/// <reference path="coq85.ts"/>
+// <reference path="coq85.ts"/>
 
 /*
   This queue guarantees that requests are pushed one after the other, and that
@@ -9,9 +9,9 @@ class RequestQueue {
   constructor() {
     this.queue = Promise.resolve();
   }
-  push(f: () => Promise<any>) {
-    var self = this;
-    var res = this.queue.then(function() { return f(); });
+  push(f: () => Promise<any>): Promise<any> {
+    let self = this;
+    let res = this.queue.then(function() { return f(); });
     this.queue = res.catch(function() { self.queue = Promise.resolve(); });
     return res;
   }
@@ -35,56 +35,67 @@ function coqtop(
   input: Object,
   silent?: boolean
   ): Promise<any> {
-  return requests.push(() => new Promise(function(onFulfilled, onRejected: (v: ValueFail) => any) {
-    $.ajax({
-      type: 'POST',
-      url: command,
-      data: {
-        data: JSON.stringify(input)
-      },
-      async: true,
-      error: function() {
-        console.log("Server did not respond!");
-      },
-      success: function(response) {
-        var result = response[0];
-        var stateId = response[1][0];
-        var editId = response[1][1];
-        var messages = response[2][0];
-        var feedback = response[2][1];
-        //if (!silent) { console.log("Response: ", response, feedback, messages); }
-        // This is slow, disabled until it is useful
-        // TODO: make this processing asynchronous to not hang UI
-        /*
-        _(feedback).each(function(x) {
-          var f = new Feedback(x);
-          onFeedback(f);
-        });
-        */
-        _(messages).each(function(x) {
-          var m = new Message(x);
-          onMessage(m);
-        });
+  return requests.push(
+    () => new Promise(
+      (onFulfilled, onRejected: (v: ValueFail) => any) => {
+        $.ajax({
+          type: 'POST',
+          url: command,
+          data: {
+            data: JSON.stringify(input)
+          },
+          async: true,
+          error: function() {
+            console.log("Server did not respond!");
+          },
+          success: function(response) {
+            let result = response[0];
+            let stateId = response[1][0];
+            let editId = response[1][1];
+            let messages = response[2][0];
+            let feedback = response[2][1];
+            //if (!silent) { console.log("Response: ", response, feedback, messages); }
+            // This is slow, disabled until it is useful
+            // TODO: make this processing asynchronous to not hang UI
+            /*
+            _(feedback).each(function(x) {
+              let f = new Feedback(x);
+              onFeedback(f);
+            });
+            */
+            _(messages).each(function(x) {
+              let m = new Message(x);
+              onMessage(m);
+            });
 
-        //console.log("Result: ", result);
-        switch (result.tag) {
-          case "ValueGood":
-            onFulfilled(result.contents);
-            break;
-          case "ValueFail":
-            onRejected(new ValueFail(result.contents));
-            break;
-          default:
-            throw "result.tag was neither ValueGood nor ValueFail";
-        }
-      }
-    });
-  }));
+            //console.log("Result: ", result);
+            switch (result.tag) {
+              case "ValueGood":
+                console.log("result", result);
+                onFulfilled(result.contents);
+                break;
+              case "ValueFail":
+                onRejected(new ValueFail(result.contents));
+                break;
+              default:
+                throw "result.tag was neither ValueGood nor ValueFail";
+            }
+          }
+        });
+      }));
 }
+
+type AddReturn = {
+  stateId: number;
+  eitherNullStateId: number;
+  output: string;
+}
+type AddHandler = (s: string, r: AddReturn) => void;
+var peaCoqAddHandlers: AddHandler[] = [];
 
 function peaCoqAddPrime(s: string): Promise<any> {
   console.log("Add'", s);
-  var res =
+  let res =
     coqtop("add'", s)
       .then(
       (r) => {
@@ -93,6 +104,7 @@ function peaCoqAddPrime(s: string): Promise<any> {
           "eitherNullStateId": r[1][0],
           "output": r[1][0],
         };
+        _(peaCoqAddHandlers).each((h) => { h(s, r); })
         return r;
         //console.log("[@" + stateId + "] Added", eitherNullStateId, output);
       })
@@ -123,7 +135,7 @@ function peaCoqGetContext(): Promise<PeaCoqContext> {
       (context) => {
         // TODO: don't use eval
         //console.log(context);
-        var term = eval(context);
+        let term = eval(context);
         return term;
       })
       .catch(
@@ -143,13 +155,15 @@ class Goal {
   goalId: number;
   goalHyp: Array<string>;
   goalCcl: string;
-  constructor(g) {
-    this.goalId = g[0];
+
+  constructor(g: [string, string[], string]) {
+    this.goalId = + g[0];
     this.goalHyp = _(g[1]).map(unbsp).value();
     this.goalCcl = unbsp(g[2]);
   }
-  toString() {
-    var res = "";//"Goal " + this.goalId + "\n\n";
+
+  toString(): string {
+    let res = "";//"Goal " + this.goalId + "\n\n";
     _(this.goalHyp).each(function(h) {
       res += h + "\n";
     });
@@ -157,6 +171,7 @@ class Goal {
     res += "\n" + this.goalCcl;
     return res;
   }
+
 }
 
 type BeforeAfter = {
@@ -165,10 +180,10 @@ type BeforeAfter = {
 };
 
 class Goals {
-  "fgGoals": Array<Goal>;
-  "bgGoals": Array<BeforeAfter>;
-  "shelvedGoals": Array<Goal>;
-  "givenUpGoals": Array<Goal>;
+  fgGoals: Array<Goal>;
+  bgGoals: Array<BeforeAfter>;
+  shelvedGoals: Array<Goal>;
+  givenUpGoals: Array<Goal>;
   constructor(maybeGoals) {
     if (!maybeGoals) {
       this.fgGoals = [];
@@ -195,6 +210,9 @@ class Goals {
   }
 }
 
+type GoalHandler = (g: Goals) => void;
+var peaCoqGoalHandlers: GoalHandler[] = [];
+
 function peaCoqGoal(): Promise<Goals> {
   console.log("Goal");
   return (
@@ -202,9 +220,10 @@ function peaCoqGoal(): Promise<Goals> {
       .then(
       (maybeGoals) => {
         //console.log("maybeGoals", maybeGoals);
-        var goals = new Goals(maybeGoals);
+        let goals = new Goals(maybeGoals);
+        _(peaCoqGoalHandlers).each((h) => { h(goals); })
         // weird, maybeGoals is an array of length 4 with 3 empty
-        //console.log("Goal", goals);
+        console.log("Goal", goals);
         return goals;
       })
       .catch(
@@ -230,7 +249,7 @@ function peaCoqQueryPrime(s: string): Promise<string> {
 function peaCoqPrintAST(sid: number): Promise<CoqXMLTree> {
   console.log("PrintAST", sid);
   return coqtop("printast", sid).then(function(r) {
-    var tree = new CoqXMLTree(r);
+    let tree = new CoqXMLTree(r);
     console.log("PrintAST\n", r.toString());
     return tree;
   });
@@ -249,13 +268,19 @@ class Status {
   }
 }
 
+type StatusHandler = (s: Status) => void;
+var peaCoqStatusHandlers: StatusHandler[] = [];
+
 function peaCoqStatus(b: boolean): Promise<Status> {
   console.log("Status");
   return (
     coqtop("status", b)
       .then(
       (s) => {
-        return new Status(s);
+        let status = new Status(s);
+        console.log("Status: ", status);
+        _(peaCoqStatusHandlers).each((h) => { h(status); })
+        return status;
       })
     );
 }
@@ -417,7 +442,7 @@ class CoqXMLTree {
     }).value();
   }
   toString(depth: number) {
-    var res = "";
+    let res = "";
     if (typeof depth === "undefined") {
       depth = 0;
     }
@@ -447,7 +472,7 @@ class LocatedCoqXMLTag {
 class CoqXMLTag { }
 
 function mkCoqXMLTag(t): CoqXMLTag {
-  var c = t.contents;
+  let c = t.contents;
   switch (t.tag) {
     case "Apply":
       return new Apply();
