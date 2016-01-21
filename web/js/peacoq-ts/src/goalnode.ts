@@ -1,6 +1,7 @@
 class GoalNode extends ProofTreeNode {
   closedBraces: number;
   gid: number;
+  goal: PeaCoqGoal;
   goalSpan: JQuery;
   goalString: string;
   goalTerm: string;
@@ -8,19 +9,15 @@ class GoalNode extends ProofTreeNode {
   ndx: number;
   openBraces: number;
   parentTactic: TacticNode;
-  response: any; // TODO: remove
   tacticGroups: TacticGroupNode[];
   tacticIndex: number;
 
-  constructor(
-    proofTree: ProofTree,
-    parentTactic: TacticNode,
-    response,
-    index: number
-    ) {
-    let goal = response.rGoals.focused[index];
-    let parent = (parentTactic === undefined) ? undefined : parentTactic.parent;
+  constructor(proofTree: ProofTree, parent: TacticNode, goal: PeaCoqGoal) {
     super(proofTree, parent);
+    this.goal = goal;
+
+    /*
+    let goal = goals.fgGoals[0];
     let goalTerm = extractGoal(goal.gGoal);
     this.hyps = _(goal.gHyps).map(extractHypothesis).value();
     this.ndx = index + 1; // used in Focus, Coq uses 1-index
@@ -33,11 +30,8 @@ class GoalNode extends ProofTreeNode {
     ];
     this.tacticIndex = 0;
     this.parentTactic = parentTactic;
-    /*
-     * This field will be populated every time this [GoalNode] is visited, and
-     * will contain the response obtained upon last visiting it.
-     */
-    this.response = response;
+    */
+
     this.openBraces = 0;
     this.closedBraces = 0;
   }

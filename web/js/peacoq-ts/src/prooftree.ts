@@ -22,6 +22,7 @@ let goalBodyPadding = 4;
 
 $(document).ready(() => {
   peaCoqAddHandlers.push(proofTreeOnAdd);
+  peaCoqGetContextHandlers.push(proofTreeOnGetContext);
   peaCoqGoalHandlers.push(proofTreeOnGoal);
   peaCoqStatusHandlers.push(proofTreeOnStatus);
 });
@@ -30,10 +31,15 @@ function proofTreeOnAdd(s: string, r: AddReturn): void {
   console.log("TODO, proofTreeOnAdd", s, r);
 }
 
-function proofTreeOnGoal(g: Goals): void {
+function proofTreeOnGetContext(c: PeaCoqContext): void {
   if (proofTrees.length === 0) { return; }
   let activeProofTree = proofTrees[0];
-  console.log("TODO, proofTreeOnGoal", g);
+  if (activeProofTree.curNode === undefined) {
+    let g = new GoalNode(activeProofTree, undefined, c[0]);
+  }
+}
+
+function proofTreeOnGoal(g: Goals): void {
 }
 
 function proofTreeOnStatus(s: Status): void {

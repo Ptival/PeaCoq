@@ -104,7 +104,7 @@ function peaCoqAddPrime(s: string): Promise<any> {
           "eitherNullStateId": r[1][0],
           "output": r[1][0],
         };
-        _(peaCoqAddHandlers).each((h) => { h(s, r); })
+        _(peaCoqAddHandlers).each((h) => { h(s, r); });
         return r;
         //console.log("[@" + stateId + "] Added", eitherNullStateId, output);
       })
@@ -128,15 +128,18 @@ type PeaCoqGoal = {
 };
 type PeaCoqContext = Array<PeaCoqGoal>;
 
+type GetContextHandler = (r: PeaCoqContext) => void;
+var peaCoqGetContextHandlers: GetContextHandler[] = [];
+
 function peaCoqGetContext(): Promise<PeaCoqContext> {
   return (
     peaCoqQueryPrime("PeaCoqGetContext.")
       .then(
-      (context) => {
+      (c) => {
         // TODO: don't use eval
-        //console.log(context);
-        let term = eval(context);
-        return term;
+        let context = eval(c);
+        _(peaCoqGetContextHandlers).each((h) => { h(context); });
+        return context;
       })
       .catch(
       (vf: ValueFail) => {
@@ -184,6 +187,7 @@ class Goals {
   bgGoals: Array<BeforeAfter>;
   shelvedGoals: Array<Goal>;
   givenUpGoals: Array<Goal>;
+
   constructor(maybeGoals) {
     if (!maybeGoals) {
       this.fgGoals = [];
@@ -208,6 +212,7 @@ class Goals {
       }).value();
     }
   }
+
 }
 
 type GoalHandler = (g: Goals) => void;
