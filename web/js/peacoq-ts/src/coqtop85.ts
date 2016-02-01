@@ -1,8 +1,8 @@
 // <reference path="coq85.ts"/>
 
 /*
-  This queue guarantees that requests are pushed one after the other, and that
-  failure of a request cascades and cancels the following ones.
+  This queue guarantees that requests are pushed one after the other,
+  and that failure of a request cascades and cancels the following ones.
 */
 class RequestQueue {
   queue: Promise<any>;

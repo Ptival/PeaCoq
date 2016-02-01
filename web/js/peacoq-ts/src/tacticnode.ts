@@ -7,19 +7,20 @@ class TacticNode extends ProofTreeNode {
   constructor(
     proofTree: ProofTree,
     parent: TacticGroupNode,
-    tactic: string,
-    response: any
+    tactic: string
+    //, response: any
     ) {
     super(proofTree, parent);
     this.tactic = tactic;
 
     let focusedBefore = getResponseFocused(parent.parent.response);
-    let focusedAfter = getResponseFocused(response);
+    //let focusedAfter = getResponseFocused(response);
 
     let unfocusedBefore = getResponseUnfocused(parent.parent.response);
-    let unfocusedAfter = getResponseUnfocused(response);
+    //let unfocusedAfter = getResponseUnfocused(response);
 
     let remainingSubgoals;
+    /*
     if (_.isEqual(unfocusedAfter, unfocusedBefore)) {
       if (focusedBefore.length > 1
         && focusedAfter[0].gId === focusedBefore[1].gId) {
@@ -33,8 +34,10 @@ class TacticNode extends ProofTreeNode {
     }
     //console.log(tactic, focusDelta, parent.parent.response, response, remainingSubgoals);
     this.goals = _(remainingSubgoals).map(function(goal, index) {
-      return new GoalNode(proofTree, this, response, index);
+      return new GoalNode(proofTree, this, response);
     }).value();
+    */
+
     this.goalIndex = 0;
   }
 

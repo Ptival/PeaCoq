@@ -23,28 +23,66 @@ let goalBodyPadding = 4;
 $(document).ready(() => {
   peaCoqAddHandlers.push(proofTreeOnAdd);
   peaCoqGetContextHandlers.push(proofTreeOnGetContext);
-  peaCoqGoalHandlers.push(proofTreeOnGoal);
+  //peaCoqGoalHandlers.push(proofTreeOnGoal);
   peaCoqStatusHandlers.push(proofTreeOnStatus);
 });
 
-function proofTreeOnAdd(s: string, r: AddReturn): void {
-  console.log("TODO, proofTreeOnAdd", s, r);
+function getActiveProofTree(): ProofTree {
+  return proofTrees[0];
 }
 
-function proofTreeOnGetContext(c: PeaCoqContext): void {
+function isUpperCase(character) {
+    return /^[A-Z]$/.test(character);
+}
+
+/*
+We only react to commands that look like tactics. For now, the
+heuristic is that it does not start with an uppercase character.
+To take into account the command, we lookup whether this command
+was expected (for instance, if the tree mode asked for it).
+If it already existed or was expected, nothing is done.
+If it was unexpected, let's create an empty, nameless group to hold it.
+*/
+function proofTreeOnAdd(s: string, r: AddReturn): void {
   if (proofTrees.length === 0) { return; }
   let activeProofTree = proofTrees[0];
-  if (activeProofTree.curNode === undefined) {
-    let g = new GoalNode(activeProofTree, undefined, c[0]);
+  let curNode = activeProofTree.curNode;
+
+  if (isUpperCase(s[0])) { return; }
+
+  if (curNode instanceof GoalNode) {
+    let existingTactic = _(curNode.getTactics())
+        .find(function(elt) { return elt.tactic === coqTrim(s); })
+    ;
+    if (existingTactic === undefined) {
+      let tg = new TacticGroupNode(activeProofTree, curNode, "");
+      let t = new TacticNode(activeProofTree, tg, coqTrim(s));
+      tg.children.push(t);
+      activeProofTree.curNode = t;
+    } else {
+      activeProofTree.curNode = existingTactic;
+    }
+    activeProofTree.update();
   }
 }
 
-function proofTreeOnGoal(g: Goals): void {
+          function proofTreeOnGetContext(c: PeaCoqContext): void {
+  if (proofTrees.length === 0) { return; }
+  let activeProofTree = proofTrees[0];
+  let curNode = activeProofTree.curNode;
+
+    let g = new GoalNode(activeProofTree, undefined, c[0]);
+  if (curNode instanceof TacticNode) {
+    curNode.children = [g];
+  }
+  activeProofTree.curNode = g;
+  activeProofTree.update();
 }
 
 function proofTreeOnStatus(s: Status): void {
   // hopefully we are always at most 1 tree late
   if (proofTrees.length + 1 === s.statusAllProofs.length) {
+    console.log("CREATING PROOF TREE");
     // we are behind on the number of proof trees, create one
     let pt = new ProofTree(
       s.statusProofName,
@@ -108,7 +146,7 @@ class ProofTree {
   anchor: d3.Selection<HTMLElement>;
   /* whatever the client wants to store as meta-data */
   clientState: Object;
-  curNode: GoalNode;
+  curNode: ProofTreeNode;
   descendantsOffset: number;
   diagonal: d3.svg.Diagonal<ProofTreeLink, ProofTreeNode>;
   goalWidth: number;
@@ -286,6 +324,7 @@ class ProofTree {
     $(":focus").blur();
   }
 
+/*
   getFocusedGoal(): GoalNode {
     let focusedChild = this.curNode.getFocusedChild();
     if (focusedChild !== undefined) {
@@ -297,6 +336,7 @@ class ProofTree {
     }
     return undefined;
   }
+*/
 
   isCurGoal(n: ProofTreeNode): boolean {
     return n.id === this.curGoal().id;
@@ -432,6 +472,7 @@ class ProofTree {
       let groups = tacticsAndGroups.groups;
       */
 
+/*
     let groupSparks = _(tacticsAndGroups)
       .map(function(group) {
       let groupNode: TacticGroupNode = self.findOrCreateGroup(curNode, group.name);
@@ -462,7 +503,7 @@ class ProofTree {
 
     // flushes the worklist and add the new sparks
     this.tacticsWorklist = groupSparks;
-
+*/
     //console.log("REPOPULATING TACTICS WORKLIST", this.tacticsWorklist);
 
     this.processTactics();
@@ -502,8 +543,7 @@ class ProofTree {
         let newChild = new TacticNode(
           self,
           groupToAttachTo,
-          t,
-          response
+          t
           );
 
         // only attach the newChild if it produces something
@@ -1050,6 +1090,7 @@ class ProofTree {
         .remove()
       ;
 
+/*
       let focusedGoal = self.getFocusedGoal();
       let diffData = (focusedGoal === undefined) ? [] : [focusedGoal];
       let diffSelection = self.diffLayer.selectAll("g.node-diff").data(
@@ -1419,12 +1460,12 @@ class ProofTree {
             leftY0 = elmtRect0(gp, oldHyp.div).bottom;
             leftY = elmtRect(gp, oldHyp.div).bottom;
 
-            /*
+
               we don't want to move the right cursor if the
               right hypothesis was not the very next
               hypothesis. this happens when a hypothesis gets
               moved down the list of hypotheses.
-             */
+
 
             if (!diff.isJump) {
               rightY0 = elmtRect0(d, newHyp.div).bottom;
@@ -1445,6 +1486,7 @@ class ProofTree {
       diffSelection.exit()
         .remove()
       ;
+*/
 
       // refocus the viewport
 
