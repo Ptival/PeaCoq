@@ -230,11 +230,11 @@ let string_of_glob_sort_gen string_of_x gs =
       | GType(x) -> "GType(" ^ string_of_x x ^ ")"
     )
 
-let string_of_sort_info = string_of_list (fun s -> s)
+let string_of_sort_info = string_of_list (string_of_located (fun s -> s))
 
 let string_of_glob_sort gs = string_of_glob_sort_gen string_of_sort_info gs
 
-let string_of_level_info = string_of_option (fun s -> s)
+let string_of_level_info = string_of_option (string_of_located (fun s -> s))
 
 let string_of_glob_level = string_of_glob_sort_gen string_of_level_info
 
