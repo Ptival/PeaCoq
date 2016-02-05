@@ -2,19 +2,19 @@
 function findPpCmdSuchThat(
   l: PpCmds,
   predicate: (_1: PpCmd) => boolean
-  ): number {
+): number {
   return _.findIndex(l, predicate);
 }
 
 function ppCmdIsStringSuchThat(
   predicate: (_1: string) => boolean
-  ): (_1: PpCmd) => boolean {
+): (_1: PpCmd) => boolean {
   return (token: PpCmd) => {
     return (
       token instanceof PpCmdPrint
       && token.token instanceof StrDef
       && predicate(token.token.string)
-      );
+    );
   }
 }
 
@@ -26,14 +26,14 @@ function replacePpCmd(
   match: (_1: PpCmd) => boolean,
   replace: (_1: PpCmd) => PpCmds,
   l: PpCmds
-  ): PpCmds {
+): PpCmds {
   let pos = findPpCmdSuchThat(l, match);
   if (pos < 0) { return l; }
   return [].concat(
     l.slice(0, pos),
     replace(l[pos]),
     l.slice(pos + 1)
-    );
+  );
 }
 
 /*
@@ -48,7 +48,7 @@ function replaceToken(s1: string, s2: string, l: PpCmds): PpCmds {
       return str(t.token.string.replace(s1, s2));
     },
     l
-    );
+  );
 }
 
 function patternScopeDelimiters(l: PpCmds): PpCmds {
@@ -58,9 +58,9 @@ function patternScopeDelimiters(l: PpCmds): PpCmds {
       str('<span style="vertical-align: sub; color: #9C27B0; font-size: xx-small;">'),
       str((<any>t).token.string.replace("%", "")),
       str('</span>')
-      ),
+    ),
     l
-    );
+  );
 }
 
 function patternForall(l: PpCmds): PpCmds {
@@ -136,9 +136,9 @@ function patternAbs(l: PpCmds): PpCmds {
         str("|"),
         l[2],
         str("|")
-        );
+      );
     }
-    );
+  );
 }
 
 /* Visualization for: x ^ y
@@ -156,7 +156,7 @@ function patternPow(l: PpCmds): PpCmds {
       str('<span style="vertical-align: super;">'),
       l.slice(pos + 2),
       str('</span>')
-      );
+    );
   }
   return l;
 }
@@ -187,9 +187,9 @@ function patternDivides(l: PpCmds): PpCmds {
         str("\u2223"),
         [l[3]], // space
         [boxDropParentheses(l[4])]
-        );
+      );
     }
-    );
+  );
 }
 
 function patternZSquare(l: PpCmds): PpCmds {
@@ -206,9 +206,9 @@ function patternZSquare(l: PpCmds): PpCmds {
       return [].concat(
         [l[2]],
         str("²")
-        );
+      );
     }
-    );
+  );
 }
 
 let anything: any = undefined;
@@ -270,7 +270,7 @@ function reduceMaybe<IN, ACC>(
   a: Array<IN>,
   f: (_1: ACC, _2: IN) => Maybe<ACC>,
   acc: ACC
-  ): Maybe<ACC> {
+): Maybe<ACC> {
   if (acc instanceof Some) {
     alert("Called reduceMaybe with a Maybe type, most likely a mistake?");
   }
@@ -286,10 +286,10 @@ function reduceMaybe<IN, ACC>(
       }
     },
     new Some(acc)
-    );
+  );
 }
 
-function ppCmdMatchGen(pat: Pattern, p: PpCmd|any, o: Object): Maybe<Object> {
+function ppCmdMatchGen(pat: Pattern, p: PpCmd | any, o: Object): Maybe<Object> {
   if (pat instanceof Anything) {
     return new Some(o);
   } else if (pat instanceof ArrayPattern) {
@@ -311,7 +311,7 @@ function ppCmdMatchGen(pat: Pattern, p: PpCmd|any, o: Object): Maybe<Object> {
           }
         },
         o
-        );
+      );
     } else {
       return new None();
     }
@@ -349,9 +349,9 @@ function patternZOfNat(l: PpCmds): PpCmds {
         str('<span style="vertical-align: sub; font-size: xx-small;">'),
         str("\u2115"),
         str('</span>')
-        );
+      );
     }
-    );
+  );
 }
 
 function boxDropParentheses(p: PpCmd): PpCmd {
@@ -389,12 +389,12 @@ function patternSumLambda(l: PpCmds): PpCmds {
           any,
           any,
           any,
-          new Binder("body") // Binder body
+          new BinderPattern("body") // Binder body
         ])]),
         tok(")")
       ]),
       any,
-      new Binder("upperBound") //new Binder("upperBound")
+      new BinderPattern("upperBound")
     ],
     (match) => {
       return [].concat(
@@ -415,9 +415,9 @@ function patternSumLambda(l: PpCmds): PpCmds {
         match.body,
         str('</span>'),
         str('</span><span style="font-family: MathJax_Size4; font-size:120%;">)</span></span>')
-        );
+      );
     }
-    );
+  );
 }
 
 function patternSum(l: PpCmds): PpCmds {
@@ -426,9 +426,9 @@ function patternSum(l: PpCmds): PpCmds {
     [
       box([box([any, tok("sum"), any])]),
       any,
-      new Binder("summand"),
+      new BinderPattern("summand"),
       any,
-      new Binder("upperBound") //new Binder("upperBound")
+      new BinderPattern("upperBound")
     ],
     (match) => {
       return [].concat(
@@ -446,7 +446,7 @@ function patternSum(l: PpCmds): PpCmds {
         match.summand,
         str('</span>'),
         str('</span><span style="font-family: MathJax_Size4; font-size:120%;">)</span></span>')
-        );
+      );
     }
-    );
+  );
 }
