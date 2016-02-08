@@ -1,20 +1,26 @@
 class GoalNode extends ProofTreeNode {
   closedBraces: number;
-  gid: number;
+  //gid: number;
   goal: PeaCoqGoal;
-  goalSpan: JQuery;
-  goalString: string;
-  goalTerm: string;
-  hyps: Hypothesis[];
-  ndx: number;
+  html: JQuery;
+  //goalSpan: JQuery;
+  //goalString: string;
+  //goalTerm: string;
+  //hyps: Hypothesis[];
+  //ndx: number;
   openBraces: number;
-  parentTactic: TacticNode;
+  //parentTactic: TacticNode;
   tacticGroups: TacticGroupNode[];
   tacticIndex: number;
 
   constructor(proofTree: ProofTree, parent: TacticNode, goal: PeaCoqGoal) {
     super(proofTree, parent);
     this.goal = goal;
+
+    this.html = $("<div>")
+      .html(htmlPrintConstrExpr(goal.concl))
+      .attr("id", _.uniqueId())
+      ;
 
     /*
     let goal = goals.fgGoals[0];
@@ -24,11 +30,13 @@ class GoalNode extends ProofTreeNode {
     this.gid = goal.gId;
     this.goalTerm = goalTerm;
     this.goalString = showTermText(goalTerm);
+    */
     this.tacticGroups = [
       //
       new TacticGroupNode(proofTree, this, userTacticsGroupName),
     ];
     this.tacticIndex = 0;
+    /*
     this.parentTactic = parentTactic;
     */
 

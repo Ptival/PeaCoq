@@ -17,7 +17,7 @@ class RequestQueue {
   }
 }
 
-var requests = new RequestQueue();
+let requests = new RequestQueue();
 
 function unbsp(s: string): string {
   return s.replace(/ /g, ' ');
@@ -34,7 +34,7 @@ function coqtop(
   command: string,
   input: Object,
   silent?: boolean
-  ): Promise<any> {
+): Promise<any> {
   return requests.push(
     () => new Promise(
       (onFulfilled, onRejected: (v: ValueFail) => any) => {
@@ -91,7 +91,7 @@ type AddReturn = {
   output: string;
 }
 type AddHandler = (s: string, r: AddReturn) => void;
-var peaCoqAddHandlers: AddHandler[] = [];
+let peaCoqAddHandlers: AddHandler[] = [];
 
 function peaCoqAddPrime(s: string): Promise<any> {
   console.log("Add'", s);
@@ -122,14 +122,17 @@ type PeaCoqHyp = {
   maybeTerm: Maybe<ConstrExpr>;
   type: ConstrExpr;
 };
+
 type PeaCoqGoal = {
   hyps: PeaCoqHyp[];
   concl: ConstrExpr;
 };
+
 type PeaCoqContext = Array<PeaCoqGoal>;
 
 type GetContextHandler = (r: PeaCoqContext) => void;
-var peaCoqGetContextHandlers: GetContextHandler[] = [];
+
+let peaCoqGetContextHandlers: GetContextHandler[] = [];
 
 function peaCoqGetContext(): Promise<PeaCoqContext> {
   return (
@@ -151,7 +154,7 @@ function peaCoqGetContext(): Promise<PeaCoqContext> {
         throw vf;
       }
       )
-    );
+  );
 }
 
 class Goal {
@@ -216,7 +219,7 @@ class Goals {
 }
 
 type GoalHandler = (g: Goals) => void;
-var peaCoqGoalHandlers: GoalHandler[] = [];
+let peaCoqGoalHandlers: GoalHandler[] = [];
 
 function peaCoqGoal(): Promise<Goals> {
   console.log("Goal");
@@ -236,7 +239,7 @@ function peaCoqGoal(): Promise<Goals> {
         return [];
       }
       )
-    );
+  );
 }
 
 // function peaCoqInit() {
@@ -274,7 +277,7 @@ class Status {
 }
 
 type StatusHandler = (s: Status) => void;
-var peaCoqStatusHandlers: StatusHandler[] = [];
+let peaCoqStatusHandlers: StatusHandler[] = [];
 
 function peaCoqStatus(b: boolean): Promise<Status> {
   console.log("Status");
@@ -287,7 +290,7 @@ function peaCoqStatus(b: boolean): Promise<Status> {
         _(peaCoqStatusHandlers).each((h) => { h(status); })
         return status;
       })
-    );
+  );
 }
 
 class ValueFail {
@@ -361,7 +364,7 @@ class Message {
   toString() {
     return (
       "[" + this.level.toString() + "]\n" + this.content
-      );
+    );
   }
 }
 
@@ -389,7 +392,7 @@ class Feedback {
     return (
       "Feedback(" + this.editOrState + ", " + this.editOrStateId + ", " +
       this.feedbackContent + ", " + this.routeId + ")"
-      );
+    );
   }
 }
 

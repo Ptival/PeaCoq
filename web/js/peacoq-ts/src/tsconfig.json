@@ -1,7 +1,7 @@
 {
   "version": "1.5.0-alpha",
   "atom": {
-    "formatOnSave": true
+    "formatOnSave": false
   },
   "compilerOptions": {
     "declaration": false,

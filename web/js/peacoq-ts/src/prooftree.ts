@@ -541,8 +541,8 @@ class ProofTree {
       .then(function(response) {
         if (isGood(response)) {
 
-          let unfocusedBefore = getResponseUnfocused(beforeResponse);
-          let unfocusedAfter = getResponseUnfocused(response);
+          //let unfocusedBefore = getResponseUnfocused(beforeResponse);
+          //let unfocusedAfter = getResponseUnfocused(response);
           let newChild = new TacticNode(
             self,
             groupToAttachTo,
@@ -639,7 +639,7 @@ class ProofTree {
           }
         });
       nodes = _(nodes)
-        .filter(function(node) { return node instanceof FakeNode; })
+        .filter(function(node) { return !(node instanceof FakeNode); })
         .value()
         ;
       let links = self.tree.links(nodes);
@@ -684,6 +684,8 @@ class ProofTree {
         .style("font-family", "monospace")
         .each(function(d) {
           let jqBody = $(d3.select(this).node());
+
+          /*
           let jQContents;
           if (d instanceof TacticNode) {
             d.span = $("<div>")
@@ -711,6 +713,9 @@ class ProofTree {
             throw d;
           }
           jqBody.append(jQContents);
+          */
+
+          if (d instanceof GoalNode) { jqBody.append(d.html); }
         })
         ;
 
@@ -774,7 +779,7 @@ class ProofTree {
             jQContents = d.span;
             jqBody.empty();
             jqBody.append(jQContents);
-          } else if (d instanceof GoalNode) {
+          }/* else if (d instanceof GoalNode) {
             jQContents = makeGoalNodePre();
             _(d.hyps).each(function(h) {
               let jQDiv = $("<div>")
@@ -790,7 +795,7 @@ class ProofTree {
             jQContents.append(d.goalSpan);
             jqBody.empty();
             jqBody.append(jQContents);
-          }
+          }*/
         })
         .each(function(d) {
           let nodeDOM = d3.select(this).node();
@@ -899,7 +904,7 @@ class ProofTree {
           // computing the difference in height between the <hr> is not
           // obvious...
           let hrDelta =
-            curNode.goalSpan[0].offsetTop
+            curNode.html[0].offsetTop
             - centeredDescendant.goalSpan[0].offsetTop
             ;
           self.descendantsOffset =
@@ -2149,6 +2154,7 @@ function showTermInline(t) {
   return showTermAux(t, 0, 0, false);
 }
 
+/*
 function getResponseFocused(response) {
   return response.rGoals.focused;
 }
@@ -2156,6 +2162,7 @@ function getResponseFocused(response) {
 function getResponseUnfocused(response) {
   return response.rGoals.unfocused;
 }
+*/
 
 function hasParent(n) {
   return n.parent !== undefined;
@@ -2207,6 +2214,8 @@ function outputError(error: any): void {
 }
 
 function goalNodeUnicityRepr(node: GoalNode): string {
+  throw("TOREDO");
+  /*
   return JSON.stringify({
     "goalTerm": node.goalTerm,
     "hyps": _(node.hyps)
@@ -2219,6 +2228,7 @@ function goalNodeUnicityRepr(node: GoalNode): string {
       })
       .value(),
   });
+  */
 }
 
 function tacticNodeUnicityRepr(node: TacticNode): string {

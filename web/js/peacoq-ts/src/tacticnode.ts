@@ -2,7 +2,6 @@ class TacticNode extends ProofTreeNode {
   goalIndex: number;
   goals: GoalNode[];
   tactic: string;
-  span: JQuery;
 
   constructor(
     proofTree: ProofTree,
@@ -13,10 +12,10 @@ class TacticNode extends ProofTreeNode {
     super(proofTree, parent);
     this.tactic = tactic;
 
-    let focusedBefore = getResponseFocused(parent.parent.response);
+    //let focusedBefore = getResponseFocused(parent.parent.response);
     //let focusedAfter = getResponseFocused(response);
 
-    let unfocusedBefore = getResponseUnfocused(parent.parent.response);
+    //let unfocusedBefore = getResponseUnfocused(parent.parent.response);
     //let unfocusedAfter = getResponseUnfocused(response);
 
     let remainingSubgoals;
