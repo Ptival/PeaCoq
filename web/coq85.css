@@ -1,4 +1,4 @@
-html, body, #interface {
+html, html>body, #interface {
   height: 100%;
   margin: 0;
 }
