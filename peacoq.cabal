@@ -21,7 +21,7 @@ Executable peacoq
   Build-tools:
 
   Build-depends:
-                adjunctions               >= 4.2   && < 4.3,
+                adjunctions               >= 4.2   && < 4.4,
                 aeson                     >= 0.8   && < 0.10,
                 array                     >= 0.5   && < 0.6,
                 base                      >= 4.8   && < 4.9,
@@ -34,7 +34,7 @@ Executable peacoq
                 exceptions                >= 0.6   && < 0.9,
                 filemanip                 >= 0.3   && < 0.4,
                 hslogger                  >= 1.2   && < 1.3,
-                lens                      >= 4.11  && < 4.13,
+                lens                      >= 4.11  && < 4.14,
                 MissingH                  >= 1.3   && < 1.4,
                 monad-loops               >= 0.4   && < 0.5,
                 mtl                       >= 2.2   && < 2.3,
