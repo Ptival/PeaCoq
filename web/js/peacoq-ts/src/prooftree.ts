@@ -47,8 +47,9 @@ function proofTreeOnAdd(s: string, r: AddReturn): void {
   if (proofTrees.length === 0) { return; }
   let activeProofTree = proofTrees[0];
   let curNode = activeProofTree.curNode;
+  let trimmed = coqTrim(s);
 
-  if (isUpperCase(s[0])) { return; }
+  if (isUpperCase(trimmed[0])) { return; }
 
   if (curNode instanceof GoalNode) {
     let existingTactic = _(curNode.getTactics())
@@ -56,6 +57,7 @@ function proofTreeOnAdd(s: string, r: AddReturn): void {
       ;
     if (existingTactic === undefined) {
       let tg = new TacticGroupNode(activeProofTree, curNode, "");
+      curNode.children.push(tg);
       let t = new TacticNode(activeProofTree, tg, coqTrim(s));
       tg.children.push(t);
       activeProofTree.curNode = t;
@@ -70,13 +72,13 @@ function proofTreeOnGetContext(c: PeaCoqContext): void {
   if (proofTrees.length === 0) { return; }
   let activeProofTree = proofTrees[0];
   let curNode = activeProofTree.curNode;
-
+  if (curNode instanceof GoalNode) { return; }
   let g = new GoalNode(activeProofTree, undefined, c[0]);
   if (activeProofTree.rootNode === undefined) {
     activeProofTree.rootNode = g;
   }
   if (curNode instanceof TacticNode) {
-    curNode.children = [g];
+    curNode.children.push(g);
   }
   activeProofTree.curNode = g;
   activeProofTree.update();
@@ -624,20 +626,19 @@ class ProofTree {
       // shorter name, expected to stay constant throughout
       let curNode = self.curNode;
 
-      assert(curNode instanceof GoalNode, "curNode instanceof GoalNode");
+      // no longer true
+      //assert(curNode instanceof GoalNode, "curNode instanceof GoalNode");
 
       // if the viewpoint has been zoomed, cancel the zoom so that the computed
       // sizes are correct
       self.resetSVGTransform();
 
       let nodes = self.tree.nodes(self.rootNode);
+
+      // D3 replaces [] with undefined, annoying...
+      _(nodes).each((d) => { if (!d.children) { d.children = []; }});
+
       // now get rid of the fake nodes used for layout
-      _(nodes)
-        .each(function(node) {
-          if (node.isTacticish() && node.getViewChildren().length === 0) {
-            node.children = [];
-          }
-        });
       nodes = _(nodes)
         .filter(function(node) { return !(node instanceof FakeNode); })
         .value()
@@ -650,14 +651,6 @@ class ProofTree {
           return this.getElementsByTagName("foreignObject");
         })
         .data(nodes, function(d) { return d.id || (d.id = _.uniqueId()); })
-        ;
-
-      // D3 populates the children field with undefined when no children
-      // it makes my life easier to instead put an empty list there
-      textSelection
-        .each(function(d) {
-          if (!d.hasOwnProperty("children")) { d.children = []; }
-        })
         ;
 
       let textEnter = textSelection.enter()
@@ -888,7 +881,6 @@ class ProofTree {
           }
         }
       } else if (self.curNode.isTacticish()) {
-        alert("This should not happen!")
         let t = getTacticFromTacticish(self.curNode);
         if (t.goals.length > 0) {
           centeredDescendant = t.goals[t.goalIndex];

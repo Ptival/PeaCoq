@@ -23,6 +23,7 @@
     "mathjax.ts",
     "utils.ts",
     "gallina.ts",
+    "goal.ts",
     "fakenode.ts",
     "goalnode.ts",
     "prooftreenode.ts",

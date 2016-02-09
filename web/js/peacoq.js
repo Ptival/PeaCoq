@@ -43,6 +43,7 @@ requirejs([
       requirejs(['peacoq-ts/coq-pretty-printer']);
       requirejs(['peacoq-ts/visualizations']);
       requirejs(['peacoq-ts/gallina']);
+      requirejs(['peacoq-ts/goal']);
       requirejs(['peacoq-ts/prooftreenode']);
       requirejs(['peacoq-ts/fakenode']);
       requirejs(['peacoq-ts/goalnode']);

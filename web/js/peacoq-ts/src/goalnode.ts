@@ -19,17 +19,8 @@ class GoalNode extends ProofTreeNode {
 
     this.html = $("<div>")
       .attr("id", _.uniqueId())
+      .append(this.goal.getHTML())
       ;
-
-    this.html.append(
-      $("<div>").html(htmlPrintHyps(goal.hyps))
-    );
-
-    this.html.append(makeContextDivider());
-
-    this.html.append(
-      $("<div>").html(htmlPrintConstrExpr(goal.concl))
-    );
 
     /*
     let goal = goals.fgGoals[0];

@@ -21,6 +21,7 @@ abstract class ProofTreeNode {
   y0: number;
 
   constructor(proofTree: ProofTree, parent: ProofTreeNode) {
+    this.children = [];
     this.id = _.uniqueId();
     this.isFake = false;
     this.proofTree = proofTree;

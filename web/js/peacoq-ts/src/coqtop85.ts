@@ -123,11 +123,6 @@ type PeaCoqHyp = {
   type: ConstrExpr;
 };
 
-type PeaCoqGoal = {
-  hyps: PeaCoqHyp[];
-  concl: ConstrExpr;
-};
-
 type PeaCoqContext = Array<PeaCoqGoal>;
 
 type GetContextHandler = (r: PeaCoqContext) => void;
@@ -140,7 +135,10 @@ function peaCoqGetContext(): Promise<PeaCoqContext> {
       .then(
       (c) => {
         // TODO: don't use eval
-        let context = eval(c);
+        let rawContext = eval(c);
+        let context = _(rawContext).map((x) => {
+          return new PeaCoqGoal(x.hyps, x.concl);
+        }).value();
         _(peaCoqGetContextHandlers).each((h) => { h(context); });
         return context;
       })

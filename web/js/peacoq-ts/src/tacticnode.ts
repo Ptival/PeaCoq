@@ -1,4 +1,4 @@
-class TacticNode extends ProofTreeNode {
+class Tactic {
   goalIndex: number;
   goals: GoalNode[];
   tactic: string;

@@ -581,41 +581,10 @@ function updatePretty(edit: Edit): Promise<void> {
     }
     return Promise.resolve();
   }
+
+  pretty.html("");
   let currentGoal = context[0];
-  let hypsHTML = htmlPrintHyps(currentGoal.hyps);
-  let oldContext = getPreviousEditContext(edit);
-  let conclHTML = (
-    oldContext instanceof Some && oldContext.some.length > 0
-      ? htmlPrintConstrExprDiff(currentGoal.concl, oldContext.some[0].concl)
-      : htmlPrintConstrExpr(currentGoal.concl)
-    );
-  pretty.html(hypsHTML + "<hr/>" + conclHTML);
-
-  /*
-  Now, let's merge redundant variables on a single line
-    a: nat, b: nat
-  becomes:
-    a, b: nat
-  */
-
-  let hyps = $(".hyp");
-  // if the previous hyp has the same body/type, incorporate it
-  _.forEach(hyps, function(elt, ndx) {
-    if (ndx === 0) { return; }
-    let prevElt = hyps[ndx - 1];
-    if (sameBodyAndType(elt, prevElt)) {
-      // prepend the names of the previous hyp, then delete previous
-      let spanToPrependTo = $(elt).children("span")[0];
-      let spanToPrependFrom = $(prevElt).children("span")[0];
-      $(spanToPrependTo).html($(spanToPrependFrom).html() + ", " + $(spanToPrependTo).html());
-      $(prevElt).remove();
-    }
-  });
-  /*
-  let fg = foreground.getSession();
-  let old = fg.getValue();
-  fg.setValue(old + "\nAs computed by PeaCoq:\n" + pp);
-  */
+  pretty.append(currentGoal.getHTML());
 }
 
 function countBackgroundGoals(goals: Goals): number {
