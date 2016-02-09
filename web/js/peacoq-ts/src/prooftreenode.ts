@@ -49,8 +49,6 @@ abstract class ProofTreeNode {
     return this.id === common.id;
   }
 
-  abstract isTacticish(): boolean;
-
   abstract nodeWidth(): number;
 
 }

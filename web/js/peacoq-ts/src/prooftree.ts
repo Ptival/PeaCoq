@@ -58,11 +58,11 @@ function proofTreeOnAdd(s: string, r: AddReturn): void {
     if (existingTactic === undefined) {
       let tg = new TacticGroupNode(activeProofTree, curNode, "");
       curNode.children.push(tg);
-      let t = new TacticNode(activeProofTree, tg, coqTrim(s));
-      tg.children.push(t);
-      activeProofTree.curNode = t;
+      let t = new Tactic(coqTrim(s), tg);
+      tg.tactics.push(t);
+      activeProofTree.curNode = tg;
     } else {
-      activeProofTree.curNode = existingTactic;
+      activeProofTree.curNode = existingTactic.parentGroup;
     }
     activeProofTree.update();
   }
@@ -73,15 +73,12 @@ function proofTreeOnGetContext(c: PeaCoqContext): void {
   let activeProofTree = proofTrees[0];
   let curNode = activeProofTree.curNode;
   if (curNode instanceof GoalNode) { return; }
-  let g = new GoalNode(activeProofTree, undefined, c[0]);
-  if (activeProofTree.rootNode === undefined) {
-    activeProofTree.rootNode = g;
+  if (!curNode || curNode instanceof TacticGroupNode) {
+    let g = new GoalNode(activeProofTree, undefined, c[0]);
+    if (curNode) { curNode.children.push(g); }
+    activeProofTree.curNode = g;
+    activeProofTree.update();
   }
-  if (curNode instanceof TacticNode) {
-    curNode.children.push(g);
-  }
-  activeProofTree.curNode = g;
-  activeProofTree.update();
 }
 
 function proofTreeOnStatus(s: Status): void {
@@ -219,7 +216,7 @@ class ProofTree {
         }
         // in order to trick d3 into displaying tactics better add fake
         // children to tactic nodes that solve their goal
-        if (node.isTacticish() && viewChildren.length === 0) {
+        if (node instanceof TacticGroupNode && viewChildren.length === 0) {
           return [new FakeNode()];
         }
         return viewChildren;
@@ -404,8 +401,11 @@ class ProofTree {
         }
     }
     */
+
+    let curNode = this.curNode;
+
     // if the user uses his keyboard, highlight the focused path
-    if (this.curNode instanceof GoalNode) {
+    if (curNode instanceof GoalNode) {
       let focusedChild = this.curNode.getFocusedChild();
       if (focusedChild === undefined) { return thin; }
       if (this.isCurNode(src) && focusedChild.id === tgt.id) { return thick; }
@@ -416,7 +416,7 @@ class ProofTree {
         return thick;
       }
       return thin;
-    } else if (this.curNode.isTacticish()) {
+    } else if (curNode instanceof TacticGroupNode) {
       let focusedChild = this.curNode.getFocusedChild();
       if (focusedChild !== undefined && tgt.id === focusedChild.id) {
         return thick;
@@ -545,20 +545,19 @@ class ProofTree {
 
           //let unfocusedBefore = getResponseUnfocused(beforeResponse);
           //let unfocusedAfter = getResponseUnfocused(response);
-          let newChild = new TacticNode(
-            self,
-            groupToAttachTo,
-            t
+          let newChild = new Tactic(
+            t,
+            groupToAttachTo
           );
 
           // only attach the newChild if it produces something
           // unique from existing children
-          let newChildRepr = tacticNodeUnicityRepr(newChild);
+          let newChildRepr = tacticUnicityRepr(newChild);
 
           let resultAlreadyExists =
             _(parentGoal.getTactics()).some(function(t) {
               return t.tactic === newChild.tactic;
-              //return (tacticNodeUnicityRepr(t) === newChildRepr);
+              //return (tacticUnicityRepr(t) === newChildRepr);
             })
             ;
 
@@ -636,7 +635,7 @@ class ProofTree {
       let nodes = self.tree.nodes(self.rootNode);
 
       // D3 replaces [] with undefined, annoying...
-      _(nodes).each((d) => { if (!d.children) { d.children = []; }});
+      _(nodes).each((d) => { if (!d.children) { d.children = []; } });
 
       // now get rid of the fake nodes used for layout
       nodes = _(nodes)
@@ -872,7 +871,7 @@ class ProofTree {
         node. it used to be at the top of the view, now it's centered.
       */
       let centeredDescendant = undefined;
-      if (self.curNode instanceof GoalNode) {
+      if (curNode instanceof GoalNode) {
         let centeredTactic = self.curNode.getFocusedChild();
         if (centeredTactic !== undefined) {
           centeredDescendant = centeredTactic.getFocusedChild();
@@ -880,8 +879,8 @@ class ProofTree {
             centeredDescendant = centeredTactic;
           }
         }
-      } else if (self.curNode.isTacticish()) {
-        let t = getTacticFromTacticish(self.curNode);
+      } else if (curNode instanceof TacticGroupNode) {
+        let t = curNode.getFocusedTactic();
         if (t.goals.length > 0) {
           centeredDescendant = t.goals[t.goalIndex];
         }
@@ -904,11 +903,10 @@ class ProofTree {
             - (curGoal.height - centeredDescendant.height) / 2
             + hrDelta
             ;
-        } else if (curNode.isTacticish()) {
-          throw "This should not happen anymore?";
+        } else if (curNode instanceof TacticGroupNode) {
           /*
           let hrDelta =
-            self.curNode.parent.goalSpan[0].offsetTop
+            curNode.parent.goalSpan[0].offsetTop
             - centeredDescendant.goalSpan[0].offsetTop
             ;
           self.descendantsOffset =
@@ -917,6 +915,7 @@ class ProofTree {
           + hrDelta
           ;
           */
+          throw "TODO";
         } else {
           self.descendantsOffset =
             self.yFactor * (nodeY(curGoal) - nodeY(centeredDescendant))
@@ -1002,10 +1001,10 @@ class ProofTree {
         .classed("goal", (d) => d instanceof GoalNode)
         .style("fill", function(d) {
           if (d instanceof GoalNode) { return "#AEC6CF"; }
-          if (d.isTacticish()) { return "#CB99C9"; }
+          if (d instanceof TacticGroupNode) { return "#CB99C9"; }
           return "#000000";
         })
-        .classed("tactic", (d) => d.isTacticish())
+        .classed("tactic", (d) => d instanceof TacticGroupNode)
         .attr("width", function(d) { return d.width; })
         .attr("height", function(d) { return d.height; })
         .attr("x", function(d) { return d.cX0; })
@@ -2175,29 +2174,10 @@ function getClosestGoal(node: ProofTreeNode): GoalNode {
   if (node instanceof GoalNode) { return node; }
   // if it is not a goal, it ought to have a parent
   if (node instanceof TacticGroupNode) {
+    assert(node.parent instanceof GoalNode, "getClosestGoal");
     return <GoalNode>node.parent;
   }
-  if (node instanceof TacticNode) {
-    let parent = node.parent;
-    if (parent instanceof GoalNode) {
-      alert("This should not happen anymore!");
-      // TODO: remove this if it indeed does not happen
-      return parent;
-    } else if (parent instanceof TacticGroupNode) {
-      return <GoalNode>parent.parent;
-    }
-  }
   throw node;
-}
-
-function getTacticFromTacticish(d: ProofTreeNode): TacticNode {
-  if (d instanceof TacticNode) {
-    return d;
-  } else if (d instanceof TacticGroupNode) {
-    return d.getFocusedTactic();
-  } else {
-    throw d;
-  }
 }
 
 // specialized version of console.log, because JS is stupid
@@ -2206,9 +2186,9 @@ function outputError(error: any): void {
 }
 
 function goalNodeUnicityRepr(node: GoalNode): string {
-  throw("TOREDO");
+  throw ("TOREDO");
   /*
-  return JSON.stringify({
+  retur  JSON.stringify({
     "goalTerm": node.goalTerm,
     "hyps": _(node.hyps)
       .map(function(h) {
@@ -2223,7 +2203,7 @@ function goalNodeUnicityRepr(node: GoalNode): string {
   */
 }
 
-function tacticNodeUnicityRepr(node: TacticNode): string {
+function tacticUnicityRepr(node: Tactic): string {
   return JSON.stringify(
     _(node.goals)
       .map(goalNodeUnicityRepr)

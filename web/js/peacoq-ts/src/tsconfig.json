@@ -28,7 +28,7 @@
     "goalnode.ts",
     "prooftreenode.ts",
     "tacticgroupnode.ts",
-    "tacticnode.ts",
+    "tactic.ts",
     "goalnode.ts",
     "prooftree.ts",
     "visualizations.ts",

@@ -13,7 +13,7 @@ class GoalNode extends ProofTreeNode {
   tacticGroups: TacticGroupNode[];
   tacticIndex: number;
 
-  constructor(proofTree: ProofTree, parent: TacticNode, goal: PeaCoqGoal) {
+  constructor(proofTree: ProofTree, parent: TacticGroupNode, goal: PeaCoqGoal) {
     super(proofTree, parent);
     this.goal = goal;
 
@@ -42,6 +42,10 @@ class GoalNode extends ProofTreeNode {
 
     this.openBraces = 0;
     this.closedBraces = 0;
+
+    if (proofTree.rootNode === undefined) {
+      proofTree.rootNode= this;
+    }
   }
 
   getFocusedChild() {
@@ -59,10 +63,10 @@ class GoalNode extends ProofTreeNode {
     return nonEmptyTacticGroups[this.tacticIndex];
   }
 
-  getTactics(): TacticNode[] {
+  getTactics(): Tactic[] {
     return _(this.tacticGroups)
       .map(function(g) { return g.getTactics(); })
-      .flatten<TacticNode>(true)
+      .flatten<Tactic>(true)
       .value()
       ;
   }
@@ -87,8 +91,6 @@ class GoalNode extends ProofTreeNode {
       return [];
     }
   }
-
-  isTacticish(): boolean { return false; }
 
   nodeWidth() {
     return this.proofTree.goalWidth;

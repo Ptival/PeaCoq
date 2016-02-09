@@ -4,7 +4,7 @@ class TacticGroupNode extends ProofTreeNode {
   name: string;
   span: JQuery;
   tacticIndex: number;
-  tactics: TacticNode[];
+  tactics: Tactic[];
 
   constructor(
     proofTree: ProofTree,
@@ -23,12 +23,12 @@ class TacticGroupNode extends ProofTreeNode {
     return viewChildren[this.tactics[this.tacticIndex].goalIndex];
   }
 
-  getFocusedTactic() {
+  getFocusedTactic(): Tactic {
       if (this.tactics.length === 0) { return undefined; }
       return this.tactics[this.tacticIndex];
   }
 
-  getTactics(): TacticNode[] {
+  getTactics(): Tactic[] {
     return this.tactics;
   }
 
@@ -36,10 +36,8 @@ class TacticGroupNode extends ProofTreeNode {
     if (this.isSolved) { return []; }
     if (this.tactics.length === 0) { return []; }
     let focusedTactic = this.tactics[this.tacticIndex];
-    return focusedTactic.getViewChildren();
+    return focusedTactic.goals;
   }
-
-  isTacticish(): boolean { return true; }
 
   nodeWidth(): number { return this.proofTree.tacticWidth; }
 

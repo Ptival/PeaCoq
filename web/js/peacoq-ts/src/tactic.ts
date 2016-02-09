@@ -1,14 +1,16 @@
 class Tactic {
   goalIndex: number;
   goals: GoalNode[];
+  parentGroup: TacticGroupNode;
   tactic: string;
 
-  constructor(tactic: string) {
-    this.tactic = tactic;
-  }
-    //, response: any
-    ) {
-    super(proofTree, parent);
+  constructor(
+    tactic: string,
+    parentGroup: TacticGroupNode
+  ) {
+    this.goalIndex = 0;
+    this.goals = [];
+    this.parentGroup = parentGroup;
     this.tactic = tactic;
 
     //let focusedBefore = getResponseFocused(parent.parent.response);
@@ -17,7 +19,7 @@ class Tactic {
     //let unfocusedBefore = getResponseUnfocused(parent.parent.response);
     //let unfocusedAfter = getResponseUnfocused(response);
 
-    let remainingSubgoals;
+    //let remainingSubgoals;
     /*
     if (_.isEqual(unfocusedAfter, unfocusedBefore)) {
       if (focusedBefore.length > 1
@@ -35,25 +37,6 @@ class Tactic {
       return new GoalNode(proofTree, this, response);
     }).value();
     */
-
-    this.goalIndex = 0;
   }
-
-  getFocusedChild() {
-    let viewChildren = this.getViewChildren();
-    if (viewChildren.length === 0) { return undefined; }
-    return viewChildren[this.goalIndex];
-  }
-
-  getViewChildren(): GoalNode[] {
-    if (this.isSolved) { return []; }
-    if (this.goals.length === 0) { return []; }
-    // Note: This SHOULD NOT be the current node!
-    return this.goals;
-  }
-
-  isTacticish(): boolean { return true; }
-
-  nodeWidth(): number { return this.proofTree.tacticWidth; }
 
 }

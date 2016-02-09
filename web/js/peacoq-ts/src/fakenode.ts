@@ -6,6 +6,5 @@ class FakeNode extends ProofTreeNode {
 
   getFocusedChild(): ProofTreeNode { throw "FakeNode"; }
   getViewChildren(): ProofTreeNode[] { throw "FakeNode"; }
-  isTacticish(): boolean { return false; }
   nodeWidth(): number { throw "FakeNode"; }
 }
