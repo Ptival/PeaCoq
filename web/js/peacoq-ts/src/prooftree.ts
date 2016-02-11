@@ -70,13 +70,17 @@ function proofTreeOnGetContext(c: PeaCoqContext): void {
   if (proofTrees.length === 0) { return; }
   let activeProofTree = proofTrees[0];
   let curNode = activeProofTree.curNode;
-  if (curNode instanceof GoalNode) { return; }
-  if (!curNode || curNode instanceof TacticGroupNode) {
+  let tacticWaiting = activeProofTree.tacticWaitingForContext;
+  // TODO: Cover all goals rather than just the first :)
+  if (!curNode) {
     let g = new GoalNode(activeProofTree, undefined, c[0]);
-    if (curNode instanceof TacticGroupNode) {
-      let t = curNode.getFocusedTactic();
-      t.goals.push(g);
-    }
+    activeProofTree.curNode = g;
+    activeProofTree.update();
+  }
+  if (tacticWaiting) {
+    let g = new GoalNode(activeProofTree, tacticWaiting.parentGroup, c[0]);
+    tacticWaiting.goals.push(g);
+    activeProofTree.tacticWaitingForContext = undefined;
     activeProofTree.curNode = g;
     activeProofTree.update();
   }
@@ -632,16 +636,18 @@ class ProofTree {
       self.resetSVGTransform();
 
       let nodes = self.tree.nodes(self.rootNode);
-
-      // D3 replaces [] with undefined, annoying...
-      //_(nodes).each((d) => { if (!d.children) { d.children = []; } });
-
-      // now get rid of the fake nodes used for layout
+      let links = self.tree.links(nodes);
+      // now remove all fake nodes
       nodes = _(nodes)
         .filter(function(node) { return !(node instanceof FakeNode); })
         .value()
         ;
-      let links = self.tree.links(nodes);
+      links = _(links)
+        .filter(function(link) {
+          return !(link.source instanceof FakeNode || link.target instanceof FakeNode)
+        })
+        .value()
+        ;
 
       // we build the foreignObject first, as its dimensions will guide the others
       let textSelection = self.textLayer

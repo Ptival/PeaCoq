@@ -31,10 +31,7 @@ class GoalNode extends ProofTreeNode {
     this.goalTerm = goalTerm;
     this.goalString = showTermText(goalTerm);
     */
-    this.tacticGroups = [
-      //
-      new TacticGroupNode(proofTree, this, userTacticsGroupName),
-    ];
+    this.tacticGroups = [];
     this.tacticIndex = 0;
     /*
     this.parentTactic = parentTactic;

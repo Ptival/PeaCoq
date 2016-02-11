@@ -1,7 +1,6 @@
 class FakeNode extends ProofTreeNode {
   constructor() {
     super(undefined, undefined);
-    this.isFake = true;
   }
 
   getFocusedChild(): ProofTreeNode { throw "FakeNode"; }
