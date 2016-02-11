@@ -1,6 +1,5 @@
 
 abstract class ProofTreeNode {
-  children: ProofTreeNode[];
   cX: number;
   cX0: number;
   cY: number;
@@ -8,7 +7,6 @@ abstract class ProofTreeNode {
   depth: number;
   height: number;
   id: string;
-  isFake: boolean;
   isSolved: boolean;
   label: string;
   parent: ProofTreeNode;
@@ -21,9 +19,7 @@ abstract class ProofTreeNode {
   y0: number;
 
   constructor(proofTree: ProofTree, parent: ProofTreeNode) {
-    this.children = [];
     this.id = _.uniqueId();
-    this.isFake = false;
     this.proofTree = proofTree;
     this.parent = parent;
     this.depth = (parent === undefined) ? 0 : parent.depth + 1;

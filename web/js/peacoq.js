@@ -48,7 +48,7 @@ requirejs([
       requirejs(['peacoq-ts/fakenode']);
       requirejs(['peacoq-ts/goalnode']);
       requirejs(['peacoq-ts/tacticgroupnode']);
-      requirejs(['peacoq-ts/tacticnode']);
+      requirejs(['peacoq-ts/tactic']);
       requirejs(['peacoq-ts/prooftree']);
     });
   });

@@ -57,12 +57,10 @@ function proofTreeOnAdd(s: string, r: AddReturn): void {
       ;
     if (existingTactic === undefined) {
       let tg = new TacticGroupNode(activeProofTree, curNode, "");
-      curNode.children.push(tg);
+      curNode.tacticGroups.push(tg);
       let t = new Tactic(coqTrim(s), tg);
       tg.tactics.push(t);
-      activeProofTree.curNode = tg;
-    } else {
-      activeProofTree.curNode = existingTactic.parentGroup;
+      activeProofTree.tacticWaitingForContext = t;
     }
     activeProofTree.update();
   }
@@ -75,7 +73,10 @@ function proofTreeOnGetContext(c: PeaCoqContext): void {
   if (curNode instanceof GoalNode) { return; }
   if (!curNode || curNode instanceof TacticGroupNode) {
     let g = new GoalNode(activeProofTree, undefined, c[0]);
-    if (curNode) { curNode.children.push(g); }
+    if (curNode instanceof TacticGroupNode) {
+      let t = curNode.getFocusedTactic();
+      t.goals.push(g);
+    }
     activeProofTree.curNode = g;
     activeProofTree.update();
   }
@@ -161,10 +162,11 @@ class ProofTree {
   tacticWidth: number;
   /* true until the user uses their mouse */
   usingKeyboard: boolean;
-  rootNode: ProofTreeNode;
+  rootNode: GoalNode;
   svgId: string;
   tactics: () => TacticGroup[];
   tacticsWorklist: WorklistItem[];
+  tacticWaitingForContext: Tactic;
   tree: d3.layout.Tree<ProofTreeNode>;
   viewportX: number;
   viewportY: number;
@@ -205,15 +207,12 @@ class ProofTree {
     this.tacticWidth = computeTacticWidth(this.width);
 
     this.tree = d3.layout.tree<ProofTreeNode>()
-      .children(
-      (node: ProofTreeNode, index: number) => {
+      .children((node: ProofTreeNode, index: number) => {
         // fake nodes are used to trick the layout engine into spacing
         // childrenless nodes appropriately
-        if (node.isFake) { return []; }
+        if (node instanceof FakeNode) { return []; }
         let viewChildren = node.getViewChildren();
-        if (viewChildren === undefined) {
-          throw node;
-        }
+        if (viewChildren === undefined) { throw node; }
         // in order to trick d3 into displaying tactics better add fake
         // children to tactic nodes that solve their goal
         if (node instanceof TacticGroupNode && viewChildren.length === 0) {
@@ -635,7 +634,7 @@ class ProofTree {
       let nodes = self.tree.nodes(self.rootNode);
 
       // D3 replaces [] with undefined, annoying...
-      _(nodes).each((d) => { if (!d.children) { d.children = []; } });
+      //_(nodes).each((d) => { if (!d.children) { d.children = []; } });
 
       // now get rid of the fake nodes used for layout
       nodes = _(nodes)
@@ -819,10 +818,11 @@ class ProofTree {
       visibleNodes = visibleNodes.concat(visibleGrandChildren.value());
 
       // xFactor is now fixed, so that the user experience is more stable
-      if (self.rootNode.children === undefined || self.rootNode.children.length === 0) {
+      let rootViewChildren = self.rootNode.getViewChildren();
+      if (rootViewChildren.length === 0) {
         self.xFactor = self.width;
       } else {
-        let xDistance = nodeX(self.rootNode.children[0]) - nodeX(self.rootNode);
+        let xDistance = nodeX(rootViewChildren[0]) - nodeX(self.rootNode);
         /* width = 4 * xDistance * xFactor */
         self.xFactor = self.width / (4 * xDistance);
       }
@@ -1557,7 +1557,7 @@ class ProofTree {
     // all tactic nodes are shifted such that the current tactic is centered
     //assert(isGoal(this.curNode), "yOffset assumes the current node is a goal!");
     if (this.isCurGoalChild(d)) {
-      assert(focusedChild !== undefined, "focusedChild === undefined");
+      assert(focusedChild !== undefined, "yOffset: focusedChild === undefined");
       return offset + (nodeY(d.parent) - nodeY(focusedChild)) * this.yFactor;
     }
 
