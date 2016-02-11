@@ -2,52 +2,20 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE RankNTypes #-}
 
 module Coq where
 
-import           Control.Monad.Catch      (MonadThrow)
-import           Control.Monad.Loops      (whileM_)
-import           Control.Monad.RWS.Strict
 import           Data.Aeson               (FromJSON, ToJSON)
-import qualified Data.ByteString          as BS
-import           Data.Conduit
-import           Data.Conduit.Binary      (sourceHandle)
-import           Data.Either              (partitionEithers)
+
 import           Data.List                (intersperse)
 import           Data.Proxy
-import           Data.XML.Types
 import           GHC.Generics             (Generic)
-import           System.IO
-import           System.Process           (ProcessHandle)
-import           Text.XML
 import           Text.XML.Stream.Parse    hiding (tag)
 
 import           FromString
 import           FromXML
 import           ToXML
 import           Utils
-
-{-
-
-A 'CoqIO':
-- runs an 'IO' action
-- can read input and output 'Handle'
-- can write 'Message's and 'Feedback'
-- can update a state with a state ID and an edit counter 'Int'
-- may fail with result of type 'Fail'
-
--}
-
-type Handles = (Handle, Handle, Handle, ProcessHandle)
-type CoqReader = Handles
-type CoqWriter = ([Message], [Feedback])
-type CoqState = (StateId, Int)
-type CoqIO = RWST CoqReader CoqWriter CoqState IO
-type CoqtopIO a = CoqIO (Value a)
-
-initialCoqState :: CoqState
-initialCoqState = (StateId 1, 0) -- 1 after auto-initialization
 
 data StateId
   = StateId Int
@@ -209,11 +177,13 @@ instance Show CoqInfo where
 
 instance ToJSON CoqInfo
 
+{-
 data GXML a
   = Element String a [GXML a]
   | PCData String
 
 type XML = GXML [(String, String)]
+-}
 
 tagSearchConstraint :: ToXML a => String -> a -> String
 tagSearchConstraint = mkTag "search_cst"
@@ -233,35 +203,11 @@ instance ToXML OptionValue where
   xml (IntValue i)    = tagOptionValue "intvalue"    i
   xml (StringValue s) = tagOptionValue "stringvalue" s
 
--- when coqtop fails, it tells which state it is now in
--- but apparently, 0 is a dummy value
-setStateIdFromValue :: Value a -> CoqIO ()
-setStateIdFromValue (ValueFail (StateId 0) _ _) = return ()
--- apparently, backtracking to this sid make coqtop unhappy
-setStateIdFromValue (ValueFail _sid        _ _) = return () --setStateId sid
-setStateIdFromValue (ValueGood _)               = return ()
-
-runCoqtopIO :: Handles -> CoqState -> CoqtopIO a -> IO (Value a, CoqState, CoqWriter)
-runCoqtopIO hs st io = runRWST io' hs st
-  where
-    io' = do
-      v <- io
-      setStateIdFromValue v
-      return v
-
 mkTag :: ToXML a => String -> String -> a -> String
 mkTag name val contents =
   "<" ++ name ++ " val=\"" ++ val ++ "\">\n"
   ++ xml contents
   ++ "\n</" ++ name ++ ">"
-
-hQuery :: (ToXML i) => String -> i -> CoqIO ()
-hQuery cmd input = do
-  (hi, _, _, _) <- ask
-  let queryStr = mkTag "call" cmd input
-  liftIO . putStrLn $ queryStr
-  liftIO $ hPutStr hi queryStr
-  return ()
 
 instance FromXML FeedbackContent where
   instanceName Proxy = "FeedbackContent"
@@ -345,54 +291,6 @@ parseXMLEither =
         ((Left  <$>) <$> (parseXML :: Parser (Maybe a)))
   `orE` ((Right <$>) <$> (parseXML :: Parser (Maybe b)))
 
-hResponseDebug :: String -> IO ()
-hResponseDebug s = if True then putStrLn s else return ()
-
-hResponse :: forall a. (FromXML a, Show a) => CoqtopIO a
-hResponse = do
-  (_, ho, he, _) <- ask
-  (messages, feedback, response) <- liftIO $ do
-
-    -- flush stderr if needed
-    -- TODO: report these errors
-    whileM_ (hReady he) (hGetLine he)
-
-    (resumable, messagesAndFeedback) <- xmlSource ho $$+ many parseXMLEither
-    let (messages, feedback) = partitionEithers messagesAndFeedback
-    (source, _) <- unwrapResumable resumable
-
-    let messageStr = unlines . map show $ messages
-    hResponseDebug $ "Message:\n" ++ take messageMaxLen messageStr
-    if length messageStr > messageMaxLen
-      then putStrLn "..."
-      else return ()
-
-    let feedbackStr = unlines . map show $ feedback
-    hResponseDebug $ "Feedback:\n" ++ take feedbackMaxLen feedbackStr
-    if length feedbackStr > feedbackMaxLen
-      then putStrLn "..."
-      else return ()
-
-    response <- source $$ (forceXML :: Parser (Value a))
-    hResponseDebug $ "Value: " ++ show response
-    hResponseDebug $ replicate 60 '='
-
-    return (messages, feedback, response)
-  tell (messages, feedback)
-  setStateIdFromValue response
-  return response
-
-hCall :: (ToXML i, FromXML o, Show o) => String -> i -> CoqtopIO o
-hCall cmd input = do
-  hQuery cmd input
-  hResponse
-
-hCallRawResponse :: (ToXML i) => String -> i -> CoqIO String
-hCallRawResponse cmd input = do
-  hQuery cmd input
-  (_, ho, _, _) <- ask
-  liftIO $ hGetContents ho
-
 instance FromXML Status where
   instanceName Proxy = "Status"
   parseXML = tagNoAttr "status" $ do
@@ -401,24 +299,6 @@ instance FromXML Status where
     allProofs <- forceXML
     proofNum <- forceXML
     return $ MkStatus path proofName allProofs proofNum
-
-xmlConduit :: (MonadThrow m) => Conduit BS.ByteString m Event
-xmlConduit = parseBytes $ def { psDecodeEntities = decodeHtmlEntities }
-
-xmlConduitPos :: (MonadThrow m) => Conduit BS.ByteString m EventPos
-xmlConduitPos = parseBytesPos $ def { psDecodeEntities = decodeHtmlEntities }
-
-xmlSource :: Handle -> Producer IO Event
-xmlSource h =
-  yield ("<?xml version=\"1.0\" encoding=\"utf-8\"?>" :: BS.ByteString)
-  =$= sourceHandle h
-  $= xmlConduit
-
-xmlSourcePos :: Handle -> Producer IO EventPos
-xmlSourcePos h =
-  yield ("<?xml version=\"1.0\" encoding=\"utf-8\"?>" :: BS.ByteString)
-  =$= sourceHandle h
-  $= xmlConduitPos
 
 instance FromXML StateId where
   instanceName Proxy = "StateId"
@@ -464,23 +344,6 @@ instance FromXML a => FromXML (Value a) where
       errorLoc :: Maybe Int -> Maybe Int -> ErrorLocation
       errorLoc (Just s) (Just e) = Just (s, e)
       errorLoc _        _        = Nothing
-
-getStateId :: CoqIO StateId
-getStateId = gets fst
-
-setStateId :: StateId -> CoqIO ()
-setStateId sid = modify (\(_, eid) -> (sid, eid))
-
-getNextEditId :: CoqIO Int
-getNextEditId = do
-  next <- gets snd
-  return next
-
-newEditID :: CoqIO Int
-newEditID = do
-  new <- gets snd
-  modify (\(sid, _) -> (sid, new + 1))
-  return new
 
 instance FromXML Evar where
   instanceName Proxy = "Evar"

@@ -8,7 +8,7 @@ import Data.IntMap          (IntMap)
 import Snap                 (Snaplet)
 import Snap.Snaplet.Session (SessionManager)
 
-import Coq
+import CoqIO
 
 data SessionState
   = SessionState

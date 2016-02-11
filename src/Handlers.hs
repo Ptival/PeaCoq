@@ -24,7 +24,7 @@ import           System.IO
 import           System.Process
 import           System.Random
 
-import           Coq
+import           CoqIO
 import           PeaCoq
 import           Session
 import           XMLProtocol
