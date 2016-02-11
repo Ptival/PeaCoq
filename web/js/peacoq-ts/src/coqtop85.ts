@@ -112,9 +112,17 @@ function peaCoqAddPrime(s: string): Promise<any> {
   return res;
 }
 
+type EditAtHandler = (sid: number) => void;
+let peaCoqEditAtHandlers: EditAtHandler[] = [];
+
 function peaCoqEditAt(sid: number): Promise<Object> {
   console.log("EditAt", sid);
-  return coqtop("editat", sid);
+  return coqtop("editat", sid)
+    .then((o) => {
+      _(peaCoqEditAtHandlers).each((h) => { h(sid); });
+      return o;
+    })
+  ;
 }
 
 type PeaCoqHyp = {

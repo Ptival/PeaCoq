@@ -6,7 +6,8 @@ class Tactic {
 
   constructor(
     tactic: string,
-    parentGroup: TacticGroupNode
+    parentGroup: TacticGroupNode,
+    addReturn: AddReturn
   ) {
     this.goalIndex = 0;
     this.goals = [];

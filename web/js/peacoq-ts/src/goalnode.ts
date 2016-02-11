@@ -10,6 +10,7 @@ class GoalNode extends ProofTreeNode {
   //ndx: number;
   openBraces: number;
   //parentTactic: TacticNode;
+  stateId: number; // should be filled as soon as known
   tacticGroups: TacticGroupNode[];
   tacticIndex: number;
 

@@ -23,6 +23,7 @@ let goalBodyPadding = 4;
 $(document).ready(() => {
   peaCoqAddHandlers.push(proofTreeOnAdd);
   peaCoqGetContextHandlers.push(proofTreeOnGetContext);
+  peaCoqEditAtHandlers.push(proofTreeOnEditAt);
   //peaCoqGoalHandlers.push(proofTreeOnGoal);
   peaCoqStatusHandlers.push(proofTreeOnStatus);
 });
@@ -46,6 +47,7 @@ If it was unexpected, let's create an empty, nameless group to hold it.
 function proofTreeOnAdd(s: string, r: AddReturn): void {
   if (proofTrees.length === 0) { return; }
   let activeProofTree = proofTrees[0];
+  activeProofTree.stateId = r.stateId;
   let curNode = activeProofTree.curNode;
   let trimmed = coqTrim(s);
 
@@ -58,12 +60,22 @@ function proofTreeOnAdd(s: string, r: AddReturn): void {
     if (existingTactic === undefined) {
       let tg = new TacticGroupNode(activeProofTree, curNode, "");
       curNode.tacticGroups.push(tg);
-      let t = new Tactic(coqTrim(s), tg);
+      let t = new Tactic(coqTrim(s), tg, r);
       tg.tactics.push(t);
       activeProofTree.tacticWaitingForContext = t;
     }
     activeProofTree.update();
   }
+}
+
+/*
+  For now, let's just rewind within the tree or give up. Eventually,
+  we could rewind into old trees.
+ */
+function proofTreeOnEditAt(sid: number): void {
+  if (proofTrees.length === 0) { return; }
+  let activeProofTree = proofTrees[0];
+  // TODO
 }
 
 function proofTreeOnGetContext(c: PeaCoqContext): void {
@@ -74,11 +86,14 @@ function proofTreeOnGetContext(c: PeaCoqContext): void {
   // TODO: Cover all goals rather than just the first :)
   if (!curNode) {
     let g = new GoalNode(activeProofTree, undefined, c[0]);
+    g.stateId = activeProofTree.stateId;
     activeProofTree.curNode = g;
     activeProofTree.update();
   }
   if (tacticWaiting) {
     let g = new GoalNode(activeProofTree, tacticWaiting.parentGroup, c[0]);
+    // the first goal's stateId is known
+    g.stateId = activeProofTree.stateId;
     tacticWaiting.goals.push(g);
     activeProofTree.tacticWaitingForContext = undefined;
     activeProofTree.curNode = g;
@@ -167,6 +182,7 @@ class ProofTree {
   /* true until the user uses their mouse */
   usingKeyboard: boolean;
   rootNode: GoalNode;
+  stateId: number;
   svgId: string;
   tactics: () => TacticGroup[];
   tacticsWorklist: WorklistItem[];
@@ -529,7 +545,7 @@ class ProofTree {
   }
 
   runTactic(t, groupToAttachTo) {
-
+/*
     let self = this;
 
     let parentGoal = getClosestGoal(groupToAttachTo);
@@ -550,7 +566,8 @@ class ProofTree {
           //let unfocusedAfter = getResponseUnfocused(response);
           let newChild = new Tactic(
             t,
-            groupToAttachTo
+            groupToAttachTo,
+            response
           );
 
           // only attach the newChild if it produces something
@@ -583,7 +600,7 @@ class ProofTree {
 
       })
       .catch(outputError);
-
+*/
   }
 
   shiftNextByTacticGroup(n) {
