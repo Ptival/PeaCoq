@@ -1,3 +1,4 @@
+/*
 function renderSum(bottom, top, right): JQuery {
   var result = $("<span>", {
     style: "display: flex; flex-flow: row; align-items: center;"
@@ -41,3 +42,4 @@ $(document).ready(function() {
 function typeset() {
   MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
 }
+*/

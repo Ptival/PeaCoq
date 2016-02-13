@@ -20,117 +20,8 @@ let diffOrange = "#FFB347";
 let diffOpacity = 0.75;
 let goalBodyPadding = 4;
 
-$(document).ready(() => {
-  peaCoqAddHandlers.push(proofTreeOnAdd);
-  peaCoqGetContextHandlers.push(proofTreeOnGetContext);
-  peaCoqEditAtHandlers.push(proofTreeOnEditAt);
-  //peaCoqGoalHandlers.push(proofTreeOnGoal);
-  peaCoqStatusHandlers.push(proofTreeOnStatus);
-});
-
 function getActiveProofTree(): ProofTree {
   return proofTrees[0];
-}
-
-function isUpperCase(character) {
-  return /^[A-Z]$/.test(character);
-}
-
-/*
-We only react to commands that look like tactics. For now, the
-heuristic is that it does not start with an uppercase character.
-To take into account the command, we lookup whether this command
-was expected (for instance, if the tree mode asked for it).
-If it already existed or was expected, nothing is done.
-If it was unexpected, let's create an empty, nameless group to hold it.
-*/
-function proofTreeOnAdd(s: string, r: AddReturn): void {
-  if (proofTrees.length === 0) { return; }
-  let activeProofTree = proofTrees[0];
-  activeProofTree.stateId = r.stateId;
-  let curNode = activeProofTree.curNode;
-  let trimmed = coqTrim(s);
-
-  if (isUpperCase(trimmed[0])) { return; }
-
-  if (curNode instanceof GoalNode) {
-    let existingTactic = _(curNode.getTactics())
-      .find(function(elt) { return elt.tactic === coqTrim(s); })
-      ;
-    if (existingTactic === undefined) {
-      let tg = new TacticGroupNode(activeProofTree, curNode, "");
-      curNode.tacticGroups.push(tg);
-      let t = new Tactic(coqTrim(s), tg, r);
-      tg.tactics.push(t);
-      activeProofTree.tacticWaitingForContext = t;
-    }
-    activeProofTree.update();
-  }
-}
-
-/*
-  For now, let's just rewind within the tree or give up. Eventually,
-  we could rewind into old trees.
- */
-function proofTreeOnEditAt(sid: number): void {
-  if (proofTrees.length === 0) { return; }
-  let activeProofTree = proofTrees[0];
-  // TODO
-}
-
-function proofTreeOnGetContext(c: PeaCoqContext): void {
-  if (proofTrees.length === 0) { return; }
-  let activeProofTree = proofTrees[0];
-  let curNode = activeProofTree.curNode;
-  let tacticWaiting = activeProofTree.tacticWaitingForContext;
-  // TODO: Cover all goals rather than just the first :)
-  if (!curNode) {
-    let g = new GoalNode(activeProofTree, undefined, c[0]);
-    g.stateId = activeProofTree.stateId;
-    activeProofTree.curNode = g;
-    activeProofTree.update();
-  }
-  if (tacticWaiting) {
-    let g = new GoalNode(activeProofTree, tacticWaiting.parentGroup, c[0]);
-    // the first goal's stateId is known
-    g.stateId = activeProofTree.stateId;
-    tacticWaiting.goals.push(g);
-    activeProofTree.tacticWaitingForContext = undefined;
-    activeProofTree.curNode = g;
-    activeProofTree.update();
-  }
-}
-
-function proofTreeOnStatus(s: Status): void {
-  // hopefully we are always at most 1 tree late
-  if (proofTrees.length + 1 === s.statusAllProofs.length) {
-    console.log("CREATING PROOF TREE");
-    // we are behind on the number of proof trees, create one
-    let pt = new ProofTree(
-      s.statusProofName,
-      $("#prooftree")[0],
-      $(window).width(),
-      $("#prooftree").height(),
-      function() { $("#loading").css("display", ""); },
-      function() { $("#loading").css("display", "none"); }
-    );
-    proofTrees.unshift(pt);
-    return;
-  }
-  // multiple trees might have been finished at once?
-  while (proofTrees.length > s.statusAllProofs.length) {
-    proofTrees.shift();
-  }
-  if (proofTrees.length !== s.statusAllProofs.length) {
-    alert("Error: we are missing multiple proof trees!")
-  }
-}
-
-function assert(condition: boolean, message: string): void {
-  if (!condition) {
-    alert("Assertion failed: " + message);
-    throw message || "Assertion failed";
-  }
 }
 
 type Hypothesis = {
@@ -138,21 +29,6 @@ type Hypothesis = {
   hName: string;
   hValue: string;
   hType: string;
-}
-
-function parseSVGTransform(a: string): any {
-  let b = {};
-  let m = a.match(/(\w+\((\-?\d+\.?\d*,? ?)+\))+/g);
-  for (let i in m) {
-    let c = m[i].match(/[\w\.\-]+/g);
-    b[c.shift()] = c;
-  }
-  return b;
-}
-
-type XY = { x: number; y: number; }
-function swapXY(r: any): any {
-  return { "x": r.y, "y": r.x };
 }
 
 type ProofTreeLink = d3.svg.diagonal.Link<ProofTreeNode>;
@@ -328,6 +204,135 @@ class ProofTree {
     return getClosestGoal(this.curNode);
   }
 
+  /*
+    here we are looking for the descendant which should align with the current
+    node. it used to be at the top of the view, now it's centered.
+  */
+  computeDescendantsOffset() {
+
+    let curNode = this.curNode;
+    let curGoal = <GoalNode>(curNode instanceof GoalNode ? curNode : curNode.parent);
+
+    let centeredDescendant: ProofTreeNode = undefined;
+    if (curNode instanceof GoalNode) {
+      let centeredTactic = curNode.getFocusedChild();
+      if (centeredTactic !== undefined) {
+        centeredDescendant = centeredTactic.getFocusedChild();
+        if (centeredDescendant === undefined) {
+          centeredDescendant = centeredTactic;
+        }
+      }
+    } else if (curNode instanceof TacticGroupNode) {
+      let t = curNode.getFocusedTactic();
+      if (t.goals.length > 0) {
+        centeredDescendant = t.goals[t.goalIndex];
+      }
+    } else {
+      throw curNode;
+    }
+
+    if (centeredDescendant !== undefined) {
+      if (curNode instanceof GoalNode
+        && centeredDescendant instanceof GoalNode) {
+        // computing the difference in height between the <hr> is not
+        // obvious...
+        let hrDelta =
+          curNode.html[0].offsetTop
+          - centeredDescendant.html[0].offsetTop
+          ;
+        this.descendantsOffset =
+          this.yFactor * (nodeY(curGoal) - nodeY(centeredDescendant))
+          - (curGoal.height - centeredDescendant.height) / 2
+          + hrDelta
+          ;
+      } else if (curNode instanceof TacticGroupNode) {
+        /*
+        let hrDelta =
+          curNode.parent.goalSpan[0].offsetTop
+          - centeredDescendant.goalSpan[0].offsetTop
+          ;
+        self.descendantsOffset =
+        self.yFactor * (nodeY(curGoal) - nodeY(centeredDescendant))
+        - (curGoal.height - centeredDescendant.height) / 2
+        + hrDelta
+        ;
+        */
+        throw "TODO";
+      } else {
+        this.descendantsOffset =
+          this.yFactor * (nodeY(curGoal) - nodeY(centeredDescendant))
+          ;
+      }
+    } else {
+      this.descendantsOffset = 0;
+    }
+
+  }
+
+  computeXYFactors() {
+    let curGoal = this.curGoal();
+    let visibleChildren = _(curGoal.getViewChildren());
+    let visibleGrandChildren = _(curGoal.getViewGrandChildren());
+    let emptyNodeArray: Array<ProofTreeNode> = [];
+    let visibleNodes = _(emptyNodeArray);
+    if (hasParent(curGoal)) {
+      visibleNodes = visibleNodes.concat([curGoal.parent]);
+    }
+    visibleNodes = visibleNodes.concat([curGoal]);
+    visibleNodes = visibleNodes.concat(visibleChildren.value());
+    visibleNodes = visibleNodes.concat(visibleGrandChildren.value());
+
+    // xFactor is now fixed, so that the user experience is more stable
+    let rootViewChildren = this.rootNode.getViewChildren();
+    if (rootViewChildren.length === 0) {
+      this.xFactor = this.width;
+    } else {
+      let xDistance = nodeX(rootViewChildren[0]) - nodeX(this.rootNode);
+      /* width = 4 * xDistance * xFactor */
+      this.xFactor = this.width / (4 * xDistance);
+    }
+
+    /*
+      we want all visible grand children to be apart from each other
+      i.e.
+      ∀ a b, yFactor * | a.y - b.y | > a.height/2 + b.height/2 + nodeVSpacing
+      we also want all visible children to be apart from each other (especially
+      when they don't have their own children to separate them)
+    */
+    let gcSiblings = _.zip(
+      visibleGrandChildren.value(),
+      visibleGrandChildren.rest().value()
+    );
+    gcSiblings.pop(); // removes the [last, undefined] pair at the end
+    let cSiblings = _.zip(
+      visibleChildren.value(),
+      visibleChildren.rest().value()
+    );
+    cSiblings.pop();
+    // also, the current node should not overlap its siblings
+    let currentSiblings = [];
+    if (this.curNode instanceof GoalNode && hasParent(this.curNode)) {
+      let curNodeSiblings = _(this.curNode.parent.getViewChildren());
+      currentSiblings = _.zip(
+        curNodeSiblings.value(),
+        curNodeSiblings.rest().value()
+      );
+      currentSiblings.pop();
+    }
+    let siblings = _(gcSiblings.concat(cSiblings, currentSiblings));
+    let yFactors = siblings
+      .map(function(e) {
+        let a = e[0], b = e[1];
+        let yDistance = nodeY(b) - nodeY(a);
+        let wantedSpacing = ((a.height + b.height) / 2) + nodeVSpacing;
+        return wantedSpacing / yDistance;
+      })
+      .value()
+      ;
+    this.yFactor = _.isEmpty(yFactors) ? this.height : _.max(yFactors);
+
+  }
+
   findOrCreateGroup(goalNode: GoalNode, groupName: string): TacticGroupNode {
     let found = _(goalNode.tacticGroups)
       .find(function(tacticGroup) {
@@ -446,6 +451,24 @@ class ProofTree {
     }
   }
 
+  onRectSelectionEnter(s: d3.selection.Enter<ProofTreeNode>): void {
+    s
+      .append("rect")
+      .classed("goal", (d) => d instanceof GoalNode)
+      .style("fill", function(d) {
+        if (d instanceof GoalNode) { return "#AEC6CF"; }
+        if (d instanceof TacticGroupNode) { return "#CB99C9"; }
+        return "#000000";
+      })
+      .classed("tactic", (d) => d instanceof TacticGroupNode)
+      .attr("width", function(d) { return d.width; })
+      .attr("height", function(d) { return d.height; })
+      .attr("x", function(d) { return d.cX0; })
+      .attr("y", function(d) { return d.cY0; })
+      .attr("rx", function(d) { return d instanceof GoalNode ? 0 : 10; })
+      ;
+  }
+
   processTactics(): Promise<any> {
 
     /*
@@ -545,62 +568,62 @@ class ProofTree {
   }
 
   runTactic(t, groupToAttachTo) {
-/*
-    let self = this;
+    /*
+        let self = this;
 
-    let parentGoal = getClosestGoal(groupToAttachTo);
-    let parentGoalRepr = goalNodeUnicityRepr(parentGoal);
+        let parentGoal = getClosestGoal(groupToAttachTo);
+        let parentGoalRepr = goalNodeUnicityRepr(parentGoal);
 
-    // if we correctly stored the last response in [parentGoal], we don't need
-    // to query for status at this moment
-    let beforeResponse = parentGoal.response;
+        // if we correctly stored the last response in [parentGoal], we don't need
+        // to query for status at this moment
+        let beforeResponse = parentGoal.response;
 
-    $("#loading-text").text(nbsp + nbsp + "Trying " + t);
+        $("#loading-text").text(nbsp + nbsp + "Trying " + t);
 
-    return asyncQueryAndUndo(t)
-      //.then(delayPromise(0))
-      .then(function(response) {
-        if (isGood(response)) {
+        return asyncQueryAndUndo(t)
+          //.then(delayPromise(0))
+          .then(function(response) {
+            if (isGood(response)) {
 
-          //let unfocusedBefore = getResponseUnfocused(beforeResponse);
-          //let unfocusedAfter = getResponseUnfocused(response);
-          let newChild = new Tactic(
-            t,
-            groupToAttachTo,
-            response
-          );
+              //let unfocusedBefore = getResponseUnfocused(beforeResponse);
+              //let unfocusedAfter = getResponseUnfocused(response);
+              let newChild = new Tactic(
+                t,
+                groupToAttachTo,
+                response
+              );
 
-          // only attach the newChild if it produces something
-          // unique from existing children
-          let newChildRepr = tacticUnicityRepr(newChild);
+              // only attach the newChild if it produces something
+              // unique from existing children
+              let newChildRepr = tacticUnicityRepr(newChild);
 
-          let resultAlreadyExists =
-            _(parentGoal.getTactics()).some(function(t) {
-              return t.tactic === newChild.tactic;
-              //return (tacticUnicityRepr(t) === newChildRepr);
-            })
-            ;
+              let resultAlreadyExists =
+                _(parentGoal.getTactics()).some(function(t) {
+                  return t.tactic === newChild.tactic;
+                  //return (tacticUnicityRepr(t) === newChildRepr);
+                })
+                ;
 
-          let tacticIsUseless =
-            (newChild.goals.length === 1)
-            && (goalNodeUnicityRepr(newChild.goals[0])
-              === parentGoalRepr)
-            ;
+              let tacticIsUseless =
+                (newChild.goals.length === 1)
+                && (goalNodeUnicityRepr(newChild.goals[0])
+                  === parentGoalRepr)
+                ;
 
-          if (!resultAlreadyExists && !tacticIsUseless) {
-            groupToAttachTo.addTactic(newChild);
-            self.update();
-          }
+              if (!resultAlreadyExists && !tacticIsUseless) {
+                groupToAttachTo.addTactic(newChild);
+                self.update();
+              }
 
-        } else {
+            } else {
 
-          //console.log("Bad response for", t, response);
+              //console.log("Bad response for", t, response);
 
-        }
+            }
 
-      })
-      .catch(outputError);
-*/
+          })
+          .catch(outputError);
+    */
   }
 
   shiftNextByTacticGroup(n) {
@@ -827,126 +850,10 @@ class ProofTree {
         ;
 
       // Now that the nodes have a size, we can compute the factors
+      this.computeXYFactors();
 
-      let curGoal = self.curGoal();
-      let visibleChildren = _(curGoal.getViewChildren());
-      let visibleGrandChildren = _(curGoal.getViewGrandChildren());
-      let emptyNodeArray: Array<ProofTreeNode> = [];
-      let visibleNodes = _(emptyNodeArray);
-      if (hasParent(curGoal)) {
-        visibleNodes = visibleNodes.concat([curGoal.parent]);
-      }
-      visibleNodes = visibleNodes.concat([curGoal]);
-      visibleNodes = visibleNodes.concat(visibleChildren.value());
-      visibleNodes = visibleNodes.concat(visibleGrandChildren.value());
-
-      // xFactor is now fixed, so that the user experience is more stable
-      let rootViewChildren = self.rootNode.getViewChildren();
-      if (rootViewChildren.length === 0) {
-        self.xFactor = self.width;
-      } else {
-        let xDistance = nodeX(rootViewChildren[0]) - nodeX(self.rootNode);
-        /* width = 4 * xDistance * xFactor */
-        self.xFactor = self.width / (4 * xDistance);
-      }
-
-      /*
-        we want all visible grand children to be apart from each other
-        i.e.
-        ∀ a b, yFactor * | a.y - b.y | > a.height/2 + b.height/2 + nodeVSpacing
-        we also want all visible children to be apart from each other (especially
-        when they don't have their own children to separate them)
-      */
-      let gcSiblings = _.zip(
-        visibleGrandChildren.value(),
-        visibleGrandChildren.rest().value()
-      );
-      gcSiblings.pop(); // removes the [last, undefined] pair at the end
-      let cSiblings = _.zip(
-        visibleChildren.value(),
-        visibleChildren.rest().value()
-      );
-      cSiblings.pop();
-      // also, the current node should not overlap its siblings
-      let currentSiblings = [];
-      if (self.curNode instanceof GoalNode && hasParent(self.curNode)) {
-        let curNodeSiblings = _(self.curNode.parent.getViewChildren());
-        currentSiblings = _.zip(
-          curNodeSiblings.value(),
-          curNodeSiblings.rest().value()
-        );
-        currentSiblings.pop();
-      }
-      let siblings = _(gcSiblings.concat(cSiblings, currentSiblings));
-      let yFactors = siblings
-        .map(function(e) {
-          let a = e[0], b = e[1];
-          let yDistance = nodeY(b) - nodeY(a);
-          let wantedSpacing = ((a.height + b.height) / 2) + nodeVSpacing;
-          return wantedSpacing / yDistance;
-        })
-        .value()
-        ;
-      self.yFactor = _.isEmpty(yFactors) ? self.height : _.max(yFactors);
-
-      /*
-        here we are looking for the descendant which should align with the current
-        node. it used to be at the top of the view, now it's centered.
-      */
-      let centeredDescendant = undefined;
-      if (curNode instanceof GoalNode) {
-        let centeredTactic = self.curNode.getFocusedChild();
-        if (centeredTactic !== undefined) {
-          centeredDescendant = centeredTactic.getFocusedChild();
-          if (centeredDescendant === undefined) {
-            centeredDescendant = centeredTactic;
-          }
-        }
-      } else if (curNode instanceof TacticGroupNode) {
-        let t = curNode.getFocusedTactic();
-        if (t.goals.length > 0) {
-          centeredDescendant = t.goals[t.goalIndex];
-        }
-      } else {
-        throw self.curNode;
-      }
-
-      if (centeredDescendant !== undefined) {
-        let curNode = self.curNode;
-        if (curNode instanceof GoalNode
-          && centeredDescendant instanceof GoalNode) {
-          // computing the difference in height between the <hr> is not
-          // obvious...
-          let hrDelta =
-            curNode.html[0].offsetTop
-            - centeredDescendant.goalSpan[0].offsetTop
-            ;
-          self.descendantsOffset =
-            self.yFactor * (nodeY(curGoal) - nodeY(centeredDescendant))
-            - (curGoal.height - centeredDescendant.height) / 2
-            + hrDelta
-            ;
-        } else if (curNode instanceof TacticGroupNode) {
-          /*
-          let hrDelta =
-            curNode.parent.goalSpan[0].offsetTop
-            - centeredDescendant.goalSpan[0].offsetTop
-            ;
-          self.descendantsOffset =
-          self.yFactor * (nodeY(curGoal) - nodeY(centeredDescendant))
-          - (curGoal.height - centeredDescendant.height) / 2
-          + hrDelta
-          ;
-          */
-          throw "TODO";
-        } else {
-          self.descendantsOffset =
-            self.yFactor * (nodeY(curGoal) - nodeY(centeredDescendant))
-            ;
-        }
-      } else {
-        self.descendantsOffset = 0;
-      }
+      // compute how much descendants must be moved to center current
+      this.computeDescendantsOffset();
 
       // now we need to set the x and y attributes of the entering foreignObjects,
       // so we need to reuse the selection
@@ -1018,22 +925,7 @@ class ProofTree {
         ;
 
       let rectSelection = self.rectLayer.selectAll("rect").data(nodes, byNodeId);
-
-      rectSelection.enter()
-        .append("rect")
-        .classed("goal", (d) => d instanceof GoalNode)
-        .style("fill", function(d) {
-          if (d instanceof GoalNode) { return "#AEC6CF"; }
-          if (d instanceof TacticGroupNode) { return "#CB99C9"; }
-          return "#000000";
-        })
-        .classed("tactic", (d) => d instanceof TacticGroupNode)
-        .attr("width", function(d) { return d.width; })
-        .attr("height", function(d) { return d.height; })
-        .attr("x", function(d) { return d.cX0; })
-        .attr("y", function(d) { return d.cY0; })
-        .attr("rx", function(d) { return d instanceof GoalNode ? 0 : 10; })
-        ;
+      this.onRectSelectionEnter(rectSelection.enter());
 
       rectSelection
         .classed("current", function(d) { return self.isCurNode(d); })
@@ -1595,907 +1487,3 @@ class ProofTree {
   }
 
 }
-
-function asyncStatus(): Promise<any> { throw "TODO"; }
-
-let goalShare = 15 / 20;
-
-function computeGoalWidth(width) {
-  return Math.floor(width * (goalShare / 2));
-}
-
-let tacticShare = 4 / 20;
-
-function computeTacticWidth(width) {
-  return Math.floor(width * (tacticShare / 2));
-}
-
-function proofTreeQueryWish(s: string): void { throw "TODO"; }
-
-/*
- * Returns a rect of the absolute position of [elmt] within the canvas. It needs
- * [node] in order to return absolute values, where [node] is the node element
- * within which [elmt] lives.
- */
-function elmtRect(node, elmt) {
-  let rect = elmt.getBoundingClientRect();
-  let containerRect = $(elmt).parents("foreignObject")[0].getBoundingClientRect();
-  let left = node.cX + deltaX(containerRect, rect);
-  let top = node.cY + deltaY(containerRect, rect);
-  return {
-    "left": left, "right": left + rect.width, "width": rect.width,
-    "top": top, "bottom": top + rect.height, "height": rect.height,
-  };
-}
-
-function elmtRect0(node, elmt) {
-  let rect = elmt.getBoundingClientRect();
-  let containerRect = $(elmt).parents("foreignObject")[0].getBoundingClientRect();
-  let left = node.cX0 + deltaX(containerRect, rect);
-  let top = node.cY0 + deltaY(containerRect, rect);
-  return {
-    "left": left, "right": left + rect.width, "width": rect.width,
-    "top": top, "bottom": top + rect.height, "height": rect.height,
-  };
-}
-
-type Rectangle = {
-  bottom: number;
-  left: number;
-  right: number;
-  top: number;
-}
-
-function deltaX(rect1: Rectangle, rect2: Rectangle): number {
-  return rect2.left - rect1.left;
-}
-function deltaY(rect1: Rectangle, rect2: Rectangle): number {
-  return rect2.top - rect1.top;
-}
-
-function makeGoalNodePre() {
-  return $("<pre>")
-    .addClass("goalNode")
-    // inlining some CSS for svg_datatourl
-    .css("font-family", "monospace")
-    .css("font-size", "14px")
-    .css("line-height", "normal")
-    .css("margin", 0)
-    .css("padding", 0)
-    ;
-}
-
-function makeContextDivider() {
-  return $("<hr>")
-    // inlining the CSS for svg_datatourl
-    .css("border", 0)
-    .css("border-top", "1px solid black")
-    .css("margin", 0)
-    ;
-}
-
-function showBindersPar(t) {
-  if (_.isEmpty(t)) { return ""; }
-  return " (" + showBinder(t[0]) + ")" + showBindersPar(_(t).rest().value());
-}
-
-function showBinders(t) {
-  if (_.isEmpty(t)) { return ""; }
-  if (t.length === 1) { return ' ' + showBinder(t[0]); }
-  return " (" + showBinder(t[0]) + ")" + showBindersPar(_(t).rest().value());
-}
-
-function showBinder(t) {
-  if (t[1] === null) {
-    return showNames(t[0]);
-  } else {
-    return showNames(t[0]) + syntax(":") + ' ' + showTermAux(t[1], 0, 0, false);
-  }
-}
-
-function showPatternAux(p, withParens) {
-  let c = p.contents;
-  switch (p.tag) {
-    case "Wildcard":
-      return "_";
-
-    case "Pattern":
-      if (c[1].length === 0) { // constructor with no parameters, never parenthesized
-        return c[0];
-      } else { // constructor with parameters, parenthesized if subpattern
-        if (c[0] === "cons" && c[1].length === 2) {
-          return (withParens ? syntax("(") : "")
-            + showPatternAux(c[1][0], true)
-            + ' ' + syntax("::") + ' '
-            + showPattern(c[1][1])
-            + (withParens ? syntax(")") : "")
-            ;
-        } else {
-          return (withParens ? syntax("(") : "")
-            + _(c[1]).reduce(function(acc, elt) {
-              return acc + " " + showPatternAux(elt, true);
-            }, c[0])
-            + (withParens ? syntax(")") : "")
-            ;
-        }
-      }
-
-    case "OrPatterns":
-      let patterns = c[0];
-      return (
-        syntax("(")
-        + _(patterns).reduce(function(acc, orpattern, ndx) {
-          return (
-            (ndx > 0 ? syntax(",") : "")
-            + _(orpattern).reduce(function(acc, pattern, ndx) {
-              return (
-                (ndx > 0 ? "|" : "")
-                + showPatternAux(pattern, false)
-              );
-            })
-          );
-        })
-        + syntax(")")
-      );
-
-    default:
-      alert("Unknown pattern: " + p.tag);
-
-  };
-}
-
-function showPattern(p) { return showPatternAux(p, false); }
-
-function showPatterns(ps) {
-  if (ps.length === 1) {
-    let patterns = ps[0];
-    return _(patterns).rest().reduce(function(acc, pattern) {
-      return acc + syntax(", ") + showPattern(pattern);
-    }, showPattern(patterns[0]));
-  } else {
-    alert("TODO");
-  }
-}
-
-function showName(t) {
-  if (t === null) { // underscore
-    return ident('_');
-  } else {
-    return ident(t);
-  }
-}
-
-function showNames(t) {
-  if (_.isEmpty(t)) { return ""; }
-
-  return showName(t[0]) + " " + showNames(_(t).rest().value());
-}
-
-function showTerm(t) {
-  let term = mkTerm(t);
-  console.log(term, term.toString());
-  return showTermAux(t, 0, 0, true);
-}
-
-function showTermIndent(t, indent) {
-  return showTermAux(t, indent, 0, true);
-}
-
-function getIndent(depth) {
-  return repeat(2 * depth, " ");
-}
-
-function extractGoal(gGoal) {
-
-  if (gGoal.hasOwnProperty("Left")) {
-    gGoal = {
-      "contents": gGoal.Left,
-      "tag": "Raw",
-    };
-  } else {
-    gGoal = gGoal.Right;
-  }
-
-  return gGoal;
-
-}
-
-function extractHypothesis(gHyp) {
-
-  if (gHyp.hasOwnProperty("Left")) {
-    // this tries to approximate parsing...
-    let matches = gHyp.Left.match(/^([\s\S]*) := ([\s\S]*) : ([\s\S]*)$/);
-    if (matches !== null) {
-      gHyp = {
-        "hName": matches[1],
-        "hValue": { "contents": matches[2], "tag": "Raw" },
-        "hType": { "contents": matches[3], "tag": "Raw" },
-      };
-    } else {
-      matches = gHyp.Left.match(/^([\s\S]*) : ([\s\S]*)$/);
-      gHyp = {
-        "hName": matches[1],
-        "hValue": null,
-        "hType": { "contents": matches[2], "tag": "Raw" },
-      };
-    }
-    if (matches == null) {
-      console.log("could not extract hypothesis", gHyp);
-    }
-
-  } else {
-    gHyp = gHyp.Right;
-  }
-
-  return gHyp;
-
-}
-
-function vernac(s) { return '<span class="vernac">' + s + '</span>'; }
-function syntax(s) { return '<span class="syntax">' + s + '</span>'; }
-function ident(s) { return '<span class="identifier">' + s + '</span>'; }
-function term(s) { return '<span class="term">' + s + '</span>'; }
-
-function showConstructor(t) {
-  let name = t[0];
-  if (t[1] === null) {
-    return syntax("|")
-      + ' '
-      + ident(name)
-      ;
-  } else {
-    let type = showTermInline(t[1]);
-    return syntax("|")
-      + ' '
-      + ident(name)
-      + ' '
-      + syntax(":")
-      + ' '
-      + type
-      ;
-  }
-}
-
-function showVernac(t) {
-  let c = t.contents;
-  let args, name, term, type;
-
-  switch (t.tag) {
-
-    case "Inductive":
-      name = c[0];
-      type = showTermInline(c[1]);
-      let constructors = _(c[2]).map(showConstructor);
-      return vernac("Inductive")
-        + ' '
-        + ident(name)
-        + ' '
-        + syntax(":")
-        + ' '
-        + type
-        + ' '
-        + syntax(":=")
-        + "<br>"
-        + _(constructors).reduce(function(acc, elt) { return acc + elt + "<br>"; }, "")
-        + syntax(".")
-        ;
-
-    case "Theorem":
-      name = c[0];
-      type = showTermInline(c[1]);
-      return vernac("Theorem")
-        + ' '
-        + ident(name)
-        + ' '
-        + syntax(":")
-        + ' '
-        + type
-        + syntax(".")
-        ;
-
-    case "Definition":
-      name = c[0];
-      args = _(c[1]).map(showBinder);
-      type = (c[2] !== null)
-        ? syntax(":") + ' ' + showTermInline(c[2]) + ' '
-        : "";
-      term = showTermIndent(c[3], 1);
-      return vernac("Definition")
-        + ' '
-        + ident(name)
-        + ' '
-        + _(args).reduce(function(acc, elt) {
-          return acc + syntax("(") + elt + syntax(")") + ' ';
-        }, "")
-        + type
-        + syntax(":=")
-        + "<br>" + getIndent(1)
-        + term
-        + syntax(".")
-        ;
-
-    case "Fixpoint":
-      name = c[0];
-      args = _(c[1]).map(showBinder);
-      let decreasing = c[2];
-      type = (c[3] !== null)
-        ? syntax(":") + ' ' + showTermInline(c[3]) + ' '
-        : "";
-      term = showTermIndent(c[4], 1);
-      return vernac("Fixpoint")
-        + ' '
-        + ident(name)
-        + ' '
-        + _(args).reduce(function(acc, elt) {
-          return acc + syntax("(") + elt + syntax(")") + ' ';
-        }, "")
-        + (
-          (decreasing !== null)
-            ? syntax("{") + ' ' + syntax("struct")
-            + ' ' + decreasing + ' ' + syntax("}") + ' '
-            : ""
-        )
-        + type
-        + syntax(":=")
-        + "<br>" + getIndent(1)
-        + term
-        + syntax(".")
-        ;
-
-    default:
-      return "Unknown Vernacular tag: " + t.tag;
-
-  };
-}
-
-function showTermText(t) {
-  return $(showTermInline(t)).text();
-}
-
-function showMatchItems(items) {
-  return _(items).reduce(function(acc, item, ndx) {
-    let term = item[0];
-    let matchAs = item[1];
-    let matchIn = item[2];
-    return (
-      acc
-      + (ndx > 0 ? syntax(",") + ' ' : "")
-      + showTermInline(term)
-      + (matchAs ? ' ' + syntax("as") + ' ' + matchAs : "")
-      + (matchIn ? ' ' + syntax("in") + ' ' + showTermInline(matchIn) : "")
-    );
-  }, "");
-}
-
-/*
-  [t]           the term to show
-  [indentation] the indentation to use if you make a newline
-  [precParent]  the precedence of the parent operator (for parenthesizing)
-  [newline]     true if the term should feel free to use multiple lines
-*/
-function showTermAux(t, indentation, precParent, newline) {
-  let c = t.contents;
-
-  let indent = getIndent(indentation);
-
-  let par = function(precOp, text) {
-    if (precOp <= precParent) {
-      return term(syntax("(") + text + syntax(")"));
-    } else {
-      return term(text);
-    }
-  };
-
-  let showOp = function(c, op, precOp) {
-    return par(
-      precOp,
-      showTermAux(c[0].contents[1], 0, precOp, false)
-      + " " + syntax(op) + " "
-      + showTermAux(c[1], 0, precOp, false)
-    );
-  };
-
-  switch (t.tag) {
-
-    case "Raw":
-      return '<span>' + c + '</span>';
-
-    case "Var":
-      if (t.type !== undefined) {
-        return '<span style="font-weight: bold;"'
-          + ' title="' + t.type + '">'
-          + c + '</span>'
-          ;
-      } else {
-        return term(c);
-      }
-
-    case "Forall":
-      return par(
-        precForall,
-        syntax("forall") + showBinders(c[0]) + syntax(",")
-        + (newline ? "<br/>" + getIndent(indentation + 1) : " ")
-        + showTermAux(c[1], indentation + 1, precParent, newline)
-      );
-
-    case "Lambda":
-      return par(
-        precMin,
-        syntax("fun") + showBinders(c[0]) + ' ' + syntax("=>")
-        + (newline ? "<br/>" + getIndent(indentation + 1) : " ")
-        + showTermAux(c[1], indentation + 1, precMin, newline)
-      );
-
-    case "Exists":
-      return par(
-        precForall,
-        syntax("exists") + showBinders(c[0]) + syntax(",")
-        + (newline ? "<br/>" + getIndent(indentation + 1) : " ")
-        + showTermAux(c[1], indentation + 1, precParent, newline)
-      );
-
-    case "Arrow":
-      return term(
-        showTermAux(c[0], indentation, precArrow, false)
-        + ' ' + syntax("->")
-        + (newline ? "<br/>" + indent : " ")
-        + showTermAux(c[1], indentation, precParent, newline)
-      );
-
-    case "Match":
-      let matchItems = c[0];
-      let maybeType = c[1];
-      let equations = c[2];
-      return term(
-        syntax("match") + ' '
-        + showMatchItems(matchItems) + ' '
-        + (maybeType
-          ? syntax(":") + ' ' + showTermAux(c[1], 0, precMin, false)
-          : ""
-        )
-        + syntax("with") + "<br>"
-        + _(equations).reduce(function(acc, elt) {
-          let patterns = showPatterns(elt[0]);
-          let body = showTermAux(elt[1], indentation + 1, precParent, newline);
-          return acc
-            + getIndent(indentation) + syntax("|") + ' '
-            + patterns
-            + ' '
-            + syntax("=>")
-            + (
-              (body.indexOf("<br>") === -1)
-                ? ' ' + body
-                : "<br>" + getIndent(indentation + 1) + body
-            )
-            + "<br>";
-        }, "")
-        //showTermAux(c[0], indentation, precArrow, false)
-        + getIndent(indentation) + syntax("end")
-      );
-
-    case "App":
-
-      // handling special case of infix operators I want to pretty print
-      if (c[0].contents === "not"
-        && c[1].contents[0].contents[0].contents === "eq"
-      ) {
-        return par(
-          precNotEqual,
-          showTermAux(c[1].contents[0].contents[1], 0, precNotEqual, false)
-          + " ≠ "
-          + showTermAux(c[1].contents[1], 0, precNotEqual, false)
-        )
-      }
-
-      if (c[0].tag === "App") {
-        switch (c[0].contents[0].contents) {
-
-          case "eq":
-            return showOp(c, "=", precEqual);
-
-          case "plus":
-            return showOp(c, "+", precPlus);
-
-          case "minus":
-            return showOp(c, "-", precMinus);
-
-          case "mult":
-            return showOp(c, "*", precMult);
-
-          case "and":
-            return showOp(c, "/\\", precAnd);
-
-          case "or":
-            return showOp(c, "\\/", precOr);
-
-          case "andb":
-            return showOp(c, "&&", precAndB);
-
-          case "orb":
-            return showOp(c, "||", precOrB);
-
-          case "iff":
-            return showOp(c, "<->", precEquiv);
-
-          // case "cons":
-          //     return showOp(c, "::", precCons);
-
-          // case "app":
-          //     return showOp(c, "++", precAppend);
-
-          default:
-          // nothing, fall through
-
-        };
-      }
-
-      return par(
-        precApp,
-        showTermAux(c[0], 0, precApp - 1, false) + " "
-        + showTermAux(c[1], 0, precApp, false)
-      );
-
-    default:
-      return "Unknown tag " + t.tag;
-
-  };
-}
-
-function inlineBlock(contents) {
-  return '<div style="display: inline-block; max-width: 100%; vertical-align: top;">' + contents + '</div>';
-}
-
-function showHypothesis(h) {
-  let res = h.hName;
-  if (h.hValue !== null) {
-    res = res + ' ' + syntax(":=") + ' ' + showTermInline(h.hValue);
-  }
-  res = inlineBlock(res + ' ' + syntax(":") + ' ')
-    + inlineBlock(showTermInline(h.hType));
-  return res;
-}
-
-function showHypothesisText(h) {
-  let res = h.hName;
-  if (h.hValue !== null) {
-    res = res + " := " + showTermText(h.hValue);
-  }
-  res = res + " : " + showTermText(h.hType);
-  return res;
-}
-
-function showTermInline(t) {
-  return showTermAux(t, 0, 0, false);
-}
-
-/*
-function getResponseFocused(response) {
-  return response.rGoals.focused;
-}
-
-function getResponseUnfocused(response) {
-  return response.rGoals.unfocused;
-}
-*/
-
-function hasParent(n) {
-  return n.parent !== undefined;
-}
-
-function hasGrandParent(n) {
-  return hasParent(n) && hasParent(n.parent);
-}
-
-function byNodeId(d) { return d.id; }
-function byLinkId(d) { return d.source.id + "," + d.target.id; }
-
-// transposition accessors
-function nodeX(d) { return d.y; }
-function nodeY(d) { return d.x; }
-
-function getClosestGoal(node: ProofTreeNode): GoalNode {
-  if (node instanceof GoalNode) { return node; }
-  // if it is not a goal, it ought to have a parent
-  if (node instanceof TacticGroupNode) {
-    assert(node.parent instanceof GoalNode, "getClosestGoal");
-    return <GoalNode>node.parent;
-  }
-  throw node;
-}
-
-// specialized version of console.log, because JS is stupid
-function outputError(error: any): void {
-  console.log(error, error.stack);
-}
-
-function goalNodeUnicityRepr(node: GoalNode): string {
-  throw ("TOREDO");
-  /*
-  retur  JSON.stringify({
-    "goalTerm": node.goalTerm,
-    "hyps": _(node.hyps)
-      .map(function(h) {
-        return {
-          "hName": h.hName,
-          "hValue": h.hValue,
-          "hType": h.hType,
-        };
-      })
-      .value(),
-  });
-  */
-}
-
-function tacticUnicityRepr(node: Tactic): string {
-  return JSON.stringify(
-    _(node.goals)
-      .map(goalNodeUnicityRepr)
-      .value()
-  );
-}
-
-function asyncQueryAndUndo(t: string): Promise<any> {
-  throw "TODO";
-}
-
-function isGood(response: any) { throw "TODO"; }
-
-let centerLeftOffset = +10;
-
-let centerRightOffset = -10;
-
-function centerLeft0(d) {
-  return {
-    "x": d.cX0 + centerLeftOffset,
-    "y": d.cY0 + d.height / 2
-  };
-}
-
-function centerRight0(d) {
-  return {
-    "x": d.cX0 + d.width + centerRightOffset,
-    "y": d.cY0 + d.height / 2
-  };
-}
-
-function centerLeft(d) {
-  return {
-    "x": d.cX + centerLeftOffset,
-    "y": d.cY + d.height / 2
-  };
-}
-
-function centerRight(d) {
-  return {
-    "x": d.cX + d.width + centerRightOffset,
-    "y": d.cY + d.height / 2
-  };
-}
-
-/*
-  This might be terrible design, but [spotTheDifference] currently marks inline
-  diffs through CSS background-color. It's much more stable than using
-  rectangles when animated.
- */
-function spotTheDifferences(before, after) {
-
-  function rec(before, after) {
-
-    let nbBefore = before.children().length;
-    let nbAfter = after.children().length;
-    if (nbBefore !== nbAfter) {
-      return [{
-        "removed": before,
-        "added": after,
-      }];
-    }
-
-    let nbChildren = nbBefore;
-    if (nbChildren === 0) { // both leaves
-      if (before.html() !== after.html()) {
-        return [{
-          "removed": before,
-          "added": after,
-        }];
-      } else {
-        return [];;
-      }
-    }
-
-    let everyChildChanged = true;
-
-    let childrenChanges = _.range(nbChildren).reduce(function(acc, i) {
-      let tmp = rec($(before.children()[i]), $(after.children()[i]));
-      if (tmp.length === 0) { everyChildChanged = false; }
-      return acc.concat(tmp);
-    }, [])
-      ;
-
-    if (everyChildChanged) {
-      return [{
-        "removed": before,
-        "added": after,
-      }];
-    } else {
-      return childrenChanges;
-    }
-
-  }
-
-  let removed = [];
-  let added = [];
-
-  _(rec($(before).children(), $(after).children())).each(function(pair, ndx) {
-    pair.removed.css("background-color", diffColor(ndx));
-    pair.added.css("background-color", diffColor(ndx));
-    //removed.push(pair.removed);
-    //added.push(pair.added);
-  });
-
-  return { "removed": removed, "added": added };
-}
-
-function avg(n1, n2) { return (n1 + n2) / 2; }
-
-function mkDot(x, y) { return { "x": x, "y": y }; }
-
-function showDot(d) { return d.x + " " + d.y; }
-
-/*
-
-  a_____b     c_____d
-  |     |     |     |
-  h_____g     f_____e
-
-*/
-function connectRects(r1, r2, rightsLeft) {
-  //console.log("rect1", r1, "rect2", r2);
-  if (rightsLeft === undefined) { rightsLeft = r2.left; }
-  let a = mkDot(r1.left, r1.top);
-  let b = mkDot(r1.right, r1.top);
-  let c = mkDot(rightsLeft, r2.top);
-  let d = mkDot(r2.right, r2.top);
-  let e = mkDot(r2.right, r2.bottom);
-  let f = mkDot(rightsLeft, r2.bottom);
-  let g = mkDot(r1.right, r1.bottom);
-  let h = mkDot(r1.left, r1.bottom);
-
-  let cp1 = mkDot(avg(b.x, c.x), b.y);
-  let cp2 = mkDot(avg(f.x, g.x), c.y);
-  let cp3 = mkDot(avg(f.x, g.x), f.y);
-  let cp4 = mkDot(avg(f.x, g.x), g.y);
-
-  //console.log("M", a, b, c, d, e, f, g, h);
-
-  return (
-    "M" + showDot(a)
-    + "L" + showDot(b)
-    + "C" + showDot(cp1) + "," + showDot(cp2) + "," + showDot(c)
-    + "L" + showDot(d) + "," + showDot(e) + "," + showDot(f)
-    + "C" + showDot(cp3) + "," + showDot(cp4) + "," + showDot(g)
-    + "L" + showDot(h)
-    + "Z"
-  );
-}
-
-function byDiffId(d) {
-  let res = "{";
-  if (d.oldHyp !== undefined) { res += d.oldHyp.hName; }
-  res += "-";
-  if (d.newHyp !== undefined) { res += d.newHyp.hName; }
-  return res + "}";
-}
-
-function sameNameAs(a) {
-  return function(b) { return a.hName === b.hName; };
-}
-
-function computeDiffList(oldHypsOriginal, newHypsOriginal) {
-  let diffList = [];
-
-  // slice() creates a shallow copy, since we will mutate this
-  let oldHyps = oldHypsOriginal.slice();
-  let newHyps = newHypsOriginal.slice();
-
-  while (oldHyps.length > 0 && newHyps.length > 0) {
-    let oldHyp = oldHyps[0];
-    let newHyp = newHyps[0];
-    // either the first two match
-    if (oldHyp.hName === newHyp.hName) {
-      diffList.push({ "oldHyp": oldHyp, "newHyp": newHyp, "isJump": false });
-      oldHyps.shift();
-      newHyps.shift();
-      continue;
-    }
-    let matchesOld = _(newHyps).find(sameNameAs(oldHyp));
-    // or the first old has disappeared
-    if (matchesOld === undefined) {
-      diffList.push({ "oldHyp": oldHyp, "newHyp": undefined, "isJump": false });
-      oldHyps.shift();
-      continue;
-    }
-    // or the first old has moved, but the first new has appeared
-    let matchesNew = _(oldHyps).find(sameNameAs(newHyp));
-    if (matchesNew === undefined) {
-      diffList.push({ "oldHyp": undefined, "newHyp": newHyp, "isJump": false });
-      newHyps.shift();
-      continue;
-    }
-    // otherwise, register matchesOld as a "jump"
-    diffList.push({ "oldHyp": oldHyp, "newHyp": matchesOld, "isJump": true });
-    oldHyps.shift();
-    _(newHyps).remove(sameNameAs(matchesOld));
-  }
-
-  // now register the remaining disappearing
-  _(oldHyps).each(function(oldHyp) {
-    diffList.push({ "oldHyp": oldHyp, "newHyp": undefined, "isJump": false });
-  });
-
-  // now register the remaining appearing
-  _(newHyps).each(function(newHyp) {
-    diffList.push({ "oldHyp": undefined, "newHyp": newHyp, "isJump": false });
-  });
-
-  return diffList;
-}
-
-/*
-  creates an empty rectangle in the same column as [node], at vertical position
-  [currentY]
-*/
-function emptyRect(node: ProofTreeNode, currentY: number): Rectangle {
-  let delta = 1; // how big to make the empty rectangle
-  return $.extend(
-    {
-      "left": node.cX,
-      "right": node.cX + node.width,
-      "width": node.width
-    },
-    {
-      "top": currentY - delta,
-      "bottom": currentY + delta,
-      "height": 2 * delta,
-    }
-  );
-}
-
-function emptyRect0(node: ProofTreeNode, currentY: number): Rectangle {
-  let delta = 1; // how big to make the empty rectangle
-  return $.extend(
-    {
-      "left": node.cX0,
-      "right": node.cX0 + node.width,
-      "width": node.width
-    },
-    {
-      "top": currentY - delta,
-      "bottom": currentY + delta,
-      "height": 2 * delta,
-    }
-  );
-}
-
-function repeat(n: number, s: string): string {
-  return Array(n + 1).join(s);
-}
-
-let diffColor = (function() {
-  let colors = [
-    "#ffbb78",
-    "#f7b6d2",
-    "#dbdb8d",
-    "#6b6ecf",
-    "#8ca252",
-    "#b5cf6b",
-    "#cedb9c",
-    "#bd9e39",
-    "#d6616b",
-    "#ce6dbd",
-    "#de9ed6",
-  ];
-  let scale = d3.scale.ordinal().range(colors);
-  return function(n) {
-    return scale(n);
-  };
-})();

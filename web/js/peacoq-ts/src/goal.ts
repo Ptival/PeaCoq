@@ -49,6 +49,7 @@ class PeaCoqGoal {
       });
 
     }
+
     return this.html.clone();
   }
 }

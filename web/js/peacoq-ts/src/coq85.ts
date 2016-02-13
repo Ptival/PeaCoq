@@ -992,7 +992,7 @@ function isAfter(pos1: AceAjax.Position, pos2: AceAjax.Position): boolean {
 
 function killEditsAfterPosition(doc: CoqDocument, pos: AceAjax.Position) {
   // we will need to rewind to the state before the oldest edit we remove
-  let editToRewindTo = undefined;
+  let editToRewindTo: Edit = undefined;
   // we remove all the edits that are after the position that was edited
   doc.removeEdits(
     (edit: Edit) => isAfter(edit.stopPos, pos),

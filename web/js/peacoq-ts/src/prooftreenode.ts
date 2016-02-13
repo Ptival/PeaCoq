@@ -19,11 +19,11 @@ abstract class ProofTreeNode {
   y0: number;
 
   constructor(proofTree: ProofTree, parent: ProofTreeNode) {
-    this.id = _.uniqueId();
-    this.proofTree = proofTree;
-    this.parent = parent;
     this.depth = (parent === undefined) ? 0 : parent.depth + 1;
+    this.id = _.uniqueId();
     this.isSolved = false;
+    this.parent = parent;
+    this.proofTree = proofTree;
   }
 
   abstract getFocusedChild(): ProofTreeNode;

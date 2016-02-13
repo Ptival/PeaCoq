@@ -2,6 +2,7 @@ let userTacticsGroupName = "PeaCoq user tactics";
 
 class TacticGroupNode extends ProofTreeNode {
   name: string;
+  parent: GoalNode;
   span: JQuery;
   tacticIndex: number;
   tactics: Tactic[];
@@ -13,6 +14,7 @@ class TacticGroupNode extends ProofTreeNode {
     ) {
     super(proofTree, parent);
     this.name = name;
+    this.parent = parent;
     this.tactics = [];
     this.tacticIndex = 0;
   }

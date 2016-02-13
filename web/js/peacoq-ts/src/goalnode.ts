@@ -3,7 +3,7 @@ class GoalNode extends ProofTreeNode {
   //gid: number;
   goal: PeaCoqGoal;
   html: JQuery;
-  //goalSpan: JQuery;
+  nodeHTML: JQuery;
   //goalString: string;
   //goalTerm: string;
   //hyps: Hypothesis[];
@@ -59,6 +59,15 @@ class GoalNode extends ProofTreeNode {
       ;
     if (nonEmptyTacticGroups.length === 0) { return undefined; }
     return nonEmptyTacticGroups[this.tacticIndex];
+  }
+
+  getGoalAncestors(): GoalNode[] {
+    if (this.parent === undefined) { return [this]; }
+    let grandparent = this.parent.parent;
+    assert (grandparent instanceof GoalNode, "getGoalAncestors: grandparent instanceof GoalNode");
+    let rec = (<GoalNode>grandparent).getGoalAncestors();
+    rec.unshift(this);
+    return rec;
   }
 
   getTactics(): Tactic[] {
