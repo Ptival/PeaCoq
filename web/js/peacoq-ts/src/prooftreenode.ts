@@ -26,8 +26,9 @@ abstract class ProofTreeNode {
     this.proofTree = proofTree;
   }
 
+  abstract getAllDescendants(): ProofTreeNode[];
+  abstract getAllGoalDescendants(): GoalNode[];
   abstract getFocusedChild(): ProofTreeNode;
-
   abstract getViewChildren(): ProofTreeNode[];
 
   getViewGrandChildren(): ProofTreeNode[] {

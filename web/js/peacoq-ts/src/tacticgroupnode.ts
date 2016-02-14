@@ -11,12 +11,24 @@ class TacticGroupNode extends ProofTreeNode {
     proofTree: ProofTree,
     parent: GoalNode,
     name: string
-    ) {
+  ) {
     super(proofTree, parent);
     this.name = name;
     this.parent = parent;
     this.tactics = [];
     this.tacticIndex = 0;
+  }
+
+  getAllDescendants() {
+    let children: GoalNode[] = _(this.tactics).map((t) => t.goals).flatten<GoalNode>().value();
+    let descendants = _(children).map((c) => c.getAllDescendants()).flatten<ProofTreeNode>().value();
+    return [].concat(children, descendants);
+  }
+
+  getAllGoalDescendants() {
+    let children: GoalNode[] = _(this.tactics).map((t) => t.goals).flatten<GoalNode>().value();
+    let descendants = _(children).map((c) => c.getAllGoalDescendants()).flatten<GoalNode>().value();
+    return [].concat(children, descendants);
   }
 
   getFocusedChild(): GoalNode {
@@ -26,8 +38,8 @@ class TacticGroupNode extends ProofTreeNode {
   }
 
   getFocusedTactic(): Tactic {
-      if (this.tactics.length === 0) { return undefined; }
-      return this.tactics[this.tacticIndex];
+    if (this.tactics.length === 0) { return undefined; }
+    return this.tactics[this.tacticIndex];
   }
 
   getTactics(): Tactic[] {

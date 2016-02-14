@@ -58,7 +58,7 @@ class ProofTree {
   /* true until the user uses their mouse */
   usingKeyboard: boolean;
   rootNode: GoalNode;
-  stateId: number;
+  //stateId: number;
   svgId: string;
   tactics: () => TacticGroup[];
   tacticsWorklist: WorklistItem[];
@@ -850,10 +850,10 @@ class ProofTree {
         ;
 
       // Now that the nodes have a size, we can compute the factors
-      this.computeXYFactors();
+      self.computeXYFactors();
 
       // compute how much descendants must be moved to center current
-      this.computeDescendantsOffset();
+      self.computeDescendantsOffset();
 
       // now we need to set the x and y attributes of the entering foreignObjects,
       // so we need to reuse the selection
@@ -925,7 +925,7 @@ class ProofTree {
         ;
 
       let rectSelection = self.rectLayer.selectAll("rect").data(nodes, byNodeId);
-      this.onRectSelectionEnter(rectSelection.enter());
+      self.onRectSelectionEnter(rectSelection.enter());
 
       rectSelection
         .classed("current", function(d) { return self.isCurNode(d); })

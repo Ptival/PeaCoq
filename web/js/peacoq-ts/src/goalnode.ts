@@ -10,40 +10,40 @@ class GoalNode extends ProofTreeNode {
   //ndx: number;
   openBraces: number;
   //parentTactic: TacticNode;
-  stateId: number; // should be filled as soon as known
+  stateIds: number[];
   tacticGroups: TacticGroupNode[];
   tacticIndex: number;
 
   constructor(proofTree: ProofTree, parent: TacticGroupNode, goal: PeaCoqGoal) {
     super(proofTree, parent);
-    this.goal = goal;
 
+    this.closedBraces = 0;
+    this.goal = goal;
     this.html = $("<div>")
       .attr("id", _.uniqueId())
       .append(this.goal.getHTML())
       ;
-
-    /*
-    let goal = goals.fgGoals[0];
-    let goalTerm = extractGoal(goal.gGoal);
-    this.hyps = _(goal.gHyps).map(extractHypothesis).value();
-    this.ndx = index + 1; // used in Focus, Coq uses 1-index
-    this.gid = goal.gId;
-    this.goalTerm = goalTerm;
-    this.goalString = showTermText(goalTerm);
-    */
+    this.openBraces = 0;
+    this.stateIds = [];
     this.tacticGroups = [];
     this.tacticIndex = 0;
-    /*
-    this.parentTactic = parentTactic;
-    */
-
-    this.openBraces = 0;
-    this.closedBraces = 0;
 
     if (proofTree.rootNode === undefined) {
       proofTree.rootNode= this;
     }
+  }
+
+  getAllDescendants() {
+    let children = this.tacticGroups;
+    let descendants = _(children).map((c) => c.getAllDescendants()).flatten<ProofTreeNode>().value();
+    return [].concat(children, descendants);
+  }
+
+  getAllGoalDescendants() {
+    let children = this.tacticGroups;
+    let descendants = _(children).map((c) => c.getAllGoalDescendants()).flatten<GoalNode>().value();
+    return [].concat(children, descendants);
+
   }
 
   getFocusedChild() {

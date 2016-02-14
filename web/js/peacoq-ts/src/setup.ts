@@ -6,6 +6,8 @@ $(document).ready(() => {
   peaCoqStatusHandlers.push(proofTreeOnStatus);
 });
 
+let mostRecentStateId: number = undefined;
+
 /*
 We only react to commands that look like tactics. For now, the
 heuristic is that it does not start with an uppercase character.
@@ -15,13 +17,18 @@ If it already existed or was expected, nothing is done.
 If it was unexpected, let's create an empty, nameless group to hold it.
 */
 function proofTreeOnAdd(s: string, r: AddReturn): void {
+  mostRecentStateId = r.stateId;
+
   if (proofTrees.length === 0) { return; }
   let activeProofTree = proofTrees[0];
-  activeProofTree.stateId = r.stateId;
   let curNode = activeProofTree.curNode;
   let trimmed = coqTrim(s);
 
-  if (isUpperCase(trimmed[0])) { return; }
+  if (isUpperCase(trimmed[0])) {
+    assert(curNode instanceof GoalNode, "proofTreeOnAdd: curNode instanceof GoalNode");
+    (<GoalNode>curNode).stateIds.push(r.stateId);
+    return;
+  }
 
   if (curNode instanceof GoalNode) {
     let existingTactic = _(curNode.getTactics())
@@ -47,11 +54,17 @@ function proofTreeOnAdd(s: string, r: AddReturn): void {
 function proofTreeOnEditAt(sid: number): void {
   if (proofTrees.length === 0) { return; }
   let activeProofTree = proofTrees[0];
+  mostRecentStateId = sid;
   let curNode = activeProofTree.curNode;
   if (curNode instanceof GoalNode) {
     let ancestorGoals = curNode.getGoalAncestors();
+    // first, get rid of all stored stateIds > sid
+    let allGoals = activeProofTree.rootNode.getAllGoalDescendants();
+    _(allGoals).each((g) => {
+      g.stateIds = _(g.stateIds).filter((s) => s <= sid).value();
+    })
     let target = _(ancestorGoals).find((g) => {
-      return g.stateId === sid;
+      return _(g.stateIds).some((s) => s === sid);
     });
     if (target) {
       activeProofTree.curNode = target;
@@ -75,14 +88,14 @@ function proofTreeOnGetContext(c: PeaCoqContext): void {
   // TODO: Cover all goals rather than just the first :)
   if (!curNode) {
     let g = new GoalNode(activeProofTree, undefined, c[0]);
-    g.stateId = activeProofTree.stateId;
+    g.stateIds.push(mostRecentStateId);
     activeProofTree.curNode = g;
     activeProofTree.update();
   }
   if (tacticWaiting) {
     let g = new GoalNode(activeProofTree, tacticWaiting.parentGroup, c[0]);
     // the first goal's stateId is known
-    g.stateId = activeProofTree.stateId;
+    g.stateIds.push(mostRecentStateId);
     tacticWaiting.goals = [g];
     activeProofTree.tacticWaitingForContext = undefined;
     activeProofTree.curNode = g;
