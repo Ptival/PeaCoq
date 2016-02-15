@@ -33,3 +33,9 @@ instance (ToXML a, ToXML b) => ToXML (a, b) where
     "<pair>\n"
     ++ unlines [xml l, xml r]
     ++ "</pair>"
+
+mkTag :: ToXML a => String -> String -> a -> String
+mkTag name val contents =
+  "<" ++ name ++ " val=\"" ++ val ++ "\">\n"
+  ++ xml contents
+  ++ "\n</" ++ name ++ ">"

@@ -188,6 +188,8 @@ $(document).ready(function() {
     $("#editor").css("height", parentHeight);
     $("#context").css("height", halfParentHeight);
     $("#coqtop").css("height", halfParentHeight);
+    let activeProofTree = getActiveProofTree();
+    if (activeProofTree) { activeProofTree.resize($(window).width(), $("#prooftree").height()); }
   });
 
   _(keybindings).each(function(binding) {

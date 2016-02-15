@@ -2,6 +2,7 @@ module Utils where
 
 import           Control.Monad.Catch   (MonadThrow)
 import           Data.Conduit          (Consumer)
+import           Data.List             (intersperse)
 import qualified Data.Text             as T
 import           Data.XML.Types        (Event, Name)
 import           Text.XML.Stream.Parse
@@ -30,3 +31,6 @@ unpackContent = T.unpack <$> content
 
 castContent :: (FromString a, MonadThrow m) => Consumer Event m a
 castContent = readUnpack <$> content
+
+sepBy :: String -> [String] -> String
+sepBy sep = concat . intersperse sep

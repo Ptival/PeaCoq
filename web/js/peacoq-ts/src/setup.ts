@@ -106,7 +106,6 @@ function proofTreeOnGetContext(c: PeaCoqContext): void {
 function proofTreeOnStatus(s: Status): void {
   // hopefully we are always at most 1 tree late
   if (proofTrees.length + 1 === s.statusAllProofs.length) {
-    console.log("CREATING PROOF TREE");
     // we are behind on the number of proof trees, create one
     let pt = new ProofTree(
       s.statusProofName,

@@ -456,8 +456,8 @@ class ProofTree {
       .append("rect")
       .classed("goal", (d) => d instanceof GoalNode)
       .style("fill", function(d) {
-        if (d instanceof GoalNode) { return "#AEC6CF"; }
-        if (d instanceof TacticGroupNode) { return "#CB99C9"; }
+        if (d instanceof GoalNode) { return "#F5F5F5"; }
+        if (d instanceof TacticGroupNode) { return "#E1BEE7"; }
         return "#000000";
       })
       .classed("tactic", (d) => d instanceof TacticGroupNode)
@@ -554,6 +554,17 @@ class ProofTree {
     //console.log("REPOPULATING TACTICS WORKLIST", this.tacticsWorklist);
 
     this.processTactics();
+  }
+
+  resize(width: number, height: number) {
+    this.svg
+      .style("width", width + "px")
+      .style("height", height + "px")
+      // also need these as attributes for svg_todataurl
+      .attr("width", width + "px")
+      .attr("height", height + "px")
+      ;
+    this.update();
   }
 
   resetSVGTransform(): void {

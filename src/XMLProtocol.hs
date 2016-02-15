@@ -2,7 +2,16 @@ module XMLProtocol where
 
 import Control.Monad.IO.Class
 
-import Coq
+import Coq.CoqInfo
+import Coq.CoqObject
+import Coq.Evar
+import Coq.Goals
+import Coq.OptionState
+import Coq.OptionValue
+import Coq.SearchConstraint
+import Coq.StateId
+import Coq.Status
+import Coq.Value
 import CoqIO
 import CoqParse
 

@@ -5,16 +5,15 @@
 
 module CoqParse where
 
-import           Data.Aeson               (ToJSON)
-import           Data.Proxy
-import           Data.Tree
-import           Data.XML.Types
-import           GHC.Generics             (Generic)
-import           Text.XML.Stream.Parse    hiding (tag)
+import Data.Aeson            (ToJSON)
+import Data.Proxy
+import Data.Tree
+import Data.XML.Types
+import GHC.Generics          (Generic)
+import Text.XML.Stream.Parse hiding (tag)
 
-import           Coq
-import           FromXML
-import           Utils
+import FromXML
+import Utils
 
 type ParseCoq = Parser (Maybe CoqXMLTree)
 type ForceCoq = Parser CoqXMLTree
@@ -233,6 +232,8 @@ instance Show CoqXMLTag where
   show (Token s)              = "Token " ++ s
   show Typed                  = "Typed"
 
+type Location = (Int, Int)
+
 type LocatedCoqXMLTag = (Maybe Location, CoqXMLTag)
 
 instance {-# OVERLAPS #-} Show LocatedCoqXMLTag where
@@ -260,6 +261,8 @@ instance Show PPXMLTag where
   show (VernacExpr s)  = "VernacExpr " ++ s
 
 instance ToJSON PPXMLTag
+
+type Position = (Int, Int)
 
 type PositionedPPXMLTag = (Position, PPXMLTag)
 

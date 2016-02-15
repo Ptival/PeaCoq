@@ -11,7 +11,10 @@ import Text.XML.Stream.Parse    hiding (tag)
 import System.Process           (ProcessHandle)
 
 import Conduits
-import Coq
+import Coq.Feedback
+import Coq.Message
+import Coq.StateId
+import Coq.Value
 import FromXML
 import ToXML
 
@@ -39,6 +42,18 @@ type CoqtopIO a = CoqIO (Value a)
 
 hResponseDebug :: String -> IO ()
 hResponseDebug s = if True then putStrLn s else return ()
+
+messageMaxLen :: Int
+messageMaxLen = 1000
+
+feedbackMaxLen :: Int
+feedbackMaxLen = 1000
+
+parseXMLEither :: (FromXML a, FromXML b) => Parser (Maybe (Either a b))
+--parseXMLEither :: forall a b. (FromXML a, FromXML b) => Parser (Maybe (Either a b))
+parseXMLEither =
+        ((Left  <$>) <$> parseXML)
+  `orE` ((Right <$>) <$> parseXML)
 
 hResponse :: forall a. (FromXML a, Show a) => CoqtopIO a
 hResponse = do
