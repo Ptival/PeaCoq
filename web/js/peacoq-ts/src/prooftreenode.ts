@@ -9,7 +9,6 @@ abstract class ProofTreeNode {
   id: string;
   isSolved: boolean;
   label: string;
-  parent: ProofTreeNode;
   proofTree: ProofTree;
   response: any; // TODO: remove this
   width: number;
@@ -22,13 +21,13 @@ abstract class ProofTreeNode {
     this.depth = (parent === undefined) ? 0 : parent.depth + 1;
     this.id = _.uniqueId();
     this.isSolved = false;
-    this.parent = parent;
     this.proofTree = proofTree;
   }
 
   abstract getAllDescendants(): ProofTreeNode[];
   abstract getAllGoalDescendants(): GoalNode[];
   abstract getFocusedChild(): ProofTreeNode;
+  abstract getParent(): ProofTreeNode;
   abstract getViewChildren(): ProofTreeNode[];
 
   getViewGrandChildren(): ProofTreeNode[] {

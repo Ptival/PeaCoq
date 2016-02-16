@@ -44,7 +44,7 @@ class ProofTree {
   anchor: d3.Selection<HTMLElement>;
   /* whatever the client wants to store as meta-data */
   clientState: Object;
-  curNode: ProofTreeNode;
+  curNode: GoalNode;
   descendantsOffset: number;
   diagonal: d3.svg.Diagonal<ProofTreeLink, ProofTreeNode>;
   height: number;
@@ -188,11 +188,11 @@ class ProofTree {
     }
     if (n1.id === n2.id) { return n1; }
     if (n1.depth < n2.depth) {
-      return this.commonAncestor(n1, n2.parent);
+      return this.commonAncestor(n1, n2.getParent());
     } else if (n1.depth > n2.depth) {
-      return this.commonAncestor(n1.parent, n2);
+      return this.commonAncestor(n1.getParent(), n2);
     } else {
-      return this.commonAncestor(n1.parent, n2.parent);
+      return this.commonAncestor(n1.getParent(), n2.getParent());
     }
   }
 
@@ -219,10 +219,13 @@ class ProofTree {
         }
       }
     } else if (curNode instanceof TacticGroupNode) {
+      throw "TODO: oops, curNode is TacticGroup";
+      /*
       let t = curNode.getFocusedTactic();
       if (t.goals.length > 0) {
         centeredDescendant = t.goals[t.goalIndex];
       }
+      */
     } else {
       throw curNode;
     }
@@ -342,6 +345,11 @@ class ProofTree {
     return groupNode;
   }
 
+  getCurrentGoal(): GoalNode {
+    assert(this.curNode instanceof GoalNode, "getCurrentGoal: curNode instanceof GoalNode");
+    return this.curNode;
+  }
+
   getFocus() { $(":focus").blur(); }
 
   getGoalWidth() {
@@ -377,21 +385,21 @@ class ProofTree {
   }
 
   isCurGoalChild(n: ProofTreeNode): boolean {
-    return hasParent(n) && this.isCurGoal(n.parent);
+    return hasParent(n) && this.isCurGoal(n.getParent());
   }
 
   isCurGoalGrandChild(n: ProofTreeNode): boolean {
-    return hasParent(n) && this.isCurGoalChild(n.parent);
+    return hasParent(n) && this.isCurGoalChild(n.getParent());
   }
 
   isCurNode(n: ProofTreeNode): boolean { return n.id === this.curNode.id; }
 
   isCurNodeChild(n: ProofTreeNode): boolean {
-    return hasParent(n) && this.isCurNode(n.parent);
+    return hasParent(n) && this.isCurNode(n.getParent());
   }
 
   isCurNodeGrandChild(n: ProofTreeNode): boolean {
-    return hasParent(n) && this.isCurNodeChild(n.parent);
+    return hasParent(n) && this.isCurNodeChild(n.getParent());
   }
 
   isCurNodeParent(n: ProofTreeNode): boolean {
@@ -399,7 +407,7 @@ class ProofTree {
   }
 
   isCurNodeSibling(n: ProofTreeNode): boolean {
-    return !this.isCurNode(n) && hasParent(n) && this.isCurNodeParent(n.parent);
+    return !this.isCurNode(n) && hasParent(n) && this.isCurNodeParent(n.getParent());
   }
 
   isRootNode(n: ProofTreeNode): boolean {
@@ -504,64 +512,66 @@ class ProofTree {
 
   refreshTactics(): void {
 
-    //if (focusedOnEditor) { return; }
-
-    let self = this;
-    let curNode = this.curNode;
-
-    let tacticsAndGroups = this.tactics();
-
-    /*
-      _(this.tactics())
-        .groupBy(function(elt) {
-        if ($.type(elt) === "string") {
-          return "tactics";
-        } else {
-          return "groups";
-        }
-      })
-        .value()
-      ;
-
-      // TODO: there should be no tactics!
-      let groups = tacticsAndGroups.groups;
-      */
-
-    /*
-        let groupSparks = _(tacticsAndGroups)
-          .map(function(group) {
-          let groupNode: TacticGroupNode = self.findOrCreateGroup(curNode, group.name);
-          return (
-            _(group.tactics)
-              .filter(
-              (tactic) => {
-                return (
-                  !_(groupNode.tactics)
-                    .some(function(node) {
-                    return (node.tactic === tactic);
-                  })
-                  );
-              })
-              .map(
-              (tactic) => {
-                return function() {
-                  return self.runTactic(tactic, groupNode);
-                }
-              })
-              .flatten(true)
-              .value()
-            );
-        })
-          .flatten<() => Promise<any>>(true)
-          .value()
-          ;
-
-        // flushes the worklist and add the new sparks
-        this.tacticsWorklist = groupSparks;
-    */
-    //console.log("REPOPULATING TACTICS WORKLIST", this.tacticsWorklist);
-
-    this.processTactics();
+    return;
+    //
+    // //if (focusedOnEditor) { return; }
+    //
+    // let self = this;
+    // let curNode = this.curNode;
+    //
+    // let tacticsAndGroups = this.tactics();
+    //
+    // /*
+    //   _(this.tactics())
+    //     .groupBy(function(elt) {
+    //     if ($.type(elt) === "string") {
+    //       return "tactics";
+    //     } else {
+    //       return "groups";
+    //     }
+    //   })
+    //     .value()
+    //   ;
+    //
+    //   // TODO: there should be no tactics!
+    //   let groups = tacticsAndGroups.groups;
+    //   */
+    //
+    // /*
+    //     let groupSparks = _(tacticsAndGroups)
+    //       .map(function(group) {
+    //       let groupNode: TacticGroupNode = self.findOrCreateGroup(curNode, group.name);
+    //       return (
+    //         _(group.tactics)
+    //           .filter(
+    //           (tactic) => {
+    //             return (
+    //               !_(groupNode.tactics)
+    //                 .some(function(node) {
+    //                 return (node.tactic === tactic);
+    //               })
+    //               );
+    //           })
+    //           .map(
+    //           (tactic) => {
+    //             return function() {
+    //               return self.runTactic(tactic, groupNode);
+    //             }
+    //           })
+    //           .flatten(true)
+    //           .value()
+    //         );
+    //     })
+    //       .flatten<() => Promise<any>>(true)
+    //       .value()
+    //       ;
+    //
+    //     // flushes the worklist and add the new sparks
+    //     this.tacticsWorklist = groupSparks;
+    // */
+    // //console.log("REPOPULATING TACTICS WORKLIST", this.tacticsWorklist);
+    //
+    // this.processTactics();
   }
 
   resize(width: number, height: number) {
@@ -882,8 +892,8 @@ class ProofTree {
         .attr("x", function(d) {
           if (hasParent(d)) {
             // non-roots are spawned at their parent's (cX0, cY0)
-            d.cX0 = d.parent.cX0;
-            d.cY0 = d.parent.cY0;
+            d.cX0 = d.getParent().cX0;
+            d.cY0 = d.getParent().cY0;
           } else {
             // the root needs to spawn somewhere arbitrary: (0, 0.5)
             d.cX0 = self.xOffset(d);
@@ -934,7 +944,7 @@ class ProofTree {
             d.cX = nodeToReach.cX;
             d.cY = nodeToReach.cY;
           } else {
-            let nodeToReach = d.parent;
+            let nodeToReach = d.getParent();
             d.cX = nodeToReach.cX;
             d.cY = nodeToReach.cY;
           }
@@ -1494,7 +1504,7 @@ class ProofTree {
     //assert(isGoal(this.curNode), "yOffset assumes the current node is a goal!");
     if (this.isCurGoalChild(d)) {
       assert(focusedChild !== undefined, "yOffset: focusedChild === undefined");
-      return offset + (nodeY(d.parent) - nodeY(focusedChild)) * this.yFactor;
+      return offset + (nodeY(d.getParent()) - nodeY(focusedChild)) * this.yFactor;
     }
 
     // all goal grandchildren are shifted such that the context line of the

@@ -10,6 +10,8 @@ class GoalNode extends ProofTreeNode {
   //ndx: number;
   openBraces: number;
   //parentTactic: TacticNode;
+  parent: TacticGroupNode;
+  solved: boolean;
   stateIds: number[];
   tacticGroups: TacticGroupNode[];
   tacticIndex: number;
@@ -24,12 +26,14 @@ class GoalNode extends ProofTreeNode {
       .append(this.goal.getHTML())
       ;
     this.openBraces = 0;
+    this.parent = parent;
+    this.solved = false;
     this.stateIds = [];
     this.tacticGroups = [];
     this.tacticIndex = 0;
 
     if (proofTree.rootNode === undefined) {
-      proofTree.rootNode= this;
+      proofTree.rootNode = this;
     }
   }
 
@@ -64,11 +68,13 @@ class GoalNode extends ProofTreeNode {
   getGoalAncestors(): GoalNode[] {
     if (this.parent === undefined) { return [this]; }
     let grandparent = this.parent.parent;
-    assert (grandparent instanceof GoalNode, "getGoalAncestors: grandparent instanceof GoalNode");
+    assert(grandparent instanceof GoalNode, "getGoalAncestors: grandparent instanceof GoalNode");
     let rec = (<GoalNode>grandparent).getGoalAncestors();
     rec.unshift(this);
     return rec;
   }
+
+  getParent(): ProofTreeNode { return this.parent; }
 
   getTactics(): Tactic[] {
     return _(this.tacticGroups)
@@ -96,6 +102,28 @@ class GoalNode extends ProofTreeNode {
       return [nonEmptyTacticGroups[this.tacticIndex]];
     } else {
       return [];
+    }
+  }
+
+  onChildSolved(): void {
+    let self = this;
+    this.solved = true;
+    this.proofTree.update()
+      .then(function() {
+        self.onSolved();
+      })
+      ;
+  }
+
+  onSolved(): void {
+    if (this.openBraces === this.closedBraces) {
+      if (hasParent(this)) {
+        this.parent.onChildSolvedAndUnfocused();
+      } else if (autoLayout) {
+        //proofTreeQueryWish('Qed.');
+      }
+    } else if (autoLayout) {
+      //proofTreeQueryWish('}');
     }
   }
 

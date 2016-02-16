@@ -3,6 +3,7 @@ let userTacticsGroupName = "PeaCoq user tactics";
 class TacticGroupNode extends ProofTreeNode {
   name: string;
   parent: GoalNode;
+  solved: boolean;
   span: JQuery;
   tacticIndex: number;
   tactics: Tactic[];
@@ -15,6 +16,7 @@ class TacticGroupNode extends ProofTreeNode {
     super(proofTree, parent);
     this.name = name;
     this.parent = parent;
+    this.solved = false;
     this.tactics = [];
     this.tacticIndex = 0;
   }
@@ -42,6 +44,8 @@ class TacticGroupNode extends ProofTreeNode {
     return this.tactics[this.tacticIndex];
   }
 
+  getParent(): GoalNode { return this.parent; }
+
   getTactics(): Tactic[] {
     return this.tactics;
   }
@@ -54,6 +58,33 @@ class TacticGroupNode extends ProofTreeNode {
   }
 
   nodeWidth(): number { return this.proofTree.getTacticWidth(); }
+
+  onChildSolvedAndUnfocused(): void {
+    let focusedTactic = this.getFocusedTactic();
+    let unsolved = _(focusedTactic.goals)
+      .find(function(elt) {
+        return !elt.solved;
+      })
+      ;
+    if (unsolved === undefined) {
+      this.onSolved();
+    } else {
+      this.proofTree.curNode = unsolved;
+      this.proofTree.refreshTactics();
+      this.proofTree.update();
+    }
+  }
+
+  onSolved(): void {
+    let self = this;
+    this.solved = true;
+    this.proofTree.curNode = this.parent;
+    this.proofTree.update()
+      .then(function() {
+        self.parent.onChildSolved();
+      })
+      ;
+  }
 
   shiftNextInGroup() {
     if (this.tacticIndex < this.tactics.length - 1) {

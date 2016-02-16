@@ -73,7 +73,8 @@ function proofTreeOnEditAt(sid: number): void {
         throw "TODO: proofTreeOnEditAt tactic waiting to be cleared";
       }
     } else {
-
+      proofTrees = [];
+      $("#prooftree").empty();
     }
   } else {
     throw "TODO: proofTreeOnEditAt";
@@ -93,6 +94,10 @@ function proofTreeOnGetContext(c: PeaCoqContext): void {
     activeProofTree.update();
   }
   if (tacticWaiting) {
+    if (c.length === 0) { // tactic solved the goal!
+      curNode.onSolved();
+      return;
+    }
     let g = new GoalNode(activeProofTree, tacticWaiting.parentGroup, c[0]);
     // the first goal's stateId is known
     g.stateIds.push(mostRecentStateId);
