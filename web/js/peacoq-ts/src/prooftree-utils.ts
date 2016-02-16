@@ -2,16 +2,6 @@
   Stuff that is somewhat general but mostly useful for the proof tree.
  */
 
-function computeGoalWidth(width) {
-  let goalShare = 15 / 20;
-  return Math.floor(width * (goalShare / 2));
-}
-
-function computeTacticWidth(width) {
-  let tacticShare = 4 / 20;
-  return Math.floor(width * (tacticShare / 2));
-}
-
 /*
  * Returns a rect of the absolute position of [elmt] within the canvas. It needs
  * [node] in order to return absolute values, where [node] is the node element

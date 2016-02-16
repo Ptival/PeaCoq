@@ -53,7 +53,7 @@ class TacticGroupNode extends ProofTreeNode {
     return focusedTactic.goals;
   }
 
-  nodeWidth(): number { return this.proofTree.tacticWidth; }
+  nodeWidth(): number { return this.proofTree.getTacticWidth(); }
 
   shiftNextInGroup() {
     if (this.tacticIndex < this.tactics.length - 1) {

@@ -100,7 +100,7 @@ class GoalNode extends ProofTreeNode {
   }
 
   nodeWidth() {
-    return this.proofTree.goalWidth;
+    return this.proofTree.getGoalWidth();
   }
 
 }

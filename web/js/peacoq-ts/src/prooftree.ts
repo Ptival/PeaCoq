@@ -47,14 +47,12 @@ class ProofTree {
   curNode: ProofTreeNode;
   descendantsOffset: number;
   diagonal: d3.svg.Diagonal<ProofTreeLink, ProofTreeNode>;
-  goalWidth: number;
   height: number;
   keydownHandler: () => void;
   name: string;
   onEndProcessing: () => void;
   onStartProcessing: () => void;
   paused: boolean;
-  tacticWidth: number;
   /* true until the user uses their mouse */
   usingKeyboard: boolean;
   rootNode: GoalNode;
@@ -99,8 +97,6 @@ class ProofTree {
     this.yFactor = this.height;
     this.clientState = {};
     this.usingKeyboard = true; // true until the user moves their mouse
-    this.goalWidth = computeGoalWidth(this.width);
-    this.tacticWidth = computeTacticWidth(this.width);
 
     this.tree = d3.layout.tree<ProofTreeNode>()
       .children((node: ProofTreeNode, index: number) => {
@@ -167,7 +163,7 @@ class ProofTree {
         .attr("id", "viewport") // for SVGPan.js
         .attr("class", "viewport")
         .attr("transform",
-        "translate(" + self.goalWidth + ", 0)"
+        "translate(" + self.getGoalWidth() + ", 0)"
         )
       ;
 
@@ -346,8 +342,20 @@ class ProofTree {
     return groupNode;
   }
 
-  getFocus() {
-    $(":focus").blur();
+  getFocus() { $(":focus").blur(); }
+
+  getGoalWidth() {
+    let goalShare = 15 / 20;
+    return Math.floor(this.width * (goalShare / 2));
+  }
+
+  getTacticWidth() {
+    let tacticShare = 4 / 20;
+    return Math.floor(this.width * (tacticShare / 2));
+  }
+
+  getCurrentScale() {
+    return (<any>this.svg[0][0]).currentScale;
   }
 
   /*
@@ -557,6 +565,8 @@ class ProofTree {
   }
 
   resize(width: number, height: number) {
+    this.width = width;
+    this.height = height;
     this.svg
       .style("width", width + "px")
       .style("height", height + "px")
@@ -714,7 +724,7 @@ class ProofTree {
         // the goal nodes need to be rendered at fixed width goalWidth
         // the tactic nodes will be resized to their actual width later
         .attr("width", function(d) {
-          return d instanceof GoalNode ? self.goalWidth : self.tacticWidth;
+          return d instanceof GoalNode ? self.getGoalWidth() : self.getTacticWidth();
         })
         ;
 
@@ -851,7 +861,7 @@ class ProofTree {
         })
         // preset the width to update measures correctly
         .attr("width", function(d) {
-          return d instanceof GoalNode ? self.goalWidth : self.tacticWidth;
+          return d instanceof GoalNode ? self.getGoalWidth() : self.getTacticWidth();
         })
         .attr("height", 0)
         .each(function(d) {
@@ -951,7 +961,7 @@ class ProofTree {
         .duration(animationDuration)
         .style("opacity", "1")
         .attr("width", function(d) { return d.width; })
-        .attr("height", function(d) { return d.height; })
+        .attr("height", function(d) { return d.height / self.getCurrentScale(); })
         .attr("x", function(d) { return d.cX; })
         .attr("y", function(d) { return d.cY; })
         ;
