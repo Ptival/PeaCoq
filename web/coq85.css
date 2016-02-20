@@ -1,6 +1,7 @@
 html, html>body, #interface {
   height: 100%;
   margin: 0;
+  overflow: hidden;
 }
 #interface, #main, #main-right, #context, #context-tabs, #coqtop, #coqtop-tabs {
   display: flex;
@@ -11,9 +12,11 @@ html, html>body, #interface {
   /* Column layout */
 }
 #main, #main-left, #main-right, #context, #context-tabs, #coqtop, #coqtop-tabs {
-  flex: 1;
+  height: 100%;
+  width: 100%;
+  /*flex: 1;*/
   /* Distribute space equally among the flex items */
-  flex-basis: 0;
+  /*flex-basis: 0;*/
   overflow: hidden;
 }
 #prooftree {
@@ -81,13 +84,13 @@ a, button {
 
 /* Visualization */
 
-#pretty {
+#pretty-content {
   display: inline-block;
   font-family: monospace;
   font-size: 12px;
   width: 100%;
 }
-#pretty hr {
+#pretty-content hr {
   border-top: 1px solid black;
   margin-bottom: 4px;
   margin-top: 4px;
@@ -114,4 +117,8 @@ a, button {
 }
 .peacoq-highlight {
   background-color: lightblue;
+}
+.horizontal-separator {
+  height: 4px;
+  background-color: black;
 }

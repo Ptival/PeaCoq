@@ -44,14 +44,14 @@ function isInfixBinaryOperation(term, name?: string) {
     term.constructor === App
     && term.left.constructor === App
     && term.left.left.constructor === Var
-    && _(binaryOperations).contains(term.left.left.name)
+    && _(binaryOperations).includes(term.left.left.name)
     && (name ? term.left.left.name === name : true)
     );
   return (
     term.constructor === App
     && term.left.constructor === App
     && term.left.left.constructor === Var
-    && _(binaryOperations).contains(term.left.left.name)
+    && _(binaryOperations).includes(term.left.left.name)
     && (name ? term.left.left.name === name : true)
     );
 }

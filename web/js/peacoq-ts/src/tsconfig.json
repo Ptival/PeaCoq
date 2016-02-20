@@ -20,6 +20,7 @@
     "coq-pretty-printer.ts",
     "coq85.ts",
     "coqtop85.ts",
+    "editor-tab.ts",
     "fakenode.ts",
     "gallina.ts",
     "goal.ts",
@@ -29,6 +30,7 @@
     "prooftreenode.ts",
     "setup.ts",
     "show.ts",
+    "tab.ts",
     "tacticgroupnode.ts",
     "tactic.ts",
     "utils.ts",
@@ -39,7 +41,9 @@
     "DefinitelyTyped/es6-shim/es6-shim.d.ts",
     "DefinitelyTyped/lodash/lodash.d.ts",
     "DefinitelyTyped/jquery/jquery.d.ts",
-    "DefinitelyTyped/mathjax/mathjax.d.ts"
+    "DefinitelyTyped/jqueryui/jqueryui.d.ts",
+    "DefinitelyTyped/mathjax/mathjax.d.ts",
+    "DefinitelyTyped/w2ui/w2ui.d.ts"
   ],
   "formatCodeOptions": {
     "indentSize": 2,

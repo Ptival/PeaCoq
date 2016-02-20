@@ -71,7 +71,7 @@ function coqtop(
             //console.log("Result: ", result);
             switch (result.tag) {
               case "ValueGood":
-                console.log("result", result);
+                //console.log("result", result);
                 onFulfilled(result.contents);
                 break;
               case "ValueFail":

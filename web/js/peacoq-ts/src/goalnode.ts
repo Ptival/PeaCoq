@@ -37,6 +37,8 @@ class GoalNode extends ProofTreeNode {
     }
   }
 
+  click(): void { return; }
+
   getAllDescendants() {
     let children = this.tacticGroups;
     let descendants = _(children).map((c) => c.getAllDescendants()).flatten<ProofTreeNode>().value();

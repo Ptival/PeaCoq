@@ -1,4 +1,4 @@
-Theorem theorem (x: nat) : forall (y: nat), x = 0 \/ True.
+Theorem theorem (x: nat) : forall (y: nat), True \/ True -> x = 0 \/ True.
 Proof.
-  intros. left.
+  intros. split. left.
 

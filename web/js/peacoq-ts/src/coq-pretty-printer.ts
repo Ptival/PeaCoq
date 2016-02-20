@@ -144,7 +144,7 @@ function extractProdBinders(a: ConstrExpr): [Array<LocalBinder>, ConstrExpr] {
       return extractProdBinders(a.returnExpr);
     } else {
       let [nal, bk, t] = bl[0];
-      let [blrec, cRest] = extractProdBinders(new CProdN(loc, _.rest(bl), c));
+      let [blrec, cRest] = extractProdBinders(new CProdN(loc, _.tail(bl), c));
       let l: LocalBinder[] = [new LocalRawAssum(nal, bk, t)];
       return [l.concat(blrec), cRest];
     }
@@ -312,7 +312,7 @@ function prListSepLastSep<T>(
     } else if (length === 1) {
       return elem(l[0]);
     } else {
-      let [h, t] = [l[0], _.rest(l)];
+      let [h, t] = [l[0], _.tail(l)];
       let e = elem(h);
       if (noEmpty && isMt(e)) {
         return start(t);
@@ -321,7 +321,7 @@ function prListSepLastSep<T>(
           if (l.length === 0) {
             return mt();
           } else {
-            let [h, t] = [l[0], _.rest(l)];
+            let [h, t] = [l[0], _.tail(l)];
             let e = elem(h);
             let r = aux(t);
             if (noEmpty && isMt(e)) {
@@ -405,7 +405,7 @@ function printHunks(
       return mt();
     }
     let unp = ul[0];
-    let l = _.rest(ul);
+    let l = _.tail(ul);
     if (unp instanceof UnpMetaVar) {
       let prec = unp.parenRelation;
       let c = pop(env);

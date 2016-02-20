@@ -300,12 +300,12 @@ class ProofTree {
     */
     let gcSiblings = _.zip(
       visibleGrandChildren.value(),
-      visibleGrandChildren.rest().value()
+      visibleGrandChildren.tail().value()
     );
     gcSiblings.pop(); // removes the [last, undefined] pair at the end
     let cSiblings = _.zip(
       visibleChildren.value(),
-      visibleChildren.rest().value()
+      visibleChildren.tail().value()
     );
     cSiblings.pop();
     // also, the current node should not overlap its siblings
@@ -314,7 +314,7 @@ class ProofTree {
       let curNodeSiblings = _(this.curNode.parent.getViewChildren());
       currentSiblings = _.zip(
         curNodeSiblings.value(),
-        curNodeSiblings.rest().value()
+        curNodeSiblings.tail().value()
       );
       currentSiblings.pop();
     }
@@ -472,9 +472,9 @@ class ProofTree {
       .append("rect")
       .classed("goal", (d) => d instanceof GoalNode)
       .style("fill", function(d) {
-        if (d instanceof GoalNode) { return "#F5F5F5"; }
-        if (d instanceof TacticGroupNode) { return "#E1BEE7"; }
-        return "#000000";
+        if (d instanceof GoalNode) { return "#DFE2DB"; }
+        if (d instanceof TacticGroupNode) { return "#FFF056"; }
+        throw "onRectSelectionEnter: style";
       })
       .classed("tactic", (d) => d instanceof TacticGroupNode)
       .attr("width", function(d) { return d.width; })

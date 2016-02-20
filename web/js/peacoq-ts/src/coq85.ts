@@ -5,17 +5,27 @@ let AceRange = ace.require("ace/range").Range;
 
 let autoLayout = false;
 
-let pretty, foreground, background, shelved, givenUp;
-let notices, warnings, errors, infos, feedback, jobs;
+let pretty: Tab;
+let foreground: EditorTab;
+let background: EditorTab;
+let shelved: EditorTab;
+let givenUp: EditorTab;
+let notices: EditorTab
+let warnings: EditorTab;
+let errors: EditorTab;
+let infos: EditorTab;
+let feedback: EditorTab;
+let jobs: EditorTab;
 
 let nbsp = "\u00A0";
 
 class CoqDocument {
-  editor: AceAjax.Editor;
-  session: AceAjax.IEditSession;
-  edits: Array<Edit>;
   beginAnchor: AceAjax.Anchor;
+  editor: AceAjax.Editor;
+  edits: Array<Edit>;
   endAnchor: AceAjax.Anchor;
+  session: AceAjax.IEditSession;
+
   constructor(editor: AceAjax.Editor) {
     this.editor = editor;
     this.edits = [];
@@ -24,24 +34,29 @@ class CoqDocument {
     this.beginAnchor = mkAnchor(this, 0, 0, "begin-marker", true);
     this.endAnchor = mkAnchor(this, 0, 0, "end-marker", false);
   }
+
   getStopPositions(): Array<AceAjax.Position> {
     return _(this.edits).map(function(e) { return e.stopPos; }).value();
   }
+
   getLastEditStop(): AceAjax.Position {
     if (this.edits.length === 0) { return this.beginAnchor.getPosition(); }
     return _(this.edits).last().stopPos;
   }
+
   pushEdit(e: Edit) { this.edits.push(e); }
+
   resetEditor(text: string) {
     this.edits = [];
     this.session.setValue(text);
     this.editor.focus();
     this.editor.scrollToLine(0, true, true, () => { });
   }
+
   removeEdits(
     predicate: (e: Edit) => boolean,
     beforeRemoval?: (e: Edit) => void
-    ) {
+  ) {
     _.remove(this.edits, function(e) {
       let toBeRemoved = predicate(e);
       if (toBeRemoved) {
@@ -51,15 +66,16 @@ class CoqDocument {
       return toBeRemoved;
     });
   }
+
 }
 
-let coqDocument: CoqDocument;
+//let coqDocument: CoqDocument;
 
 let statusPeriod = 3000;
 let maxLength = 2000;
 
 function onFeedback(f: Feedback) {
-  let session = feedback.getSession();
+  let session = feedback.editor.getSession();
   let current = session.getValue().substring(0, maxLength);
   let now = new Date();
   session.setValue("[" + now.toString().substring(16, 24) + "] " + f.toString() +
@@ -70,18 +86,18 @@ function isQueryWarning(m: Message) {
   return (
     m.level.constructor === Warning && m.content.indexOf(
       "Query commands should not be inserted in scripts"
-      ) > -1
-    );
+    ) > -1
+  );
 }
 
 function onMessage(m: Message) {
   let level = m.level;
 
   let session;
-  if (level instanceof Error) { session = errors.getSession(); }
-  else if (level instanceof Notice) { session = notices.getSession(); }
-  else if (level instanceof Warning) { session = warnings.getSession(); }
-  else if (level instanceof Info) { session = infos.getSession(); }
+  if (level instanceof Error) { session = errors.editor.getSession(); }
+  else if (level instanceof Notice) { session = notices.editor.getSession(); }
+  else if (level instanceof Warning) { session = warnings.editor.getSession(); }
+  else if (level instanceof Info) { session = infos.editor.getSession(); }
   else {
     throw MatchFailure("onMessage", level);
   }
@@ -127,14 +143,14 @@ function setupSyntaxHovering() {
 
   $(document)
     .on('mouseenter mouseover', '.syntax', function(e) {
-    $(this).toggleClass('peacoq-highlight', true);
-    e.stopImmediatePropagation();
-  })
+      $(this).toggleClass('peacoq-highlight', true);
+      e.stopImmediatePropagation();
+    })
     .on('mouseout mouseleave', '.syntax', function(e) {
-    $(this).toggleClass('peacoq-highlight', false);
-    e.stopImmediatePropagation();
-  })
-  ;
+      $(this).toggleClass('peacoq-highlight', false);
+      e.stopImmediatePropagation();
+    })
+    ;
 
 }
 
@@ -184,76 +200,109 @@ let keybindings: KeyBinding[] = [
 
 $(document).ready(function() {
 
-  $(window).resize(function() {
-    $("#editor").css("height", parentHeight);
-    $("#context").css("height", halfParentHeight);
-    $("#coqtop").css("height", halfParentHeight);
-    let activeProofTree = getActiveProofTree();
-    if (activeProofTree) { activeProofTree.resize($(window).width(), $("#prooftree").height()); }
-  });
-
-  _(keybindings).each(function(binding) {
-    $(document).bind("keydown", binding.jQ, binding.handler);
-  });
-
-  resetCoqtop();
-
-  //periodicallyStatus();
-
-  let buttonGroup = $("#toolbar > .btn-group");
-  addLoadLocal(buttonGroup);
-  addSaveLocal(buttonGroup);
-  addPrevious(buttonGroup);
-  addNext(buttonGroup);
-  addGoToCaret(buttonGroup);
-  addDebug(buttonGroup);
-
-  let editor: AceAjax.Editor = ace.edit("editor");
-
-  pretty = addTab("pretty", "context");
-  setupSyntaxHovering();
-  foreground = addEditorTab("foreground", "context");
-  background = addEditorTab("background", "context");
-  shelved = addEditorTab("shelved", "context");
-  givenUp = addEditorTab("givenup", "context");
-
-  notices = addEditorTab("notices", "coqtop");
-  warnings = addEditorTab("warnings", "coqtop");
-  errors = addEditorTab("errors", "coqtop");
-  infos = addEditorTab("infos", "coqtop");
-  jobs = addEditorTab("jobs", "coqtop");
-  feedback = addEditorTab("feedback", "coqtop");
-
-  //jobs     = ace.edit("jobs");
-
-  setupNavigation();
-
-  let session = editor.getSession();
-
-  setupEditor(editor);
-
-  editor.focus();
-  session.on("change", function(change) {
-    killEditsAfterPosition(coqDocument, minPos(change.start, change.end));
-  });
-
-  coqDocument = new CoqDocument(editor);
-
-  //let nbRows = ed.getSession().getLength();
-  //let r0 = new Range(0, 2, 0, 5);
-  //console.log(r0.toString());
-
-  //let s = new Selection(ed.getSession());
-  //s.fromOrientedRange(r0);
-  //s.moveCursorBy(0, 5);
-  //console.log(s.getRange().toString());
-  //ed.getSession().addMarker(s.getRange(), 'coq-command', 'text');
-  //let text = ed.getSession().getTextRange(s.getRange());
-  //console.log(text);
-
-  //editor.setValue("Require Import List.\nImport ListNotations.\nTheorem test : [0] = [1; 2].\n", 1);
-
-  $(window).resize();
+  return;
+  //
+  // $(window).resize(function() {
+  //   $("#editor").css("height", parentHeight);
+  //   $("#context").css("height", halfParentHeight);
+  //   $("#coqtop").css("height", halfParentHeight);
+  //   let activeProofTree = getActiveProofTree();
+  //   if (activeProofTree) { activeProofTree.resize($(window).width(), $("#prooftree").height()); }
+  // });
+  //
+  // _(keybindings).each(function(binding) {
+  //   $(document).bind("keydown", binding.jQ, binding.handler);
+  // });
+  //
+  // resetCoqtop();
+  //
+  // //periodicallyStatus();
+  //
+  // let buttonGroup = $("#toolbar > .btn-group");
+  // addLoadLocal(buttonGroup);
+  // addSaveLocal(buttonGroup);
+  // addPrevious(buttonGroup);
+  // addNext(buttonGroup);
+  // addGoToCaret(buttonGroup);
+  // addDebug(buttonGroup);
+  //
+  // let editor: AceAjax.Editor = ace.edit("editor");
+  //
+  // pretty = addTab("pretty", "context");
+  // setupSyntaxHovering();
+  // foreground = addEditorTab("foreground", "context");
+  // background = addEditorTab("background", "context");
+  // shelved = addEditorTab("shelved", "context");
+  // givenUp = addEditorTab("givenup", "context");
+  //
+  // notices = addEditorTab("notices", "coqtop");
+  // warnings = addEditorTab("warnings", "coqtop");
+  // errors = addEditorTab("errors", "coqtop");
+  // infos = addEditorTab("infos", "coqtop");
+  // jobs = addEditorTab("jobs", "coqtop");
+  // feedback = addEditorTab("feedback", "coqtop");
+  //
+  // //jobs     = ace.edit("jobs");
+  //
+  // setupNavigation();
+  //
+  // let session = editor.getSession();
+  //
+  // setupEditor(editor);
+  //
+  // editor.focus();
+  // session.on("change", function(change) {
+  //   killEditsAfterPosition(coqDocument, minPos(change.start, change.end));
+  // });
+  //
+  // coqDocument = new CoqDocument(editor);
+  //
+  // //let nbRows = ed.getSession().getLength();
+  // //let r0 = new Range(0, 2, 0, 5);
+  // //console.log(r0.toString());
+  //
+  // //let s = new Selection(ed.getSession());
+  // //s.fromOrientedRange(r0);
+  // //s.moveCursorBy(0, 5);
+  // //console.log(s.getRange().toString());
+  // //ed.getSession().addMarker(s.getRange(), 'coq-command', 'text');
+  // //let text = ed.getSession().getTextRange(s.getRange());
+  // //console.log(text);
+  //
+  // //editor.setValue("Require Import List.\nImport ListNotations.\nTheorem test : [0] = [1; 2].\n", 1);
+  //
+  // $(".horizontal-separator").draggable({
+  //   axis: 'y',
+  //   containment: 'parent',
+  //   cursor: 'pointer',
+  //   helper: 'clone',
+  //   drag: function(event, ui) {
+  //     let height = ui.offset.top - 220 // 220 : initial top margin to the previousDiv
+  //       , referenceHeight = 0
+  //       , previousSection = $(this).prev()
+  //       , nextSection = $(this).next();
+  //
+  //     if ((nextSection.height() === 0) && (referenceHeight - height < 0)) {
+  //       return;
+  //     }
+  //
+  //     previousSection.height(height);
+  //     nextSection.height(referenceHeight - height);
+  //
+  //
+  //     if (nextSection.height() < 20) {
+  //       previousSection.height(height + nextSection.height());
+  //       nextSection.height(0);
+  //     }
+  //
+  //     if (previousSection.height() < 20) {
+  //       nextSection.height(referenceHeight - height - previousSection.height());
+  //       previousSection.height(0);
+  //     }
+  //   }
+  // });
+  //
+  // $(window).resize();
 
 });
 
@@ -261,12 +310,12 @@ let unlockedAnchor;
 let unlockedMarker;
 
 function clearCoqtopTabs() {
-  _([foreground, background, shelved, givenUp, notices, warnings, errors, infos])
-    .each(function(editor) {
-    editor.setValue("");
-  });
-  $(".badge").css("display", "none");
-  pretty.html("");
+  // _([foreground, background, shelved, givenUp, notices, warnings, errors, infos])
+  //   .each(function(et) {
+  //     et.editor.setValue("");
+  //   });
+  // $(".badge").css("display", "none");
+  // pretty.div.html("");
 }
 
 class EditState { }
@@ -319,7 +368,7 @@ class Edit {
       doc.edits.length === 0
         ? new None()
         : new Some(_(doc.edits).last())
-      );
+    );
     doc.pushEdit(this);
 
     this.goals = new Goals(undefined);
@@ -343,7 +392,7 @@ class Edit {
 }
 
 function reportError(e: string, switchTab: boolean) {
-  errors.getSession().setValue(e);
+  errors.editor.getSession().setValue(e);
   $("#errors-badge").css("display", "");
   if (switchTab) { $("a[href=#errors-tab]").click(); }
 }
@@ -355,7 +404,7 @@ function onNextEditFail(e: Edit): (_1: ValueFail) => Promise<any> {
     }
     e.remove();
     reportError(vf.message, true);
-    errors.getSession().setValue(vf.message);
+    errors.editor.getSession().setValue(vf.message);
     console.log(vf.stateId);
     if (vf.stateId !== 0) {
       // TODO: also need to cancel edits > vf.stateId
@@ -388,7 +437,7 @@ function onNext(doc: CoqDocument): Promise<void> {
     new AceRange(
       lastEditStopPos.row, lastEditStopPos.column,
       endPos.row, endPos.column
-      );
+    );
   let unprocessedText = doc.session.getTextRange(unprocessedRange);
   if (coqTrimLeft(unprocessedText) === "") {
     return;
@@ -420,14 +469,14 @@ function onNext(doc: CoqDocument): Promise<void> {
           });
       })
       .catch(onNextEditFail(e))
-    );
+  );
 }
 
 // TODO: there is a better way to rewind with the new STM machinery!
 function rewindToPosition(
   doc: CoqDocument,
   targetPos: AceAjax.Position
-  ): Promise<void> {
+): Promise<void> {
   let lastEditStopPos = doc.getLastEditStop();
   if (isAfter(targetPos, lastEditStopPos)) {
     return Promise.resolve();
@@ -435,14 +484,14 @@ function rewindToPosition(
     return (
       onPrevious(doc)
         .then(() => rewindToPosition(doc, targetPos))
-      );
+    );
   }
 }
 
 function forwardToPosition(
   doc: CoqDocument,
   targetPos: AceAjax.Position
-  ): Promise<void> {
+): Promise<void> {
   let lastEditStopPos = doc.getLastEditStop();
   if (isAfter(lastEditStopPos, targetPos)) { return Promise.resolve(); }
 
@@ -497,7 +546,7 @@ function onPrevious(doc: CoqDocument): Promise<void> {
       .catch(
       (vf: ValueFail) => {
         reportError(vf.message, true);
-        errors.getSession().setValue(vf.message);
+        errors.editor.getSession().setValue(vf.message);
         // Hopefully, the goals have not changed?
         /*
         let s = peaCoqStatus(false);
@@ -511,7 +560,7 @@ function onPrevious(doc: CoqDocument): Promise<void> {
         */
       }
       )
-    );
+  );
 }
 
 type AddResult = {
@@ -541,13 +590,13 @@ function htmlPrintHyp(h: PeaCoqHyp): string {
     result += (
       "<span>\u00A0:=\u00A0</span><span>"
       + htmlPrintConstrExpr(maybeTerm.some) + "</span>"
-      );
+    );
   }
   result += (
     "<span>:\u00A0</span><span>"
     + htmlPrintConstrExpr(h.type)
     + "</span>"
-    );
+  );
   return result;
 }
 
@@ -574,19 +623,19 @@ function updatePretty(edit: Edit): Promise<void> {
   // context can be empty (if you finished a focused subgoal)
   if (context.length === 0) {
     if (edit.status.statusProofName === null) {
-      pretty.html("");
+      pretty.div.html("");
     }
     else if (countBackgroundGoals(edit.goals) > 0) {
-      pretty.html("Subgoal solved, but background goals remain.");
+      pretty.div.html("Subgoal solved, but background goals remain.");
     } else {
-      pretty.html("All subgoals solved!");
+      pretty.div.html("All subgoals solved!");
     }
     return Promise.resolve();
   }
 
-  pretty.html("");
+  pretty.div.html("");
   let currentGoal = context[0];
-  pretty.append(currentGoal.getHTML());
+  pretty.div.append(currentGoal.getHTML());
 }
 
 function countBackgroundGoals(goals: Goals): number {
@@ -594,7 +643,7 @@ function countBackgroundGoals(goals: Goals): number {
     goals.bgGoals,
     (acc, elt) => acc + elt.before.length + elt.after.length,
     0
-    );
+  );
 }
 
 function updateGoals(edit: Edit): void {
@@ -604,7 +653,7 @@ function updateGoals(edit: Edit): void {
   $("#shelved-counter").text(" (" + goals.shelvedGoals.length + ")");
   $("#givenup-counter").text(" (" + goals.givenUpGoals.length + ")");
   if (goals.fgGoals.length > 0) {
-    foreground.getSession().setValue(goals.fgGoals[0].toString());
+    foreground.editor.getSession().setValue(goals.fgGoals[0].toString());
   }
 }
 
@@ -676,7 +725,7 @@ function addSaveLocal(buttonGroup) {
   })
     .appendTo(buttonGroup)
     .on("click", saveLocal)
-  ;
+    ;
 
   $("<a>", {
     "download": "output.v",
@@ -684,7 +733,7 @@ function addSaveLocal(buttonGroup) {
   })
     .css("display", "none")
     .appendTo(buttonGroup)
-  ;
+    ;
 
 }
 
@@ -701,8 +750,8 @@ function addNext(buttonGroup) {
   })
     .appendTo(buttonGroup)
     .on("click", function() {
-    onNext(coqDocument);
-  })
+      onNext(coqDocument);
+    })
     .append(mkGlyph("arrow-down"))
     .append(nbsp + "Next");
 }
@@ -714,8 +763,8 @@ function addDebug(buttonGroup) {
   })
     .appendTo(buttonGroup)
     .on("click", function() {
-    // Do nothing
-  })
+      // Do nothing
+    })
     .append("Debug: ");
 }
 
@@ -726,21 +775,21 @@ function addPrevious(buttonGroup) {
   })
     .appendTo(buttonGroup)
     .on("click", function() {
-    onPrevious(coqDocument);
-  })
+      onPrevious(coqDocument);
+    })
     .append(mkGlyph("arrow-up"))
     .append(nbsp + "Prev");
 }
 
 function addGoToCaret(buttonGroup) {
   $("<button>", {
-    "id": "previous",
+    "id": "to-caret",
     "class": "btn btn-primary",
   })
     .appendTo(buttonGroup)
     .on("click", function() {
-    onGotoCaret(coqDocument);
-  })
+      onGotoCaret(coqDocument);
+    })
     .append(mkGlyph("arrow-right"))
     .append(nbsp + "To Caret");
 }
@@ -767,7 +816,7 @@ let bullets = ["{", "}", "+", "-", "*"];
 function next(str) {
   // if the very next thing is one of {, }, +, -, *, it is the next
   let trimmed = coqTrimLeft(str);
-  if (_(bullets).contains(trimmed[0])) {
+  if (_(bullets).includes(trimmed[0])) {
     return str.length - trimmed.length + 1;
   }
   // otherwise, gotta find a dot
@@ -782,7 +831,7 @@ function prev(str) {
   // now, it could be the case that there is a bullet after that dot
   let strAfterDot = str.substring(lastDotPosition + 1, str.length);
   let firstCharAfterDot = coqTrimLeft(strAfterDot)[0];
-  if (_(bullets).contains(firstCharAfterDot)) {
+  if (_(bullets).includes(firstCharAfterDot)) {
     return lastDotPosition + 1 + strAfterDot.indexOf(firstCharAfterDot) + 1;
   }
   // otherwise, find the last dot
@@ -828,7 +877,7 @@ function coq_get_last_dot(str) {
   while (my_index(modified) >= 0) {
     index = my_index(modified);
     modified = modified.substring(0, index) + " " +
-    modified.substring(index + 1);
+      modified.substring(index + 1);
   }
   return index;
 }
@@ -928,7 +977,7 @@ class Anchor {
   constructor(
     doc: CoqDocument,
     row: number, column: number, klass: string, insertRight: boolean
-    ) {
+  ) {
     this.anchor = new AceAnchor(doc.session.getDocument(), row, column);
     if (insertRight) { this.anchor.$insertRight = true; }
     this.marker = {};
@@ -943,7 +992,7 @@ class Anchor {
         "height:", height, "px;",
         "top:", top, "px;",
         "left:", left, "px; width:", width, "px'></div>"
-        );
+      );
     };
     this.marker = doc.session.addDynamicMarker(this.marker, true);
     this.anchor.on("change", function() {
@@ -955,7 +1004,7 @@ class Anchor {
 function mkAnchor(
   doc: CoqDocument,
   row: number, column: number, klass: string, insertRight: boolean
-  ): AceAjax.Anchor {
+): AceAjax.Anchor {
   let a = new AceAnchor(doc.session.getDocument(), row, column);
   if (insertRight) { a.$insertRight = true; }
   a.marker = {};
@@ -970,7 +1019,7 @@ function mkAnchor(
       "height:", height, "px;",
       "top:", top, "px;",
       "left:", left, "px; width:", width, "px'></div>"
-      );
+    );
   };
   a.marker = doc.session.addDynamicMarker(a.marker, true);
   a.on("change", function(change, anchor) {
@@ -999,14 +1048,14 @@ function killEditsAfterPosition(doc: CoqDocument, pos: AceAjax.Position) {
   doc.removeEdits(
     (edit: Edit) => isAfter(edit.stopPos, pos),
     (edit: Edit) => {
-    let maybeEdit = edit.previousEdit;
+      let maybeEdit = edit.previousEdit;
       if (maybeEdit instanceof Some
         && (
           editToRewindTo === undefined
           ||
           maybeEdit.some.stateId < editToRewindTo.stateId
-          )
-        ) {
+        )
+      ) {
         editToRewindTo = maybeEdit.some;
       }
     }
@@ -1060,10 +1109,12 @@ function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
+let CoqMode = ace.require("peacoq-js/mode-coq").Mode;
+
 function setupEditor(e: AceAjax.Editor) {
   //e.setTheme("ace/theme/monokai");
   //let OCamlMode = ace.require("ace/mode/ocaml").Mode;
-  let CoqMode = ace.require("peacoq-js/mode-coq").Mode;
+
   //ace.require("ace/keyboard/textarea");
   e.session.setMode(new CoqMode());
   //e.getSession().setMode("coq");
@@ -1136,21 +1187,6 @@ function addTab(name: string, containerName: string): JQuery {
   });
 
   return div;
-}
-
-function addEditorTab(name: string, containerName: string): AceAjax.Editor {
-
-  let editorDiv = addTab(name, containerName);
-
-  let editor = ace.edit(name);
-  setupEditor(editor);
-
-  editorDiv.find("a").click(function(e) {
-    editor.resize();
-  });
-
-  return editor;
-
 }
 
 function focusProofTreeUI() { throw "TODO"; }
