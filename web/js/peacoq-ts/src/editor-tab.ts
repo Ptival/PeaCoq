@@ -1,5 +1,5 @@
 class EditorTab extends Tab {
-  editor: AceAjax.Editor;
+  private editor: AceAjax.Editor;
 
   constructor(id: string, caption: string, layout: string, panel: string) {
     let self = this;
@@ -16,6 +16,17 @@ class EditorTab extends Tab {
     this.onResizeHandlers.push(function() {
       self.editor.resize();
     });
-
   }
+
+  getValue(): string { return this.editor.getValue(); }
+
+  setValue(s: string, switchToTab: boolean) {
+    this.editor.session.setValue(s);
+    if (switchToTab) {
+      this.click();
+    } else {
+      this.captionShouldBeBold(true);
+    }
+  }
+
 }

@@ -4,6 +4,8 @@ $(document).ready(() => {
 
   resetCoqtop();
 
+  peaCoqEditAtHandlers.push(() => { clearCoqtopTabs(); })
+
   let pstyle = 'border: 1px solid #dfdfdf;';
 
   $('#interface').w2layout({
@@ -42,6 +44,8 @@ $(document).ready(() => {
     warnings = new EditorTab("warnings", "Warnings", "right-layout", "bottom");
     errors = new EditorTab("errors", "Errors", "right-layout", "bottom");
     infos = new EditorTab("infos", "Infos", "right-layout", "bottom");
+    debug = new EditorTab("debug", "Debug", "right-layout", "bottom");
+    failures = new EditorTab("failures", "Failures", "right-layout", "bottom");
     jobs = new EditorTab("jobs", "Jobs", "right-layout", "bottom");
     feedback = new EditorTab("feedback", "Feedback", "right-layout", "bottom");
     w2ui["right-layout_bottom_tabs"].click("notices");
@@ -122,7 +126,9 @@ function proofTreeOnEditAt(sid: number): void {
   // clean up necessary for tactics waiting
   if (activeProofTree.tacticWaitingForContext) {
     let tac = activeProofTree.tacticWaitingForContext;
-    _(tac.parentGroup.tactics).remove((t: Tactic) => tac.tactic === t.tactic);
+    _.remove(tac.parentGroup.tactics, (t: Tactic) =>
+      tac.tactic === t.tactic
+    );
     activeProofTree.tacticWaitingForContext = undefined;
     activeProofTree.update();
   }

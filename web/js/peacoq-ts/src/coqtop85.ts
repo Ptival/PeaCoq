@@ -315,7 +315,7 @@ function mkMessageLevel(m): MessageLevel {
     case "Debug":
       return new Debug(m.contents);
     case "Error":
-      return new Error();
+      return new MyError();
     case "Info":
       return new Info();
     case "Notice":
@@ -327,7 +327,10 @@ function mkMessageLevel(m): MessageLevel {
   };
 }
 
-class MessageLevel { }
+abstract class MessageLevel {
+  abstract getAssociatedTab(): EditorTab;
+  abstract toString(): string;
+}
 
 class Debug extends MessageLevel {
   debug: string;
@@ -335,28 +338,31 @@ class Debug extends MessageLevel {
     super();
     this.debug = s;
   }
-  toString() {
-    return "Debug(" + this.debug + ")";
-  }
+  getAssociatedTab() { return debug; }
+  toString() {return "Debug(" + this.debug + ")"; }
 }
 
 class MyError extends MessageLevel {
   constructor() { super(); }
+  getAssociatedTab() { return errors; }
   toString() { return "Error"; }
 }
 
 class Info extends MessageLevel {
   constructor() { super(); }
+  getAssociatedTab() { return infos; }
   toString() { return "Info"; }
 }
 
 class Notice extends MessageLevel {
   constructor() { super(); }
+  getAssociatedTab() { return notices; }
   toString() { return "Notice"; }
 }
 
 class Warning extends MessageLevel {
   constructor() { super(); }
+  getAssociatedTab() { return warnings; }
   toString() { return "Warning"; }
 }
 
@@ -366,6 +372,10 @@ class Message {
   constructor(m) {
     this.level = mkMessageLevel(m[0]);
     this.content = unbsp(m[1]);
+  }
+  display() {
+    let tab = this.level.getAssociatedTab();
+    tab.setValue(this.content, false);
   }
   toString() {
     return (

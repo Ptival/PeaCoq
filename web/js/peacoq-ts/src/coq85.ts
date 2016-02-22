@@ -14,6 +14,8 @@ let notices: EditorTab
 let warnings: EditorTab;
 let errors: EditorTab;
 let infos: EditorTab;
+let debug: EditorTab;
+let failures: EditorTab;
 let feedback: EditorTab;
 let jobs: EditorTab;
 
@@ -75,11 +77,13 @@ let statusPeriod = 3000;
 let maxLength = 2000;
 
 function onFeedback(f: Feedback) {
-  let session = feedback.editor.getSession();
-  let current = session.getValue().substring(0, maxLength);
+  let current = feedback.getValue().substring(0, maxLength);
   let now = new Date();
-  session.setValue("[" + now.toString().substring(16, 24) + "] " + f.toString() +
-    "\n" + current);
+  feedback.setValue(
+    "[" + now.toString().substring(16, 24) + "] " + f.toString() +
+    "\n" + current,
+    false
+  );
 }
 
 function isQueryWarning(m: Message) {
@@ -91,27 +95,7 @@ function isQueryWarning(m: Message) {
 }
 
 function onMessage(m: Message) {
-  let level = m.level;
-
-  let session;
-  if (level instanceof Error) { session = errors.editor.getSession(); }
-  else if (level instanceof Notice) { session = notices.editor.getSession(); }
-  else if (level instanceof Warning) { session = warnings.editor.getSession(); }
-  else if (level instanceof Info) { session = infos.editor.getSession(); }
-  else {
-    throw MatchFailure("onMessage", level);
-  }
-
-  session.setValue(m.content);
-  if (level instanceof Notice) {
-    $("#notices-badge").css("display", "");
-    $("a[href=#notices-tab]").click();
-  } else if (level instanceof Warning) {
-    $("#warnings-badge").css("display", "");
-    if (isQueryWarning(m)) {
-      coqtop("status", false, true);
-    }
-  }
+  m.display();
 }
 
 function periodicallyStatus(): void {
@@ -391,10 +375,9 @@ class Edit {
 
 }
 
-function reportError(e: string, switchTab: boolean) {
-  errors.editor.getSession().setValue(e);
-  $("#errors-badge").css("display", "");
-  if (switchTab) { $("a[href=#errors-tab]").click(); }
+function reportFailure(f: string) { //, switchTab: boolean) {
+  failures.setValue(f, true);
+  //yif (switchTab) { failures.click(); }
 }
 
 function onNextEditFail(e: Edit): (_1: ValueFail) => Promise<any> {
@@ -403,8 +386,7 @@ function onNextEditFail(e: Edit): (_1: ValueFail) => Promise<any> {
       throw vf;
     }
     e.remove();
-    reportError(vf.message, true);
-    errors.editor.getSession().setValue(vf.message);
+    reportFailure(vf.message);
     console.log(vf.stateId);
     if (vf.stateId !== 0) {
       // TODO: also need to cancel edits > vf.stateId
@@ -545,8 +527,7 @@ function onPrevious(doc: CoqDocument): Promise<void> {
       })
       .catch(
       (vf: ValueFail) => {
-        reportError(vf.message, true);
-        errors.editor.getSession().setValue(vf.message);
+        reportFailure(vf.message);
         // Hopefully, the goals have not changed?
         /*
         let s = peaCoqStatus(false);
@@ -653,7 +634,7 @@ function updateGoals(edit: Edit): void {
   $("#shelved-counter").text(" (" + goals.shelvedGoals.length + ")");
   $("#givenup-counter").text(" (" + goals.givenUpGoals.length + ")");
   if (goals.fgGoals.length > 0) {
-    foreground.editor.getSession().setValue(goals.fgGoals[0].toString());
+    foreground.setValue(goals.fgGoals[0].toString(), false);
   }
 }
 
