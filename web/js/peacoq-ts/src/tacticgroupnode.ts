@@ -13,7 +13,7 @@ class TacticGroupNode extends ProofTreeNode {
     parent: GoalNode,
     name: string
   ) {
-    super(proofTree, parent);
+    super(proofTree, just(<ProofTreeNode>parent));
     this.name = name;
     this.parent = parent;
     this.solved = false;
@@ -37,10 +37,10 @@ class TacticGroupNode extends ProofTreeNode {
     return [].concat(children, descendants);
   }
 
-  getFocusedChild(): GoalNode {
-    let viewChildren = this.getViewChildren();
-    if (viewChildren.length === 0) { return undefined; }
-    return viewChildren[this.tactics[this.tacticIndex].goalIndex];
+  getFocusedChild(): Maybe<ProofTreeNode> {
+    let viewChildren: ProofTreeNode[] = this.getViewChildren();
+    if (viewChildren.length === 0) { return nothing(); }
+    return just(viewChildren[this.tactics[this.tacticIndex].goalIndex]);
   }
 
   getFocusedTactic(): Tactic {
@@ -48,7 +48,7 @@ class TacticGroupNode extends ProofTreeNode {
     return this.tactics[this.tacticIndex];
   }
 
-  getParent(): GoalNode { return this.parent; }
+  getParent(): Maybe<GoalNode> { return this.parent; }
 
   getTactics(): Tactic[] {
     return this.tactics;
@@ -59,6 +59,10 @@ class TacticGroupNode extends ProofTreeNode {
     if (this.tactics.length === 0) { return []; }
     let focusedTactic = this.tactics[this.tacticIndex];
     return focusedTactic.goals;
+  }
+
+  isSolved(): boolean {
+    return this.getFocusedTactic().isSolved();
   }
 
   nodeWidth(): number { return this.proofTree.getTacticWidth(); }

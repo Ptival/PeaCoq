@@ -48,7 +48,6 @@ class ProofTree {
   descendantsOffset: number;
   diagonal: d3.svg.Diagonal<ProofTreeLink, ProofTreeNode>;
   height: number;
-  keydownHandler: () => void;
   name: string;
   onEndProcessing: () => void;
   onStartProcessing: () => void;
@@ -83,6 +82,9 @@ class ProofTree {
     onStartProcessing: () => void, onEndProcessing: () => void
   ) {
     let self = this;
+
+    width = Math.max(0, width);
+    height = Math.max(0, height);
 
     this.name = name;
     this.anchor = d3.select(anchor);
@@ -414,6 +416,85 @@ class ProofTree {
     return n.id === this.rootNode.id;
   }
 
+  keydownHandler() {
+
+    let ev: any = d3.event;
+
+    // don't interact while typing
+    if (ev.target.type === "textarea") { return; }
+
+    var curNode = this.curNode;
+
+    var children = curNode.getViewChildren();
+
+    this.usingKeyboard = true;
+
+    //console.log(d3.event.keyCode);
+
+    switch (ev.keyCode) {
+
+      case 37: // Left
+        //case 65: // a
+        ev.preventDefault();
+        if (hasParent(curNode)) {
+          //asyncLog("LEFT " + nodeString(curNode.parent));
+          curNode.parent.click();
+        } else {
+          // when at the root node, undo the last action (usually Proof.)
+          //onCtrlUp(false);
+        }
+        break;
+
+      case 39: // Right
+        //case 68: // d
+        ev.preventDefault();
+        var dest = curNode.getFocusedChild();
+        if (dest === undefined) { break; }
+        //asyncLog("RIGHT " + nodeString(dest));
+        dest.click();
+        break;
+
+      case 38: // Up
+        //case 87: // w
+        ev.preventDefault();
+        if (ev.shiftKey) {
+          //this.shiftPrevGoal(curNode.getFocusedChild());
+        } else {
+          this.shiftPrevByTacticGroup(curNode);
+        }
+        break;
+
+      case 40: // Down
+        //case 83: // s
+        ev.preventDefault();
+        if (ev.shiftKey) {
+          //this.shiftNextGoal(curNode.getFocusedChild());
+        } else {
+          this.shiftNextByTacticGroup(curNode);
+        }
+        break;
+
+      case 219: // [
+        var focusedChild = curNode.getFocusedChild();
+          focusedChild.shiftPrevInGroup();
+        break;
+
+      case 221: // ]
+        var focusedChild = curNode.getFocusedChild();
+          focusedChild.shiftNextInGroup();
+        break;
+
+      default:
+        //console.log("Unhandled event", d3.event.keyCode);
+        return;
+    }
+
+    // EDIT: now that we integrate the proof tree, it's best to let stuff bubble up
+    // if we haven't returned, we don't want the normal key behavior
+    //d3.event.preventDefault();
+
+  }
+
   linkWidth(d: ProofTreeLink): string {
     let src = d.source;
     let tgt = d.target;
@@ -471,11 +552,6 @@ class ProofTree {
     s
       .append("rect")
       .classed("goal", (d) => d instanceof GoalNode)
-      .style("fill", function(d) {
-        if (d instanceof GoalNode) { return "#DFE2DB"; }
-        if (d instanceof TacticGroupNode) { return "#FFF056"; }
-        throw "onRectSelectionEnter: style";
-      })
       .classed("tactic", (d) => d instanceof TacticGroupNode)
       .attr("width", function(d) { return d.width; })
       .attr("height", function(d) { return d.height; })
@@ -695,6 +771,8 @@ class ProofTree {
     let self = this;
 
     return new Promise(function(onFulfilled, onRejected) {
+
+      if (!self.rootNode) { return; }
 
       // shorter name, expected to stay constant throughout
       let curNode = self.curNode;

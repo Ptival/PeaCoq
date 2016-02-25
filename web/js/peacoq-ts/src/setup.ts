@@ -4,17 +4,15 @@ $(document).ready(() => {
 
   resetCoqtop();
 
-  peaCoqEditAtHandlers.push(() => { clearCoqtopTabs(); })
-
-  let pstyle = 'border: 1px solid #dfdfdf;';
+  let pstyle = '';// 'border: 1px solid #dfdfdf;';
 
   $('#interface').w2layout({
     name: 'layout',
     panels: [
-      { type: 'top', size: 31, resizable: false, style: pstyle, content: $("<div>", { id: "toolbar" }) },
+      { type: 'top', size: 34, resizable: false, style: pstyle, content: $("<div>", { id: "toolbar" }) },
       { type: 'left', size: "50%", overflow: 'hidden', resizable: true, style: pstyle, content: $("<div>", { id: "editor", style: "height: 100%" }) },
       { type: 'main', size: "50%", style: pstyle, overflow: 'hidden', content: $("<div>", { id: "right" }) },
-      { type: 'bottom', size: "50%", overflow: 'hidden', resizable: true, style: pstyle, content: $("<div>", { id: "prooftree" }) },
+      { type: 'bottom', hidden: true, size: "50%", overflow: 'hidden', resizable: true, style: pstyle, content: $("<div>", { id: "prooftree" }) },
     ]
   });
 
@@ -56,6 +54,8 @@ $(document).ready(() => {
   $(window).resize(onResize);
   w2ui['layout'].on({ type: "resize", execute: "after" }, onResize);
   w2ui['right-layout'].on({ type: "resize", execute: "after" }, onResize);
+  w2ui['layout'].on({ type: "hide", execute: "after" }, () => { coqDocument.recenterEditor(); });
+  w2ui['layout'].on({ type: "show", execute: "after" }, () => { coqDocument.recenterEditor(); });
 
   _(keybindings).each(function(binding) {
     $(document).bind("keydown", binding.jQ, binding.handler);
@@ -63,6 +63,7 @@ $(document).ready(() => {
 
   setupToolbar();
   setupSyntaxHovering();
+  Theme.setupTheme();
 
   peaCoqAddHandlers.push(proofTreeOnAdd);
   peaCoqGetContextHandlers.push(proofTreeOnGetContext);
@@ -83,9 +84,11 @@ If it already existed or was expected, nothing is done.
 If it was unexpected, let's create an empty, nameless group to hold it.
 */
 function proofTreeOnAdd(s: string, r: AddReturn): void {
+
   lastStateId = r.stateId;
 
   if (proofTrees.length === 0) { return; }
+
   let activeProofTree = proofTrees[0];
   let curNode = activeProofTree.curNode;
   let trimmed = coqTrim(s);
@@ -106,10 +109,17 @@ function proofTreeOnAdd(s: string, r: AddReturn): void {
       let t = new Tactic(coqTrim(s), tg, r);
       activeProofTree.tacticWaitingForContext = t;
       tg.tactics.push(t);
+      activeProofTree.update();
     } else {
       activeProofTree.tacticWaitingForContext = existingTactic;
+      activeProofTree.update()
+        .then(() => {
+          let unsolvedGoal = _(existingTactic.goals).find((elt) => elt.isSolved());
+          if (unsolvedGoal === undefined) {
+            existingTactic.parentGroup.onSolved();
+          }
+        });
     }
-    activeProofTree.update();
   }
 }
 
@@ -133,29 +143,27 @@ function proofTreeOnEditAt(sid: number): void {
     activeProofTree.update();
   }
 
-  if (curNode instanceof GoalNode) {
-    let ancestorGoals = curNode.getGoalAncestors();
-    // first, get rid of all stored stateIds > sid
-    let allGoals = activeProofTree.rootNode.getAllGoalDescendants();
-    _(allGoals).each((g) => {
-      g.stateIds = _(g.stateIds).filter((s) => s <= sid).value();
-    })
-    let target = _(ancestorGoals).find((g) => {
-      return _(g.stateIds).some((s) => s === sid);
-    });
-    if (target) {
-      activeProofTree.curNode = target;
-      activeProofTree.update();
-      if (activeProofTree.tacticWaitingForContext) {
-        throw "TODO: proofTreeOnEditAt tactic waiting to be cleared";
-      }
-    } else {
-      proofTrees = [];
-      $("#prooftree").empty();
+  let ancestorGoals = curNode.getGoalAncestors();
+  // first, get rid of all stored stateIds > sid
+  let allGoals = activeProofTree.rootNode.getAllGoalDescendants();
+  _(allGoals).each((g) => {
+    g.stateIds = _(g.stateIds).filter((s) => s <= sid).value();
+  })
+  let target = _(ancestorGoals).find((g) => {
+    return _(g.stateIds).some((s) => s === sid);
+  });
+  if (target) {
+    activeProofTree.curNode = target;
+    activeProofTree.update();
+    if (activeProofTree.tacticWaitingForContext) {
+      throw "TODO: proofTreeOnEditAt tactic waiting to be cleared";
     }
   } else {
-    throw "TODO: proofTreeOnEditAt";
+    proofTrees = [];
+    hideProofTreePanel();
+    $("#prooftree").empty();
   }
+
 }
 
 function proofTreeOnGetContext(c: PeaCoqContext): void {
@@ -201,6 +209,7 @@ function proofTreeOnStatus(s: Status): void {
   // hopefully we are always at most 1 tree late
   if (proofTrees.length + 1 === s.statusAllProofs.length) {
     // we are behind on the number of proof trees, create one
+    showProofTreePanel(); // needs to be before for width/height
     let pt = new ProofTree(
       s.statusProofName,
       $("#prooftree")[0],
@@ -215,6 +224,10 @@ function proofTreeOnStatus(s: Status): void {
   // multiple trees might have been finished at once?
   while (proofTrees.length > s.statusAllProofs.length) {
     proofTrees.shift();
+    if (proofTrees.length === 0) {
+      $("#prooftree").empty();
+      hideProofTreePanel();
+    }
   }
   if (proofTrees.length !== s.statusAllProofs.length) {
     alert("Error: we are missing multiple proof trees!")
@@ -247,16 +260,35 @@ function setupToolbar(): void {
     $(this).val(""); // forces change when same file is picked
   });
 
+  $("<a>", {
+    "download": "output.v",
+    "id": "save-local-link",
+  })
+    .css("display", "none")
+    .appendTo($("body"))
+    ;
+
   $("#toolbar").w2toolbar({
     name: 'w2toolbar',
     items: [
       { type: 'button', id: 'toolbar-load-local', caption: 'Load', img: 'glyphicon glyphicon-floppy-open', onClick: () => loadLocal() },
-      { type: 'button', id: 'toolbar-save-local', caption: 'Save', img: 'glyphicon glyphicon-floppy-save' },
+      { type: 'button', id: 'toolbar-save-local', caption: 'Save', img: 'glyphicon glyphicon-floppy-save', onClick: () => saveLocal() },
       { type: 'break' },
       { type: 'button', id: 'toolbar-previous', caption: 'Previous', img: 'glyphicon glyphicon-arrow-up', onClick: () => onPrevious(coqDocument) },
       { type: 'button', id: 'toolbar-next', caption: 'Next', img: 'glyphicon glyphicon-arrow-down', onClick: () => onNext(coqDocument) },
       { type: 'button', id: 'toolbar-to-caret', caption: 'To Caret', img: 'glyphicon glyphicon-arrow-right', onClick: () => onGotoCaret(coqDocument) },
+      { type: 'spacer' },
+      { type: 'radio', id: 'bright', group: '1', caption: 'Bright', checked: true, onClick: Theme.switchToBright },
+      { type: 'radio', id: 'dark', group: '1', caption: 'Dark', onClick: Theme.switchToDark },
     ]
   });
 
+}
+
+function hideProofTreePanel(): void {
+  w2ui["layout"].hide("bottom");
+}
+
+function showProofTreePanel(): void {
+  w2ui["layout"].show("bottom");
 }

@@ -10,13 +10,13 @@ class GoalNode extends ProofTreeNode {
   //ndx: number;
   openBraces: number;
   //parentTactic: TacticNode;
-  parent: TacticGroupNode;
+  parent: Maybe<TacticGroupNode>;
   solved: boolean;
   stateIds: number[];
   tacticGroups: TacticGroupNode[];
   tacticIndex: number;
 
-  constructor(proofTree: ProofTree, parent: TacticGroupNode, goal: PeaCoqGoal) {
+  constructor(proofTree: ProofTree, parent: Maybe<TacticGroupNode>, goal: PeaCoqGoal) {
     super(proofTree, parent);
 
     this.closedBraces = 0;
@@ -52,31 +52,36 @@ class GoalNode extends ProofTreeNode {
 
   }
 
-  getFocusedChild() {
-    let viewChildren = this.getViewChildren();
-    if (viewChildren.length === 0) { return undefined; }
-    return viewChildren[this.tacticIndex];
+  getFocusedChild(): Maybe<ProofTreeNode> {
+    let viewChildren: ProofTreeNode[] = this.getViewChildren();
+    if (viewChildren.length === 0) { return nothing(); }
+    return just(viewChildren[this.tacticIndex]);
   }
 
-  getFocusedTacticGroup(): TacticGroupNode {
-    let nonEmptyTacticGroups = _(this.tacticGroups)
+  getFocusedTacticGroup(): TsMonad.Maybe<TacticGroupNode> {
+    let nonEmptyTacticGroups: TacticGroupNode[] = _(this.tacticGroups)
       .filter(function(group) { return (group.tactics.length > 0); })
       .value()
       ;
-    if (nonEmptyTacticGroups.length === 0) { return undefined; }
-    return nonEmptyTacticGroups[this.tacticIndex];
+    if (nonEmptyTacticGroups.length === 0) { return TsMonad.Maybe.nothing(); }
+    return TsMonad.Maybe.just(nonEmptyTacticGroups[this.tacticIndex]);
   }
 
   getGoalAncestors(): GoalNode[] {
-    if (this.parent === undefined) { return [this]; }
-    let grandparent = this.parent.parent;
-    assert(grandparent instanceof GoalNode, "getGoalAncestors: grandparent instanceof GoalNode");
-    let rec = (<GoalNode>grandparent).getGoalAncestors();
-    rec.unshift(this);
-    return rec;
+    return this.getGrandParent().caseOf({
+      nothing: () => [this],
+      just: (gp) => [].concat([this], gp.getGoalAncestors()),
+    });
   }
 
-  getParent(): ProofTreeNode { return this.parent; }
+  getGrandParent(): Maybe<GoalNode> {
+    return this.parent.caseOf({
+      nothing: () => nothing(),
+      just: (p: TacticGroupNode) => just(p.parent),
+    });
+  }
+
+  getParent(): Maybe<ProofTreeNode> { return this.parent; }
 
   getTactics(): Tactic[] {
     return _(this.tacticGroups)
@@ -92,7 +97,7 @@ class GoalNode extends ProofTreeNode {
    * ancestor of the current node, so that the current node is reachable.
    */
   getViewChildren(): TacticGroupNode[] {
-    if (this.isSolved) { return []; }
+    if (this.isSolved()) { return []; }
     let nonEmptyTacticGroups = _(this.tacticGroups)
       .filter(function(group) { return (group.tactics.length > 0); })
       .value()
@@ -107,6 +112,14 @@ class GoalNode extends ProofTreeNode {
     }
   }
 
+  isSolved(): boolean {
+    let focusedTacticGroup = this.getFocusedTacticGroup();
+    return this.getFocusedTacticGroup().caseOf({
+      nothing: () => false,
+      just: (tg) => tg.isSolved(),
+    });
+  }
+
   onChildSolved(): void {
     let self = this;
     this.solved = true;
@@ -119,11 +132,14 @@ class GoalNode extends ProofTreeNode {
 
   onSolved(): void {
     if (this.openBraces === this.closedBraces) {
-      if (hasParent(this)) {
-        this.parent.onChildSolvedAndUnfocused();
-      } else if (autoLayout) {
-        //proofTreeQueryWish('Qed.');
-      }
+      this.parent.caseOf({
+        nothing: () => {
+          if (autoLayout) {
+            //proofTreeQueryWish('Qed.');
+          }
+        },
+        just: (p) => p.onChildSolvedAndUnfocused(),
+      });
     } else if (autoLayout) {
       //proofTreeQueryWish('}');
     }

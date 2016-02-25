@@ -7,7 +7,6 @@ abstract class ProofTreeNode {
   depth: number;
   height: number;
   id: string;
-  isSolved: boolean;
   label: string;
   proofTree: ProofTree;
   response: any; // TODO: remove this
@@ -17,18 +16,20 @@ abstract class ProofTreeNode {
   y: number;
   y0: number;
 
-  constructor(proofTree: ProofTree, parent: ProofTreeNode) {
-    this.depth = (parent === undefined) ? 0 : parent.depth + 1;
+  constructor(proofTree: ProofTree, parent: TsMonad.Maybe<ProofTreeNode>) {
+    this.depth = parent.caseOf({
+      nothing: () => 0,
+      just: (parent) => parent.depth + 1,
+    });
     this.id = _.uniqueId();
-    this.isSolved = false;
     this.proofTree = proofTree;
   }
 
   abstract click(): void;
   abstract getAllDescendants(): ProofTreeNode[];
   abstract getAllGoalDescendants(): GoalNode[];
-  abstract getFocusedChild(): ProofTreeNode;
-  abstract getParent(): ProofTreeNode;
+  abstract getFocusedChild(): Maybe<ProofTreeNode>;
+  abstract getParent(): Maybe<ProofTreeNode>;
   abstract getViewChildren(): ProofTreeNode[];
 
   getViewGrandChildren(): ProofTreeNode[] {
@@ -46,6 +47,7 @@ abstract class ProofTreeNode {
     return this.id === common.id;
   }
 
+  abstract isSolved(): boolean;
   abstract nodeWidth(): number;
 
 }

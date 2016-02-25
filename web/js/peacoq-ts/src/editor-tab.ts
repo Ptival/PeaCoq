@@ -16,9 +16,23 @@ class EditorTab extends Tab {
     this.onResizeHandlers.push(function() {
       self.editor.resize();
     });
+
+    allEditorTabs.push(this);
+  }
+
+  clearValue(): void {
+    this.editor.session.setValue("");
+    this.captionShouldBeBold(false);
   }
 
   getValue(): string { return this.editor.getValue(); }
+
+  recenter(): void {
+    let pos = this.editor.getCursorPosition();
+    this.editor.scrollToLine(pos.row, true, true, () => {});
+  }
+
+  setTheme(s: string): void { this.editor.setTheme(s); }
 
   setValue(s: string, switchToTab: boolean) {
     this.editor.session.setValue(s);

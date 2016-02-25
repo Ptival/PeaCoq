@@ -13,7 +13,7 @@ requirejs.config({
     'peacoq-ts/fakenode': { deps: ['peacoq-ts/prooftreenode'] },
     'peacoq-ts/goalnode': { deps: ['peacoq-ts/prooftreenode'] },
     'peacoq-ts/tacticgroupnode': { deps: ['peacoq-ts/prooftreenode'] },
-    'peacoq-ts/setup': { deps: ['peacoq-ts/coq85', 'peacoq-ts/coqtop85', 'peacoq-ts/editor-tab', 'peacoq-ts/prooftree'] },
+    'peacoq-ts/setup': { deps: ['peacoq-ts/coq85', 'peacoq-ts/coqtop85', 'peacoq-ts/editor-tab', 'peacoq-ts/prooftree', 'peacoq-ts/theme'] },
     'peacoq-ts/editor-tab': { deps: ['peacoq-ts/tab'] },
   }
 });
@@ -26,11 +26,13 @@ requirejs([
     'jquery-ui/jquery-ui',
     'jquery.hotkeys',
     'bootstrap',
+    'jss',
     'lodash',
     'MathJax-master/MathJax',
+    'tsmonad',
     'w2ui/w2ui',
   ],
-  function(ace, $, bootstrap, lodash) {
+  function(ace, d3, $) {
     window.ace = ace;
     requirejs([
       'ace/mode/ocaml',
@@ -41,6 +43,7 @@ requirejs([
       'peacoq-ts/setup',
       'peacoq-ts/editor-tab',
       'peacoq-ts/tab',
+      'peacoq-ts/theme',
       'peacoq-ts/prooftree',
     ], function() {
       requirejs(['peacoq-ts/coq-constr-expr']);
@@ -58,6 +61,7 @@ requirejs([
       requirejs(['peacoq-ts/show']);
       requirejs(['peacoq-ts/tacticgroupnode']);
       requirejs(['peacoq-ts/tactic']);
+      //requirejs(['peacoq-ts/theme']);
       requirejs(['peacoq-ts/utils']);
       requirejs(['peacoq-ts/visualizations']);
     });

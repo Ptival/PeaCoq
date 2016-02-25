@@ -1,3 +1,7 @@
+type Maybe<T> = TsMonad.Maybe<T>;
+let nothing = TsMonad.Maybe.nothing;
+let just = TsMonad.Maybe.just;
+
 function assert(condition: boolean, message: string): void {
   if (!condition) {
     alert("Assertion failed: " + message);
@@ -16,13 +20,6 @@ function parseSVGTransform(a: string): any {
   }
   return b;
 }
-
-class Maybe<T> {}
-class Some<T> extends Maybe<T> {
-  some: T;
-  constructor(t: T) { super(); this.some = t; }
-}
-class None<T> extends Maybe<T> {}
 
 function MatchFailure(fn: string, o: Object) {
   if (!o) { return "undefined discriminee"; }

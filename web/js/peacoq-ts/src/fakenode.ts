@@ -6,8 +6,9 @@ class FakeNode extends ProofTreeNode {
   click(): void { throw "FakeNode"; }
   getAllDescendants(): ProofTreeNode[] { throw "FakeNode"; }
   getAllGoalDescendants(): GoalNode[] { throw "FakeNode"; }
-  getFocusedChild(): ProofTreeNode { throw "FakeNode"; }
+  getFocusedChild(): Maybe<ProofTreeNode> { throw "FakeNode"; }
   getParent(): ProofTreeNode { throw "FakeNode"; }
   getViewChildren(): ProofTreeNode[] { throw "FakeNode"; }
+  isSolved(): boolean { throw "FakeNode"; }
   nodeWidth(): number { throw "FakeNode"; }
 }

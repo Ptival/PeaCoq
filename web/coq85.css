@@ -11,18 +11,6 @@ html, html>body, #interface {
   flex-direction: column;
   /* Column layout */
 }
-#main, #main-left, #main-right, #context, #context-tabs, #coqtop, #coqtop-tabs {
-  height: 100%;
-  width: 100%;
-  /*flex: 1;*/
-  /* Distribute space equally among the flex items */
-  /*flex-basis: 0;*/
-  overflow: hidden;
-}
-#prooftree {
-  display: flex;
-  height: 50%;
-}
 a, button {
   border-radius: 0 !important;
   padding: 2px 4px !important;
@@ -56,12 +44,6 @@ a, button {
   border-radius: 0 !important;
   position: absolute;
   z-index: 5;
-}
-.processing {
-  background-color: rgba(255, 179, 71, 1);
-}
-.processed {
-  background-color: rgba(144, 238, 144, 1);
 }
 
 /* Syntax highlighting */

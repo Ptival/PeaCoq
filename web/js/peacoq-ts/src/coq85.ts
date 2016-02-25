@@ -19,6 +19,8 @@ let failures: EditorTab;
 let feedback: EditorTab;
 let jobs: EditorTab;
 
+let allEditorTabs: EditorTab[] = [];
+
 let nbsp = "\u00A0";
 
 class CoqDocument {
@@ -47,6 +49,11 @@ class CoqDocument {
   }
 
   pushEdit(e: Edit) { this.edits.push(e); }
+
+  recenterEditor() {
+    let pos = this.editor.getCursorPosition();
+    this.editor.scrollToLine(pos.row, true, true, () => { });
+  }
 
   resetEditor(text: string) {
     this.edits = [];
@@ -294,12 +301,11 @@ let unlockedAnchor;
 let unlockedMarker;
 
 function clearCoqtopTabs() {
-  // _([foreground, background, shelved, givenUp, notices, warnings, errors, infos])
-  //   .each(function(et) {
-  //     et.editor.setValue("");
-  //   });
-  // $(".badge").css("display", "none");
-  // pretty.div.html("");
+  _([foreground, background, shelved, givenUp, notices, warnings, errors, infos, debug, failures])
+    .each((et: EditorTab) => {
+      et.clearValue();
+    });
+  pretty.div.html("");
 }
 
 class EditState { }
@@ -319,8 +325,7 @@ class Edit {
   editState: EditState;
   editId: number;
   markerId: number;
-  previousStateId: number;
-  stateId: number;
+  stateId: Maybe<number>;
   markerRange: AceAjax.Range;
   startPos: AceAjax.Position;
   stopPos: AceAjax.Position;
@@ -339,20 +344,11 @@ class Edit {
     this.markerRange = new AceRange(start.row, start.column, stop.row, stop.column);
 
     this.editId = freshEditId();
-    if (doc.edits.length > 0) {
-      this.previousStateId = _.last(doc.edits).stateId;
-    } else {
-      this.previousStateId = 1;
-    }
-    this.stateId = undefined;
+    this.stateId = nothing();
     this.markerId = doc.session.addMarker(this.markerRange, "processing", "text", false);
 
     this.document = doc;
-    this.previousEdit = (
-      doc.edits.length === 0
-        ? new None()
-        : new Some(_(doc.edits).last())
-    );
+    this.previousEdit = doc.edits.length === 0 ? nothing() : just(_(doc.edits).last());
     doc.pushEdit(this);
 
     this.goals = new Goals(undefined);
@@ -398,12 +394,7 @@ function onNextEditFail(e: Edit): (_1: ValueFail) => Promise<any> {
 }
 
 function getPreviousEditContext(e: Edit): Maybe<PeaCoqContext> {
-  let prevEdit = e.previousEdit;
-  let oldC = new None();
-  if (prevEdit instanceof Some) {
-    oldC = new Some(prevEdit.some.context);
-  }
-  return oldC;
+  return e.previousEdit.fmap((e) => e.context);
 }
 
 /*
@@ -511,7 +502,7 @@ function onPrevious(doc: CoqDocument): Promise<void> {
   clearCoqtopTabs();
   let lastEdit = _.last(doc.edits);
   return (
-    peaCoqEditAt(lastEdit.previousStateId)
+    peaCoqEditAt(lastEdit.previousEdit.stateId)
       .then(
       () => {
         lastEdit.remove();
@@ -567,12 +558,10 @@ function htmlPrintConstrExprDiff(c: ConstrExpr, old: ConstrExpr): string {
 function htmlPrintHyp(h: PeaCoqHyp): string {
   let result = '<span><span class="tag-variable">' + h.name + "</span></span>";
   let maybeTerm = h.maybeTerm;
-  if (maybeTerm instanceof Some) {
-    result += (
-      "<span>\u00A0:=\u00A0</span><span>"
-      + htmlPrintConstrExpr(maybeTerm.some) + "</span>"
-    );
-  }
+  result += maybeTerm.caseOf({
+    nothing: () => "",
+    just: (t) => "<span>\u00A0:=\u00A0</span><span>" + htmlPrintConstrExpr(t) + "</span>",
+  });
   result += (
     "<span>:\u00A0</span><span>"
     + htmlPrintConstrExpr(h.type)
@@ -661,29 +650,29 @@ function loadLocal() {
   $("#filepicker").click();
 }
 
-function addLoadLocal(buttonGroup) {
-  $("<input>", {
-    "id": "filepicker",
-    "type": "file",
-    "style": "display: none;",
-  }).appendTo(buttonGroup);
-
-  $("#filepicker").on("change", function() {
-    // TODO: warning about resetting Coq/saving file
-    loadFile();
-    $(this).val(""); // forces change when same file is picked
-  });
-
-  $("<button>", {
-    "class": "btn btn-primary",
-    "html": $("<span>")
-      .append(mkGlyph("floppy-open"))
-      .append(nbsp + "Load"),
-    "id": "load-local-button",
-  })
-    .appendTo(buttonGroup)
-    .on("click", loadLocal);
-}
+// function addLoadLocal(buttonGroup) {
+//   $("<input>", {
+//     "id": "filepicker",
+//     "type": "file",
+//     "style": "display: none;",
+//   }).appendTo(buttonGroup);
+//
+//   $("#filepicker").on("change", function() {
+//     // TODO: warning about resetting Coq/saving file
+//     loadFile();
+//     $(this).val(""); // forces change when same file is picked
+//   });
+//
+//   $("<button>", {
+//     "class": "btn btn-primary",
+//     "html": $("<span>")
+//       .append(mkGlyph("floppy-open"))
+//       .append(nbsp + "Load"),
+//     "id": "load-local-button",
+//   })
+//     .appendTo(buttonGroup)
+//     .on("click", loadLocal);
+// }
 
 function saveLocal() {
   let editor = coqDocument.editor;
@@ -695,28 +684,28 @@ function saveLocal() {
   editor.focus();
 }
 
-function addSaveLocal(buttonGroup) {
-
-  $("<button>", {
-    "class": "btn btn-primary",
-    "id": "save-local-button",
-    "html": $("<span>")
-      .append(mkGlyph("floppy-save"))
-      .append(nbsp + "Save"),
-  })
-    .appendTo(buttonGroup)
-    .on("click", saveLocal)
-    ;
-
-  $("<a>", {
-    "download": "output.v",
-    "id": "save-local-link",
-  })
-    .css("display", "none")
-    .appendTo(buttonGroup)
-    ;
-
-}
+// function addSaveLocal(buttonGroup) {
+//
+//   $("<button>", {
+//     "class": "btn btn-primary",
+//     "id": "save-local-button",
+//     "html": $("<span>")
+//       .append(mkGlyph("floppy-save"))
+//       .append(nbsp + "Save"),
+//   })
+//     .appendTo(buttonGroup)
+//     .on("click", saveLocal)
+//     ;
+//
+//   $("<a>", {
+//     "download": "output.v",
+//     "id": "save-local-link",
+//   })
+//     .css("display", "none")
+//     .appendTo(buttonGroup)
+//     ;
+//
+// }
 
 function mkGlyph(name) {
   return $("<i>", {
@@ -1093,7 +1082,7 @@ function capitalize(s: string): string {
 let CoqMode = ace.require("peacoq-js/mode-coq").Mode;
 
 function setupEditor(e: AceAjax.Editor) {
-  //e.setTheme("ace/theme/monokai");
+  e.setTheme(Theme.theme.aceTheme);
   //let OCamlMode = ace.require("ace/mode/ocaml").Mode;
 
   //ace.require("ace/keyboard/textarea");
