@@ -241,7 +241,7 @@ function prBinder(
   many: boolean,
   pr: (c: ConstrExpr) => PpCmds,
   [nal, k, t]
-  ): PpCmds {
+): PpCmds {
   if (k instanceof Generalized) {
     let [b, bp, tp] = [k.kind1, k.kind2, k.b];
     throw "TODO: prBinder Generalized";
@@ -255,7 +255,7 @@ function prBinder(
         prListWithSep(spc, prLName, nal),
         str(" : "),
         pr(t)
-        );
+      );
       if (many) {
         return peaCoqBox(surroundImpl(b, s));
       } else {
@@ -271,7 +271,7 @@ function prDelimitedBinders(
   sep: () => PpCmds,
   prC: (t: ConstrExpr) => PpCmds,
   bl: LocalBinder[]
-  ): PpCmds {
+): PpCmds {
   let n = beginOfBinders(bl);
   if (bl.length === 0) { throw "prDelimitedBinders: bl should not be empty"; }
   let bl0 = bl[0];
@@ -305,7 +305,7 @@ function prListSepLastSep<T>(
   lastSep: () => PpCmds,
   elem: (T) => PpCmds,
   l: T[]
-  ): PpCmds {
+): PpCmds {
   function start(l: T[]): PpCmds {
     if (l.length === 0) {
       return mt();
@@ -376,7 +376,7 @@ function prBindersGen(
   sep: () => PpCmds,
   isOpen: boolean,
   ul: LocalBinder[]
-  ) {
+) {
   if (isOpen) {
     return prDelimitedBinders(mt, sep, prC, ul);
   } else {
@@ -420,7 +420,7 @@ function printHunks(
         () => aux(sl),
         (x) => pr([n, prec], x),
         cl
-        );
+      );
       pp2 = aux(l);
       return ret(unp, pp1, pp2);
     }
@@ -453,7 +453,7 @@ function printHunks(
   return aux(unps);
 }
 
-type PpResult =[PpCmds, number];
+type PpResult = [PpCmds, number];
 
 // Here Coq would consult the notation table to figure [unpl] and [level] from
 // [s], but we have it already figured out.
@@ -462,7 +462,7 @@ function prNotation(
   env: ConstrNotationSubstitution,
   unpl: Unparsing[],
   level: number
-  ): PpResult {
+): PpResult {
   return [
     printHunks(level, pr, prBinders, env, unpl),
     level
@@ -486,7 +486,7 @@ function prQualid(sp: QualId): PpCmds {
     sl = prList(
       (dir: string) => [].concat(tagPath(str(dir)), str(".")),
       sl0
-      );
+    );
   }
   return [].concat(sl, id);
 }
@@ -501,18 +501,19 @@ function prGlobSortInstance(i) {
   if (i instanceof GProp) { return tagType(str("Prop")); }
   if (i instanceof GSet) { return tagType(str("Set")); }
   if (i instanceof GType) {
-    let t = i.type;
-    if (t instanceof Some) { return str(t.some); }
-    if (t instanceof None) { return tagType(str("Type")); }
-    throw MatchFailure("prGlobSortInstance", t);
+    return i.type.caseOf({
+      nothing: () => tagType(str("Type")),
+      just: (t) => str(t),
+    });
   }
   throw MatchFailure("prGlobSortInstance", i);
 }
 
 function prOptNoSpc<T>(pr: (T) => PpCmds, x: Maybe<T>): PpCmds {
-  if (x instanceof None) { return mt(); }
-  if (x instanceof Some) { return pr(x); }
-  throw MatchFailure("prOptNoSpc", x);
+  return x.caseOf({
+    nothing: () => mt(),
+    just: (x) => pr(x),
+  });
 }
 
 function prUnivAnnot<T>(pr: (T) => PpCmds, x: T): PpCmds {
@@ -525,10 +526,10 @@ function prUniverseInstance(us: Maybe<InstanceExpr>): PpCmds {
       return prUnivAnnot(
         (y) => prListWithSep(spc, prGlobSortInstance, y),
         x
-        );
+      );
     },
     us
-    );
+  );
 }
 
 function prCRef(r: Reference, us: Maybe<InstanceExpr>): PpCmds {
@@ -550,45 +551,44 @@ function prProj(
   a: ConstrExpr,
   f,
   l
-  ): PpCmds {
+): PpCmds {
   return [].concat(
     pr([lProj, new E()], a),
     cut(),
     str(".("),
     prApp(pr, f, l),
     str(")")
-    );
+  );
 }
 
 function prExplArgs(
   pr: (pa: PrecAssoc, ce: ConstrExpr) => PpCmds,
   [a, expl]: AppArg
-  ): PpCmds {
-  if (expl instanceof None) {
-    return pr([lApp, new L()], a);
-  }
-  if (expl instanceof Some) {
-    let e = expl.some[1];
-    if (e instanceof ExplByPos) {
-      throw "Anomaly: Explicitation by position not implemented";
-    }
-    if (e instanceof ExplByName) {
-      return ([].concat(str("("), prId(e.name), str(":="), pr(lTop, a), str(")")));
-    }
-    throw MatchFailure("prExplArgs", e);
-  }
-  throw MatchFailure("prExplArgs", expl);
+): PpCmds {
+  return expl.caseOf({
+    nothing: () => pr([lApp, new L()], a),
+    just: (expl) => {
+      let e = expl.some[1];
+      if (e instanceof ExplByPos) {
+        throw "Anomaly: Explicitation by position not implemented";
+      }
+      if (e instanceof ExplByName) {
+        return [].concat(str("("), prId(e.name), str(":="), pr(lTop, a), str(")"));
+      }
+      throw MatchFailure("prExplArgs", e);
+    },
+  });
 }
 
 function prApp(
   pr: (_1: PrecAssoc, _2: ConstrExpr) => PpCmds,
   a: ConstrExpr,
   l: AppArgs
-  ) {
+) {
   return ([].concat(
     pr([lApp, new L()], a),
     prList((x) => { return [].concat(spc(), prExplArgs(pr, x)); }, l)
-    ));
+  ));
 }
 
 function precOfPrimToken(t: PrimToken): number {
@@ -621,7 +621,7 @@ function prUniv(l) {
       str("max("),
       prListWithSep(() => str(","), str, l),
       str(")")
-      );
+    );
   }
 }
 
@@ -639,7 +639,7 @@ function prGlobSort(s: GlobSort): PpCmds {
       return hov(
         0,
         [].concat(tagType(str("Type")), prUnivAnnot(prUniv, s.type))
-        );
+      );
     }
   }
   throw MatchFailure("prGlobSort", s);
@@ -658,7 +658,7 @@ function prDanglingWithFor(
   pr: (_1: () => PpCmds, _2: PrecAssoc, _3: ConstrExpr) => PpCmds,
   inherited: PrecAssoc,
   a: ConstrExpr
-  ): PpCmds {
+): PpCmds {
   // TODO CFix and CCoFix
   return pr(sep, inherited, a);
 }
@@ -678,7 +678,7 @@ function casesPatternExprLoc(p): CoqLocation {
 function prWithComments(
   loc: CoqLocation,
   pp
-  ): PpCmds {
+): PpCmds {
   return prLocated((x) => x, [loc, pp]);
 }
 
@@ -686,7 +686,7 @@ function prPatt(
   sep: () => PpCmds,
   inh: PrecAssoc,
   p: ConstrExpr
-  ): PpCmds {
+): PpCmds {
 
   function match(p: ConstrExpr): [PpCmds, number] {
     // TODO CPatRecord
@@ -702,8 +702,8 @@ function prPatt(
             prList(
               (x) => prPatt(spc, [lApp, new L()], x),
               p.cases2
-              )
-            ),
+            )
+          ),
           lApp
         ];
       }
@@ -715,8 +715,8 @@ function prPatt(
             prList(
               (x) => prPatt(spc, [lApp, new L()], x),
               p.cases1
-              )
-            ),
+            )
+          ),
           lApp
         ];
       }
@@ -728,27 +728,24 @@ function prPatt(
             prList(
               (x) => prPatt(spc, [lApp, new L()], x),
               p.cases1
-              )
-            )),
+            )
+          )),
           prList(
             (x) => prPatt(spc, [lApp, new L()], x),
             p.cases2
-            )
-          ),
+          )
+        ),
         lApp
       ];
     } else if (p instanceof CPatAtom) {
       let r = p.reference;
-      if (r instanceof None) {
-        return [str("_"), lAtom];
-      } else if (r instanceof Some) {
-        return [prReference(r.some), lAtom];
-      } else {
-        throw MatchFailure("prPatt > match", p);
-      }
-    //} else if (p instanceof CPatOr) {
+      return r.caseOf<PpResult>({
+        nothing: () => [str("_"), lAtom],
+        just: (r) => [prReference(r), lAtom],
+      });
+      //} else if (p instanceof CPatOr) {
       // TODO
-    //} else if (p instanceof CPatNotation) {
+      //} else if (p instanceof CPatNotation) {
       // TODO
     } else if (p instanceof CPatPrim) {
       return [prPrimToken(p.token), lAtom];
@@ -767,55 +764,45 @@ function prPatt(
   return prWithComments(loc, [].concat(
     sep(),
     precLess(prec, inh) ? strm : surround(strm)
-    ));
+  ));
 }
 
 function prAsin(
   pr: (_1: PrecAssoc, _2: ConstrExpr) => PpCmds,
   [na, indnalopt]
-  ): PpCmds {
-  let prefix;
-  if (na instanceof Some) {
-    prefix = [].concat(
+): PpCmds {
+  let prefix = na.caseOf({
+    nothing: () => mt(),
+    just: (na) => [].concat(
       spc(),
       keyword("as"),
       spc(),
-      prLName(na.some)
-      );
-  }
-  else if (na instanceof None) {
-    prefix = mt();
-  } else {
-    throw MatchFailure("prAsin", na);
-  }
-  let suffix;
-  if (indnalopt instanceof None) {
-    suffix = mt();
-  }
-  else if (indnalopt instanceof Some) {
-    suffix = [].concat(
+      prLName(na)
+    ),
+  });
+  let suffix = indnalopt.caseOf({
+    nothing: () => mt(),
+    just: (i) => [].concat(
       spc(),
       keyword("in"),
       spc(),
-      prPatt(mt, lSimplePatt, indnalopt.some)
-      );
-  } else {
-    throw MatchFailure("prAsin", indnalopt);
-  }
+      prPatt(mt, lSimplePatt, i)
+    ),
+  });
   return [].concat(
     prefix,
     suffix
-    );
+  );
 }
 
 function prCaseItem(
   pr: (_1: PrecAssoc, _2: ConstrExpr) => PpCmds,
   [tm, asin]
-  ): PpCmds {
+): PpCmds {
   return hov(0, [].concat(
     pr([lCast, new E()], tm),
     prAsin(pr, asin)
-    ));
+  ));
 }
 
 function sepV(): PpCmds { return [].concat(str(","), spc()); }
@@ -861,18 +848,18 @@ function prSepCom(sep, f, c): PpCmds {
 function prCaseType(
   pr: (_1: PrecAssoc, _2: ConstrExpr) => PpCmds,
   po: Maybe<ConstrExpr>
-  ): PpCmds {
+): PpCmds {
   // TODO: po instanceof CHole with IntroAnonymous
-  if (po instanceof None) { return mt(); }
-  if (po instanceof Some) {
-    return [].concat(
+  return po.caseOf({
+    nothing: () => mt(),
+    just: (po) => [].concat(
       spc(),
       hov(2, [].concat(
         keyword("return"),
-        prSepCom(spc, (x) => pr(lSimpleConstr, x), po.some)
-        ))
-      );
-  }
+        prSepCom(spc, (x) => pr(lSimpleConstr, x), po)
+      ))
+    ),
+  });
 }
 
 function prBar() { return [].concat(str(";"), spc()); }
@@ -880,7 +867,7 @@ function prBar() { return [].concat(str(";"), spc()); }
 function prEqn(
   pr: (_1: PrecAssoc, _2: ConstrExpr) => PpCmds,
   [loc, pl0, rhs]: BranchExpr
-  ): PpCmds {
+): PpCmds {
   let pl1 = _(pl0).map((located: Located<Array<CasesPatternExpr>>) => located[1]).value();
   return [].concat(
     spc(),
@@ -894,32 +881,34 @@ function prEqn(
               prBar,
               (x) => prListWithSep(sepV, (y) => prPatt(mt, lTop, y), x),
               pl1
-              ),
+            ),
             str(" =>")
-            )),
+          )),
           prSepCom(spc, (x) => pr(lTop, x), rhs)
-          )
         )
       )
-    );
+    )
+  );
 }
 
 function prSimpleReturnType(
-    pr: (_1: PrecAssoc, _2: ConstrExpr) => PpCmds,
-    na: Maybe<Located<Name>>,
-    po: Maybe<ConstrExpr>
+  pr: (_1: PrecAssoc, _2: ConstrExpr) => PpCmds,
+  na: Maybe<Located<Name>>,
+  po: Maybe<ConstrExpr>
 ): PpCmds {
   let res = [];
-  if (na instanceof Some) {
-    let name = na.some[1];
-    if (name instanceof Name) {
-      res = res.concat(spc(), keyword("as"), spc(), prId(name.id));
-    } else {
-      res = res.concat(mt);
-    }
-  } else {
-    res = res.concat(mt());
-  }
+
+  na.caseOf({
+    nothing: () => { res = res.concat(mt()); },
+    just: (na) => {
+      let name = na.some[1];
+      if (name instanceof Name) {
+        res = res.concat(spc(), keyword("as"), spc(), prId(name.id));
+      } else {
+        res = res.concat(mt);
+      }
+    },
+  });
 
   res = res.concat(prCaseType(pr, po));
 
@@ -933,7 +922,7 @@ function extractLamBinders(a: ConstrExpr): [LocalBinder[], ConstrExpr] {
     } else {
       let [nal, bk, t] = a.binders[0];
       let [bl, c] = extractLamBinders(a.body);
-      let res : LocalBinder[] = [new LocalRawAssum(nal, bk, t)]
+      let res: LocalBinder[] = [new LocalRawAssum(nal, bk, t)]
       return [res.concat(bl), c];
     }
   } else {
@@ -945,12 +934,12 @@ let prFunSep: PpCmds = [].concat(spc(), str("=>"));
 
 function prGen(
   pr: (_1: () => PpCmds, _2: PrecAssoc, _3: ConstrExpr) => PpCmds
-  ): (_1: () => PpCmds, _2: PrecAssoc, _3: ConstrExpr) => PpCmds {
+): (_1: () => PpCmds, _2: PrecAssoc, _3: ConstrExpr) => PpCmds {
   return function(
     sep: () => PpCmds,
     inherited: PrecAssoc,
     a: ConstrExpr
-    ): PpCmds {
+  ): PpCmds {
 
     function ret(cmds: PpCmds, prec: number): PpResult {
       return [tagConstrExpr(a, cmds), prec];
@@ -963,36 +952,37 @@ function prGen(
       if (a instanceof CApp) {
         // TODO: ldots_var
         let pf = a.function[0];
-        if (pf instanceof Some) {
-          let [i, f, l] = [pf.some, a.function[1], a.arguments];
-          let [l1, l2] = chop(i, l);
-          let [c, rest] = sepLast(l1);
-          // TODO: assert c[1] is empty option?
-          let p = prProj(prmt, prApp, c[0], f, rest);
-          // TODO: it might be nice if we could highlight the structure
-          // nested applications, rather than having a flat n-ary one
-          if (l2.length > 0) {
-            return ret(
-              [].concat(
-                p,
-                prList(
-                  (a) => {
-                    return [].concat(spc(), prExplArgs(prmt, a));
-                  },
-                  l2
+        return pf.caseOf<PpResult>({
+          nothing: () => {
+            let [f, l] = [a.function[1], a.arguments];
+            return ret(prApp(prmt, f, l), lApp);
+          },
+          just: (pf) => {
+            let [i, f, l] = [pf, a.function[1], a.arguments];
+            let [l1, l2] = chop(i, l);
+            let [c, rest] = sepLast(l1);
+            // TODO: assert c[1] is empty option?
+            let p = prProj(prmt, prApp, c[0], f, rest);
+            // TODO: it might be nice if we could highlight the structure
+            // nested applications, rather than having a flat n-ary one
+            if (l2.length > 0) {
+              return ret(
+                [].concat(
+                  p,
+                  prList(
+                    (a) => {
+                      return [].concat(spc(), prExplArgs(prmt, a));
+                    },
+                    l2
                   )
                 ),
-              lApp
+                lApp
               );
-          } else {
-            return [p, lProj];
-          }
-        }
-        if (pf instanceof None) {
-          let [f, l] = [a.function[1], a.arguments];
-          return ret(prApp(prmt, f, l), lApp);
-        }
-        throw MatchFailure("pr -> match -> CApp", pf);
+            } else {
+              return [p, lProj];
+            }
+          },
+        });
       }
 
       if (a instanceof CCases) {
@@ -1009,20 +999,20 @@ function prGen(
                 sepV,
                 (x) => prCaseItem(prDangling, x),
                 a.cases
-                )
-              ),
+              )
+            ),
             prCaseType(prDangling, a.returnType),
             spc(),
             keyword("with"),
             prList(
               (e: BranchExpr) => prEqn((x, y) => pr(mt, x, y), e),
               a.branches
-              ),
+            ),
             spc(),
             keyword("end")
-            ))),
+          ))),
           lAtom
-          );
+        );
       }
 
       if (a instanceof CDelimiters) {
@@ -1030,7 +1020,7 @@ function prGen(
         return ret(
           prDelimiters(sc, pr(mt, [lDelim, new E()], e)),
           lDelim
-          );
+        );
       }
 
       if (a instanceof CLambdaN) {
@@ -1055,11 +1045,11 @@ function prGen(
             hov(2, [].concat(
               keyword("let"), spc(), prLName(a.name), str(" :="),
               pr(spc, lTop, a.bound), spc(), keyword("in")
-              )),
-            pr(spc, lTop, a.body)
             )),
+            pr(spc, lTop, a.body)
+          )),
           lLetIn
-          );
+        );
       }
 
       if (a instanceof CLetTuple) {
@@ -1092,11 +1082,11 @@ function prGen(
                 () => { return str("("); },
                 [maxInt, new L()],
                 t
-                ),
-              str(")")
               ),
+              str(")")
+            ),
             lAtom
-            );
+          );
         } else {
           let [s, env] = [a.notation, a.substitution];
           return prNotation(
@@ -1106,7 +1096,7 @@ function prGen(
             env,
             a.unparsing,
             a.precedence
-            );
+          );
         }
       }
 
@@ -1114,7 +1104,7 @@ function prGen(
         return ret(
           prPrimToken(a.token),
           precOfPrimToken(a.token)
-          );
+        );
       }
 
       if (a instanceof CProdN) {
@@ -1128,9 +1118,9 @@ function prGen(
               bl),
             str(","),
             pr(spc, lTop, aRest)
-            ),
+          ),
           lProd
-          );
+        );
       }
 
       if (a instanceof CRef) {
@@ -1138,7 +1128,7 @@ function prGen(
         return ret(
           prCRef(r, us),
           lAtom
-          );
+        );
       }
 
       if (a instanceof CSort) {
@@ -1174,14 +1164,14 @@ function prConstrExpr(a: ConstrExpr): PpCmds {
 
 function prHTMLGen(
   pr: (_1: () => PpCmds, _2: PrecAssoc, _3: ConstrExpr) => PpCmds
-  ): (_1: () => PpCmds, _2: PrecAssoc, _3: ConstrExpr) => PpCmds {
+): (_1: () => PpCmds, _2: PrecAssoc, _3: ConstrExpr) => PpCmds {
   let recur = prGen(pr);
   return function(sep: () => PpCmds, pa: PrecAssoc, e: ConstrExpr): PpCmds {
     return [].concat(
       str('<span class="ace_editor syntax">'),
       recur(sep, pa, e),
       str("</span>")
-      );
+    );
   }
 }
 
@@ -1251,7 +1241,7 @@ function dumbPrintPpCmds(l: PpCmds): string {
     l,
     (acc: string, p: PpCmd) => { return acc + dumbPrintPpCmd(p); },
     ""
-    );
+  );
 }
 
 function htmlPrintStrToken(t: StrToken): string {
@@ -1319,7 +1309,7 @@ function htmlPrintPpCmds(l: PpCmds): string {
     l,
     (acc: string, p: PpCmd) => { return acc + htmlPrintPpCmd(p); },
     ""
-    );
+  );
 }
 
 function markDifferent(s: string): string {
@@ -1388,7 +1378,7 @@ function ppCmdsSameShape(l: PpCmds, old: PpCmds): boolean {
     return (
       ppCmdSameShape(l[0], old[0])
       && ppCmdsSameShape(l.slice(1), old.slice(1))
-      );
+    );
   }
   return false;
 }
@@ -1406,8 +1396,8 @@ function htmlPrintPpCmdsDiff(l: PpCmds, old: PpCmds): string {
           return acc + htmlPrintPpCmd(p);
         },
         ""
-        )
-      );
+      )
+    );
   }
   var z = _.zip(l, old);
   return _.reduce(
@@ -1416,5 +1406,5 @@ function htmlPrintPpCmdsDiff(l: PpCmds, old: PpCmds): string {
       return acc + htmlPrintPpCmdDiff(p, oldP);
     },
     ""
-    );
+  );
 }

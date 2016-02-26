@@ -23,7 +23,7 @@ requirejs([
     'ace/ace',
     'd3',
     'jquery',
-    'jquery-ui/jquery-ui',
+    //'jquery-ui/jquery-ui',
     'jquery.hotkeys',
     'bootstrap',
     'jss',
@@ -50,6 +50,7 @@ requirejs([
       requirejs(['peacoq-ts/coq-definitions']);
       requirejs(['peacoq-ts/coq-pretty-printer']);
       //requirejs(['peacoq-ts/coq85']);
+      requirejs(['peacoq-ts/edits']);
       requirejs(['peacoq-ts/fakenode']);
       requirejs(['peacoq-ts/gallina']);
       requirejs(['peacoq-ts/goal']);

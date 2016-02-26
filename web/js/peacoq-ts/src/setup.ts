@@ -193,7 +193,7 @@ function proofTreeOnGetContext(c: PeaCoqContext): void {
     } else {
       let gs =
         _(c).map(function(goal) {
-          return new GoalNode(activeProofTree, tacticWaiting.parentGroup, goal);
+          return new GoalNode(activeProofTree, just(tacticWaiting.parentGroup), goal);
         }).value();
       tacticWaiting.goals = gs;
       let curGoal = gs[0];

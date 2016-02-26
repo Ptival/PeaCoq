@@ -190,11 +190,14 @@ class ProofTree {
     }
     if (n1.id === n2.id) { return n1; }
     if (n1.depth < n2.depth) {
-      return this.commonAncestor(n1, n2.getParent());
+      return this.commonAncestor(n1, fromJust(n2.getParent()));
     } else if (n1.depth > n2.depth) {
-      return this.commonAncestor(n1.getParent(), n2);
+      return this.commonAncestor(fromJust(n1.getParent()), n2);
     } else {
-      return this.commonAncestor(n1.getParent(), n2.getParent());
+      return this.commonAncestor(
+        fromJust(n1.getParent()),
+        fromJust(n2.getParent())
+      );
     }
   }
 
@@ -208,65 +211,37 @@ class ProofTree {
   */
   computeDescendantsOffset() {
 
+    let self = this;
     let curNode = this.curNode;
-    let curGoal = <GoalNode>(curNode instanceof GoalNode ? curNode : curNode.parent);
 
-    let centeredDescendant: ProofTreeNode = undefined;
-    if (curNode instanceof GoalNode) {
-      let centeredTactic = curNode.getFocusedChild();
-      if (centeredTactic !== undefined) {
-        centeredDescendant = centeredTactic.getFocusedChild();
-        if (centeredDescendant === undefined) {
-          centeredDescendant = centeredTactic;
+    let centeredDescendant =
+      this.curNode.getFocusedChild().caseOf<Maybe<ProofTreeNode>>({
+        nothing: () => nothing(),
+        just: (fc) => fc.getFocusedChild().caseOf({
+          nothing: () => just(fc),
+          just: (fgc) => just(fgc),
+        })
+      });
+
+    centeredDescendant.caseOf({
+      nothing: () => { self.descendantsOffset = 0; },
+      just: (d) => {
+        if (d instanceof GoalNode) {
+          // computing the difference in height between the <hr> is not
+          // obvious...
+          let hrDelta = curNode.html[0].offsetTop - d.html[0].offsetTop;
+          this.descendantsOffset = (
+            this.yFactor * (nodeY(curNode) - nodeY(centeredDescendant))
+            - (curNode.height - d.height) / 2
+            + hrDelta
+          );
+        } else {
+          this.descendantsOffset =
+            this.yFactor * (nodeY(curNode) - nodeY(centeredDescendant))
+            ;
         }
       }
-    } else if (curNode instanceof TacticGroupNode) {
-      throw "TODO: oops, curNode is TacticGroup";
-      /*
-      let t = curNode.getFocusedTactic();
-      if (t.goals.length > 0) {
-        centeredDescendant = t.goals[t.goalIndex];
-      }
-      */
-    } else {
-      throw curNode;
-    }
-
-    if (centeredDescendant !== undefined) {
-      if (curNode instanceof GoalNode
-        && centeredDescendant instanceof GoalNode) {
-        // computing the difference in height between the <hr> is not
-        // obvious...
-        let hrDelta =
-          curNode.html[0].offsetTop
-          - centeredDescendant.html[0].offsetTop
-          ;
-        this.descendantsOffset =
-          this.yFactor * (nodeY(curGoal) - nodeY(centeredDescendant))
-          - (curGoal.height - centeredDescendant.height) / 2
-          + hrDelta
-          ;
-      } else if (curNode instanceof TacticGroupNode) {
-        /*
-        let hrDelta =
-          curNode.parent.goalSpan[0].offsetTop
-          - centeredDescendant.goalSpan[0].offsetTop
-          ;
-        self.descendantsOffset =
-        self.yFactor * (nodeY(curGoal) - nodeY(centeredDescendant))
-        - (curGoal.height - centeredDescendant.height) / 2
-        + hrDelta
-        ;
-        */
-        throw "TODO";
-      } else {
-        this.descendantsOffset =
-          this.yFactor * (nodeY(curGoal) - nodeY(centeredDescendant))
-          ;
-      }
-    } else {
-      this.descendantsOffset = 0;
-    }
+    });
 
   }
 
@@ -276,9 +251,9 @@ class ProofTree {
     let visibleGrandChildren = _(curGoal.getViewGrandChildren());
     let emptyNodeArray: Array<ProofTreeNode> = [];
     let visibleNodes = _(emptyNodeArray);
-    if (hasParent(curGoal)) {
-      visibleNodes = visibleNodes.concat([curGoal.parent]);
-    }
+    curGoal.getParent().fmap((p) => {
+      visibleNodes = visibleNodes.concat([p]);
+    });
     visibleNodes = visibleNodes.concat([curGoal]);
     visibleNodes = visibleNodes.concat(visibleChildren.value());
     visibleNodes = visibleNodes.concat(visibleGrandChildren.value());
@@ -313,7 +288,7 @@ class ProofTree {
     // also, the current node should not overlap its siblings
     let currentSiblings = [];
     if (this.curNode instanceof GoalNode && hasParent(this.curNode)) {
-      let curNodeSiblings = _(this.curNode.parent.getViewChildren());
+      let curNodeSiblings = _(fromJust(this.curNode.parent).getViewChildren());
       currentSiblings = _.zip(
         curNodeSiblings.value(),
         curNodeSiblings.tail().value()
@@ -387,30 +362,35 @@ class ProofTree {
   }
 
   isCurGoalChild(n: ProofTreeNode): boolean {
-    return hasParent(n) && this.isCurGoal(n.getParent());
+    let self = this;
+    return n.hasParentSuchThat((p) => self.isCurGoal(p));
   }
 
   isCurGoalGrandChild(n: ProofTreeNode): boolean {
-    return hasParent(n) && this.isCurGoalChild(n.getParent());
+    let self = this;
+    return n.hasParentSuchThat((p) => self.isCurGoalChild(p));
   }
 
   isCurNode(n: ProofTreeNode): boolean { return n.id === this.curNode.id; }
 
   isCurNodeChild(n: ProofTreeNode): boolean {
-    return hasParent(n) && this.isCurNode(n.getParent());
+    let self = this;
+    return n.hasParentSuchThat((p) => self.isCurNode(p));
   }
 
   isCurNodeGrandChild(n: ProofTreeNode): boolean {
-    return hasParent(n) && this.isCurNodeChild(n.getParent());
+    let self = this;
+    return n.hasParentSuchThat((p) => self.isCurNodeChild(p));
   }
 
   isCurNodeParent(n: ProofTreeNode): boolean {
-    return hasParent(this.curNode) && this.curNode.parent.id === n.id;
+    let self = this;
+    return this.curNode.hasParentSuchThat((p) => p.id === n.id);
   }
 
-  isCurNodeSibling(n: ProofTreeNode): boolean {
-    return !this.isCurNode(n) && hasParent(n) && this.isCurNodeParent(n.getParent());
-  }
+  // isCurNodeSibling(n: ProofTreeNode): boolean {
+  //   return !this.isCurNode(n) && hasParent(n) && this.isCurNodeParent(n.getParent());
+  // }
 
   isRootNode(n: ProofTreeNode): boolean {
     return n.id === this.rootNode.id;
@@ -438,7 +418,7 @@ class ProofTree {
         ev.preventDefault();
         if (hasParent(curNode)) {
           //asyncLog("LEFT " + nodeString(curNode.parent));
-          curNode.parent.click();
+          fromJust(curNode.parent).click();
         } else {
           // when at the root node, undo the last action (usually Proof.)
           //onCtrlUp(false);
@@ -448,10 +428,10 @@ class ProofTree {
       case 39: // Right
         //case 68: // d
         ev.preventDefault();
-        var dest = curNode.getFocusedChild();
-        if (dest === undefined) { break; }
-        //asyncLog("RIGHT " + nodeString(dest));
-        dest.click();
+        curNode.getFocusedChild().fmap((dest) => {
+          //asyncLog("RIGHT " + nodeString(dest));
+          dest.click()
+        });
         break;
 
       case 38: // Up
@@ -476,12 +456,12 @@ class ProofTree {
 
       case 219: // [
         var focusedChild = curNode.getFocusedChild();
-          focusedChild.shiftPrevInGroup();
+        focusedChild.fmap((c) => (<TacticGroupNode>c).shiftPrevInGroup());
         break;
 
       case 221: // ]
         var focusedChild = curNode.getFocusedChild();
-          focusedChild.shiftNextInGroup();
+        focusedChild.fmap((c) => (<TacticGroupNode>c).shiftNextInGroup());
         break;
 
       default:
@@ -526,26 +506,35 @@ class ProofTree {
     let curNode = this.curNode;
 
     // if the user uses his keyboard, highlight the focused path
-    if (curNode instanceof GoalNode) {
-      let focusedChild = this.curNode.getFocusedChild();
-      if (focusedChild === undefined) { return thin; }
-      if (this.isCurNode(src) && focusedChild.id === tgt.id) { return thick; }
-      // we want to thicken the path to the focused subgoal
-      let focusedGrandChild = focusedChild.getFocusedChild();
-      if (focusedGrandChild === undefined) { return thin; }
-      if (focusedChild.id == src.id && focusedGrandChild.id === tgt.id) {
-        return thick;
-      }
-      return thin;
-    } else if (curNode instanceof TacticGroupNode) {
-      let focusedChild = this.curNode.getFocusedChild();
-      if (focusedChild !== undefined && tgt.id === focusedChild.id) {
-        return thick;
-      }
-      return thin;
-    } else {
-      throw this.curNode;
-    }
+    // if (curNode instanceof GoalNode) {
+
+    return this.curNode.getFocusedChild().caseOf({
+      nothing: () => thin,
+      just: (focusedChild) => {
+        if (this.isCurNode(src) && focusedChild.id === tgt.id) { return thick; }
+        return focusedChild.getFocusedChild().caseOf({
+          nothing: () => thin,
+          just: (focusedGrandChild) => {
+            return (
+              focusedChild.id == src.id && focusedGrandChild.id === tgt.id
+                ? thick : thin
+            );
+          },
+        });
+      },
+    });
+
+    //
+    // } else if (curNode instanceof TacticGroupNode) {
+    //   let focusedChild = this.curNode.getFocusedChild();
+    //   if (focusedChild !== undefined && tgt.id === focusedChild.id) {
+    //     return thick;
+    //   }
+    //   return thin;
+    // } else {
+    //   throw this.curNode;
+    // }
+
   }
 
   onRectSelectionEnter(s: d3.selection.Enter<ProofTreeNode>): void {
@@ -968,14 +957,21 @@ class ProofTree {
       // so we need to reuse the selection
       textEnter
         .attr("x", function(d) {
+          d.getParent().caseOf({
+            nothing: () => {
+              // the root needs to spawn somewhere arbitrary: (0, 0.5)
+              d.cX0 = self.xOffset(d);
+              d.cY0 = 0.5 * self.yFactor + self.yOffset(d);
+            },
+            just: (p) => {
+              // non-roots are spawned at their parent's (cX0, cY0)
+              d.cX0 = p.cX0;
+              d.cY0 = p.cY0;
+            },
+          });
           if (hasParent(d)) {
-            // non-roots are spawned at their parent's (cX0, cY0)
-            d.cX0 = d.getParent().cX0;
-            d.cY0 = d.getParent().cY0;
           } else {
-            // the root needs to spawn somewhere arbitrary: (0, 0.5)
-            d.cX0 = self.xOffset(d);
-            d.cY0 = 0.5 * self.yFactor + self.yOffset(d);
+
           }
           return d.cX0;
         })
@@ -1018,11 +1014,11 @@ class ProofTree {
             return d.cX;
           }
           if (d instanceof GoalNode) {
-            let nodeToReach = d.parent.parent;
+            let nodeToReach = fromJust(d.getGrandParent());
             d.cX = nodeToReach.cX;
             d.cY = nodeToReach.cY;
           } else {
-            let nodeToReach = d.getParent();
+            let nodeToReach = fromJust(d.getParent());
             d.cX = nodeToReach.cX;
             d.cY = nodeToReach.cY;
           }
@@ -1514,18 +1510,20 @@ class ProofTree {
       // refocus the viewport
 
       self.viewportX = - (
-        hasParent(curNode)
-          ? curNode.parent.cX
-          : curNode.cX // TODO: could do some math to align it the same way
+        curNode.parent.caseOf({
+          // TODO: could do some math to align it the same way
+          nothing: () => curNode.cX,
+          just: (p) => p.cX,
+        })
       );
 
-      self.viewportY =
-        - (
-          curNode instanceof GoalNode
-            ? (curNode.cY + curNode.height / 2 - self.height / 2)
-            : (curNode.parent.cY + curNode.parent.height / 2 - self.height / 2)
-        )
-        ;
+      self.viewportY = (curNode.cY + curNode.height / 2 - self.height / 2);
+      // - (
+      //   curNode instanceof GoalNode
+      //     ? (curNode.cY + curNode.height / 2 - self.height / 2)
+      //     : (curNode.parent.cY + curNode.parent.height / 2 - self.height / 2)
+      // )
+      // ;
 
       self.viewport
         .transition()

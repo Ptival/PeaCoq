@@ -164,11 +164,12 @@ function patternPow(l: PpCmds): PpCmds {
 function matchPattern(
   l: PpCmds,
   pat: Pattern[],
-  h: (_1: any) => PpCmds)
-  : PpCmds {
-  let match = ppCmdsMatch(pat, l);
-  if (match instanceof Some) { return h(match.some); }
-  return l;
+  h: (_1: any) => PpCmds
+): PpCmds {
+  return ppCmdsMatch(pat, l).caseOf({
+    nothing: () => l,
+    just: (m) => h(m),
+  });
 }
 
 // for "divides": \u2223
@@ -255,15 +256,17 @@ function tok(s: string): Pattern {
 let any: Pattern = new Anything();
 
 function ppCmdsMatchGen(p: Pattern[], l: PpCmds, o: Object): Maybe<Object> {
-  if (p.length !== l.length) { return new None(); }
+  if (p.length !== l.length) { return nothing(); }
   let zip = _.zip(p, l);
   for (let index in zip) {
     let [pat, cmd] = zip[index];
-    let mo = ppCmdMatchGen(pat, cmd, o);
-    if (mo instanceof None) { return mo; }
-    if (mo instanceof Some) { o = mo.some; }
+    let shortCircuit = ppCmdMatchGen(pat, cmd, o).caseOf({
+        nothing: () => true,
+        just: (newo) => { o = newo; return false; }
+    });
+    if (shortCircuit) { return nothing(); }
   }
-  return new Some(o);
+  return just(o);
 }
 
 function reduceMaybe<IN, ACC>(
@@ -271,34 +274,28 @@ function reduceMaybe<IN, ACC>(
   f: (_1: ACC, _2: IN) => Maybe<ACC>,
   acc: ACC
 ): Maybe<ACC> {
-  if (acc instanceof Some) {
-    alert("Called reduceMaybe with a Maybe type, most likely a mistake?");
-  }
   return _.reduce(
     a,
     (acc: Maybe<ACC>, elt: IN) => {
-      if (acc instanceof None) {
-        return acc;
-      } else if (acc instanceof Some) {
-        return f(acc.some, elt);
-      } else {
-        throw MatchFailure("reduceMaybe", acc);
-      }
+      return acc.caseOf({
+        nothing: () => acc,
+        just: (acc) => f (acc, elt),
+      });
     },
-    new Some(acc)
+    just(acc)
   );
 }
 
 function ppCmdMatchGen(pat: Pattern, p: PpCmd | any, o: Object): Maybe<Object> {
   if (pat instanceof Anything) {
-    return new Some(o);
+    return just(o);
   } else if (pat instanceof ArrayPattern) {
     if (!(p instanceof Array)) { throw MatchFailure("ppCmdMatchGen > ArrayPattern", p); }
     return ppCmdsMatchGen(pat.array, p, o);
   } else if (pat instanceof BinderPattern) {
     let binder = pat.binder;
     o[binder] = p;
-    return new Some(o);
+    return just(o);
   } else if (pat instanceof Constructor) {
     if (p instanceof pat.name) {
       return reduceMaybe(
@@ -307,22 +304,22 @@ function ppCmdMatchGen(pat: Pattern, p: PpCmd | any, o: Object): Maybe<Object> {
           if (field in p) {
             return ppCmdMatchGen(pat.fields[field], p[field], acc);
           } else {
-            return new None();
+            return nothing();
           }
         },
         o
       );
     } else {
-      return new None();
+      return nothing();
     }
   } else if (pat instanceof StringPattern) {
     if (!(typeof p === "string")) {
       throw MatchFailure("ppCmdMatchGen > StringPattern", p);
     }
     if (pat.string === p) {
-      return new Some(o);
+      return just(o);
     } else {
-      return new None();
+      return nothing();
     }
   } else {
     throw MatchFailure("patternMatch > rec", pat);

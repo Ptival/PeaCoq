@@ -41,6 +41,13 @@ abstract class ProofTreeNode {
       );
   }
 
+  hasParentSuchThat(pred: (_1: ProofTreeNode) => boolean): boolean {
+    return this.getParent().caseOf({
+      nothing: () => false,
+      just: (p) => pred(p),
+    });
+  }
+
   isCurNodeAncestor() {
     let curNode = this.proofTree.curNode;
     let common = this.proofTree.commonAncestor(curNode, this);

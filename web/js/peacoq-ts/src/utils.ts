@@ -2,6 +2,13 @@ type Maybe<T> = TsMonad.Maybe<T>;
 let nothing = TsMonad.Maybe.nothing;
 let just = TsMonad.Maybe.just;
 
+function fromJust<T>(m: Maybe<T>): T {
+  return m.caseOf<T>({
+    nothing: () => undefined,
+    just: (x) => x,
+  })
+}
+
 function assert(condition: boolean, message: string): void {
   if (!condition) {
     alert("Assertion failed: " + message);

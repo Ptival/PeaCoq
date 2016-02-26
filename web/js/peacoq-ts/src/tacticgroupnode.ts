@@ -48,7 +48,7 @@ class TacticGroupNode extends ProofTreeNode {
     return this.tactics[this.tacticIndex];
   }
 
-  getParent(): Maybe<GoalNode> { return this.parent; }
+  getParent(): Maybe<GoalNode> { return just(this.parent); }
 
   getTactics(): Tactic[] {
     return this.tactics;

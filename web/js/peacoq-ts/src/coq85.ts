@@ -26,7 +26,7 @@ let nbsp = "\u00A0";
 class CoqDocument {
   beginAnchor: AceAjax.Anchor;
   editor: AceAjax.Editor;
-  edits: Array<Edit>;
+  edits: Array<ProcessedEdit>;
   endAnchor: AceAjax.Anchor;
   session: AceAjax.IEditSession;
 
@@ -39,16 +39,16 @@ class CoqDocument {
     this.endAnchor = mkAnchor(this, 0, 0, "end-marker", false);
   }
 
-  getStopPositions(): Array<AceAjax.Position> {
-    return _(this.edits).map(function(e) { return e.stopPos; }).value();
+  getStopPositions(): AceAjax.Position[] {
+    return _(this.edits).map(function(e) { return e.getStopPosition(); }).value();
   }
 
   getLastEditStop(): AceAjax.Position {
     if (this.edits.length === 0) { return this.beginAnchor.getPosition(); }
-    return _(this.edits).last().stopPos;
+    return _(this.edits).last().getStopPosition();
   }
 
-  pushEdit(e: Edit) { this.edits.push(e); }
+  pushEdit(e: ProcessedEdit) { this.edits.push(e); }
 
   recenterEditor() {
     let pos = this.editor.getCursorPosition();
@@ -63,14 +63,14 @@ class CoqDocument {
   }
 
   removeEdits(
-    predicate: (e: Edit) => boolean,
-    beforeRemoval?: (e: Edit) => void
+    predicate: (e: ProcessedEdit) => boolean,
+    beforeRemoval?: (e: ProcessedEdit) => void
   ) {
     _.remove(this.edits, function(e) {
       let toBeRemoved = predicate(e);
       if (toBeRemoved) {
         if (beforeRemoval) { beforeRemoval(e); }
-        e.removeMarker();
+        e.remove();
       }
       return toBeRemoved;
     });
@@ -308,11 +308,6 @@ function clearCoqtopTabs() {
   pretty.div.html("");
 }
 
-class EditState { }
-class EditToProcess extends EditState { }
-class EditProcessing extends EditState { }
-class EditProcessed extends EditState { }
-
 let freshEditId = (function() {
   let editCounter = 2; // TODO: pick the correct number
   return function() {
@@ -320,63 +315,13 @@ let freshEditId = (function() {
   }
 })();
 
-class Edit {
-  document: CoqDocument;
-  editState: EditState;
-  editId: number;
-  markerId: number;
-  stateId: Maybe<number>;
-  markerRange: AceAjax.Range;
-  startPos: AceAjax.Position;
-  stopPos: AceAjax.Position;
-  previousEdit: Maybe<Edit>;
-
-  // to be updated later than initialization
-  status: Status;
-  goals: Goals;
-  context: PeaCoqContext;
-
-  constructor(doc: CoqDocument, start: AceAjax.Position, stop: AceAjax.Position) {
-    this.editState = EditToProcess;
-    this.startPos = start;
-    this.stopPos = stop;
-
-    this.markerRange = new AceRange(start.row, start.column, stop.row, stop.column);
-
-    this.editId = freshEditId();
-    this.stateId = nothing();
-    this.markerId = doc.session.addMarker(this.markerRange, "processing", "text", false);
-
-    this.document = doc;
-    this.previousEdit = doc.edits.length === 0 ? nothing() : just(_(doc.edits).last());
-    doc.pushEdit(this);
-
-    this.goals = new Goals(undefined);
-    this.context = [];
-  }
-
-  markProcessed() {
-    this.document.session.removeMarker(this.markerId);
-    this.markerId = this.document.session.addMarker(this.markerRange, "processed", "text", false);
-  }
-
-  removeMarker(): void {
-    this.document.session.removeMarker(this.markerId);
-  }
-
-  remove(): void {
-    this.removeMarker();
-    _.remove(this.document.edits, this);
-  }
-
-}
 
 function reportFailure(f: string) { //, switchTab: boolean) {
   failures.setValue(f, true);
   //yif (switchTab) { failures.click(); }
 }
 
-function onNextEditFail(e: Edit): (_1: ValueFail) => Promise<any> {
+function onNextEditFail(e: EditBeingProcessed): (_1: ValueFail) => Promise<any> {
   return (vf: ValueFail) => {
     if (!(vf instanceof ValueFail)) {
       throw vf;
@@ -393,7 +338,7 @@ function onNextEditFail(e: Edit): (_1: ValueFail) => Promise<any> {
   };
 }
 
-function getPreviousEditContext(e: Edit): Maybe<PeaCoqContext> {
+function getPreviousEditContext(e: ProcessedEdit): Maybe<PeaCoqContext> {
   return e.previousEdit.fmap((e) => e.context);
 }
 
@@ -417,31 +362,29 @@ function onNext(doc: CoqDocument): Promise<void> {
   }
   let nextIndex = next(unprocessedText);
   let newStopPos = movePosRight(doc, lastEditStopPos, nextIndex);
-  let e = new Edit(coqDocument, lastEditStopPos, newStopPos);
+  let e1 = new EditToProcess(coqDocument, lastEditStopPos, newStopPos);
+  let e2 = new EditBeingProcessed(e1);
   return (
     peaCoqAddPrime(unprocessedText.substring(0, nextIndex))
       .then(
       (response) => {
-        e.stateId = response.stateId;
-        e.markProcessed();
         doc.session.selection.clearSelection();
         doc.editor.moveCursorToPosition(newStopPos);
         doc.editor.scrollToLine(newStopPos.row, true, true, () => { });
         doc.editor.focus();
+        let sid: number = response.stateId;
         let s = peaCoqStatus(false);
         let g = s.then(peaCoqGoal);
         let c = g.then(peaCoqGetContext);
         return Promise.all<any>([s, g, c]).then(
-          ([s, g, c]) => {
-            e.status = s;
-            e.goals = g;
-            e.context = c;
-            updateGoals(e);
-            updatePretty(e);
+          ([s, g, c]: [Status, Goals, PeaCoqContext]) => {
+            let e = new ProcessedEdit(e2, sid, s, g, c);
+            //updateGoals(e);
+            //updatePretty(e);
             return Promise.resolve();
           });
       })
-      .catch(onNextEditFail(e))
+      .catch(onNextEditFail(e2))
   );
 }
 
@@ -501,23 +444,31 @@ function onGotoCaret(doc: CoqDocument): Promise<void> {
 function onPrevious(doc: CoqDocument): Promise<void> {
   clearCoqtopTabs();
   let lastEdit = _.last(doc.edits);
+  if (!lastEdit) { return Promise.resolve(); }
   return (
-    peaCoqEditAt(lastEdit.previousEdit.stateId)
+    lastEdit.previousEdit
+      .caseOf({
+        nothing: () => {
+          return peaCoqEditAt(1);
+        },
+        just: (pe) => {
+          return peaCoqEditAt(pe.stateId);
+        },
+      })
       .then(
       () => {
         lastEdit.remove();
         doc.session.selection.clearSelection();
-        doc.editor.moveCursorToPosition(lastEdit.startPos);
-        doc.editor.scrollToLine(lastEdit.startPos.row, true, true, () => { });
+        doc.editor.moveCursorToPosition(lastEdit.getStartPosition());
+        doc.editor.scrollToLine(lastEdit.getStartPosition().row, true, true, () => { });
         doc.editor.focus();
-        let prevEdit = _.last(doc.edits);
-        if (prevEdit !== undefined) {
-          updateGoals(prevEdit);
-          updatePretty(prevEdit);
-        }
+        // let prevEdit = _.last(doc.edits);
+        // if (prevEdit !== undefined) {
+        //   updateGoals(prevEdit);
+        //   updatePretty(prevEdit);
+        // }
       })
-      .catch(
-      (vf: ValueFail) => {
+      .catch((vf: ValueFail) => {
         reportFailure(vf.message);
         // Hopefully, the goals have not changed?
         /*
@@ -530,9 +481,9 @@ function onPrevious(doc: CoqDocument): Promise<void> {
             )
           );
         */
-      }
-      )
+      })
   );
+
 }
 
 type AddResult = {
@@ -588,25 +539,25 @@ function sameBodyAndType(hyp1: HTMLElement, hyp2: HTMLElement): boolean {
   return true;
 }
 
-function updatePretty(edit: Edit): Promise<void> {
-  let context = edit.context;
-  // context can be empty (if you finished a focused subgoal)
-  if (context.length === 0) {
-    if (edit.status.statusProofName === null) {
-      pretty.div.html("");
-    }
-    else if (countBackgroundGoals(edit.goals) > 0) {
-      pretty.div.html("Subgoal solved, but background goals remain.");
-    } else {
-      pretty.div.html("All subgoals solved!");
-    }
-    return Promise.resolve();
-  }
-
-  pretty.div.html("");
-  let currentGoal = context[0];
-  pretty.div.append(currentGoal.getHTML());
-}
+// function updatePretty(edit: ProcessedEdit): Promise<void> {
+//   let context = edit.context;
+//   // context can be empty (if you finished a focused subgoal)
+//   if (context.length === 0) {
+//     if (edit.status.statusProofName === null) {
+//       pretty.div.html("");
+//     }
+//     else if (countBackgroundGoals(edit.goals) > 0) {
+//       pretty.div.html("Subgoal solved, but background goals remain.");
+//     } else {
+//       pretty.div.html("All subgoals solved!");
+//     }
+//     return Promise.resolve();
+//   }
+//
+//   pretty.div.html("");
+//   let currentGoal = context[0];
+//   pretty.div.append(currentGoal.getHTML());
+// }
 
 function countBackgroundGoals(goals: Goals): number {
   return _.reduce(
@@ -616,7 +567,7 @@ function countBackgroundGoals(goals: Goals): number {
   );
 }
 
-function updateGoals(edit: Edit): void {
+function updateGoals(edit: ProcessedEdit): void {
   let goals = edit.goals;
   $("#foreground-counter").text(" (" + goals.fgGoals.length + ")");
   $("#background-counter").text(" (" + countBackgroundGoals(goals) + ")");
@@ -1013,31 +964,30 @@ function isAfter(pos1: AceAjax.Position, pos2: AceAjax.Position): boolean {
 
 function killEditsAfterPosition(doc: CoqDocument, pos: AceAjax.Position) {
   // we will need to rewind to the state before the oldest edit we remove
-  let editToRewindTo: Edit = undefined;
+  let editToRewindTo: Maybe<ProcessedEdit> = nothing();
   // we remove all the edits that are after the position that was edited
   doc.removeEdits(
-    (edit: Edit) => isAfter(edit.stopPos, pos),
-    (edit: Edit) => {
-      let maybeEdit = edit.previousEdit;
-      if (maybeEdit instanceof Some
-        && (
-          editToRewindTo === undefined
-          ||
-          maybeEdit.some.stateId < editToRewindTo.stateId
-        )
-      ) {
-        editToRewindTo = maybeEdit.some;
-      }
+    (edit: ProcessedEdit) => isAfter(edit.getStopPosition(), pos),
+    (edit: ProcessedEdit) => {
+      edit.previousEdit.caseOf({
+        nothing: () => { },
+        just: (pe) => {
+          editToRewindTo.caseOf({
+            nothing: () => { editToRewindTo = just(pe); },
+            just: (e) => {
+              if (pe.stateId < e.stateId) { editToRewindTo = just(pe); }
+            },
+          });
+        },
+      })
     }
   );
-  if (editToRewindTo !== undefined) {
-    peaCoqEditAt(editToRewindTo.stateId)
-      .then(
-      () => {
-        updateGoals(editToRewindTo);
-        updatePretty(editToRewindTo);
-      });
-  }
+
+  editToRewindTo.caseOf({
+    nothing: () => { },
+    just: (e) => { peaCoqEditAt(e.stateId); }
+  });
+
 }
 
 function movePosRight(doc: CoqDocument, pos: AceAjax.Position, n: number) {
@@ -1104,59 +1054,6 @@ function setupEditor(e: AceAjax.Editor) {
     })
   });
 
-}
-
-function addTab(name: string, containerName: string): JQuery {
-
-  let item = $("<li>", {
-    "role": "presentation",
-  }).appendTo($("#" + containerName + "-pills > ul"));
-
-  let anchor = $("<a>", {
-    "href": "#" + name + "-tab",
-    //"aria-controls": name + "-tab",
-    //"role": "tab",
-    //"data-toggle": "pill",
-  })
-    .appendTo(item)
-    ;
-
-  $("<span>", { "text": capitalize(name) }).appendTo(anchor);
-  $("<span>", { "id": name + "-counter" }).appendTo(anchor);
-
-  let badge = $("<span>", {
-    "class": "badge",
-    "id": name + "-badge",
-    "html": mkGlyph("exclamation-sign"),
-  })
-    .css("display", "none")
-    .appendTo(anchor)
-    ;
-
-  let tabPanel = $("<div>", {
-    "role": "tabpanel",
-    "class": "tab-pane",
-    "id": name + "-tab",
-  })
-    .css("display", "none")
-    .appendTo($("#" + containerName + "-tabs"))
-    ;
-
-  let div = $("<div>", {
-    "id": name,
-  })
-    .appendTo(tabPanel);
-
-  anchor.click(function(e) {
-    e.preventDefault();
-    badge.css("display", "none");
-    $(this).tab("show");
-    $("#" + containerName + "-tabs").children(".tab-pane").css("display", "none");
-    tabPanel.css("display", "flex");
-    return false;
-  });
-
-  return div;
 }
 
 function focusProofTreeUI() { throw "TODO"; }
