@@ -1,6 +1,6 @@
 class FakeNode extends ProofTreeNode {
-  constructor() {
-    super(undefined, undefined);
+  constructor(p: ProofTree, parent: ProofTreeNode) {
+    super(p, just(parent));
   }
 
   click(): void { throw "FakeNode"; }

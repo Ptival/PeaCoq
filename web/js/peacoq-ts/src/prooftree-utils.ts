@@ -65,24 +65,20 @@ function makeContextDivider() {
 }
 
 type XY = { x: number; y: number; }
-function swapXY(r: any): any {
-  return { "x": r.y, "y": r.x };
+
+function swapXY(r: XY): XY {
+  let [x, y] = [r.x, r.y];
+  r.x = y;
+  r.y = x;
+  return r;
 }
 
-function hasParent(n) {
-  return n.parent !== undefined;
-}
-
-function hasGrandParent(n) {
-  return hasParent(n) && hasParent(n.parent);
-}
-
-function byNodeId(d) { return d.id; }
-function byLinkId(d) { return d.source.id + "," + d.target.id; }
+function byNodeId(d: ProofTreeNode): string { return d.id; }
+function byLinkId(d: ProofTreeLink): string { return d.source.id + "," + d.target.id; }
 
 // transposition accessors
-function nodeX(d) { return d.y; }
-function nodeY(d) { return d.x; }
+function nodeX(d: ProofTreeNode): number { return d.y; }
+function nodeY(d: ProofTreeNode): number { return d.x; }
 
 function getClosestGoal(node: ProofTreeNode): GoalNode {
   if (node instanceof GoalNode) { return node; }
@@ -123,93 +119,98 @@ let centerLeftOffset = +10;
 
 let centerRightOffset = -10;
 
-function centerLeft0(d) {
+function centerLeft0(d: ProofTreeNode): XY {
   return {
-    "x": d.cX0 + centerLeftOffset,
-    "y": d.cY0 + d.height / 2
+    "x": d.originalScaledX + centerLeftOffset,
+    "y": d.originalScaledY + d.height / 2,
   };
 }
 
-function centerRight0(d) {
+function centerRight0(d: ProofTreeNode): XY {
   return {
-    "x": d.cX0 + d.width + centerRightOffset,
-    "y": d.cY0 + d.height / 2
+    "x": d.originalScaledX + d.width + centerRightOffset,
+    "y": d.originalScaledY + d.height / 2,
   };
 }
 
-function centerLeft(d) {
+function centerLeft(d: ProofTreeNode): XY {
   return {
     "x": d.cX + centerLeftOffset,
-    "y": d.cY + d.height / 2
+    "y": d.cY + d.height / 2,
   };
 }
 
-function centerRight(d) {
+function centerRight(d: ProofTreeNode): XY {
   return {
     "x": d.cX + d.width + centerRightOffset,
-    "y": d.cY + d.height / 2
+    "y": d.cY + d.height / 2,
   };
 }
+
+/*
+Right now this code doesn't make sense anymore, even type-wise the last
+lines return an object of lists. Disabled for now.
+*/
 
 /*
   This might be terrible design, but [spotTheDifference] currently marks inline
   diffs through CSS background-color. It's much more stable than using
   rectangles when animated.
  */
-function spotTheDifferences(before, after) {
-
-  function rec(before, after) {
-
-    let nbBefore = before.children().length;
-    let nbAfter = after.children().length;
-    if (nbBefore !== nbAfter) {
-      return [{
-        "removed": before,
-        "added": after,
-      }];
-    }
-
-    let nbChildren = nbBefore;
-    if (nbChildren === 0) { // both leaves
-      if (before.html() !== after.html()) {
-        return [{
-          "removed": before,
-          "added": after,
-        }];
-      } else {
-        return [];;
-      }
-    }
-
-    let everyChildChanged = true;
-
-    let childrenChanges = _.range(nbChildren).reduce(function(acc, i) {
-      let tmp = rec($(before.children()[i]), $(after.children()[i]));
-      if (tmp.length === 0) { everyChildChanged = false; }
-      return acc.concat(tmp);
-    }, [])
-      ;
-
-    if (everyChildChanged) {
-      return [{
-        "removed": before,
-        "added": after,
-      }];
-    } else {
-      return childrenChanges;
-    }
-
-  }
-
-  let removed = [];
-  let added = [];
-
-  _(rec($(before).children(), $(after).children())).each(function(pair, ndx) {
-    pair.removed.css("background-color", diffColor(ndx));
-    pair.added.css("background-color", diffColor(ndx));
-    //removed.push(pair.removed);
-    //added.push(pair.added);
-  });
-
-  return { "removed": removed, "added": added };
-}
+// function spotTheDifferences(before: JQuery, after: JQuery) {
+//
+//   function rec(before, after) {
+//
+//     let nbBefore = before.children().length;
+//     let nbAfter = after.children().length;
+//     if (nbBefore !== nbAfter) {
+//       return [{
+//         "removed": before,
+//         "added": after,
+//       }];
+//     }
+//
+//     let nbChildren = nbBefore;
+//     if (nbChildren === 0) { // both leaves
+//       if (before.html() !== after.html()) {
+//         return [{
+//           "removed": before,
+//           "added": after,
+//         }];
+//       } else {
+//         return [];;
+//       }
+//     }
+//
+//     let everyChildChanged = true;
+//
+//     let childrenChanges = _.range(nbChildren).reduce(function(acc, i) {
+//       let tmp = rec($(before.children()[i]), $(after.children()[i]));
+//       if (tmp.length === 0) { everyChildChanged = false; }
+//       return acc.concat(tmp);
+//     }, [])
+//       ;
+//
+//     if (everyChildChanged) {
+//       return [{
+//         "removed": before,
+//         "added": after,
+//       }];
+//     } else {
+//       return childrenChanges;
+//     }
+//
+//   }
+//
+//   let removed = [];
+//   let added = [];
+//
+//   _(rec($(before).children(), $(after).children())).each(function(pair, ndx) {
+//     pair.removed.css("background-color", diffColor(ndx));
+//     pair.added.css("background-color", diffColor(ndx));
+//     //removed.push(pair.removed);
+//     //added.push(pair.added);
+//   });
+//
+//   return { "removed": removed, "added": added };
+// }

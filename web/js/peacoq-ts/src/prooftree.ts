@@ -110,7 +110,7 @@ class ProofTree {
         // in order to trick d3 into displaying tactics better add fake
         // children to tactic nodes that solve their goal
         if (node instanceof TacticGroupNode && viewChildren.length === 0) {
-          return [new FakeNode()];
+          return [new FakeNode(self, node)];
         }
         return viewChildren;
       })
@@ -125,6 +125,12 @@ class ProofTree {
 
     this.diagonal = d3.svg
       .diagonal<ProofTreeNode>()
+      .source((d: ProofTreeLink, i: number) => {
+        return swapXY(centerRight(d.source));
+      })
+      .target((d: ProofTreeLink, i: number) => {
+        return swapXY(centerLeft(d.target));
+      })
       .projection(function(d) { return [d.y, d.x]; })
       ;
 
@@ -231,13 +237,13 @@ class ProofTree {
           // obvious...
           let hrDelta = curNode.html[0].offsetTop - d.html[0].offsetTop;
           this.descendantsOffset = (
-            this.yFactor * (nodeY(curNode) - nodeY(centeredDescendant))
+            this.yFactor * (nodeY(curNode) - nodeY(d))
             - (curNode.height - d.height) / 2
             + hrDelta
           );
         } else {
           this.descendantsOffset =
-            this.yFactor * (nodeY(curNode) - nodeY(centeredDescendant))
+            this.yFactor * (nodeY(curNode) - nodeY(d))
             ;
         }
       }
@@ -287,8 +293,8 @@ class ProofTree {
     cSiblings.pop();
     // also, the current node should not overlap its siblings
     let currentSiblings = [];
-    if (this.curNode instanceof GoalNode && hasParent(this.curNode)) {
-      let curNodeSiblings = _(fromJust(this.curNode.parent).getViewChildren());
+    if (this.curNode instanceof GoalNode && this.curNode.hasParent()) {
+      let curNodeSiblings = _(fromJust(this.curNode.getParent()).getViewChildren());
       currentSiblings = _.zip(
         curNodeSiblings.value(),
         curNodeSiblings.tail().value()
@@ -416,9 +422,9 @@ class ProofTree {
       case 37: // Left
         //case 65: // a
         ev.preventDefault();
-        if (hasParent(curNode)) {
+        if (curNode.hasParent()) {
           //asyncLog("LEFT " + nodeString(curNode.parent));
-          fromJust(curNode.parent).click();
+          fromJust(curNode.getParent()).click();
         } else {
           // when at the root node, undo the last action (usually Proof.)
           //onCtrlUp(false);
@@ -544,8 +550,8 @@ class ProofTree {
       .classed("tactic", (d) => d instanceof TacticGroupNode)
       .attr("width", function(d) { return d.width; })
       .attr("height", function(d) { return d.height; })
-      .attr("x", function(d) { return d.cX0; })
-      .attr("y", function(d) { return d.cY0; })
+      .attr("x", (d) => d.originalScaledX)
+      .attr("y", (d) => d.originalScaledY)
       .attr("rx", function(d) { return d instanceof GoalNode ? 0 : 10; })
       ;
   }
@@ -960,22 +966,22 @@ class ProofTree {
           d.getParent().caseOf({
             nothing: () => {
               // the root needs to spawn somewhere arbitrary: (0, 0.5)
-              d.cX0 = self.xOffset(d);
-              d.cY0 = 0.5 * self.yFactor + self.yOffset(d);
+              d.originalScaledX = self.xOffset(d);
+              d.originalScaledY = 0.5 * self.yFactor + self.yOffset(d);
             },
             just: (p) => {
               // non-roots are spawned at their parent's (cX0, cY0)
-              d.cX0 = p.cX0;
-              d.cY0 = p.cY0;
+              d.originalScaledX = p.originalScaledX;
+              d.originalScaledY = p.originalScaledY;
             },
           });
-          if (hasParent(d)) {
+          if (d.hasParent()) {
           } else {
 
           }
-          return d.cX0;
+          return d.originalScaledX;
         })
-        .attr("y", function(d, ndx) { return d.cY0; })
+        .attr("y", function(d, ndx) { return d.originalScaledY; })
         ;
 
       textSelection
@@ -1010,7 +1016,7 @@ class ProofTree {
         .duration(animationDuration)
         .attr("x", function(d) {
           // in general, nodes should move towards the parent goal node
-          if (!hasParent(d) || self.isRootNode(d)) {
+          if (!d.hasParent() || self.isRootNode(d)) {
             return d.cX;
           }
           if (d instanceof GoalNode) {
@@ -1040,7 +1046,7 @@ class ProofTree {
         .style("stroke-width", function(d) {
           return self.isCurNode(d) ? "4px" : "";
         })
-        .classed("solved", function(d) { return d.solved; })
+        .classed("solved", function(d) { return d.isSolved(); })
         .transition()
         .duration(animationDuration)
         .style("opacity", "1")
@@ -1065,17 +1071,18 @@ class ProofTree {
         .append("path")
         .classed("link", true)
         .attr("d",
-        (d) => {
-          let src = swapXY(centerRight0(d.source));
-          let tgt = swapXY(centerLeft0(d.target));
-          return self.diagonal({ "source": src, "target": tgt });
+        (d: ProofTreeLink) => {
+          //let src = swapXY(centerRight0(d.source));
+          //let tgt = swapXY(centerLeft0(d.target));
+          //return self.diagonal({ "source": src, "target": tgt });
+          return self.diagonal({ "source": d.source, "target": d.target });
         })
         .attr("stroke",
-        (d) => {
+        (d: ProofTreeLink) => {
           let t = d.target;
           if (
             t instanceof TacticGroupNode
-            && t.getFocusedTactic().goals.length === 0
+            && fromJust(t.getFocusedTactic()).goals.length === 0
           ) {
             return "#00FF00";
           } else {
@@ -1090,9 +1097,7 @@ class ProofTree {
         .style("opacity", 1)
         .attr("d",
         (d) => {
-          let src = swapXY(centerRight(d.source));
-          let tgt = swapXY(centerLeft(d.target));
-          return self.diagonal({ "source": src, "target": tgt });
+          return self.diagonal({ "source": d.source, "target": d.target });
         })
         .attr("stroke-width", self.linkWidth.bind(self))
         ;
@@ -1101,9 +1106,7 @@ class ProofTree {
         .transition()
         .duration(animationDuration)
         .attr("d", function(d) {
-          let src = swapXY(centerRight(d.source));
-          let tgt = swapXY(centerLeft(d.target));
-          return self.diagonal({ "source": src, "target": tgt });
+          return self.diagonal({ "source": d.source, "target": d.target });
         })
         .style("opacity", "0")
         .remove()
@@ -1510,7 +1513,7 @@ class ProofTree {
       // refocus the viewport
 
       self.viewportX = - (
-        curNode.parent.caseOf({
+        curNode.getParent().caseOf({
           // TODO: could do some math to align it the same way
           nothing: () => curNode.cX,
           just: (p) => p.cX,
@@ -1543,8 +1546,8 @@ class ProofTree {
       _(nodes).each(function(d) {
         d.x0 = d.x;
         d.y0 = d.y;
-        d.cX0 = d.cX;
-        d.cY0 = d.cY;
+        d.originalScaledX = d.cX;
+        d.originalScaledY = d.cY;
       });
 
       //this.updateDebug();
@@ -1579,8 +1582,10 @@ class ProofTree {
     // all tactic nodes are shifted such that the current tactic is centered
     //assert(isGoal(this.curNode), "yOffset assumes the current node is a goal!");
     if (this.isCurGoalChild(d)) {
-      assert(focusedChild !== undefined, "yOffset: focusedChild === undefined");
-      return offset + (nodeY(d.getParent()) - nodeY(focusedChild)) * this.yFactor;
+      //assert(focusedChild !== undefined, "yOffset: focusedChild === undefined");
+      return offset + (
+        nodeY(fromJust(d.getParent())) - nodeY(fromJust(focusedChild))
+      ) * this.yFactor;
     }
 
     // all goal grandchildren are shifted such that the context line of the

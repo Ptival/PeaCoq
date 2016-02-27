@@ -6,6 +6,7 @@ class EditMarker {
   stopPos: AceAjax.Position;
 
   constructor(doc: CoqDocument, start: AceAjax.Position, stop: AceAjax.Position) {
+    this.document = doc;
     this.startPos = start;
     this.stopPos = stop;
     this.markerRange = new AceRange(start.row, start.column, stop.row, stop.column);

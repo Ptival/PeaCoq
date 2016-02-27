@@ -13,7 +13,7 @@ class TacticGroupNode extends ProofTreeNode {
     parent: GoalNode,
     name: string
   ) {
-    super(proofTree, just(<ProofTreeNode>parent));
+    super(proofTree, just(parent));
     this.name = name;
     this.parent = parent;
     this.solved = false;
@@ -43,9 +43,12 @@ class TacticGroupNode extends ProofTreeNode {
     return just(viewChildren[this.tactics[this.tacticIndex].goalIndex]);
   }
 
-  getFocusedTactic(): Tactic {
-    if (this.tactics.length === 0) { return undefined; }
-    return this.tactics[this.tacticIndex];
+  getFocusedTactic(): Maybe<Tactic> {
+    return (
+      this.tactics.length === 0
+        ? nothing()
+        : just(this.tactics[this.tacticIndex])
+    );
   }
 
   getParent(): Maybe<GoalNode> { return just(this.parent); }
@@ -55,20 +58,23 @@ class TacticGroupNode extends ProofTreeNode {
   }
 
   getViewChildren(): GoalNode[] {
-    if (this.isSolved) { return []; }
+    if (this.isSolved()) { return []; }
     if (this.tactics.length === 0) { return []; }
     let focusedTactic = this.tactics[this.tacticIndex];
     return focusedTactic.goals;
   }
 
   isSolved(): boolean {
-    return this.getFocusedTactic().isSolved();
+    return this.getFocusedTactic().caseOf({
+      nothing: () => false,
+      just: (t) => t.isSolved(),
+    });
   }
 
   nodeWidth(): number { return this.proofTree.getTacticWidth(); }
 
   onChildSolvedAndUnfocused(): void {
-    let focusedTactic = this.getFocusedTactic();
+    let focusedTactic = fromJust(this.getFocusedTactic());
     let unsolved = _(focusedTactic.goals)
       .find(function(elt) {
         return !elt.solved;

@@ -1,9 +1,9 @@
 
 abstract class ProofTreeNode {
-  cX: number;
-  cX0: number;
-  cY: number;
-  cY0: number;
+  private _cX: number;
+  private cX0: number;
+  private _cY: number;
+  private cY0: number;
   depth: number;
   height: number;
   id: string;
@@ -26,9 +26,52 @@ abstract class ProofTreeNode {
   }
 
   abstract click(): void;
+
+  get cX(): number {
+    if (this._cX === undefined) {
+      throw this;
+    }
+    return this._cX;
+  }
+  set cX(x: number) {
+    this._cX = x;
+  }
+  get cY(): number {
+    if (this._cY === undefined) {
+      throw this;
+    }
+    return this._cY;
+  }
+  set cY(y: number) {
+    this._cY = y;
+  }
+
   abstract getAllDescendants(): ProofTreeNode[];
   abstract getAllGoalDescendants(): GoalNode[];
   abstract getFocusedChild(): Maybe<ProofTreeNode>;
+
+  get originalScaledX(): number {
+    if (this.cX0 === undefined) {
+      throw this;
+    }
+    return this.cX0;
+  }
+
+  set originalScaledX(x: number) {
+    this.cX0 = x;
+  }
+
+  get OriginalScaledY(): number {
+    if (this.cY0 === undefined) {
+      throw this;
+    }
+    return this.cY0;
+  }
+
+  set originalScaledY(x: number) {
+    this.cY0 = x;
+  }
+
   abstract getParent(): Maybe<ProofTreeNode>;
   abstract getViewChildren(): ProofTreeNode[];
 
@@ -38,8 +81,14 @@ abstract class ProofTreeNode {
         .map(function(e) { return e.getViewChildren(); })
         .flatten<ProofTreeNode>(true)
         .value()
-      );
+    );
   }
+
+  hasGrandParent(): boolean {
+    return this.hasParentSuchThat((p) => p.hasParent());
+  }
+
+  hasParent(): boolean { return this.hasParentSuchThat(() => true); }
 
   hasParentSuchThat(pred: (_1: ProofTreeNode) => boolean): boolean {
     return this.getParent().caseOf({

@@ -173,8 +173,8 @@ function emptyRect0(node: ProofTreeNode, currentY: number): Rectangle {
   let delta = 1; // how big to make the empty rectangle
   return $.extend(
     {
-      "left": node.cX0,
-      "right": node.cX0 + node.width,
+      "left": node.originalScaledX,
+      "right": node.originalScaledY + node.width,
       "width": node.width
     },
     {

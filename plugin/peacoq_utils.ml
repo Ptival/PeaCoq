@@ -30,8 +30,8 @@ let mk_new s =
 let string_of_option string_of_elt o =
   mk_new (
       match o with
-      | None -> "None()"
-      | Some(elt) -> "Some(" ^ string_of_elt elt ^ ")"
+      | None -> "nothing()"
+      | Some(elt) -> "just(" ^ string_of_elt elt ^ ")"
     )
 
 let string_of_inductive (mi, i) =

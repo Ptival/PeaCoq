@@ -1,4 +1,5 @@
 class GoalNode extends ProofTreeNode {
+  // DO NOT USE "children" AS D3 WILL OVERWRITE
   closedBraces: number;
   //gid: number;
   goal: PeaCoqGoal;
@@ -10,7 +11,8 @@ class GoalNode extends ProofTreeNode {
   //ndx: number;
   openBraces: number;
   //parentTactic: TacticNode;
-  parent: Maybe<TacticGroupNode>;
+  // DO NOT USE "parent" AS D3 WILL OVERWRITE
+  private parentGroup: Maybe<TacticGroupNode>;
   solved: boolean;
   stateIds: number[];
   tacticGroups: TacticGroupNode[];
@@ -26,7 +28,7 @@ class GoalNode extends ProofTreeNode {
       .append(this.goal.getHTML())
       ;
     this.openBraces = 0;
-    this.parent = parent;
+    this.parentGroup = parent;
     this.solved = false;
     this.stateIds = [];
     this.tacticGroups = [];
@@ -75,13 +77,13 @@ class GoalNode extends ProofTreeNode {
   }
 
   getGrandParent(): Maybe<GoalNode> {
-    return this.parent.caseOf({
+    return this.parentGroup.caseOf({
       nothing: () => nothing(),
       just: (p: TacticGroupNode) => just(p.parent),
     });
   }
 
-  getParent(): Maybe<ProofTreeNode> { return this.parent; }
+  getParent(): Maybe<TacticGroupNode> { return this.parentGroup; }
 
   getTactics(): Tactic[] {
     return _(this.tacticGroups)
@@ -132,7 +134,7 @@ class GoalNode extends ProofTreeNode {
 
   onSolved(): void {
     if (this.openBraces === this.closedBraces) {
-      this.parent.caseOf({
+      this.parentGroup.caseOf({
         nothing: () => {
           if (autoLayout) {
             //proofTreeQueryWish('Qed.');

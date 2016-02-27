@@ -186,14 +186,14 @@ class Goal {
 
 }
 
-type BeforeAfter = {
-  before: Array<Goal>;
-  after: Array<Goal>;
+type GoalBeforeAfter = {
+  before: Goal[];
+  after: Goal[];
 };
 
 class Goals {
   fgGoals: Array<Goal>;
-  bgGoals: Array<BeforeAfter>;
+  bgGoals: Array<GoalBeforeAfter>;
   shelvedGoals: Array<Goal>;
   givenUpGoals: Array<Goal>;
 

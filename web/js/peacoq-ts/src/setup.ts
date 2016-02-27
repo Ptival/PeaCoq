@@ -177,7 +177,7 @@ function proofTreeOnGetContext(c: PeaCoqContext): void {
   // we only create GoalNodes if this is the root or if a tactic has been ran
   if (activeProofTree.rootNode === undefined) {
     assert(c.length === 1, "proofTreeOnGetContext: c.length === 1");
-    let g = new GoalNode(activeProofTree, undefined, c[0]);
+    let g = new GoalNode(activeProofTree, nothing(), c[0]);
     assert(activeProofTree.rootNode !== undefined, "proofTreeOnGetContext: new GoalNode should set rootNode");
     g.stateIds.push(lastStateId);
     activeProofTree.curNode = g;
