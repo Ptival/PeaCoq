@@ -46,7 +46,7 @@ class ProofTree {
   clientState: Object;
   curNode: GoalNode;
   descendantsOffset: number;
-  diagonal: d3.svg.Diagonal<ProofTreeLink, ProofTreeNode>;
+  //diagonal: d3.svg.Diagonal<ProofTreeLink, ProofTreeNode>;
   height: number;
   name: string;
   onEndProcessing: () => void;
@@ -121,17 +121,6 @@ class ProofTree {
         // for tactics without children
         return 1 / (1 + (d.depth * d.depth * d.depth));
       })
-      ;
-
-    this.diagonal = d3.svg
-      .diagonal<ProofTreeNode>()
-      .source((d: ProofTreeLink, i: number) => {
-        return swapXY(centerRight(d.source));
-      })
-      .target((d: ProofTreeLink, i: number) => {
-        return swapXY(centerLeft(d.target));
-      })
-      .projection(function(d) { return [d.y, d.x]; })
       ;
 
     d3.select("body")
@@ -1074,7 +1063,7 @@ class ProofTree {
           //let src = swapXY(centerRight0(d.source));
           //let tgt = swapXY(centerLeft0(d.target));
           //return self.diagonal({ "source": src, "target": tgt });
-          return self.diagonal({ "source": d.source, "target": d.target });
+          return diagonal0({ "source": d.source, "target": d.target });
         })
         .attr("stroke",
         (d: ProofTreeLink) => {
@@ -1096,7 +1085,7 @@ class ProofTree {
         .style("opacity", 1)
         .attr("d",
         (d) => {
-          return self.diagonal({ "source": d.source, "target": d.target });
+          return diagonal({ "source": d.source, "target": d.target });
         })
         .attr("stroke-width", self.linkWidth.bind(self))
         ;
@@ -1105,7 +1094,7 @@ class ProofTree {
         .transition()
         .duration(animationDuration)
         .attr("d", function(d) {
-          return self.diagonal({ "source": d.source, "target": d.target });
+          return diagonal({ "source": d.source, "target": d.target });
         })
         .style("opacity", "0")
         .remove()
@@ -1598,3 +1587,19 @@ class ProofTree {
   }
 
 }
+
+function mkDiagonal(cL, cR) {
+  return (d3.svg
+    .diagonal<ProofTreeNode>()
+    .source((d: ProofTreeLink, i: number) => {
+      return swapXY(cR(d.source));
+    })
+    .target((d: ProofTreeLink, i: number) => {
+      return swapXY(cL(d.target));
+    })
+    .projection(function(d) { return [d.y, d.x]; })
+  );
+}
+
+let diagonal0 = mkDiagonal(centerLeft0, centerRight0);
+let diagonal = mkDiagonal(centerLeft, centerRight);
