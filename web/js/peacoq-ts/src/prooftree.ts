@@ -312,7 +312,6 @@ class ProofTree {
       .value()
       ;
     this.yFactor = _.isEmpty(yFactors) ? this.height : _.max(yFactors);
-
   }
 
   findOrCreateGroup(goalNode: GoalNode, groupName: string): TacticGroupNode {
@@ -1520,7 +1519,7 @@ class ProofTree {
         })
       );
 
-      self.viewportY = (curNode.cY + curNode.height / 2 - self.height / 2);
+      self.viewportY = - (curNode.cY + curNode.height / 2 - self.height / 2);
       // - (
       //   curNode instanceof GoalNode
       //     ? (curNode.cY + curNode.height / 2 - self.height / 2)

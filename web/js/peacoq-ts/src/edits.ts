@@ -81,8 +81,12 @@ class ProcessedEdit {
 
   getStopPosition(): AceAjax.Position { return this.marker.stopPos; }
 
-  remove(): void {
+  onRemove(): void {
     this.marker.remove();
+  }
+
+  remove(): void {
+    this.onRemove();
     _.remove(this.document.edits, this);
   }
 

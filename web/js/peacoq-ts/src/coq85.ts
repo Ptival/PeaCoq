@@ -70,7 +70,7 @@ class CoqDocument {
       let toBeRemoved = predicate(e);
       if (toBeRemoved) {
         if (beforeRemoval) { beforeRemoval(e); }
-        e.remove();
+        e.onRemove();
       }
       return toBeRemoved;
     });
@@ -117,12 +117,6 @@ function parentHeight(): string {
 
 function halfParentHeight(): string {
   return (parseInt($(this).parent().css("height"), 10) / 2) + "px";
-}
-
-function setupNavigation() {
-  $("a[href=#pretty-tab]").click();
-  //$("a[href=#foreground-tab]").click();
-  $("a[href=#notices-tab]").click();
 }
 
 function resetCoqtop() {
@@ -379,8 +373,6 @@ function onNext(doc: CoqDocument): Promise<void> {
         return Promise.all<any>([s, g, c]).then(
           ([s, g, c]: [Status, Goals, PeaCoqContext]) => {
             let e = new ProcessedEdit(e2, sid, s, g, c);
-            //updateGoals(e);
-            //updatePretty(e);
             return Promise.resolve();
           });
       })
@@ -539,43 +531,12 @@ function sameBodyAndType(hyp1: HTMLElement, hyp2: HTMLElement): boolean {
   return true;
 }
 
-// function updatePretty(edit: ProcessedEdit): Promise<void> {
-//   let context = edit.context;
-//   // context can be empty (if you finished a focused subgoal)
-//   if (context.length === 0) {
-//     if (edit.status.statusProofName === null) {
-//       pretty.div.html("");
-//     }
-//     else if (countBackgroundGoals(edit.goals) > 0) {
-//       pretty.div.html("Subgoal solved, but background goals remain.");
-//     } else {
-//       pretty.div.html("All subgoals solved!");
-//     }
-//     return Promise.resolve();
-//   }
-//
-//   pretty.div.html("");
-//   let currentGoal = context[0];
-//   pretty.div.append(currentGoal.getHTML());
-// }
-
 function countBackgroundGoals(goals: Goals): number {
   return _.reduce(
     goals.bgGoals,
     (acc, elt) => acc + elt.before.length + elt.after.length,
     0
   );
-}
-
-function updateGoals(edit: ProcessedEdit): void {
-  let goals = edit.goals;
-  $("#foreground-counter").text(" (" + goals.fgGoals.length + ")");
-  $("#background-counter").text(" (" + countBackgroundGoals(goals) + ")");
-  $("#shelved-counter").text(" (" + goals.shelvedGoals.length + ")");
-  $("#givenup-counter").text(" (" + goals.givenUpGoals.length + ")");
-  if (goals.fgGoals.length > 0) {
-    foreground.setValue(goals.fgGoals[0].toString(), false);
-  }
 }
 
 function onLoad(text) {
@@ -601,30 +562,6 @@ function loadLocal() {
   $("#filepicker").click();
 }
 
-// function addLoadLocal(buttonGroup) {
-//   $("<input>", {
-//     "id": "filepicker",
-//     "type": "file",
-//     "style": "display: none;",
-//   }).appendTo(buttonGroup);
-//
-//   $("#filepicker").on("change", function() {
-//     // TODO: warning about resetting Coq/saving file
-//     loadFile();
-//     $(this).val(""); // forces change when same file is picked
-//   });
-//
-//   $("<button>", {
-//     "class": "btn btn-primary",
-//     "html": $("<span>")
-//       .append(mkGlyph("floppy-open"))
-//       .append(nbsp + "Load"),
-//     "id": "load-local-button",
-//   })
-//     .appendTo(buttonGroup)
-//     .on("click", loadLocal);
-// }
-
 function saveLocal() {
   let editor = coqDocument.editor;
   let text = editor.getValue();
@@ -633,86 +570,6 @@ function saveLocal() {
   $("#save-local-link").attr("href", url);
   $("#save-local-link")[0].click();
   editor.focus();
-}
-
-// function addSaveLocal(buttonGroup) {
-//
-//   $("<button>", {
-//     "class": "btn btn-primary",
-//     "id": "save-local-button",
-//     "html": $("<span>")
-//       .append(mkGlyph("floppy-save"))
-//       .append(nbsp + "Save"),
-//   })
-//     .appendTo(buttonGroup)
-//     .on("click", saveLocal)
-//     ;
-//
-//   $("<a>", {
-//     "download": "output.v",
-//     "id": "save-local-link",
-//   })
-//     .css("display", "none")
-//     .appendTo(buttonGroup)
-//     ;
-//
-// }
-
-function mkGlyph(name) {
-  return $("<i>", {
-    "class": "glyphicon glyphicon-" + name,
-  });
-}
-
-function addNext(buttonGroup) {
-  $("<button>", {
-    "id": "next",
-    "class": "btn btn-primary",
-  })
-    .appendTo(buttonGroup)
-    .on("click", function() {
-      onNext(coqDocument);
-    })
-    .append(mkGlyph("arrow-down"))
-    .append(nbsp + "Next");
-}
-
-function addDebug(buttonGroup) {
-  $("<button>", {
-    "id": "debug",
-    "class": "btn btn-primary",
-  })
-    .appendTo(buttonGroup)
-    .on("click", function() {
-      // Do nothing
-    })
-    .append("Debug: ");
-}
-
-function addPrevious(buttonGroup) {
-  $("<button>", {
-    "id": "previous",
-    "class": "btn btn-primary",
-  })
-    .appendTo(buttonGroup)
-    .on("click", function() {
-      onPrevious(coqDocument);
-    })
-    .append(mkGlyph("arrow-up"))
-    .append(nbsp + "Prev");
-}
-
-function addGoToCaret(buttonGroup) {
-  $("<button>", {
-    "id": "to-caret",
-    "class": "btn btn-primary",
-  })
-    .appendTo(buttonGroup)
-    .on("click", function() {
-      onGotoCaret(coqDocument);
-    })
-    .append(mkGlyph("arrow-right"))
-    .append(nbsp + "To Caret");
 }
 
 let delimiters = ["."];
@@ -949,13 +806,6 @@ function mkAnchor(
   return a;
 }
 
-/*
-function rmAnchor(doc: CoqDocument, a: Anchor) {
-  a.anchor.detach();
-  doc.session.removeMarker(a.marker.id);
-}
-*/
-
 function isAfter(pos1: AceAjax.Position, pos2: AceAjax.Position): boolean {
   if (pos1.row > pos2.row) { return true; }
   if (pos1.row < pos2.row) { return false; }
@@ -1055,7 +905,3 @@ function setupEditor(e: AceAjax.Editor) {
   });
 
 }
-
-function focusProofTreeUI() { throw "TODO"; }
-function getToprove(): string { throw "TODO"; }
-function studyTactics(pt: ProofTree) { throw "TODO"; }
