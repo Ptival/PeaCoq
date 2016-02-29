@@ -9,7 +9,6 @@ abstract class ProofTreeNode {
   id: string;
   label: string;
   proofTree: ProofTree;
-  response: any; // TODO: remove this
   width: number;
   x: number;
   x0: number;

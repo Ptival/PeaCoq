@@ -244,7 +244,7 @@ class ProofTree {
     let curGoal = this.curGoal();
     let visibleChildren = _(curGoal.getViewChildren());
     let visibleGrandChildren = _(curGoal.getViewGrandChildren());
-    let emptyNodeArray: Array<ProofTreeNode> = [];
+    let emptyNodeArray: ProofTreeNode[] = [];
     let visibleNodes = _(emptyNodeArray);
     curGoal.getParent().fmap((p) => {
       visibleNodes = visibleNodes.concat([p]);

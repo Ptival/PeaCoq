@@ -131,7 +131,7 @@ type PeaCoqHyp = {
   type: ConstrExpr;
 };
 
-type PeaCoqContext = Array<PeaCoqGoal>;
+type PeaCoqContext = PeaCoqGoal[];
 
 type GetContextHandler = (r: PeaCoqContext) => void;
 
@@ -165,7 +165,7 @@ function peaCoqGetContext(): Promise<PeaCoqContext> {
 
 class Goal {
   goalId: number;
-  goalHyp: Array<string>;
+  goalHyp: string[];
   goalCcl: string;
 
   constructor(g: [string, string[], string]) {
@@ -192,10 +192,10 @@ type GoalBeforeAfter = {
 };
 
 class Goals {
-  fgGoals: Array<Goal>;
-  bgGoals: Array<GoalBeforeAfter>;
-  shelvedGoals: Array<Goal>;
-  givenUpGoals: Array<Goal>;
+  fgGoals: Goal[];
+  bgGoals: GoalBeforeAfter[];
+  shelvedGoals: Goal[];
+  givenUpGoals: Goal[];
 
   constructor(maybeGoals) {
     if (!maybeGoals) {
@@ -270,7 +270,7 @@ function peaCoqPrintAST(sid: number): Promise<CoqXMLTree> {
 }
 
 class Status {
-  statusPath: Array<string>;
+  statusPath: string[];
   statusProofName: string;
   statusAllProofs: string;
   statusProofNum: number;
@@ -458,7 +458,7 @@ class ProcessingIn extends FeedbackContent {
 
 class CoqXMLTree {
   rootLabel: LocatedCoqXMLTag;
-  subForest: Array<CoqXMLTree>;
+  subForest: CoqXMLTree[];
   constructor(t) {
     this.rootLabel = new LocatedCoqXMLTag(t[0]);
     this.subForest = _(t[1]).map(function(t) {

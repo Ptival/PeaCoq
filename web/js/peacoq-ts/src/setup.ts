@@ -155,9 +155,6 @@ function proofTreeOnEditAt(sid: number): void {
   if (target) {
     activeProofTree.curNode = target;
     activeProofTree.update();
-    if (activeProofTree.tacticWaitingForContext) {
-      throw "TODO: proofTreeOnEditAt tactic waiting to be cleared";
-    }
   } else {
     proofTrees = [];
     hideProofTreePanel();
