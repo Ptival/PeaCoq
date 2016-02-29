@@ -61,7 +61,7 @@ abstract class ProofTreeNode {
     this.cX0 = x;
   }
 
-  get OriginalScaledY(): number {
+  get originalScaledY(): number {
     if (this.cY0 === undefined) {
       throw this;
     }

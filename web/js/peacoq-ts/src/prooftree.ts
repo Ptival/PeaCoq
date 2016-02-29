@@ -963,10 +963,6 @@ class ProofTree {
               d.originalScaledY = p.originalScaledY;
             },
           });
-          if (d.hasParent()) {
-          } else {
-
-          }
           return d.originalScaledX;
         })
         .attr("y", function(d, ndx) { return d.originalScaledY; })
