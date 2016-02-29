@@ -44,7 +44,7 @@ class ProofTree {
   anchor: d3.Selection<HTMLElement>;
   /* whatever the client wants to store as meta-data */
   clientState: Object;
-  curNode: GoalNode;
+  private _curNode: GoalNode;
   descendantsOffset: number;
   //diagonal: d3.svg.Diagonal<ProofTreeLink, ProofTreeNode>;
   height: number;
@@ -59,7 +59,8 @@ class ProofTree {
   svgId: string;
   tactics: () => TacticGroup[];
   tacticsWorklist: WorklistItem[];
-  tacticWaitingForContext: Tactic;
+  tacticWaiting: Maybe<string>;
+  //tacticWaitingForContext: Maybe<TacticWaiting>;
   tree: d3.layout.Tree<ProofTreeNode>;
   viewportX: number;
   viewportY: number;
@@ -99,6 +100,7 @@ class ProofTree {
     this.yFactor = this.height;
     this.clientState = {};
     this.usingKeyboard = true; // true until the user moves their mouse
+    this.tacticWaiting = nothing();
 
     this.tree = d3.layout.tree<ProofTreeNode>()
       .children((node: ProofTreeNode, index: number) => {
@@ -106,7 +108,7 @@ class ProofTree {
         // childrenless nodes appropriately
         if (node instanceof FakeNode) { return []; }
         let viewChildren = node.getViewChildren();
-        if (viewChildren === undefined) { throw node; }
+        if (viewChildren === undefined) { throw ["children", node]; }
         // in order to trick d3 into displaying tactics better add fake
         // children to tactic nodes that solve their goal
         if (node instanceof TacticGroupNode && viewChildren.length === 0) {
@@ -301,6 +303,12 @@ class ProofTree {
       .value()
       ;
     this.yFactor = _.isEmpty(yFactors) ? this.height : _.max(yFactors);
+  }
+
+  get curNode(): GoalNode { return this._curNode; }
+  set curNode(n: GoalNode) {
+    console.log("CHANGING CURNODE");
+    this._curNode = n;
   }
 
   findOrCreateGroup(goalNode: GoalNode, groupName: string): TacticGroupNode {
@@ -728,7 +736,7 @@ class ProofTree {
         self.update();
       }
     } else {
-      throw n;
+      throw ["shiftNextByTacticGroup", n];
     }
   }
 
@@ -743,7 +751,7 @@ class ProofTree {
         self.update();
       }
     } else {
-      throw n;
+      throw ["shiftPrevByTacticGroup", n];
     }
   }
 

@@ -1,16 +1,26 @@
+// class TacticWaiting {
+//   addReturn: AddReturn;
+//   parentGroup: TacticGroupNode;
+//   tactic: string;
+//
+//   constructor(tactic: string, parentGroup: TacticGroupNode, addReturn: AddReturn) {
+//     this.addReturn = addReturn;
+//     this.parentGroup = parentGroup;
+//     this.tactic = tactic;
+//   }
+// }
+
 class Tactic {
+  //addReturn: AddReturn;
   goalIndex: number;
   goals: GoalNode[];
   parentGroup: TacticGroupNode;
   tactic: string;
 
-  constructor(
-    tactic: string,
-    parentGroup: TacticGroupNode,
-    addReturn: AddReturn
-  ) {
+  constructor(tactic: string, parentGroup: TacticGroupNode, goals: GoalNode[]) {
+    //this.addReturn = waiting.addReturn;
     this.goalIndex = 0;
-    this.goals = [];
+    this.goals = goals;
     this.parentGroup = parentGroup;
     this.tactic = tactic;
 

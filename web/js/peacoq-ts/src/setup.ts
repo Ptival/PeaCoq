@@ -99,28 +99,30 @@ function proofTreeOnAdd(s: string, r: AddReturn): void {
     return;
   }
 
-  if (curNode instanceof GoalNode) {
-    let existingTactic = _(curNode.getTactics())
-      .find(function(elt) { return elt.tactic === coqTrim(s); })
-      ;
-    if (existingTactic === undefined) {
-      let tg = new TacticGroupNode(activeProofTree, curNode, "");
-      curNode.tacticGroups.push(tg);
-      let t = new Tactic(coqTrim(s), tg, r);
-      activeProofTree.tacticWaitingForContext = t;
-      tg.tactics.push(t);
-      activeProofTree.update();
-    } else {
-      activeProofTree.tacticWaitingForContext = existingTactic;
-      activeProofTree.update()
-        .then(() => {
-          let unsolvedGoal = _(existingTactic.goals).find((elt) => elt.isSolved());
-          if (unsolvedGoal === undefined) {
-            existingTactic.parentGroup.onSolved();
-          }
-        });
-    }
-  }
+  activeProofTree.tacticWaiting = just(trimmed);
+
+  //
+  // if (curNode instanceof GoalNode) {
+  //   let existingTactic = _(curNode.getTactics())
+  //     .find(function(elt) { return elt.tactic === coqTrim(s); })
+  //     ;
+  //   if (existingTactic === undefined) {
+  //     let tg = new TacticGroupNode(activeProofTree, curNode, "");
+  //     curNode.tacticGroups.push(tg);
+  //     let t = new TacticWaiting(coqTrim(s), tg, r);
+  //     activeProofTree.tacticWaitingForContext = just(t);
+  //     activeProofTree.update();
+  //   } else {
+  //     activeProofTree.tacticWaitingForContext = existingTactic;
+  //     activeProofTree.update()
+  //       .then(() => {
+  //         let unsolvedGoal = _(existingTactic.goals).find((elt) => elt.isSolved());
+  //         if (unsolvedGoal === undefined) {
+  //           existingTactic.parentGroup.onSolved();
+  //         }
+  //       });
+  //   }
+  // }
 }
 
 /*
@@ -134,14 +136,7 @@ function proofTreeOnEditAt(sid: number): void {
   let curNode = activeProofTree.curNode;
 
   // clean up necessary for tactics waiting
-  if (activeProofTree.tacticWaitingForContext) {
-    let tac = activeProofTree.tacticWaitingForContext;
-    _.remove(tac.parentGroup.tactics, (t: Tactic) =>
-      tac.tactic === t.tactic
-    );
-    activeProofTree.tacticWaitingForContext = undefined;
-    activeProofTree.update();
-  }
+  activeProofTree.tacticWaiting = nothing();
 
   let ancestorGoals = curNode.getGoalAncestors();
   // first, get rid of all stored stateIds > sid
@@ -167,7 +162,6 @@ function proofTreeOnGetContext(c: PeaCoqContext): void {
   if (proofTrees.length === 0) { return; }
   let activeProofTree = proofTrees[0];
   let curNode = activeProofTree.curNode;
-  let tacticWaiting = activeProofTree.tacticWaitingForContext;
 
   if (lastStatus.statusProofName === null) { return; }
 
@@ -179,26 +173,45 @@ function proofTreeOnGetContext(c: PeaCoqContext): void {
     g.stateIds.push(lastStateId);
     activeProofTree.curNode = g;
     activeProofTree.update();
+    return;
   }
 
-  if (tacticWaiting) {
-    // FIRST clear tacticWaitingForContext
-    activeProofTree.tacticWaitingForContext = undefined;
-    if (c.length === 0) { // tactic solved the goal!
-      curNode.onSolved();
-      return;
-    } else {
-      let gs =
+  activeProofTree.tacticWaiting.caseOf({
+    nothing: () => { return; },
+    just: (tacticName) => {
+
+      // make sure to clear tacticWaiting
+      activeProofTree.tacticWaiting = nothing();
+
+      let tactic = _.find(curNode.getTactics(), (t) => t.tactic === tacticName);
+
+      let tacticGroup = tactic ? tactic.parentGroup : new TacticGroupNode(activeProofTree, curNode, "");
+
+      let goals =
         _(c).map(function(goal) {
-          return new GoalNode(activeProofTree, just(tacticWaiting.parentGroup), goal);
+          return new GoalNode(activeProofTree, just(tacticGroup), goal);
         }).value();
-      tacticWaiting.goals = gs;
-      let curGoal = gs[0];
-      curGoal.stateIds.push(lastStateId);
-      activeProofTree.curNode = curGoal;
-      activeProofTree.update();
+
+      if (!tactic) {
+        curNode.tacticGroups.push(tacticGroup);
+        tactic = new Tactic(tacticName, tacticGroup, goals);
+        tacticGroup.tactics.push(tactic);
+      } else {
+        tactic.goals = goals;
+      }
+
+      if (goals.length > 0) {
+        let curGoal = goals[0];
+        curGoal.stateIds.push(lastStateId);
+        activeProofTree.curNode = curGoal;
+        activeProofTree.update();
+      } else {
+        curNode.onChildSolved();
+      }
+
     }
-  }
+  });
+
 }
 
 function proofTreeOnStatus(s: Status): void {
