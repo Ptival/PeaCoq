@@ -35,6 +35,9 @@ class CoqDocument {
     this.edits = [];
     // WARNING: This line must stay over calls to mkAnchor
     this.session = editor.getSession();
+    this.session.on("change", (change) => {
+      killEditsAfterPosition(this, minPos(change.start, change.end));
+    });
     this.beginAnchor = mkAnchor(this, 0, 0, "begin-marker", true);
     this.endAnchor = mkAnchor(this, 0, 0, "end-marker", false);
   }
