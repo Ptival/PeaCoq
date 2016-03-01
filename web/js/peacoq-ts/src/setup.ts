@@ -91,8 +91,8 @@ function proofTreeOnEdit(
       function() { $("#loading").css("display", "none"); }
     );
     proofTrees.unshift(pt);
-    assert(context.length === 1, "proofTreeOnGetContext: c.length === 1");
-    let g = new GoalNode(pt, nothing(), context[0]);
+    assert(context.length === 1, "proofTreeOnGetContext: c.length === 1, c.length: " + context.length);
+    let g = new GoalNode(pt, nothing(), goals, context[0]);
     assert(pt.rootNode !== undefined, "proofTreeOnGetContext: new GoalNode should set rootNode");
     g.stateIds.push(stateId);
     pt.curNode = g;
@@ -125,11 +125,30 @@ function proofTreeOnEdit(
 
   let tactic: Tactic = _.find(curNode.getTactics(), (t) => t.tactic === trimmed);
 
-  let tacticGroup: TacticGroupNode = tactic ? tactic.parentGroup : new TacticGroupNode(activeProofTree, curNode, "");
+  let tacticGroup: TacticGroupNode = (
+    tactic
+    ? tactic.parentGroup
+    : new TacticGroupNode(activeProofTree, curNode, "")
+  );
+
+  /*
+  We need to figure out which foreground goals are relevant to this tactic node.
+  If the number of unfocused goals has changed by running the tactic, the tactic
+  must have solved the previous goal and the current foreground goals are the
+  remaining ones.
+  Otherwise, the delta foreground goals have been created by running the tactic.
+  */
+  let goalsBefore = curNode.goals;
+  let goalsAfter = goals;
+  let nbRelevantGoals =
+    goalsBefore.bgGoals.length === goalsAfter.bgGoals.length
+    ? goalsAfter.fgGoals.length - (goalsBefore.fgGoals.length - 1)
+    : 0;
+  let relevantGoals = context.slice(0, nbRelevantGoals);
 
   let goalNodes: GoalNode[] =
-    _(context).map(function(goal) {
-      return new GoalNode(activeProofTree, just(tacticGroup), goal);
+    _(relevantGoals).map(function(goal) {
+      return new GoalNode(activeProofTree, just(tacticGroup), goals, goal);
     }).value();
 
   if (!tactic) {

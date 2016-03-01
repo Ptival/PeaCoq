@@ -3,6 +3,7 @@ class GoalNode extends ProofTreeNode {
   closedBraces: number;
   //gid: number;
   goal: PeaCoqGoal;
+  goals: Goals;
   html: JQuery;
   nodeHTML: JQuery;
   //goalString: string;
@@ -18,11 +19,12 @@ class GoalNode extends ProofTreeNode {
   tacticGroups: TacticGroupNode[];
   tacticIndex: number;
 
-  constructor(proofTree: ProofTree, parent: Maybe<TacticGroupNode>, goal: PeaCoqGoal) {
+  constructor(proofTree: ProofTree, parent: Maybe<TacticGroupNode>, goals: Goals, goal: PeaCoqGoal) {
     super(proofTree, parent);
 
     this.closedBraces = 0;
     this.goal = goal;
+    this.goals = goals;
     this.html = $("<div>")
       .attr("id", _.uniqueId())
       .append(this.goal.getHTML())
