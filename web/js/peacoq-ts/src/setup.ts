@@ -65,64 +65,90 @@ $(document).ready(() => {
   setupSyntaxHovering();
   Theme.setupTheme();
 
-  peaCoqAddHandlers.push(proofTreeOnAdd);
-  peaCoqGetContextHandlers.push(proofTreeOnGetContext);
+  // peaCoqAddHandlers.push(proofTreeOnAdd);
+  // peaCoqGetContextHandlers.push(proofTreeOnGetContext);
   peaCoqEditAtHandlers.push(proofTreeOnEditAt);
-  //peaCoqGoalHandlers.push(proofTreeOnGoal);
-  peaCoqStatusHandlers.push(proofTreeOnStatus);
+  // peaCoqGoalHandlers.push(proofTreeOnGoal);
+  // peaCoqStatusHandlers.push(proofTreeOnStatus);
+  editHandlers.push(proofTreeOnEdit);
 });
 
-let lastStatus: Status = undefined;
-let lastStateId: number = undefined;
+function proofTreeOnEdit(
+  query: string, stateId: number, status: Status, goals: Goals,
+  context: PeaCoqContext
+): void {
 
-/*
-We only react to commands that look like tactics. For now, the
-heuristic is that it does not start with an uppercase character.
-To take into account the command, we lookup whether this command
-was expected (for instance, if the tree mode asked for it).
-If it already existed or was expected, nothing is done.
-If it was unexpected, let's create an empty, nameless group to hold it.
-*/
-function proofTreeOnAdd(s: string, r: AddReturn): void {
-
-  lastStateId = r.stateId;
+  // hopefully we are always at most 1 tree late
+  if (proofTrees.length + 1 === status.statusAllProofs.length) {
+    // we are behind on the number of proof trees, create one
+    showProofTreePanel(); // needs to be before for width/height
+    let pt = new ProofTree(
+      status.statusProofName,
+      $("#prooftree")[0],
+      $("#prooftree").parent().width(),
+      $("#prooftree").parent().height(),
+      function() { $("#loading").css("display", ""); },
+      function() { $("#loading").css("display", "none"); }
+    );
+    proofTrees.unshift(pt);
+    assert(context.length === 1, "proofTreeOnGetContext: c.length === 1");
+    let g = new GoalNode(pt, nothing(), context[0]);
+    assert(pt.rootNode !== undefined, "proofTreeOnGetContext: new GoalNode should set rootNode");
+    g.stateIds.push(stateId);
+    pt.curNode = g;
+    pt.update();
+    return;
+  } else {
+    // multiple trees might have been finished at once?
+    while (proofTrees.length > status.statusAllProofs.length) {
+      proofTrees.shift();
+      if (proofTrees.length === 0) {
+        $("#prooftree").empty();
+        hideProofTreePanel();
+      }
+    }
+    if (proofTrees.length !== status.statusAllProofs.length) {
+      alert("Error: we are missing multiple proof trees!")
+    }
+  }
 
   if (proofTrees.length === 0) { return; }
 
   let activeProofTree = proofTrees[0];
   let curNode = activeProofTree.curNode;
-  let trimmed = coqTrim(s);
+  let trimmed = coqTrim(query);
 
   if (isUpperCase(trimmed[0])) {
-    assert(curNode instanceof GoalNode, "proofTreeOnAdd: curNode instanceof GoalNode");
-    (<GoalNode>curNode).stateIds.push(r.stateId);
+    curNode.stateIds.push(stateId);
     return;
   }
 
-  activeProofTree.tacticWaiting = just(trimmed);
+  let tactic: Tactic = _.find(curNode.getTactics(), (t) => t.tactic === trimmed);
 
-  //
-  // if (curNode instanceof GoalNode) {
-  //   let existingTactic = _(curNode.getTactics())
-  //     .find(function(elt) { return elt.tactic === coqTrim(s); })
-  //     ;
-  //   if (existingTactic === undefined) {
-  //     let tg = new TacticGroupNode(activeProofTree, curNode, "");
-  //     curNode.tacticGroups.push(tg);
-  //     let t = new TacticWaiting(coqTrim(s), tg, r);
-  //     activeProofTree.tacticWaitingForContext = just(t);
-  //     activeProofTree.update();
-  //   } else {
-  //     activeProofTree.tacticWaitingForContext = existingTactic;
-  //     activeProofTree.update()
-  //       .then(() => {
-  //         let unsolvedGoal = _(existingTactic.goals).find((elt) => elt.isSolved());
-  //         if (unsolvedGoal === undefined) {
-  //           existingTactic.parentGroup.onSolved();
-  //         }
-  //       });
-  //   }
-  // }
+  let tacticGroup: TacticGroupNode = tactic ? tactic.parentGroup : new TacticGroupNode(activeProofTree, curNode, "");
+
+  let goalNodes: GoalNode[] =
+    _(context).map(function(goal) {
+      return new GoalNode(activeProofTree, just(tacticGroup), goal);
+    }).value();
+
+  if (!tactic) {
+    curNode.tacticGroups.push(tacticGroup);
+    tactic = new Tactic(trimmed, tacticGroup, goalNodes);
+    tacticGroup.tactics.push(tactic);
+  } else {
+    tactic.goals = goalNodes;
+  }
+
+  if (goalNodes.length > 0) {
+    let curGoal: GoalNode = goalNodes[0];
+    curGoal.stateIds.push(stateId);
+    activeProofTree.curNode = curGoal;
+    activeProofTree.update();
+  } else {
+    curNode.onChildSolved();
+  }
+
 }
 
 /*
@@ -130,9 +156,10 @@ function proofTreeOnAdd(s: string, r: AddReturn): void {
   we could rewind into old trees.
  */
 function proofTreeOnEditAt(sid: number): void {
+
   if (proofTrees.length === 0) { return; }
   let activeProofTree = proofTrees[0];
-  lastStateId = sid;
+  //lastStateId = sid;
   let curNode = activeProofTree.curNode;
 
   // clean up necessary for tactics waiting
@@ -156,92 +183,6 @@ function proofTreeOnEditAt(sid: number): void {
     $("#prooftree").empty();
   }
 
-}
-
-function proofTreeOnGetContext(c: PeaCoqContext): void {
-  if (proofTrees.length === 0) { return; }
-  let activeProofTree = proofTrees[0];
-  let curNode = activeProofTree.curNode;
-
-  if (lastStatus.statusProofName === null) { return; }
-
-  // we only create GoalNodes if this is the root or if a tactic has been ran
-  if (activeProofTree.rootNode === undefined) {
-    assert(c.length === 1, "proofTreeOnGetContext: c.length === 1");
-    let g = new GoalNode(activeProofTree, nothing(), c[0]);
-    assert(activeProofTree.rootNode !== undefined, "proofTreeOnGetContext: new GoalNode should set rootNode");
-    g.stateIds.push(lastStateId);
-    activeProofTree.curNode = g;
-    activeProofTree.update();
-    return;
-  }
-
-  activeProofTree.tacticWaiting.caseOf({
-    nothing: () => { return; },
-    just: (tacticName) => {
-
-      // make sure to clear tacticWaiting
-      activeProofTree.tacticWaiting = nothing();
-
-      let tactic = _.find(curNode.getTactics(), (t) => t.tactic === tacticName);
-
-      let tacticGroup = tactic ? tactic.parentGroup : new TacticGroupNode(activeProofTree, curNode, "");
-
-      let goals =
-        _(c).map(function(goal) {
-          return new GoalNode(activeProofTree, just(tacticGroup), goal);
-        }).value();
-
-      if (!tactic) {
-        curNode.tacticGroups.push(tacticGroup);
-        tactic = new Tactic(tacticName, tacticGroup, goals);
-        tacticGroup.tactics.push(tactic);
-      } else {
-        tactic.goals = goals;
-      }
-
-      if (goals.length > 0) {
-        let curGoal = goals[0];
-        curGoal.stateIds.push(lastStateId);
-        activeProofTree.curNode = curGoal;
-        activeProofTree.update();
-      } else {
-        curNode.onChildSolved();
-      }
-
-    }
-  });
-
-}
-
-function proofTreeOnStatus(s: Status): void {
-  lastStatus = s;
-  // hopefully we are always at most 1 tree late
-  if (proofTrees.length + 1 === s.statusAllProofs.length) {
-    // we are behind on the number of proof trees, create one
-    showProofTreePanel(); // needs to be before for width/height
-    let pt = new ProofTree(
-      s.statusProofName,
-      $("#prooftree")[0],
-      $("#prooftree").parent().width(),
-      $("#prooftree").parent().height(),
-      function() { $("#loading").css("display", ""); },
-      function() { $("#loading").css("display", "none"); }
-    );
-    proofTrees.unshift(pt);
-    return;
-  }
-  // multiple trees might have been finished at once?
-  while (proofTrees.length > s.statusAllProofs.length) {
-    proofTrees.shift();
-    if (proofTrees.length === 0) {
-      $("#prooftree").empty();
-      hideProofTreePanel();
-    }
-  }
-  if (proofTrees.length !== s.statusAllProofs.length) {
-    alert("Error: we are missing multiple proof trees!")
-  }
 }
 
 function onResize(): void {

@@ -183,114 +183,6 @@ let keybindings: KeyBinding[] = [
   },
 ];
 
-$(document).ready(function() {
-
-  return;
-  //
-  // $(window).resize(function() {
-  //   $("#editor").css("height", parentHeight);
-  //   $("#context").css("height", halfParentHeight);
-  //   $("#coqtop").css("height", halfParentHeight);
-  //   let activeProofTree = getActiveProofTree();
-  //   if (activeProofTree) { activeProofTree.resize($(window).width(), $("#prooftree").height()); }
-  // });
-  //
-  // _(keybindings).each(function(binding) {
-  //   $(document).bind("keydown", binding.jQ, binding.handler);
-  // });
-  //
-  // resetCoqtop();
-  //
-  // //periodicallyStatus();
-  //
-  // let buttonGroup = $("#toolbar > .btn-group");
-  // addLoadLocal(buttonGroup);
-  // addSaveLocal(buttonGroup);
-  // addPrevious(buttonGroup);
-  // addNext(buttonGroup);
-  // addGoToCaret(buttonGroup);
-  // addDebug(buttonGroup);
-  //
-  // let editor: AceAjax.Editor = ace.edit("editor");
-  //
-  // pretty = addTab("pretty", "context");
-  // setupSyntaxHovering();
-  // foreground = addEditorTab("foreground", "context");
-  // background = addEditorTab("background", "context");
-  // shelved = addEditorTab("shelved", "context");
-  // givenUp = addEditorTab("givenup", "context");
-  //
-  // notices = addEditorTab("notices", "coqtop");
-  // warnings = addEditorTab("warnings", "coqtop");
-  // errors = addEditorTab("errors", "coqtop");
-  // infos = addEditorTab("infos", "coqtop");
-  // jobs = addEditorTab("jobs", "coqtop");
-  // feedback = addEditorTab("feedback", "coqtop");
-  //
-  // //jobs     = ace.edit("jobs");
-  //
-  // setupNavigation();
-  //
-  // let session = editor.getSession();
-  //
-  // setupEditor(editor);
-  //
-  // editor.focus();
-  // session.on("change", function(change) {
-  //   killEditsAfterPosition(coqDocument, minPos(change.start, change.end));
-  // });
-  //
-  // coqDocument = new CoqDocument(editor);
-  //
-  // //let nbRows = ed.getSession().getLength();
-  // //let r0 = new Range(0, 2, 0, 5);
-  // //console.log(r0.toString());
-  //
-  // //let s = new Selection(ed.getSession());
-  // //s.fromOrientedRange(r0);
-  // //s.moveCursorBy(0, 5);
-  // //console.log(s.getRange().toString());
-  // //ed.getSession().addMarker(s.getRange(), 'coq-command', 'text');
-  // //let text = ed.getSession().getTextRange(s.getRange());
-  // //console.log(text);
-  //
-  // //editor.setValue("Require Import List.\nImport ListNotations.\nTheorem test : [0] = [1; 2].\n", 1);
-  //
-  // $(".horizontal-separator").draggable({
-  //   axis: 'y',
-  //   containment: 'parent',
-  //   cursor: 'pointer',
-  //   helper: 'clone',
-  //   drag: function(event, ui) {
-  //     let height = ui.offset.top - 220 // 220 : initial top margin to the previousDiv
-  //       , referenceHeight = 0
-  //       , previousSection = $(this).prev()
-  //       , nextSection = $(this).next();
-  //
-  //     if ((nextSection.height() === 0) && (referenceHeight - height < 0)) {
-  //       return;
-  //     }
-  //
-  //     previousSection.height(height);
-  //     nextSection.height(referenceHeight - height);
-  //
-  //
-  //     if (nextSection.height() < 20) {
-  //       previousSection.height(height + nextSection.height());
-  //       nextSection.height(0);
-  //     }
-  //
-  //     if (previousSection.height() < 20) {
-  //       nextSection.height(referenceHeight - height - previousSection.height());
-  //       previousSection.height(0);
-  //     }
-  //   }
-  // });
-  //
-  // $(window).resize();
-
-});
-
 let unlockedAnchor;
 let unlockedMarker;
 
@@ -358,8 +250,9 @@ function onNext(doc: CoqDocument): Promise<void> {
   let newStopPos = movePosRight(doc, lastEditStopPos, nextIndex);
   let e1 = new EditToProcess(coqDocument, lastEditStopPos, newStopPos);
   let e2 = new EditBeingProcessed(e1);
+  let query = unprocessedText.substring(0, nextIndex);
   return (
-    peaCoqAddPrime(unprocessedText.substring(0, nextIndex))
+    peaCoqAddPrime(query)
       .then(
       (response) => {
         doc.session.selection.clearSelection();
@@ -373,12 +266,16 @@ function onNext(doc: CoqDocument): Promise<void> {
         return Promise.all<any>([s, g, c]).then(
           ([s, g, c]: [Status, Goals, PeaCoqContext]) => {
             let e = new ProcessedEdit(e2, sid, s, g, c);
+            _(editHandlers).each((h) => h(query, sid, s, g, c));
             return Promise.resolve();
           });
       })
       .catch(onNextEditFail(e2))
   );
 }
+
+type EditHandler = (q: string, sid: number, s: Status, g: Goals, c: PeaCoqContext) => void;
+let editHandlers: EditHandler[] = [];
 
 // TODO: there is a better way to rewind with the new STM machinery!
 function rewindToPosition(

@@ -1,15 +1,3 @@
-// class TacticWaiting {
-//   addReturn: AddReturn;
-//   parentGroup: TacticGroupNode;
-//   tactic: string;
-//
-//   constructor(tactic: string, parentGroup: TacticGroupNode, addReturn: AddReturn) {
-//     this.addReturn = addReturn;
-//     this.parentGroup = parentGroup;
-//     this.tactic = tactic;
-//   }
-// }
-
 class Tactic {
   //addReturn: AddReturn;
   goalIndex: number;
