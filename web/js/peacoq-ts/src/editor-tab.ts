@@ -2,8 +2,9 @@ class EditorTab extends Tab {
   private editor: AceAjax.Editor;
 
   constructor(id: string, caption: string, layout: string, panel: string) {
-    let self = this;
     super(id, caption, layout, panel);
+
+    let self = this;
 
     w2ui[layout].content(panel, self.div[0]);
     this.editor = ace.edit(id + "-content");

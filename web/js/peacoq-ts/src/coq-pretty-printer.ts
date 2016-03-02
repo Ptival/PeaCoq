@@ -69,8 +69,8 @@ class PpCmdPrintIfBroken<T> extends PpCmdToken<T> { }
 class PpCmdOpenBox<T> extends PpCmdToken<T> {
   blockType: BlockType;
   constructor(b: BlockType) {
-    this.blockType = b;
     super();
+    this.blockType = b;
   }
 }
 
@@ -97,8 +97,8 @@ function tagVariable(p: PpCmds): PpCmds { return tag("variable", p); }
 class PpCmdOpenTag<T> extends PpCmdToken<T> {
   tag: string;
   constructor(t: Tag) {
-    this.tag = t;
     super();
+    this.tag = t;
   }
 }
 
