@@ -117,6 +117,7 @@ class GoalNode extends ProofTreeNode {
   }
 
   isSolved(): boolean {
+    if (this.proofTree.isCurNodeDescendant(this)) { return false; }
     let focusedTacticGroup = this.getFocusedTacticGroup();
     return this.getFocusedTacticGroup().caseOf({
       nothing: () => false,
