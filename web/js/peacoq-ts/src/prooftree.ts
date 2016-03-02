@@ -1064,6 +1064,7 @@ class ProofTree {
       linkSelection.enter()
         .append("path")
         .classed("link", true)
+        .attr("fill", "none")
         .attr("d",
         (d: ProofTreeLink) => {
           //let src = swapXY(centerRight0(d.source));
@@ -1595,15 +1596,16 @@ class ProofTree {
 }
 
 function mkDiagonal(cL, cR) {
-  return (d3.svg
-    .diagonal<ProofTreeNode>()
-    .source((d: ProofTreeLink, i: number) => {
-      return swapXY(cR(d.source));
-    })
-    .target((d: ProofTreeLink, i: number) => {
-      return swapXY(cL(d.target));
-    })
-    .projection(function(d) { return [d.y, d.x]; })
+  return (
+    d3.svg
+      .diagonal()
+      .source((d: ProofTreeLink, i: number) => {
+        return swapXY(cR(d.source));
+      })
+      .target((d: ProofTreeLink, i: number) => {
+        return swapXY(cL(d.target));
+      })
+      .projection(function(d) { return [d.y, d.x]; })
   );
 }
 
