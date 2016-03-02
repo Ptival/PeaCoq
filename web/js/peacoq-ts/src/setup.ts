@@ -69,49 +69,53 @@ $(document).ready(() => {
   // peaCoqGetContextHandlers.push(proofTreeOnGetContext);
   peaCoqEditAtHandlers.push(proofTreeOnEditAt);
   // peaCoqGoalHandlers.push(proofTreeOnGoal);
-  // peaCoqStatusHandlers.push(proofTreeOnStatus);
+  peaCoqStatusHandlers.push(proofTreeOnStatus);
   editHandlers.push(proofTreeOnEdit);
 });
 
+let lastStatus: Status;
+
+function proofTreeOnStatus(s) {
+  lastStatus = s;
+}
+
 function proofTreeOnEdit(
-  query: string, stateId: number, status: Status, goals: Goals,
+  query: string, stateId: number, lastStatus: Status, status: Status, goals: Goals,
   context: PeaCoqContext
 ): void {
 
   let trimmed = coqTrim(query);
 
-  if (trimmed.startsWith("Theorem")) {
-    // hopefully we are always at most 1 tree late
-    if (proofTrees.length + 1 === status.statusAllProofs.length) {
-      // we are behind on the number of proof trees, create one
-      showProofTreePanel(); // needs to be before for width/height
-      let pt = new ProofTree(
-        status.statusProofName,
-        $("#prooftree")[0],
-        $("#prooftree").parent().width(),
-        $("#prooftree").parent().height(),
-        function() { $("#loading").css("display", ""); },
-        function() { $("#loading").css("display", "none"); }
-      );
-      proofTrees.unshift(pt);
-      assert(context.length === 1, "proofTreeOnGetContext: c.length === 1, c.length: " + context.length);
-      let g = new GoalNode(pt, nothing(), goals, context[0]);
-      assert(pt.rootNode !== undefined, "proofTreeOnGetContext: new GoalNode should set rootNode");
-      g.stateIds.push(stateId);
-      pt.curNode = g;
-      pt.update();
-      return;
-    } else {
-      // multiple trees might have been finished at once?
-      while (proofTrees.length > status.statusAllProofs.length) {
-        proofTrees.shift();
-        if (proofTrees.length === 0) {
-          $("#prooftree").empty();
-          hideProofTreePanel();
-        }
-      }
-      if (proofTrees.length !== status.statusAllProofs.length) {
-        alert("Error: we are missing multiple proof trees!")
+  if (
+    lastStatus.statusAllProofs.length + 1 === status.statusAllProofs.length
+    &&
+    proofTrees.length + 1 === status.statusAllProofs.length
+  ) {
+    // we are behind on the number of proof trees, create one
+    showProofTreePanel(); // needs to be before for width/height
+    let pt = new ProofTree(
+      status.statusProofName,
+      $("#prooftree")[0],
+      $("#prooftree").parent().width(),
+      $("#prooftree").parent().height(),
+      function() { $("#loading").css("display", ""); },
+      function() { $("#loading").css("display", "none"); }
+    );
+    proofTrees.unshift(pt);
+    assert(context.length === 1, "proofTreeOnGetContext: c.length === 1, c.length: " + context.length);
+    let g = new GoalNode(pt, nothing(), goals, context[0]);
+    assert(pt.rootNode !== undefined, "proofTreeOnGetContext: new GoalNode should set rootNode");
+    g.stateIds.push(stateId);
+    pt.curNode = g;
+    pt.update();
+    return;
+  } else {
+    // multiple trees might have been finished at once?
+    while (proofTrees.length > status.statusAllProofs.length) {
+      proofTrees.shift();
+      if (proofTrees.length === 0) {
+        $("#prooftree").empty();
+        hideProofTreePanel();
       }
     }
   }

@@ -122,9 +122,10 @@ function halfParentHeight(): string {
   return (parseInt($(this).parent().css("height"), 10) / 2) + "px";
 }
 
-function resetCoqtop() {
-  peaCoqEditAt(1)
-    .then(() => peaCoqAddPrime("Require Import PeaCoq.PeaCoq."));
+function resetCoqtop(): Promise<any> {
+  return peaCoqEditAt(1)
+    .then(() => peaCoqAddPrime("Require Import PeaCoq.PeaCoq."))
+    .then(() => peaCoqStatus(false));
 }
 
 function setupSyntaxHovering() {
@@ -263,13 +264,14 @@ function onNext(doc: CoqDocument): Promise<void> {
         doc.editor.scrollToLine(newStopPos.row, true, true, () => { });
         doc.editor.focus();
         let sid: number = response.stateId;
+        let ls = lastStatus;
         let s = peaCoqStatus(false);
         let g = s.then(peaCoqGoal);
         let c = g.then(peaCoqGetContext);
         return Promise.all<any>([s, g, c]).then(
           ([s, g, c]: [Status, Goals, PeaCoqContext]) => {
             let e = new ProcessedEdit(e2, sid, s, g, c);
-            _(editHandlers).each((h) => h(query, sid, s, g, c));
+            _(editHandlers).each((h) => h(query, sid, ls, s, g, c));
             return Promise.resolve();
           });
       })
@@ -277,7 +279,7 @@ function onNext(doc: CoqDocument): Promise<void> {
   );
 }
 
-type EditHandler = (q: string, sid: number, s: Status, g: Goals, c: PeaCoqContext) => void;
+type EditHandler = (q: string, sid: number, ls: Status, s: Status, g: Goals, c: PeaCoqContext) => void;
 let editHandlers: EditHandler[] = [];
 
 // TODO: there is a better way to rewind with the new STM machinery!
@@ -340,10 +342,9 @@ function onPrevious(doc: CoqDocument): Promise<void> {
   return (
     lastEdit.previousEdit
       .caseOf({
-        nothing: () => {
-          return peaCoqEditAt(1);
-        },
+        nothing: () => resetCoqtop(),
         just: (pe) => {
+          lastStatus = pe.status;
           return peaCoqEditAt(pe.stateId);
         },
       })
