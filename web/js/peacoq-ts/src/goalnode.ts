@@ -43,17 +43,17 @@ class GoalNode extends ProofTreeNode {
 
   click(): void { return; }
 
-  getAllDescendants() {
-    let children = this.tacticGroups;
-    let descendants = _(children).map((c) => c.getAllDescendants()).flatten<ProofTreeNode>().value();
+  getAllDescendants(): ProofTreeNode[] {
+    let children: TacticGroupNode[] = this.tacticGroups;
+    let descendants: ProofTreeNode[] = _(children).map((c) => c.getAllDescendants()).flatten<ProofTreeNode>().value();
     return [].concat(children, descendants);
   }
 
-  getAllGoalDescendants() {
-    let children = this.tacticGroups;
-    let descendants = _(children).map((c) => c.getAllGoalDescendants()).flatten<GoalNode>().value();
-    return [].concat(children, descendants);
-
+  getAllGoalDescendants(): GoalNode[] {
+    let children: TacticGroupNode[] = this.tacticGroups;
+    let descendants: GoalNode[] = _(children).map((c) => c.getAllGoalDescendants()).flatten<GoalNode>().value();
+    let result: GoalNode[] = [this];
+    return result.concat(descendants);
   }
 
   getFocusedChild(): Maybe<ProofTreeNode> {

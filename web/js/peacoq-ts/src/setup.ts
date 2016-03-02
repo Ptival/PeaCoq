@@ -184,13 +184,12 @@ function proofTreeOnEditAt(sid: number): void {
   // clean up necessary for tactics waiting
   activeProofTree.tacticWaiting = nothing();
 
-  let ancestorGoals = curNode.getGoalAncestors();
   // first, get rid of all stored stateIds > sid
   let allGoals = activeProofTree.rootNode.getAllGoalDescendants();
   _(allGoals).each((g) => {
     g.stateIds = _(g.stateIds).filter((s) => s <= sid).value();
-  })
-  let target = _(ancestorGoals).find((g) => {
+  });
+  let target = _(allGoals).find((g) => {
     return _(g.stateIds).some((s) => s === sid);
   });
   if (target) {

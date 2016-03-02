@@ -25,15 +25,15 @@ class TacticGroupNode extends ProofTreeNode {
     alert("TODO: click");
   }
 
-  getAllDescendants() {
+  getAllDescendants(): ProofTreeNode[] {
     let children: GoalNode[] = _(this.tactics).map((t) => t.goals).flatten<GoalNode>().value();
-    let descendants = _(children).map((c) => c.getAllDescendants()).flatten<ProofTreeNode>().value();
+    let descendants: ProofTreeNode[] = _(children).map((c) => c.getAllDescendants()).flatten<ProofTreeNode>().value();
     return [].concat(children, descendants);
   }
 
-  getAllGoalDescendants() {
+  getAllGoalDescendants(): GoalNode[] {
     let children: GoalNode[] = _(this.tactics).map((t) => t.goals).flatten<GoalNode>().value();
-    let descendants = _(children).map((c) => c.getAllGoalDescendants()).flatten<GoalNode>().value();
+    let descendants: GoalNode[] = _(children).map((c) => c.getAllGoalDescendants()).flatten<GoalNode>().value();
     return [].concat(children, descendants);
   }
 

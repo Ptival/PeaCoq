@@ -30,7 +30,7 @@ class EditorTab extends Tab {
 
   recenter(): void {
     let pos = this.editor.getCursorPosition();
-    this.editor.scrollToLine(pos.row, true, true, () => {});
+    this.editor.scrollToLine(pos.row, true, true, () => { });
   }
 
   setTheme(s: string): void { this.editor.setTheme(s); }
