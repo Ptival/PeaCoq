@@ -78,37 +78,41 @@ function proofTreeOnEdit(
   context: PeaCoqContext
 ): void {
 
-  // hopefully we are always at most 1 tree late
-  if (proofTrees.length + 1 === status.statusAllProofs.length) {
-    // we are behind on the number of proof trees, create one
-    showProofTreePanel(); // needs to be before for width/height
-    let pt = new ProofTree(
-      status.statusProofName,
-      $("#prooftree")[0],
-      $("#prooftree").parent().width(),
-      $("#prooftree").parent().height(),
-      function() { $("#loading").css("display", ""); },
-      function() { $("#loading").css("display", "none"); }
-    );
-    proofTrees.unshift(pt);
-    assert(context.length === 1, "proofTreeOnGetContext: c.length === 1, c.length: " + context.length);
-    let g = new GoalNode(pt, nothing(), goals, context[0]);
-    assert(pt.rootNode !== undefined, "proofTreeOnGetContext: new GoalNode should set rootNode");
-    g.stateIds.push(stateId);
-    pt.curNode = g;
-    pt.update();
-    return;
-  } else {
-    // multiple trees might have been finished at once?
-    while (proofTrees.length > status.statusAllProofs.length) {
-      proofTrees.shift();
-      if (proofTrees.length === 0) {
-        $("#prooftree").empty();
-        hideProofTreePanel();
+  let trimmed = coqTrim(query);
+
+  if (trimmed.startsWith("Theorem")) {
+    // hopefully we are always at most 1 tree late
+    if (proofTrees.length + 1 === status.statusAllProofs.length) {
+      // we are behind on the number of proof trees, create one
+      showProofTreePanel(); // needs to be before for width/height
+      let pt = new ProofTree(
+        status.statusProofName,
+        $("#prooftree")[0],
+        $("#prooftree").parent().width(),
+        $("#prooftree").parent().height(),
+        function() { $("#loading").css("display", ""); },
+        function() { $("#loading").css("display", "none"); }
+      );
+      proofTrees.unshift(pt);
+      assert(context.length === 1, "proofTreeOnGetContext: c.length === 1, c.length: " + context.length);
+      let g = new GoalNode(pt, nothing(), goals, context[0]);
+      assert(pt.rootNode !== undefined, "proofTreeOnGetContext: new GoalNode should set rootNode");
+      g.stateIds.push(stateId);
+      pt.curNode = g;
+      pt.update();
+      return;
+    } else {
+      // multiple trees might have been finished at once?
+      while (proofTrees.length > status.statusAllProofs.length) {
+        proofTrees.shift();
+        if (proofTrees.length === 0) {
+          $("#prooftree").empty();
+          hideProofTreePanel();
+        }
       }
-    }
-    if (proofTrees.length !== status.statusAllProofs.length) {
-      alert("Error: we are missing multiple proof trees!")
+      if (proofTrees.length !== status.statusAllProofs.length) {
+        alert("Error: we are missing multiple proof trees!")
+      }
     }
   }
 
@@ -116,7 +120,6 @@ function proofTreeOnEdit(
 
   let activeProofTree = proofTrees[0];
   let curNode = activeProofTree.curNode;
-  let trimmed = coqTrim(query);
 
   if (isUpperCase(trimmed[0])) {
     curNode.stateIds.push(stateId);
@@ -127,8 +130,8 @@ function proofTreeOnEdit(
 
   let tacticGroup: TacticGroupNode = (
     tactic
-    ? tactic.parentGroup
-    : new TacticGroupNode(activeProofTree, curNode, "")
+      ? tactic.parentGroup
+      : new TacticGroupNode(activeProofTree, curNode, "")
   );
 
   /*
@@ -142,8 +145,8 @@ function proofTreeOnEdit(
   let goalsAfter = goals;
   let nbRelevantGoals =
     goalsBefore.bgGoals.length === goalsAfter.bgGoals.length
-    ? goalsAfter.fgGoals.length - (goalsBefore.fgGoals.length - 1)
-    : 0;
+      ? goalsAfter.fgGoals.length - (goalsBefore.fgGoals.length - 1)
+      : 0;
   let relevantGoals = context.slice(0, nbRelevantGoals);
 
   let goalNodes: GoalNode[] =

@@ -306,10 +306,7 @@ class ProofTree {
   }
 
   get curNode(): GoalNode { return this._curNode; }
-  set curNode(n: GoalNode) {
-    console.log("CHANGING CURNODE");
-    this._curNode = n;
-  }
+  set curNode(n: GoalNode) { this._curNode = n; }
 
   findOrCreateGroup(goalNode: GoalNode, groupName: string): TacticGroupNode {
     let found = _(goalNode.tacticGroups)
