@@ -125,17 +125,17 @@ class GoalNode extends ProofTreeNode {
     });
   }
 
-  onChildSolved(): void {
+  onChildSolved(sid: number): void {
     let self = this;
     this.solved = true;
     this.proofTree.update()
       .then(function() {
-        self.onSolved();
+        self.onSolved(sid);
       })
       ;
   }
 
-  onSolved(): void {
+  onSolved(sid: number): void {
     if (this.openBraces === this.closedBraces) {
       this.parentGroup.caseOf({
         nothing: () => {
@@ -143,7 +143,7 @@ class GoalNode extends ProofTreeNode {
             //proofTreeQueryWish('Qed.');
           }
         },
-        just: (p) => p.onChildSolvedAndUnfocused(),
+        just: (p) => p.onChildSolvedAndUnfocused(sid),
       });
     } else if (autoLayout) {
       //proofTreeQueryWish('}');

@@ -168,7 +168,7 @@ function proofTreeOnEdit(
     activeProofTree.curNode = curGoal;
     activeProofTree.update();
   } else {
-    curNode.onChildSolved();
+    curNode.onChildSolved(stateId);
   }
 
 }

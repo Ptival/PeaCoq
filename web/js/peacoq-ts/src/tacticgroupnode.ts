@@ -73,7 +73,7 @@ class TacticGroupNode extends ProofTreeNode {
 
   nodeWidth(): number { return this.proofTree.getTacticWidth(); }
 
-  onChildSolvedAndUnfocused(): void {
+  onChildSolvedAndUnfocused(sid: number): void {
     let focusedTactic = fromJust(this.getFocusedTactic());
     let unsolved = _(focusedTactic.goals)
       .find(function(elt) {
@@ -81,21 +81,22 @@ class TacticGroupNode extends ProofTreeNode {
       })
       ;
     if (unsolved === undefined) {
-      this.onSolved();
+      this.onSolved(sid);
     } else {
+      unsolved.stateIds.push(sid);
       this.proofTree.curNode = unsolved;
-      this.proofTree.refreshTactics();
+      //this.proofTree.refreshTactics();
       this.proofTree.update();
     }
   }
 
-  onSolved(): void {
+  onSolved(sid: number): void {
     let self = this;
     this.solved = true;
     this.proofTree.curNode = this.parent;
     this.proofTree.update()
       .then(function() {
-        self.parent.onChildSolved();
+        self.parent.onChildSolved(sid);
       })
       ;
   }
