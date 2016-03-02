@@ -377,6 +377,11 @@ class ProofTree {
     return n.hasParentSuchThat((p) => self.isCurNode(p));
   }
 
+  isCurNodeDescendant(n: ProofTreeNode): boolean {
+    let common = this.commonAncestor(n, this.curNode);
+    return common.id === this.curNode.id;
+  }
+
   isCurNodeGrandChild(n: ProofTreeNode): boolean {
     let self = this;
     return n.hasParentSuchThat((p) => self.isCurNodeChild(p));
