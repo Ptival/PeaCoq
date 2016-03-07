@@ -5,13 +5,14 @@ class Tab {
   onClickHandlers: Function[];
   onResizeHandlers: Function[];
   panel: string;
-  w2uiId: string;
+  tab: W2UI.W2Tabs;
 
   constructor(id: string, caption: string, layout: string, panel: string) {
     this.caption = caption;
     this.id = id;
     this.panel = panel;
-    this.w2uiId = layout + "_" + panel + "_tabs";
+    let w2uiId = layout + "_" + panel + "_tabs";
+    this.tab = w2ui[w2uiId];
 
     let self = this;
 
@@ -23,7 +24,7 @@ class Tab {
       layout.owner.html(panel, self.div[0]);
     });
 
-    w2ui[this.w2uiId].add({
+    this.tab.add({
       id: id,
       caption: caption,
       onClick: function() { self.onClick(this); }
@@ -35,13 +36,13 @@ class Tab {
   }
 
   captionShouldBeBold(bold: boolean): void {
-    w2ui[this.w2uiId].set(this.id, {
+    this.tab.set(this.id, {
       caption: bold ? "<b>" + this.caption + "</b>" : this.caption
     });
   }
 
   click(): void {
-    w2ui[this.w2uiId].click(this.id);
+    this.tab.click(this.id);
   }
 
   onClick(layout) {

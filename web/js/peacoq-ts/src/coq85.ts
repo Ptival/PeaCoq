@@ -288,7 +288,7 @@ function rewindToPosition(
   targetPos: AceAjax.Position
 ): Promise<void> {
   let lastEditStopPos = doc.getLastEditStop();
-  if (isAfter(targetPos, lastEditStopPos)) {
+  if (isAfter(ComparisonFlag.Strictly, targetPos, lastEditStopPos)) {
     return Promise.resolve();
   } else {
     return (
@@ -303,7 +303,7 @@ function forwardToPosition(
   targetPos: AceAjax.Position
 ): Promise<void> {
   let lastEditStopPos = doc.getLastEditStop();
-  if (isAfter(lastEditStopPos, targetPos)) { return Promise.resolve(); }
+  if (isAfter(ComparisonFlag.Strictly, lastEditStopPos, targetPos)) { return Promise.resolve(); }
 
   // don't move forward if there is only spaces/comments
   let range = AceRange.fromPoints(lastEditStopPos, targetPos);
@@ -325,9 +325,9 @@ function onGotoCaret(doc: CoqDocument): Promise<void> {
   // of the last edit
   let cursorPos = doc.editor.getCursorPosition();
   let lastEditStopPos = doc.getLastEditStop();
-  if (isAfter(cursorPos, lastEditStopPos)) {
+  if (isAfter(ComparisonFlag.Strictly, cursorPos, lastEditStopPos)) {
     return forwardToPosition(doc, cursorPos);
-  } else if (isAfter(lastEditStopPos, cursorPos)) {
+  } else if (isAfter(ComparisonFlag.Strictly, lastEditStopPos, cursorPos)) {
     return rewindToPosition(doc, cursorPos);
   } else {
     // no need to move
@@ -707,10 +707,30 @@ function mkAnchor(
   return a;
 }
 
-function isAfter(pos1: AceAjax.Position, pos2: AceAjax.Position): boolean {
+enum ComparisonFlag {
+  Strictly,
+  OrEqual
+};
+
+/**
+ * Checks if first argument is strictly before second argument
+**/
+function isBefore(flag: ComparisonFlag, pos1: AceAjax.Position, pos2: AceAjax.Position): boolean {
+  if (pos1.row < pos2.row) { return true; }
+  if (pos1.row > pos2.row) { return false; }
+  switch(flag) {
+    case ComparisonFlag.Strictly: return pos1.column < pos2.column;
+    case ComparisonFlag.OrEqual: return pos1.column <= pos2.column;
+  };
+}
+
+function isAfter(flag: ComparisonFlag, pos1: AceAjax.Position, pos2: AceAjax.Position): boolean {
   if (pos1.row > pos2.row) { return true; }
   if (pos1.row < pos2.row) { return false; }
-  return (pos1.column > pos2.column);
+  switch(flag) {
+    case ComparisonFlag.Strictly: return pos1.column > pos2.column;
+    case ComparisonFlag.OrEqual: return pos1.column >= pos2.column;
+  };
 }
 
 function killEditsAfterPosition(doc: CoqDocument, pos: AceAjax.Position) {
@@ -718,7 +738,7 @@ function killEditsAfterPosition(doc: CoqDocument, pos: AceAjax.Position) {
   let editToRewindTo: Maybe<ProcessedEdit> = nothing();
   // we remove all the edits that are after the position that was edited
   doc.removeEdits(
-    (edit: ProcessedEdit) => isAfter(edit.getStopPosition(), pos),
+    (edit: ProcessedEdit) => isAfter(ComparisonFlag.Strictly, edit.getStopPosition(), pos),
     (edit: ProcessedEdit) => {
       edit.previousEdit.caseOf({
         nothing: () => { },

@@ -77,6 +77,13 @@ class ProcessedEdit {
     this.document.pushEdit(this);
   }
 
+  containsPosition(p: AceAjax.Position): boolean {
+    return (
+      isBefore(ComparisonFlag.OrEqual, this.getStartPosition(), p)
+      && isBefore(ComparisonFlag.Strictly, p, this.getStopPosition())
+    );
+  }
+
   getStartPosition(): AceAjax.Position { return this.marker.startPos; }
 
   getStopPosition(): AceAjax.Position { return this.marker.stopPos; }

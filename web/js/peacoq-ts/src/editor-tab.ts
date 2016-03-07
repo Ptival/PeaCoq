@@ -6,7 +6,7 @@ class EditorTab extends Tab {
 
     let self = this;
 
-    w2ui[layout].content(panel, self.div[0]);
+    (<W2UI.W2Layout>w2ui[layout]).content(panel, self.div[0]);
     this.editor = ace.edit(id + "-content");
     setupEditor(this.editor);
 

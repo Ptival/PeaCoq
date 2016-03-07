@@ -1,4 +1,8 @@
 let coqDocument: CoqDocument = undefined;
+let layout: W2UI.W2Layout;
+let rightLayout: W2UI.W2Layout;
+let contextTabs: W2UI.W2Tabs;
+let coqtopTabs: W2UI.W2Tabs;
 
 $(document).ready(() => {
 
@@ -17,6 +21,15 @@ $(document).ready(() => {
   });
 
   let editor: AceAjax.Editor = ace.edit("editor");
+  editor.selection.on("changeCursor", (e) => {
+    let cursorPosition = editor.selection.getCursor();
+    _(coqDocument.edits).each((e: ProcessedEdit) => {
+      if (e.containsPosition(cursorPosition)) {
+        console.log(e.stateId);
+      }
+    });
+  });
+  //editor.selection.on("changeSelection", (e) => { console.log(e); });
   coqDocument = new CoqDocument(editor);
   setupEditor(editor);
   editor.resize();
@@ -30,13 +43,21 @@ $(document).ready(() => {
     ],
   });
 
-  w2ui["right-layout"].on({ type: "render", execute: "after" }, () => {
+  layout = w2ui["layout"];
+  rightLayout = w2ui["right-layout"];
+  contextTabs = w2ui["right-layout_main_tabs"];
+  contextTabs.onClick = function(event) {
+      $('#myTabsContent').html(event.target);
+  };
+  coqtopTabs = w2ui["right-layout_bottom_tabs"];
+
+  rightLayout.on({ type: "render", execute: "after" }, () => {
     pretty = new Tab("pretty", "Pretty", "right-layout", "main");
     foreground = new EditorTab("foreground", "Foreground", "right-layout", "main");
     background = new EditorTab("background", "Background", "right-layout", "main");
     shelved = new EditorTab("shelved", "Shelved", "right-layout", "main");
     givenUp = new EditorTab("givenup", "Given up", "right-layout", "main");
-    w2ui["right-layout_main_tabs"].click("pretty");
+    contextTabs.click("pretty");
 
     notices = new EditorTab("notices", "Notices", "right-layout", "bottom");
     warnings = new EditorTab("warnings", "Warnings", "right-layout", "bottom");
@@ -46,16 +67,16 @@ $(document).ready(() => {
     failures = new EditorTab("failures", "Failures", "right-layout", "bottom");
     jobs = new EditorTab("jobs", "Jobs", "right-layout", "bottom");
     feedback = new EditorTab("feedback", "Feedback", "right-layout", "bottom");
-    w2ui["right-layout_bottom_tabs"].click("notices");
+    coqtopTabs.click("notices");
   })
 
-  w2ui["layout"].content("main", w2ui["right-layout"]);
+  layout.content("main", rightLayout);
 
   $(window).resize(onResize);
-  w2ui['layout'].on({ type: "resize", execute: "after" }, onResize);
-  w2ui['right-layout'].on({ type: "resize", execute: "after" }, onResize);
-  w2ui['layout'].on({ type: "hide", execute: "after" }, () => { coqDocument.recenterEditor(); });
-  w2ui['layout'].on({ type: "show", execute: "after" }, () => { coqDocument.recenterEditor(); });
+  layout.on({ type: "resize", execute: "after" }, onResize);
+  rightLayout.on({ type: "resize", execute: "after" }, onResize);
+  layout.on({ type: "hide", execute: "after" }, () => { coqDocument.recenterEditor(); });
+  layout.on({ type: "show", execute: "after" }, () => { coqDocument.recenterEditor(); });
 
   _(keybindings).each(function(binding) {
     $(document).bind("keydown", binding.jQ, binding.handler);
@@ -262,9 +283,9 @@ function setupToolbar(): void {
 }
 
 function hideProofTreePanel(): void {
-  w2ui["layout"].hide("bottom");
+  layout.hide("bottom");
 }
 
 function showProofTreePanel(): void {
-  w2ui["layout"].show("bottom");
+  layout.show("bottom");
 }
