@@ -321,6 +321,8 @@ class ProofTree {
     return groupNode;
   }
 
+  getAllNodes(): ProofTreeNode[] { return this.rootNode.getAllDescendants(); }
+
   getCurrentGoal(): GoalNode {
     assert(this.curNode instanceof GoalNode, "getCurrentGoal: curNode instanceof GoalNode");
     return this.curNode;
@@ -372,14 +374,27 @@ class ProofTree {
 
   isCurNode(n: ProofTreeNode): boolean { return n.id === this.curNode.id; }
 
+  isCurNodeAncestor(strictly: Strictly, n: ProofTreeNode): boolean {
+    let common = this.commonAncestor(n, this.curNode);
+    let commonAncestorIsNode = common.id === n.id;
+    switch (strictly) {
+      case Strictly.Yes: return commonAncestorIsNode && !this.isCurNode(n);
+      case Strictly.No: return commonAncestorIsNode;
+    };
+  }
+
   isCurNodeChild(n: ProofTreeNode): boolean {
     let self = this;
     return n.hasParentSuchThat((p) => self.isCurNode(p));
   }
 
-  isCurNodeDescendant(n: ProofTreeNode): boolean {
+  isCurNodeDescendant(strictly: Strictly, n: ProofTreeNode): boolean {
     let common = this.commonAncestor(n, this.curNode);
-    return common.id === this.curNode.id;
+    let commonAncestorIsCurNode = common.id === this.curNode.id;
+    switch (strictly) {
+      case Strictly.Yes: return commonAncestorIsCurNode && !this.isCurNode(n);
+      case Strictly.No: return commonAncestorIsCurNode;
+    };
   }
 
   isCurNodeGrandChild(n: ProofTreeNode): boolean {

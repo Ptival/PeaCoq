@@ -1,20 +1,13 @@
 class GoalNode extends ProofTreeNode {
   // DO NOT USE "children" AS D3 WILL OVERWRITE
   closedBraces: number;
-  //gid: number;
   goal: PeaCoqGoal;
   goals: Goals;
   html: JQuery;
   nodeHTML: JQuery;
-  //goalString: string;
-  //goalTerm: string;
-  //hyps: Hypothesis[];
-  //ndx: number;
   openBraces: number;
-  //parentTactic: TacticNode;
   // DO NOT USE "parent" AS D3 WILL OVERWRITE
   private parentGroup: Maybe<TacticGroupNode>;
-  solved: boolean;
   stateIds: number[];
   tacticGroups: TacticGroupNode[];
   tacticIndex: number;
@@ -31,7 +24,6 @@ class GoalNode extends ProofTreeNode {
       ;
     this.openBraces = 0;
     this.parentGroup = parent;
-    this.solved = false;
     this.stateIds = [];
     this.tacticGroups = [];
     this.tacticIndex = 0;
@@ -117,7 +109,7 @@ class GoalNode extends ProofTreeNode {
   }
 
   isSolved(): boolean {
-    if (this.proofTree.isCurNodeDescendant(this)) { return false; }
+    if (this.proofTree.isCurNodeAncestor(Strictly.Yes, this)) { return false; }
     let focusedTacticGroup = this.getFocusedTacticGroup();
     return this.getFocusedTacticGroup().caseOf({
       nothing: () => false,
@@ -127,7 +119,6 @@ class GoalNode extends ProofTreeNode {
 
   onChildSolved(sid: number): void {
     let self = this;
-    this.solved = true;
     this.proofTree.update()
       .then(function() {
         self.onSolved(sid);

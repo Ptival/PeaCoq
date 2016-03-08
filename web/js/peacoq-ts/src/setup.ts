@@ -146,7 +146,8 @@ function proofTreeOnEdit(
   let activeProofTree = proofTrees[0];
   let curNode = activeProofTree.curNode;
 
-  if (isUpperCase(trimmed[0])) {
+  if (isUpperCase(trimmed[0]) || _(bullets).includes(trimmed)) {
+    curNode.goals = goals;
     curNode.stateIds.push(stateId);
     return;
   }
@@ -187,6 +188,8 @@ function proofTreeOnEdit(
     tactic.goals = goalNodes;
   }
 
+  tacticGroup.isProcessed = true;
+
   if (goalNodes.length > 0) {
     let curGoal: GoalNode = goalNodes[0];
     curGoal.stateIds.push(stateId);
@@ -213,8 +216,12 @@ function proofTreeOnEditAt(sid: number): void {
   activeProofTree.tacticWaiting = nothing();
 
   // first, get rid of all stored stateIds > sid
+  // and mark their children tactic groups unprocessed
   let allGoals = activeProofTree.rootNode.getAllGoalDescendants();
   _(allGoals).each((g) => {
+    if (_(g.stateIds).some((s) => s >= sid)) {
+      _(g.tacticGroups).each((g) => { g.isProcessed = false; });
+    }
     g.stateIds = _(g.stateIds).filter((s) => s <= sid).value();
   });
   let target = _(allGoals).find((g) => {

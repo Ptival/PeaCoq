@@ -87,8 +87,8 @@ class ProcessedEdit extends Edit {
 
   containsPosition(p: AceAjax.Position): boolean {
     return (
-      isBefore(ComparisonFlag.OrEqual, this.getStartPosition(), p)
-      && isBefore(ComparisonFlag.Strictly, p, this.getStopPosition())
+      isBefore(Strictly.No, this.getStartPosition(), p)
+      && isBefore(Strictly.No, p, this.getStopPosition())
     );
   }
 
