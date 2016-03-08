@@ -25,14 +25,18 @@ let nbsp = "\u00A0";
 
 class CoqDocument {
   beginAnchor: AceAjax.Anchor;
+  editBeingProcessed: Maybe<EditBeingProcessed>;
   editor: AceAjax.Editor;
-  edits: Array<ProcessedEdit>;
+  editsProcessed: ProcessedEdit[];
+  editsToProcess: EditToProcess[];
   endAnchor: AceAjax.Anchor;
   session: AceAjax.IEditSession;
 
   constructor(editor: AceAjax.Editor) {
     this.editor = editor;
-    this.edits = [];
+    this.editsProcessed = [];
+    this.editBeingProcessed = nothing();
+    this.editsToProcess = [];
     // WARNING: This line must stay over calls to mkAnchor
     this.session = editor.getSession();
     this.session.on("change", (change) => {
@@ -42,16 +46,83 @@ class CoqDocument {
     this.endAnchor = mkAnchor(this, 0, 0, "end-marker", false);
   }
 
-  getStopPositions(): AceAjax.Position[] {
-    return _(this.edits).map(function(e) { return e.getStopPosition(); }).value();
-  }
+  // getStopPositions(): AceAjax.Position[] {
+  //   return _(this.editsProcessed).map(function(e) { return e.getStopPosition(); }).value();
+  // }
 
   getLastEditStop(): AceAjax.Position {
-    if (this.edits.length === 0) { return this.beginAnchor.getPosition(); }
-    return _(this.edits).last().getStopPosition();
+    let self = this;
+    // work our way backwards
+    if (this.editsToProcess.length > 0) {
+      return _(this.editsToProcess).last().getStopPosition();
+    }
+    return this.editBeingProcessed.caseOf({
+      just: (e) => e.getStopPosition(),
+      nothing: () => {
+        if (self.editsProcessed.length === 0) {
+          return self.beginAnchor.getPosition();
+        }
+        return _(self.editsProcessed).last().getStopPosition();
+      }
+    })
   }
 
-  pushEdit(e: ProcessedEdit) { this.edits.push(e); }
+  onProcessEditsFailure(): (_1: ValueFail) => Promise<any> {
+    let self = this;
+    return (vf: ValueFail) => {
+      if (!(vf instanceof ValueFail)) {
+        throw vf;
+      }
+      self.editBeingProcessed.fmap((e) => e.onRemove());
+      self.editBeingProcessed = nothing();
+      _(self.editsToProcess).each((e) => e.onRemove());
+      self.editsToProcess = [];
+      reportFailure(vf.message);
+      console.log(vf.stateId);
+      if (vf.stateId !== 0) {
+        // TODO: also need to cancel edits > vf.stateId
+        return peaCoqEditAt(vf.stateId);
+      } else {
+        return Promise.reject(vf);
+      }
+    };
+  }
+
+  processEdits(): Promise<void> {
+    let self = this;
+    if (
+      this.editsToProcess.length === 0
+      || this.editBeingProcessed.caseOf({ nothing: () => false, just: () => true })
+    ) { return Promise.resolve(); }
+    let ebp = new EditBeingProcessed(this.editsToProcess.shift());
+    this.editBeingProcessed = just(ebp);
+    return (
+      peaCoqAddPrime(ebp.query)
+        .then((response) => {
+          let stopPos = ebp.getStopPosition();
+          self.session.selection.clearSelection();
+          self.editor.moveCursorToPosition(stopPos);
+          self.editor.scrollToLine(stopPos.row, true, true, () => { });
+          self.editor.focus();
+          let sid: number = response.stateId;
+          let ls = lastStatus;
+          let s = peaCoqStatus(false);
+          let g = s.then(peaCoqGoal);
+          let c = g.then(peaCoqGetContext);
+          return Promise.all<any>([s, g, c]).then(
+            ([s, g, c]: [Status, Goals, PeaCoqContext]) => {
+              let e = new ProcessedEdit(ebp, sid, s, g, c);
+              self.editsProcessed.push(e);
+              _(editHandlers).each((h) => h(ebp.query, sid, ls, s, g, c));
+              this.editBeingProcessed = nothing();
+              return self.processEdits();
+            });
+        })
+        .catch(self.onProcessEditsFailure)
+    );
+  }
+
+  pushEdit(e: ProcessedEdit) { this.editsProcessed.push(e); }
 
   recenterEditor() {
     let pos = this.editor.getCursorPosition();
@@ -59,7 +130,9 @@ class CoqDocument {
   }
 
   resetEditor(text: string) {
-    this.edits = [];
+    this.editsProcessed = [];
+    this.editBeingProcessed = nothing();
+    this.editsToProcess = [];
     this.session.setValue(text);
     this.editor.focus();
     this.editor.scrollToLine(0, true, true, () => { });
@@ -69,7 +142,7 @@ class CoqDocument {
     predicate: (e: ProcessedEdit) => boolean,
     beforeRemoval?: (e: ProcessedEdit) => void
   ) {
-    _.remove(this.edits, function(e) {
+    _.remove(this.editsProcessed, function(e) {
       let toBeRemoved = predicate(e);
       if (toBeRemoved) {
         if (beforeRemoval) { beforeRemoval(e); }
@@ -211,23 +284,6 @@ function reportFailure(f: string) { //, switchTab: boolean) {
   //yif (switchTab) { failures.click(); }
 }
 
-function onNextEditFail(e: EditBeingProcessed): (_1: ValueFail) => Promise<any> {
-  return (vf: ValueFail) => {
-    if (!(vf instanceof ValueFail)) {
-      throw vf;
-    }
-    e.remove();
-    reportFailure(vf.message);
-    console.log(vf.stateId);
-    if (vf.stateId !== 0) {
-      // TODO: also need to cancel edits > vf.stateId
-      return peaCoqEditAt(vf.stateId);
-    } else {
-      return Promise.reject(vf);
-    }
-  };
-}
-
 function getPreviousEditContext(e: ProcessedEdit): Maybe<PeaCoqContext> {
   return e.previousEdit.fmap((e) => e.context);
 }
@@ -238,7 +294,6 @@ throws the error again)
 */
 function onNext(doc: CoqDocument): Promise<void> {
   clearCoqtopTabs();
-  // the last anchor is how far we have processed
   let lastEditStopPos = doc.getLastEditStop();
   let endPos = doc.endAnchor.getPosition();
   let unprocessedRange =
@@ -252,31 +307,10 @@ function onNext(doc: CoqDocument): Promise<void> {
   }
   let nextIndex = next(unprocessedText);
   let newStopPos = movePosRight(doc, lastEditStopPos, nextIndex);
-  let e1 = new EditToProcess(coqDocument, lastEditStopPos, newStopPos);
-  let e2 = new EditBeingProcessed(e1);
   let query = unprocessedText.substring(0, nextIndex);
-  return (
-    peaCoqAddPrime(query)
-      .then(
-      (response) => {
-        doc.session.selection.clearSelection();
-        doc.editor.moveCursorToPosition(newStopPos);
-        doc.editor.scrollToLine(newStopPos.row, true, true, () => { });
-        doc.editor.focus();
-        let sid: number = response.stateId;
-        let ls = lastStatus;
-        let s = peaCoqStatus(false);
-        let g = s.then(peaCoqGoal);
-        let c = g.then(peaCoqGetContext);
-        return Promise.all<any>([s, g, c]).then(
-          ([s, g, c]: [Status, Goals, PeaCoqContext]) => {
-            let e = new ProcessedEdit(e2, sid, s, g, c);
-            _(editHandlers).each((h) => h(query, sid, ls, s, g, c));
-            return Promise.resolve();
-          });
-      })
-      .catch(onNextEditFail(e2))
-  );
+  let e1 = new EditToProcess(coqDocument, lastEditStopPos, newStopPos, query);
+  doc.editsToProcess.push(e1);
+  return doc.processEdits();
 }
 
 type EditHandler = (q: string, sid: number, ls: Status, s: Status, g: Goals, c: PeaCoqContext) => void;
@@ -337,7 +371,7 @@ function onGotoCaret(doc: CoqDocument): Promise<void> {
 
 function onPrevious(doc: CoqDocument): Promise<void> {
   clearCoqtopTabs();
-  let lastEdit = _.last(doc.edits);
+  let lastEdit = _.last(doc.editsProcessed);
   if (!lastEdit) { return Promise.resolve(); }
   return (
     lastEdit.previousEdit
@@ -718,7 +752,7 @@ enum ComparisonFlag {
 function isBefore(flag: ComparisonFlag, pos1: AceAjax.Position, pos2: AceAjax.Position): boolean {
   if (pos1.row < pos2.row) { return true; }
   if (pos1.row > pos2.row) { return false; }
-  switch(flag) {
+  switch (flag) {
     case ComparisonFlag.Strictly: return pos1.column < pos2.column;
     case ComparisonFlag.OrEqual: return pos1.column <= pos2.column;
   };
@@ -727,7 +761,7 @@ function isBefore(flag: ComparisonFlag, pos1: AceAjax.Position, pos2: AceAjax.Po
 function isAfter(flag: ComparisonFlag, pos1: AceAjax.Position, pos2: AceAjax.Position): boolean {
   if (pos1.row > pos2.row) { return true; }
   if (pos1.row < pos2.row) { return false; }
-  switch(flag) {
+  switch (flag) {
     case ComparisonFlag.Strictly: return pos1.column > pos2.column;
     case ComparisonFlag.OrEqual: return pos1.column >= pos2.column;
   };

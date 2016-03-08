@@ -40,7 +40,7 @@ a, button {
   position: absolute;
   border-left: 2px solid red;
 }
-.processing, .processed {
+.processing, .processed, .toprocess {
   border-radius: 0 !important;
   position: absolute;
   z-index: 5;

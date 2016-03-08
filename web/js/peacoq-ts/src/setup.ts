@@ -23,7 +23,7 @@ $(document).ready(() => {
   let editor: AceAjax.Editor = ace.edit("editor");
   editor.selection.on("changeCursor", (e) => {
     let cursorPosition = editor.selection.getCursor();
-    _(coqDocument.edits).each((e: ProcessedEdit) => {
+    _(coqDocument.editsProcessed).each((e: ProcessedEdit) => {
       if (e.containsPosition(cursorPosition)) {
         console.log(e.stateId);
       }

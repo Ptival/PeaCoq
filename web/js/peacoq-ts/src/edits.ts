@@ -26,12 +26,23 @@ class EditMarker {
   }
 }
 
-class EditToProcess {
+abstract class Edit {
+  marker: EditMarker;
+  constructor(m: EditMarker) { this.marker = m; }
+  getStartPosition(): AceAjax.Position { return this.marker.startPos; }
+  getStopPosition(): AceAjax.Position { return this.marker.stopPos; }
+  onRemove(): void { this.marker.remove(); }
+}
+
+class EditToProcess extends Edit {
   document: CoqDocument;
-  private marker: EditMarker;
-  constructor(doc: CoqDocument, start: AceAjax.Position, stop: AceAjax.Position) {
+  query: string;
+  constructor(
+    doc: CoqDocument, start: AceAjax.Position, stop: AceAjax.Position, query: string
+  ) {
+    super(new EditMarker(doc, start, stop));
     this.document = doc;
-    this.marker = new EditMarker(doc, start, stop);
+    this.query = query;
   }
   promoteMarker(): EditMarker {
     this.marker.markProcessing();
@@ -39,42 +50,39 @@ class EditToProcess {
   }
 }
 
-class EditBeingProcessed {
+class EditBeingProcessed extends Edit {
   document: CoqDocument;
-  private marker: EditMarker;
+  query: string;
   constructor(e: EditToProcess) {
+    super(e.promoteMarker())
     this.document = e.document;
     this.marker = e.promoteMarker();
+    this.query = e.query;
   }
   promoteMarker(): EditMarker {
     this.marker.markProcessed();
     return this.marker;
   }
-  remove(): void {
-    this.marker.remove();
-  }
 }
 
-class ProcessedEdit {
+class ProcessedEdit extends Edit {
   context: PeaCoqContext;
   document: CoqDocument;
   editId: number;
   goals: Goals;
-  private marker: EditMarker;
   previousEdit: Maybe<ProcessedEdit>;
   stateId: number;
   status: Status;
 
   constructor(e: EditBeingProcessed, sid: number, s: Status, gs: Goals, c: PeaCoqContext) {
+    super(e.promoteMarker());
     this.context = c;
     this.document = e.document;
     this.goals = gs;
-    this.marker = e.promoteMarker();
     this.editId = freshEditId();
     this.stateId = sid;
     this.status = s;
-    this.previousEdit = this.document.edits.length === 0 ? nothing() : just(_(this.document.edits).last());
-    this.document.pushEdit(this);
+    this.previousEdit = this.document.editsProcessed.length === 0 ? nothing() : just(_(this.document.editsProcessed).last());
   }
 
   containsPosition(p: AceAjax.Position): boolean {
@@ -84,17 +92,9 @@ class ProcessedEdit {
     );
   }
 
-  getStartPosition(): AceAjax.Position { return this.marker.startPos; }
-
-  getStopPosition(): AceAjax.Position { return this.marker.stopPos; }
-
-  onRemove(): void {
-    this.marker.remove();
-  }
-
   remove(): void {
     this.onRemove();
-    _.remove(this.document.edits, this);
+    _.remove(this.document.editsProcessed, this);
   }
 
 }

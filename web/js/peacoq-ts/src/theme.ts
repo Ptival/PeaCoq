@@ -1,5 +1,17 @@
 let cssPath = "js/lib/w2ui/";
 
+interface Theme {
+  aceTheme: string;
+  background: string;
+  css: string;
+  foreground: string;
+  goalFill: string;
+  processed: string;
+  processing: string;
+  toprocess: string;
+  tacticFill: string;
+}
+
 namespace BrightTheme {
   export let aceTheme = "";
   export let background = "rgba(245, 246, 247, 1)";
@@ -8,6 +20,7 @@ namespace BrightTheme {
   export let goalFill = "#DFE2DB";
   export let processed = "rgba(144, 238, 144, 1)";
   export let processing = "rgba(255, 179, 71, 1)";
+  export let toprocess = "rgba(173, 216, 230, 1)";
   export let tacticFill = "#FFF056";
 }
 
@@ -18,13 +31,14 @@ namespace DarkTheme {
   export let foreground = "white";
   export let goalFill = "#7F827B";
   export let processed = "rgba(44, 138, 44, 1)";
-  export let processing = "rgba(255, 179, 71, 1)";
+  export let processing = "rgba(185, 109, 01, 1)";
+  export let toprocess = "rgba(73, 116, 130, 1)";
   export let tacticFill = "#9F9006";
 }
 
 namespace Theme {
 
-  export let theme = DarkTheme;
+  export let theme: Theme = DarkTheme;
 
   export function switchToBright(): void {
     theme = BrightTheme;
@@ -57,6 +71,7 @@ namespace Theme {
     jss.set("#prooftree", { "background-color": theme.background });
     jss.set(".processed", { "background-color": theme.processed });
     jss.set(".processing", { "background-color": theme.processing });
+    jss.set(".toprocess", { "background-color": theme.toprocess });
     jss.set(".goal", { "fill": theme.goalFill });
     jss.set(".tactic", { "fill": theme.tacticFill });
 

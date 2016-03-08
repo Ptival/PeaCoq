@@ -9,12 +9,13 @@ requirejs.config({
     'bootstrap': { deps: ['jquery'] },
     'jquery.hotkeys': { deps: ['jquery'] },
     'MathJax-master/MathJax': { deps: ['jquery'] },
-    'peacoq-ts/coq85': { deps: ['peacoq-ts/coqtop85'] },
+    'peacoq-ts/coq85': { deps: ['peacoq-ts/coqtop85', 'peacoq-ts/utils'] },
+    'peacoq-ts/editor-tab': { deps: ['peacoq-ts/tab'] },
     'peacoq-ts/fakenode': { deps: ['peacoq-ts/prooftreenode'] },
     'peacoq-ts/goalnode': { deps: ['peacoq-ts/prooftreenode'] },
     'peacoq-ts/tacticgroupnode': { deps: ['peacoq-ts/prooftreenode'] },
     'peacoq-ts/setup': { deps: ['peacoq-ts/coq85', 'peacoq-ts/coqtop85', 'peacoq-ts/editor-tab', 'peacoq-ts/prooftree', 'peacoq-ts/theme'] },
-    'peacoq-ts/editor-tab': { deps: ['peacoq-ts/tab'] },
+    'peacoq-ts/utils': { deps: ['tsmonad'] },
     'peacoq-ts/prooftree': { deps: ['peacoq-ts/prooftree-utils']},
   }
 });
