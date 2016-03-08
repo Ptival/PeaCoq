@@ -9,6 +9,14 @@ function fromJust<T>(m: Maybe<T>): T {
   })
 }
 
+function isNothing<T>(m: Maybe<T>): boolean {
+  return m.equals(nothing());
+}
+
+function isJust<T>(m: Maybe<T>): boolean {
+  return m.caseOf({ nothing: () => false, just: (x) => true });
+}
+
 function assert(condition: boolean, message: string): void {
   if (!condition) {
     alert("Assertion failed: " + message);

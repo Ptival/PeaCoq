@@ -67,33 +67,29 @@ class CoqDocument {
     })
   }
 
-  onProcessEditsFailure(): (_1: ValueFail) => Promise<any> {
-    let self = this;
-    return (vf: ValueFail) => {
-      if (!(vf instanceof ValueFail)) {
-        throw vf;
-      }
-      self.editBeingProcessed.fmap((e) => e.onRemove());
-      self.editBeingProcessed = nothing();
-      _(self.editsToProcess).each((e) => e.onRemove());
-      self.editsToProcess = [];
-      reportFailure(vf.message);
-      console.log(vf.stateId);
-      if (vf.stateId !== 0) {
-        // TODO: also need to cancel edits > vf.stateId
-        return peaCoqEditAt(vf.stateId);
-      } else {
-        return Promise.reject(vf);
-      }
-    };
+  onProcessEditsFailure(vf: ValueFail): Promise<any> {
+    if (!(vf instanceof ValueFail)) {
+      throw vf;
+    }
+    this.editBeingProcessed.fmap((e) => e.onRemove());
+    this.editBeingProcessed = nothing();
+    _(this.editsToProcess).each((e) => e.onRemove());
+    this.editsToProcess = [];
+    reportFailure(vf.message);
+    console.log(vf.stateId);
+    if (vf.stateId !== 0) {
+      // TODO: also need to cancel edits > vf.stateId
+      return peaCoqEditAt(vf.stateId);
+    } else {
+      return Promise.reject(vf);
+    }
   }
 
   processEdits(): Promise<void> {
     let self = this;
-    if (
-      this.editsToProcess.length === 0
-      || this.editBeingProcessed.caseOf({ nothing: () => false, just: () => true })
-    ) { return Promise.resolve(); }
+    if (this.editsToProcess.length === 0 || isJust(this.editBeingProcessed)) {
+      return Promise.resolve();
+    }
     let ebp = new EditBeingProcessed(this.editsToProcess.shift());
     this.editBeingProcessed = just(ebp);
     return (
@@ -118,7 +114,7 @@ class CoqDocument {
               return self.processEdits();
             });
         })
-        .catch(self.onProcessEditsFailure)
+        .catch(self.onProcessEditsFailure.bind(self))
     );
   }
 
@@ -371,6 +367,9 @@ function onGotoCaret(doc: CoqDocument): Promise<void> {
 
 function onPrevious(doc: CoqDocument): Promise<void> {
   clearCoqtopTabs();
+  if (isJust(doc.editBeingProcessed) || doc.editsToProcess.length > 0) {
+    return Promise.resolve();
+  }
   let lastEdit = _.last(doc.editsProcessed);
   if (!lastEdit) { return Promise.resolve(); }
   return (
