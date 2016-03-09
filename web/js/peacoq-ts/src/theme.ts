@@ -8,6 +8,7 @@ interface Theme {
   goalFill: string;
   processed: string;
   processing: string;
+  separatorColor: string;
   toprocess: string;
   tacticFill: string;
 }
@@ -20,6 +21,7 @@ namespace BrightTheme {
   export let goalFill = "#DFE2DB";
   export let processed = "rgba(144, 238, 144, 1)";
   export let processing = "rgba(255, 179, 71, 1)";
+  export let separatorColor = "#999999";
   export let toprocess = "rgba(173, 216, 230, 1)";
   export let tacticFill = "#FFF056";
 }
@@ -32,6 +34,7 @@ namespace DarkTheme {
   export let goalFill = "#7F827B";
   export let processed = "rgba(44, 138, 44, 1)";
   export let processing = "rgba(185, 109, 01, 1)";
+  export let separatorColor = "#999999";
   export let toprocess = "rgba(73, 116, 130, 1)";
   export let tacticFill = "#9F9006";
 }
@@ -74,6 +77,8 @@ namespace Theme {
     jss.set(".toprocess", { "background-color": theme.toprocess });
     jss.set(".goal", { "fill": theme.goalFill });
     jss.set(".tactic", { "fill": theme.tacticFill });
+
+    jss.set(".w2ui-layout>div .w2ui-resizer", { "background-color": theme.separatorColor });
 
     coqDocument.editor.setTheme(theme.aceTheme);
     _(allEditorTabs).each((et) => { et.setTheme(theme.aceTheme); })
