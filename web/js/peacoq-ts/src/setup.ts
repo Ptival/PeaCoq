@@ -53,6 +53,7 @@ $(document).ready(() => {
 
   rightLayout.on({ type: "render", execute: "after" }, () => {
     pretty = new Tab("pretty", "Pretty", "right-layout", "main");
+    pretty.div.css("padding-left", "4px");
     foreground = new EditorTab("foreground", "Foreground", "right-layout", "main");
     background = new EditorTab("background", "Background", "right-layout", "main");
     shelved = new EditorTab("shelved", "Shelved", "right-layout", "main");
