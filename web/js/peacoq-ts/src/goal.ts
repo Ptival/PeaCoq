@@ -5,9 +5,9 @@
 // printing diffs between lines, as merging messes with this...
 
 class PeaCoqGoal {
-  html: JQuery;
-  hyps: PeaCoqHyp[];
-  concl: ConstrExpr;
+  private html: JQuery;
+  private hyps: PeaCoqHyp[];
+  private concl: ConstrExpr;
 
   constructor(hyps, concl) {
     this.html = undefined; // rendered on-demand and cached

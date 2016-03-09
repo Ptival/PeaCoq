@@ -16,7 +16,7 @@ $(document).ready(() => {
       { type: 'top', size: 34, resizable: false, style: pstyle, content: $("<div>", { id: "toolbar" }) },
       { type: 'left', size: "50%", overflow: 'hidden', resizable: true, style: pstyle, content: $("<div>", { id: "editor", style: "height: 100%" }) },
       { type: 'main', size: "50%", style: pstyle, overflow: 'hidden', content: $("<div>", { id: "right" }) },
-      { type: 'bottom', hidden: true, size: "50%", overflow: 'hidden', resizable: true, style: pstyle, content: $("<div>", { id: "prooftree" }) },
+      { type: 'bottom', hidden: true, size: "30%", overflow: 'hidden', resizable: true, style: pstyle, content: $("<div>", { id: "prooftree" }) },
     ]
   });
 
@@ -47,7 +47,7 @@ $(document).ready(() => {
   rightLayout = w2ui["right-layout"];
   contextTabs = w2ui["right-layout_main_tabs"];
   contextTabs.onClick = function(event) {
-      $('#myTabsContent').html(event.target);
+    $('#myTabsContent').html(event.target);
   };
   coqtopTabs = w2ui["right-layout_bottom_tabs"];
 
@@ -106,6 +106,11 @@ function proofTreeOnEdit(
 ): void {
 
   let trimmed = coqTrim(query);
+
+  if (context.length > 0) {
+    pretty.div.append(context[0].getHTML());
+    foreground.setValue(goals.fgGoals[0].toString(), false);
+  }
 
   if (
     lastStatus.statusAllProofs.length + 1 === status.statusAllProofs.length
