@@ -102,7 +102,11 @@ function proofTreeOnStatus(s) {
 }
 
 function proofTreeOnEdit(
-  query: string, stateId: number, lastStatus: Status, status: Status, goals: Goals,
+  query: string,
+  stateId: number,
+  lastStatus: Status,
+  status: Status,
+  goals: Goals,
   context: PeaCoqContext
 ): void {
 
@@ -183,7 +187,12 @@ function proofTreeOnEdit(
 
   let goalNodes: GoalNode[] =
     _(relevantGoals).map(function(goal) {
-      return new GoalNode(activeProofTree, just(tacticGroup), goals, goal);
+      return new GoalNode(
+        activeProofTree,
+        just(tacticGroup),
+        goals,
+        goal
+      );
     }).value();
 
   if (!tactic) {

@@ -12,7 +12,12 @@ class GoalNode extends ProofTreeNode {
   tacticGroups: TacticGroupNode[];
   tacticIndex: number;
 
-  constructor(proofTree: ProofTree, parent: Maybe<TacticGroupNode>, goals: Goals, goal: PeaCoqGoal) {
+  constructor(
+    proofTree: ProofTree,
+    parent: Maybe<TacticGroupNode>,
+    goals: Goals,
+    goal: PeaCoqGoal
+  ) {
     super(proofTree, parent);
 
     this.closedBraces = 0;

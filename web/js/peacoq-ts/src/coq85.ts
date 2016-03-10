@@ -791,7 +791,11 @@ function killEditsAfterPosition(doc: CoqDocument, pos: AceAjax.Position) {
 
 }
 
-function movePosRight(doc: CoqDocument, pos: AceAjax.Position, n: number) {
+function movePosRight(
+  doc: CoqDocument,
+  pos: AceAjax.Position,
+  n: number
+): AceAjax.Position {
   if (n === 0) {
     return pos;
   }
