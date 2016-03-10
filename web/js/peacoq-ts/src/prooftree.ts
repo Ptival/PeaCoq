@@ -773,167 +773,161 @@ class ProofTree {
   }
 
   update(): Promise<{}> {
+    let self = this;
+    return new Promise(function(onFulfilled, onRejected) {
+      return self.updatePromise(onFulfilled, onRejected);
+    });
+  }
 
-    //if (focusedOnEditor) { return Promise.resolve(); }
-
+  updatePromise<T>(onFulfilled: () => T, onRejected: () => void): T {
     let self = this;
 
-    return new Promise(function(onFulfilled, onRejected) {
+    let curNode = self.curNode;
 
-      if (!self.rootNode) { return; }
+    self.resetSVGTransform(); // cancel view transformations
 
-      // shorter name, expected to stay constant throughout
-      let curNode = self.curNode;
+    let nodes = self.tree.nodes(self.rootNode);
+    let links = self.tree.links(nodes);
+    // now remove all fake nodes
+    nodes = _(nodes)
+      .filter(function(node) { return !(node instanceof FakeNode); })
+      .value()
+      ;
+    links = _(links)
+      .filter(function(link) {
+        return !(link.source instanceof FakeNode || link.target instanceof FakeNode)
+      })
+      .value()
+      ;
 
-      // no longer true
-      //assert(curNode instanceof GoalNode, "curNode instanceof GoalNode");
+    // we build the foreignObject first, as its dimensions will guide the others
+    let textSelection = self.textLayer
+      .selectAll(function() {
+        return this.getElementsByTagName("foreignObject");
+      })
+      .data(nodes, function(d) { return d.id || (d.id = _.uniqueId()); })
+      ;
 
-      // if the viewpoint has been zoomed, cancel the zoom so that the computed
-      // sizes are correct
-      self.resetSVGTransform();
+    let textEnter = textSelection.enter()
+      .append("foreignObject")
+      .classed("monospace", true)
+      // the goal nodes need to be rendered at fixed width goalWidth
+      // the tactic nodes will be resized to their actual width later
+      .attr("width", function(d) {
+        return d instanceof GoalNode ? self.getGoalWidth() : self.getTacticWidth();
+      })
+      ;
 
-      let nodes = self.tree.nodes(self.rootNode);
-      let links = self.tree.links(nodes);
-      // now remove all fake nodes
-      nodes = _(nodes)
-        .filter(function(node) { return !(node instanceof FakeNode); })
-        .value()
-        ;
-      links = _(links)
-        .filter(function(link) {
-          return !(link.source instanceof FakeNode || link.target instanceof FakeNode)
-        })
-        .value()
-        ;
+    textEnter
+      .append("xhtml:body")
+      //.classed("svg", true)
+      .style("margin", 0) // keep this line for svg_datatourl
+      .style("padding", function(d) {
+        return d instanceof GoalNode ? goalBodyPadding + "px" : "0px 0px";
+      })
+      .style("background-color", "rgba(0, 0, 0, 0)")
+      // should make it less painful on 800x600 videoprojector
+      // TODO: fix computing diffs so that zooming is possible
+      .style("font-size", (self.width < 1000) ? "12px" : "14px")
+      .style("font-family", "monospace")
+      .each(function(d) {
+        let jqBody = $(d3.select(this).node());
 
-      // we build the foreignObject first, as its dimensions will guide the others
-      let textSelection = self.textLayer
-        .selectAll(function() {
-          return this.getElementsByTagName("foreignObject");
-        })
-        .data(nodes, function(d) { return d.id || (d.id = _.uniqueId()); })
-        ;
-
-      let textEnter = textSelection.enter()
-        .append("foreignObject")
-        .classed("monospace", true)
-        // the goal nodes need to be rendered at fixed width goalWidth
-        // the tactic nodes will be resized to their actual width later
-        .attr("width", function(d) {
-          return d instanceof GoalNode ? self.getGoalWidth() : self.getTacticWidth();
-        })
-        ;
-
-      textEnter
-        .append("xhtml:body")
-        //.classed("svg", true)
-        .style("margin", 0) // keep this line for svg_datatourl
-        .style("padding", function(d) {
-          return d instanceof GoalNode ? goalBodyPadding + "px" : "0px 0px";
-        })
-        .style("background-color", "rgba(0, 0, 0, 0)")
-        // should make it less painful on 800x600 videoprojector
-        // TODO: fix computing diffs so that zooming is possible
-        .style("font-size", (self.width < 1000) ? "12px" : "14px")
-        .style("font-family", "monospace")
-        .each(function(d) {
-          let jqBody = $(d3.select(this).node());
-
-          /*
-          let jQContents;
-          if (d instanceof TacticNode) {
-            d.span = $("<div>")
-              .addClass("tacticNode")
-              .css("padding", "4px")
-              .css("text-align", "center")
-              .text(d.tactic);
-            jQContents = d.span;
-          } else if (d instanceof TacticGroupNode) {
-            return; // needs to be refreshed on every update, see below
-          } else if (d instanceof GoalNode) {
-            jQContents = makeGoalNodePre();
-            _(d.hyps).each(function(h) {
-              let jQDiv = $("<div>")
-                .html(showHypothesis(h))
-                .attr("id", _.uniqueId())
-                ;
-              h.div = jQDiv[0];
-              jQContents.append(h.div);
-            });
-            jQContents.append(makeContextDivider());
-            d.goalSpan = $("<div>").html(showTerm(d.goalTerm));
-            jQContents.append(d.goalSpan);
-          } else {
-            throw d;
-          }
-          jqBody.append(jQContents);
-          */
-
-          if (d instanceof GoalNode) { jqBody.append(d.html); }
-        })
-        ;
-
-      textSelection
-        // the tactic groups need to be updated every time
-        .each(function(d) {
-          let jqBody = $(d3.select(this).select("body").node());
-          let jQContents;
-          if (d instanceof TacticGroupNode) {
-            let focusedTactic = d.tactics[d.tacticIndex];
-            let nbTactics = d.tactics.length;
-            d.span = $("<div>")
-              .addClass("tacticNode")
-              .css("padding", "4px")
-              .css("text-align", "center")
+        /*
+        let jQContents;
+        if (d instanceof TacticNode) {
+          d.span = $("<div>")
+            .addClass("tacticNode")
+            .css("padding", "4px")
+            .css("text-align", "center")
+            .text(d.tactic);
+          jQContents = d.span;
+        } else if (d instanceof TacticGroupNode) {
+          return; // needs to be refreshed on every update, see below
+        } else if (d instanceof GoalNode) {
+          jQContents = makeGoalNodePre();
+          _(d.hyps).each(function(h) {
+            let jQDiv = $("<div>")
+              .html(showHypothesis(h))
+              .attr("id", _.uniqueId())
               ;
+            h.div = jQDiv[0];
+            jQContents.append(h.div);
+          });
+          jQContents.append(makeContextDivider());
+          d.goalSpan = $("<div>").html(showTerm(d.goalTerm));
+          jQContents.append(d.goalSpan);
+        } else {
+          throw d;
+        }
+        jqBody.append(jQContents);
+        */
 
-            // prepend a tactic node selector if necessary
-            if (nbTactics > 1) {
+        if (d instanceof GoalNode) { jqBody.append(d.html); }
+      })
+      ;
 
-              if (d.tacticIndex > 0) {
-                d.span.append(
-                  $("<a>")
-                    .attr("href", "#")
-                    .text('◀')
-                    .click(function(e) {
-                      e.stopImmediatePropagation();
-                      d.shiftPrevInGroup();
-                    })
-                );
-              } else {
-                d.span.append(nbsp);
-              }
+    textSelection
+      // the tactic groups need to be updated every time
+      .each(function(d) {
+        let jqBody = $(d3.select(this).select("body").node());
+        let jQContents;
+        if (d instanceof TacticGroupNode) {
+          let focusedTactic = d.tactics[d.tacticIndex];
+          let nbTactics = d.tactics.length;
+          d.span = $("<div>")
+            .addClass("tacticNode")
+            .css("padding", "4px")
+            .css("text-align", "center")
+            ;
 
+          // prepend a tactic node selector if necessary
+          if (nbTactics > 1) {
+
+            if (d.tacticIndex > 0) {
               d.span.append(
-                '[' + (d.tacticIndex + 1) + '/' + d.tactics.length + ']'
+                $("<a>")
+                  .attr("href", "#")
+                  .text('◀')
+                  .click(function(e) {
+                    e.stopImmediatePropagation();
+                    d.shiftPrevInGroup();
+                  })
               );
-
-              if (d.tacticIndex < d.tactics.length - 1) {
-                d.span.append(
-                  $("<a>")
-                    .attr("href", "#")
-                    .text('▶')
-                    .click(function(e) {
-                      e.stopImmediatePropagation();
-                      d.shiftNextInGroup();
-                    })
-                );
-              } else {
-                d.span.append(nbsp);
-              }
-
-              d.span.append($("<br>"));
-
+            } else {
+              d.span.append(nbsp);
             }
 
             d.span.append(
-              focusedTactic.tactic
+              '[' + (d.tacticIndex + 1) + '/' + d.tactics.length + ']'
             );
 
-            jQContents = d.span;
-            jqBody.empty();
-            jqBody.append(jQContents);
-          }/* else if (d instanceof GoalNode) {
+            if (d.tacticIndex < d.tactics.length - 1) {
+              d.span.append(
+                $("<a>")
+                  .attr("href", "#")
+                  .text('▶')
+                  .click(function(e) {
+                    e.stopImmediatePropagation();
+                    d.shiftNextInGroup();
+                  })
+              );
+            } else {
+              d.span.append(nbsp);
+            }
+
+            d.span.append($("<br>"));
+
+          }
+
+          d.span.append(
+            focusedTactic.tactic
+          );
+
+          jQContents = d.span;
+          jqBody.empty();
+          jqBody.append(jQContents);
+        }/* else if (d instanceof GoalNode) {
             jQContents = makeGoalNodePre();
             _(d.hyps).each(function(h) {
               let jQDiv = $("<div>")
@@ -950,389 +944,444 @@ class ProofTree {
             jqBody.empty();
             jqBody.append(jQContents);
           }*/
-        })
-        .each(function(d) {
-          let nodeDOM = d3.select(this).node();
-          self.updateNodeMeasures(nodeDOM, d);
-        })
-        // preset the width to update measures correctly
-        .attr("width", function(d) {
-          return d instanceof GoalNode ? self.getGoalWidth() : self.getTacticWidth();
-        })
-        .attr("height", 0)
-        .each(function(d) {
-          let nodeDOM = d3.select(this).node().firstChild;
-          self.updateNodeMeasures(nodeDOM, d);
-        })
-        ;
+      })
+      .each(function(d) {
+        let nodeDOM = d3.select(this).node();
+        self.updateNodeMeasures(nodeDOM, d);
+      })
+      // preset the width to update measures correctly
+      .attr("width", function(d) {
+        return d instanceof GoalNode ? self.getGoalWidth() : self.getTacticWidth();
+      })
+      .attr("height", 0)
+      .each(function(d) {
+        let nodeDOM = d3.select(this).node().firstChild;
+        self.updateNodeMeasures(nodeDOM, d);
+      })
+      ;
 
-      // Now that the nodes have a size, we can compute the factors
-      self.computeXYFactors();
+    // Now that the nodes have a size, we can compute the factors
+    self.computeXYFactors();
 
-      // compute how much descendants must be moved to center current
-      self.computeDescendantsOffset();
+    // compute how much descendants must be moved to center current
+    self.computeDescendantsOffset();
 
-      // now we need to set the x and y attributes of the entering foreignObjects,
-      // so we need to reuse the selection
-      textEnter
-        .attr("x", function(d) {
-          d.getParent().caseOf({
-            nothing: () => {
-              // the root needs to spawn somewhere arbitrary: (0, 0.5)
-              d.originalScaledX = self.xOffset(d);
-              d.originalScaledY = 0.5 * self.yFactor + self.yOffset(d);
-            },
-            just: (p) => {
-              // non-roots are spawned at their parent's (cX0, cY0)
-              d.originalScaledX = p.originalScaledX;
-              d.originalScaledY = p.originalScaledY;
-            },
-          });
-          return d.originalScaledX;
-        })
-        .attr("y", function(d, ndx) { return d.originalScaledY; })
-        ;
+    // now we need to set the x and y attributes of the entering foreignObjects,
+    // so we need to reuse the selection
+    textEnter
+      .attr("x", function(d) {
+        d.getParent().caseOf({
+          nothing: () => {
+            // the root needs to spawn somewhere arbitrary: (0, 0.5)
+            d.originalScaledX = self.xOffset(d);
+            d.originalScaledY = 0.5 * self.yFactor + self.yOffset(d);
+          },
+          just: (p) => {
+            // non-roots are spawned at their parent's (cX0, cY0)
+            d.originalScaledX = p.originalScaledX;
+            d.originalScaledY = p.originalScaledY;
+          },
+        });
+        return d.originalScaledX;
+      })
+      .attr("y", function(d, ndx) { return d.originalScaledY; })
+      ;
 
-      textSelection
-        .each(function(d) {
-          d.cX = nodeX(d) * self.xFactor + self.xOffset(d);
-          d.cY = nodeY(d) * self.yFactor + self.yOffset(d);
-        })
-        // preset the width to update measures correctly
-        .attr("width", function(d) { return d.width; })
-        .attr("height", function(d) { return d.height; })
-        .transition()
-        .duration(animationDuration)
-        .style("opacity", "1")
-        .attr("x", function(d) { return d.cX; })
-        .attr("y", function(d) { return d.cY; })
-        .each("end", function() {
-          // this is in "end" so that it does not trigger before nodes are positioned
-          d3.select(this)
-            .on("click", function(d) {
+    textSelection
+      .each(function(d) {
+        d.cX = nodeX(d) * self.xFactor + self.xOffset(d);
+        d.cY = nodeY(d) * self.yFactor + self.yOffset(d);
+      })
+      // preset the width to update measures correctly
+      .attr("width", function(d) { return d.width; })
+      .attr("height", function(d) { return d.height; })
+      .transition()
+      .duration(animationDuration)
+      .style("opacity", "1")
+      .attr("x", function(d) { return d.cX; })
+      .attr("y", function(d) { return d.cY; })
+      .each("end", function() {
+        // this is in "end" so that it does not trigger before nodes are positioned
+        d3.select(this)
+          .on("click", function(d) {
 
-              //asyncLog("CLICK " + nodeString(d));
+            //asyncLog("CLICK " + nodeString(d));
 
-              d.click();
+            d.click();
 
-            })
-            ;
-        })
-        ;
+          })
+          ;
+      })
+      ;
 
-      textSelection.exit()
-        .transition()
-        .duration(animationDuration)
-        .attr("x", function(d) {
-          // in general, nodes should move towards the parent goal node
-          if (!d.hasParent() || self.isRootNode(d)) {
-            return d.cX;
-          }
-          if (d instanceof GoalNode) {
-            let nodeToReach = fromJust(d.getGrandParent());
-            d.cX = nodeToReach.cX;
-            d.cY = nodeToReach.cY;
-          } else {
-            let nodeToReach = fromJust(d.getParent());
-            d.cX = nodeToReach.cX;
-            d.cY = nodeToReach.cY;
-          }
+    textSelection.exit()
+      .transition()
+      .duration(animationDuration)
+      .attr("x", function(d) {
+        // in general, nodes should move towards the parent goal node
+        if (!d.hasParent() || self.isRootNode(d)) {
           return d.cX;
-        })
-        .attr("y", function(d) { return d.cY; })
-        .style("opacity", "0")
-        .remove()
-        ;
+        }
+        if (d instanceof GoalNode) {
+          let nodeToReach = fromJust(d.getGrandParent());
+          d.cX = nodeToReach.cX;
+          d.cY = nodeToReach.cY;
+        } else {
+          let nodeToReach = fromJust(d.getParent());
+          d.cX = nodeToReach.cX;
+          d.cY = nodeToReach.cY;
+        }
+        return d.cX;
+      })
+      .attr("y", function(d) { return d.cY; })
+      .style("opacity", "0")
+      .remove()
+      ;
 
-      let rectSelection = self.rectLayer.selectAll("rect").data(nodes, byNodeId);
-      self.onRectSelectionEnter(rectSelection.enter());
+    let rectSelection = self.rectLayer.selectAll("rect").data(nodes, byNodeId);
+    self.onRectSelectionEnter(rectSelection.enter());
 
-      rectSelection
-        .classed("current", function(d) { return self.isCurNode(d); })
-        .style("stroke", function(d) {
-          return self.isCurNode(d) ? "#03C03C" : "";
-        })
-        .style("stroke-width", function(d) {
-          return self.isCurNode(d) ? "4px" : "";
-        })
-        .classed("solved", function(d) { return d.isSolved(); })
-        .transition()
-        .duration(animationDuration)
-        .style("opacity", "1")
-        .attr("width", function(d) { return d.width; })
-        .attr("height", function(d) { return d.height / self.getCurrentScale(); })
-        .attr("x", function(d) { return d.cX; })
-        .attr("y", function(d) { return d.cY; })
-        ;
+    rectSelection
+      .classed("current", function(d) { return self.isCurNode(d); })
+      .style("stroke", function(d) {
+        return self.isCurNode(d) ? "#03C03C" : "";
+      })
+      .style("stroke-width", function(d) {
+        return self.isCurNode(d) ? "4px" : "";
+      })
+      .classed("solved", function(d) { return d.isSolved(); })
+      .transition()
+      .duration(animationDuration)
+      .style("opacity", "1")
+      .attr("width", function(d) { return d.width; })
+      .attr("height", function(d) { return d.height / self.getCurrentScale(); })
+      .attr("x", function(d) { return d.cX; })
+      .attr("y", function(d) { return d.cY; })
+      ;
 
-      rectSelection.exit()
-        .transition()
-        .duration(animationDuration)
-        .attr("x", function(d) { return d.cX; })
-        .attr("y", function(d) { return d.cY; })
-        .style("opacity", "0")
-        .remove()
-        ;
+    rectSelection.exit()
+      .transition()
+      .duration(animationDuration)
+      .attr("x", function(d) { return d.cX; })
+      .attr("y", function(d) { return d.cY; })
+      .style("opacity", "0")
+      .remove()
+      ;
 
-      let linkSelection = self.linkLayer.selectAll("path").data(links, byLinkId);
+    let linkSelection = self.linkLayer.selectAll("path").data(links, byLinkId);
 
-      linkSelection.enter()
-        .append("path")
-        .classed("link", true)
-        .attr("fill", "none")
-        .attr("d",
-        (d: ProofTreeLink) => {
-          //let src = swapXY(centerRight0(d.source));
-          //let tgt = swapXY(centerLeft0(d.target));
-          //return self.diagonal({ "source": src, "target": tgt });
-          return diagonal0({ "source": d.source, "target": d.target });
-        })
-        .attr("stroke",
-        (d: ProofTreeLink) => {
-          let t = d.target;
-          if (
-            t instanceof TacticGroupNode
-            && fromJust(t.getFocusedTactic()).goals.length === 0
-          ) {
-            return "#00FF00";
-          } else {
-            return "#000000";
-          }
-        })
-        ;
+    linkSelection.enter()
+      .append("path")
+      .classed("link", true)
+      .attr("fill", "none")
+      .attr("d",
+      (d: ProofTreeLink) => {
+        //let src = swapXY(centerRight0(d.source));
+        //let tgt = swapXY(centerLeft0(d.target));
+        //return self.diagonal({ "source": src, "target": tgt });
+        return diagonal0({ "source": d.source, "target": d.target });
+      })
+      .attr("stroke",
+      (d: ProofTreeLink) => {
+        let t = d.target;
+        if (
+          t instanceof TacticGroupNode
+          && fromJust(t.getFocusedTactic()).goals.length === 0
+        ) {
+          return "#00FF00";
+        } else {
+          return "#000000";
+        }
+      })
+      ;
 
-      linkSelection
-        .transition()
-        .duration(animationDuration)
-        .style("opacity", 1)
-        .attr("d",
-        (d) => {
-          return diagonal({ "source": d.source, "target": d.target });
-        })
-        .attr("stroke-width", self.linkWidth.bind(self))
-        ;
+    linkSelection
+      .transition()
+      .duration(animationDuration)
+      .style("opacity", 1)
+      .attr("d",
+      (d) => {
+        return diagonal({ "source": d.source, "target": d.target });
+      })
+      .attr("stroke-width", self.linkWidth.bind(self))
+      ;
 
-      linkSelection.exit()
-        .transition()
-        .duration(animationDuration)
-        .attr("d", function(d) {
-          return diagonal({ "source": d.source, "target": d.target });
-        })
-        .style("opacity", "0")
-        .remove()
-        ;
+    linkSelection.exit()
+      .transition()
+      .duration(animationDuration)
+      .attr("d", function(d) {
+        return diagonal({ "source": d.source, "target": d.target });
+      })
+      .style("opacity", "0")
+      .remove()
+      ;
 
-      /*
-            let focusedGoal = self.getFocusedGoal();
-            let diffData = (focusedGoal === undefined) ? [] : [focusedGoal];
-            let diffSelection = self.diffLayer.selectAll("g.node-diff").data(
-              diffData,
-              byNodeId
-              );
+    /*
+          let focusedGoal = self.getFocusedGoal();
+          let diffData = (focusedGoal === undefined) ? [] : [focusedGoal];
+          let diffSelection = self.diffLayer.selectAll("g.node-diff").data(
+            diffData,
+            byNodeId
+            );
 
-            diffSelection.enter()
-              .append("g")
-              .classed("node-diff", true)
-              .classed("diff", true)
-              .each(function(d) {
-              // create these so that the field exists on first access
-              d.addedSelections = [];
-              d.removedSelections = [];
-              // force the proper order of display, diffs on top of streams
-              d.pathsGroup = d3.select(this).append("g").classed("paths", true); // streams
-              d.rectsGroup = d3.select(this).append("g").classed("rects", true); // diffs
-            })
-              .style("opacity", 0)
+          diffSelection.enter()
+            .append("g")
+            .classed("node-diff", true)
+            .classed("diff", true)
+            .each(function(d) {
+            // create these so that the field exists on first access
+            d.addedSelections = [];
+            d.removedSelections = [];
+            // force the proper order of display, diffs on top of streams
+            d.pathsGroup = d3.select(this).append("g").classed("paths", true); // streams
+            d.rectsGroup = d3.select(this).append("g").classed("rects", true); // diffs
+          })
+            .style("opacity", 0)
+            .transition()
+            .duration(animationDuration)
+            .style("opacity", 1)
+          ;
+
+          diffSelection
+          // need to redo this every time now that nodes can change :(
+            .each(function(d) {
+            let gp = d.parent.parent;
+
+            let d3this = d3.select(this);
+
+            // adding diffs for the goal
+
+            let subdiff = spotTheDifferences(gp.goalSpan, d.goalSpan);
+
+            // there should be a goal stream whenever there are diffs
+            let goalStreamData = subdiff.removed.length > 0 ? [undefined] : [];
+            let goalStreamSelection =
+              d.pathsGroup.selectAll("path.goalstream")
+                .data(goalStreamData)
+              ;
+
+            goalStreamSelection.enter()
+              .append("path")
+              .classed("goalstream", true)
+              .attr("fill", diffBlue)
+              .attr("opacity", diffOpacity)
+              .attr("stroke-width", 0)
+              .attr(
+              "d",
+              connectRects(
+                elmtRect0(gp, gp.goalSpan[0]),
+                elmtRect0(d, d.goalSpan[0]),
+                undefined //d.parent.cX + d.parent.width/2
+                )
+              )
+            ;
+
+            goalStreamSelection
               .transition()
               .duration(animationDuration)
-              .style("opacity", 1)
+              .attr(
+              "d",
+              connectRects(
+                elmtRect(gp, gp.goalSpan[0]),
+                elmtRect(d, d.goalSpan[0]),
+                undefined //d.parent.cX + d.parent.width/2
+                )
+              )
             ;
 
-            diffSelection
-            // need to redo this every time now that nodes can change :(
-              .each(function(d) {
-              let gp = d.parent.parent;
+            goalStreamSelection.exit()
+              .remove()
+            ;
+
+            // let goalRemovedSelection =
+            //     d.rectsGroup.selectAll("rect.goalremoved")
+            //     .data(subdiff.removed)
+            // ;
+
+            // goalRemovedSelection.enter()
+            //     .append("rect")
+            //     .classed("goalremoved", true)
+            //     .attr("fill", function(d, ndx) {
+            //         return colorScale(ndx);
+            //     })
+            //     .attr("opacity", diffOpacity)
+            // ;
+
+            // goalRemovedSelection
+            //     .each(function(jSpan) {
+            //         let rect0 = elmtRect0(gp, jSpan[0]);
+            //         let rect = elmtRect(gp, jSpan[0]);
+            //         d3.select(this)
+            //             .attr("width", rect.width)
+            //             .attr("height", rect.height)
+            //             .attr("x", rect0.left)
+            //             .attr("y", rect0.top)
+            //             .transition()
+            //             .duration(animationDuration)
+            //             .attr("x", rect.left)
+            //             .attr("y", rect.top)
+            //         ;
+            //     })
+            //         ;
+
+            // let goalAddedSelection =
+            //     d.rectsGroup.selectAll("rect.goaladded")
+            //     .data(subdiff.added)
+            // ;
+
+            // goalAddedSelection.enter()
+            //     .append("rect")
+            //     .classed("goaladded", true)
+            //     .attr("fill", function(d, ndx) {
+            //         return colorScale(ndx);
+            //     })
+            //     .attr("opacity", diffOpacity)
+            // ;
+
+            // goalAddedSelection
+            //     .each(function(jSpan) {
+            //         let rect0 = elmtRect0(d, jSpan[0]);
+            //         let rect = elmtRect(d, jSpan[0]);
+            //         d3.select(this)
+            //             .attr("width", rect.width)
+            //             .attr("height", rect.height)
+            //             .attr("x", rect0.left)
+            //             .attr("y", rect0.top)
+            //             .transition()
+            //             .duration(animationDuration)
+            //             .attr("x", rect.left)
+            //             .attr("y", rect.top)
+            //         ;
+            //     })
+            //         ;
+
+            // adding diffs for the hypotheses
+            let diffList = computeDiffList(gp.hyps, d.hyps);
+
+            d.diffListSelection =
+            d.pathsGroup.selectAll("g.diff-item")
+              .data(diffList, byDiffId)
+            ;
+
+            d.diffListSelection.enter()
+              .append("g")
+              .classed("diff-item", true)
+              .attr("id", byDiffId)
+              .each(function(diff) {
 
               let d3this = d3.select(this);
 
-              // adding diffs for the goal
+              if (diff.oldHyp === undefined) {
 
-              let subdiff = spotTheDifferences(gp.goalSpan, d.goalSpan);
-
-              // there should be a goal stream whenever there are diffs
-              let goalStreamData = subdiff.removed.length > 0 ? [undefined] : [];
-              let goalStreamSelection =
-                d.pathsGroup.selectAll("path.goalstream")
-                  .data(goalStreamData)
+                let newHyp = diff.newHyp;
+                d3this
+                  .append("path")
+                  .attr("fill", diffGreen)
+                  .attr("opacity", diffOpacity)
+                  .attr("stroke-width", 0)
                 ;
 
-              goalStreamSelection.enter()
-                .append("path")
-                .classed("goalstream", true)
-                .attr("fill", diffBlue)
-                .attr("opacity", diffOpacity)
-                .attr("stroke-width", 0)
-                .attr(
-                "d",
-                connectRects(
-                  elmtRect0(gp, gp.goalSpan[0]),
-                  elmtRect0(d, d.goalSpan[0]),
-                  undefined //d.parent.cX + d.parent.width/2
-                  )
-                )
-              ;
+              } else if (diff.newHyp === undefined) {
 
-              goalStreamSelection
-                .transition()
-                .duration(animationDuration)
-                .attr(
-                "d",
-                connectRects(
-                  elmtRect(gp, gp.goalSpan[0]),
-                  elmtRect(d, d.goalSpan[0]),
-                  undefined //d.parent.cX + d.parent.width/2
-                  )
-                )
-              ;
+                let oldHyp = diff.oldHyp;
+                d3this
+                  .append("path")
+                  .attr("fill", diffRed)
+                  .attr("opacity", diffOpacity)
+                  .attr("stroke-width", 0)
+                ;
 
-              goalStreamSelection.exit()
-                .remove()
-              ;
+              } else {
 
-              // let goalRemovedSelection =
-              //     d.rectsGroup.selectAll("rect.goalremoved")
-              //     .data(subdiff.removed)
-              // ;
-
-              // goalRemovedSelection.enter()
-              //     .append("rect")
-              //     .classed("goalremoved", true)
-              //     .attr("fill", function(d, ndx) {
-              //         return colorScale(ndx);
-              //     })
-              //     .attr("opacity", diffOpacity)
-              // ;
-
-              // goalRemovedSelection
-              //     .each(function(jSpan) {
-              //         let rect0 = elmtRect0(gp, jSpan[0]);
-              //         let rect = elmtRect(gp, jSpan[0]);
-              //         d3.select(this)
-              //             .attr("width", rect.width)
-              //             .attr("height", rect.height)
-              //             .attr("x", rect0.left)
-              //             .attr("y", rect0.top)
-              //             .transition()
-              //             .duration(animationDuration)
-              //             .attr("x", rect.left)
-              //             .attr("y", rect.top)
-              //         ;
-              //     })
-              //         ;
-
-              // let goalAddedSelection =
-              //     d.rectsGroup.selectAll("rect.goaladded")
-              //     .data(subdiff.added)
-              // ;
-
-              // goalAddedSelection.enter()
-              //     .append("rect")
-              //     .classed("goaladded", true)
-              //     .attr("fill", function(d, ndx) {
-              //         return colorScale(ndx);
-              //     })
-              //     .attr("opacity", diffOpacity)
-              // ;
-
-              // goalAddedSelection
-              //     .each(function(jSpan) {
-              //         let rect0 = elmtRect0(d, jSpan[0]);
-              //         let rect = elmtRect(d, jSpan[0]);
-              //         d3.select(this)
-              //             .attr("width", rect.width)
-              //             .attr("height", rect.height)
-              //             .attr("x", rect0.left)
-              //             .attr("y", rect0.top)
-              //             .transition()
-              //             .duration(animationDuration)
-              //             .attr("x", rect.left)
-              //             .attr("y", rect.top)
-              //         ;
-              //     })
-              //         ;
-
-              // adding diffs for the hypotheses
-              let diffList = computeDiffList(gp.hyps, d.hyps);
-
-              d.diffListSelection =
-              d.pathsGroup.selectAll("g.diff-item")
-                .data(diffList, byDiffId)
-              ;
-
-              d.diffListSelection.enter()
-                .append("g")
-                .classed("diff-item", true)
-                .attr("id", byDiffId)
-                .each(function(diff) {
-
-                let d3this = d3.select(this);
-
-                if (diff.oldHyp === undefined) {
-
-                  let newHyp = diff.newHyp;
+                let oldHyp = diff.oldHyp;
+                let newHyp = diff.newHyp;
+                if (JSON.stringify(oldHyp.hType)
+                  !== JSON.stringify(newHyp.hType)) {
                   d3this
-                    .append("path")
-                    .attr("fill", diffGreen)
+                    .insert("path", ":first-child")
+                    .attr("fill", diffBlue)
                     .attr("opacity", diffOpacity)
                     .attr("stroke-width", 0)
                   ;
-
-                } else if (diff.newHyp === undefined) {
-
-                  let oldHyp = diff.oldHyp;
-                  d3this
-                    .append("path")
-                    .attr("fill", diffRed)
-                    .attr("opacity", diffOpacity)
-                    .attr("stroke-width", 0)
-                  ;
-
-                } else {
-
-                  let oldHyp = diff.oldHyp;
-                  let newHyp = diff.newHyp;
-                  if (JSON.stringify(oldHyp.hType)
-                    !== JSON.stringify(newHyp.hType)) {
-                    d3this
-                      .insert("path", ":first-child")
-                      .attr("fill", diffBlue)
-                      .attr("opacity", diffOpacity)
-                      .attr("stroke-width", 0)
-                    ;
-
-                  }
 
                 }
-              })
-              ;
 
-              // keep track of how far we are vertically to draw the diffs with
-              // only one side nicely
-              let leftY0 = gp.cY0 + goalBodyPadding;
-              let rightY0 = d.cY0 + goalBodyPadding;
-              let leftY = gp.cY + goalBodyPadding;
-              let rightY = d.cY + goalBodyPadding;
+              }
+            })
+            ;
 
-              d.diffListSelection
-                .each(function(diff) {
+            // keep track of how far we are vertically to draw the diffs with
+            // only one side nicely
+            let leftY0 = gp.cY0 + goalBodyPadding;
+            let rightY0 = d.cY0 + goalBodyPadding;
+            let leftY = gp.cY + goalBodyPadding;
+            let rightY = d.cY + goalBodyPadding;
 
-                if (diff.oldHyp === undefined) {
-                  let newHyp = diff.newHyp;
+            d.diffListSelection
+              .each(function(diff) {
+
+              if (diff.oldHyp === undefined) {
+                let newHyp = diff.newHyp;
+                d3.select(this).select("path")
+                  .attr(
+                  "d",
+                  connectRects(
+                    emptyRect0(gp, leftY0),
+                    elmtRect0(d, newHyp.div),
+                    undefined //d.parent.cX + d.parent.width/2
+                    )
+                  )
+                  .transition()
+                  .duration(animationDuration)
+                  .attr(
+                  "d",
+                  connectRects(
+                    emptyRect(gp, leftY),
+                    elmtRect(d, newHyp.div),
+                    undefined //d.parent.cX + d.parent.width/2
+                    )
+                  )
+                ;
+                rightY0 = elmtRect0(d, newHyp.div).bottom;
+                rightY = elmtRect(d, newHyp.div).bottom;
+
+              } else if (diff.newHyp === undefined) {
+
+                let oldHyp = diff.oldHyp;
+                d3.select(this).select("path")
+                  .attr(
+                  "d",
+                  connectRects(
+                    elmtRect0(gp, oldHyp.div),
+                    emptyRect0(d, rightY0),
+                    undefined //d.parent.cX + d.parent.width/2
+                    )
+                  )
+                  .transition()
+                  .duration(animationDuration)
+                  .attr(
+                  "d",
+                  connectRects(
+                    elmtRect(gp, oldHyp.div),
+                    emptyRect(d, rightY),
+                    undefined //d.parent.cX + d.parent.width/2
+                    )
+                  )
+                ;
+                leftY0 = elmtRect0(gp, oldHyp.div).bottom;
+                leftY = elmtRect(gp, oldHyp.div).bottom;
+
+              } else {
+
+                let oldHyp = diff.oldHyp;
+                let newHyp = diff.newHyp;
+                if (JSON.stringify(oldHyp.hType) !== JSON.stringify(newHyp.hType)) {
+
                   d3.select(this).select("path")
                     .attr(
                     "d",
                     connectRects(
-                      emptyRect0(gp, leftY0),
+                      elmtRect0(gp, oldHyp.div),
                       elmtRect0(d, newHyp.div),
                       undefined //d.parent.cX + d.parent.width/2
                       )
@@ -1342,229 +1391,172 @@ class ProofTree {
                     .attr(
                     "d",
                     connectRects(
-                      emptyRect(gp, leftY),
+                      elmtRect(gp, oldHyp.div),
                       elmtRect(d, newHyp.div),
                       undefined //d.parent.cX + d.parent.width/2
                       )
                     )
                   ;
-                  rightY0 = elmtRect0(d, newHyp.div).bottom;
-                  rightY = elmtRect(d, newHyp.div).bottom;
 
-                } else if (diff.newHyp === undefined) {
+                  let subdiff = spotTheDifferences(
+                    oldHyp.div,
+                    newHyp.div
+                    );
 
-                  let oldHyp = diff.oldHyp;
-                  d3.select(this).select("path")
-                    .attr(
-                    "d",
-                    connectRects(
-                      elmtRect0(gp, oldHyp.div),
-                      emptyRect0(d, rightY0),
-                      undefined //d.parent.cX + d.parent.width/2
-                      )
-                    )
-                    .transition()
-                    .duration(animationDuration)
-                    .attr(
-                    "d",
-                    connectRects(
-                      elmtRect(gp, oldHyp.div),
-                      emptyRect(d, rightY),
-                      undefined //d.parent.cX + d.parent.width/2
-                      )
-                    )
-                  ;
-                  leftY0 = elmtRect0(gp, oldHyp.div).bottom;
-                  leftY = elmtRect(gp, oldHyp.div).bottom;
+                  // let diffId = byDiffId(diff);
+                  // d.removedSelections[diffId] =
+                  //     d.rectsGroup.selectAll("rect.removed")
+                  //     .data(subdiff.removed)
+                  // ;
 
-                } else {
+                  // d.removedSelections[diffId].enter()
+                  //     .append("rect")
+                  //     .classed("removed", true)
+                  //     .attr("fill", function(d, ndx) {
+                  //         return colorScale(ndx);
+                  //     })
+                  //     .attr("opacity", diffOpacity)
+                  // ;
 
-                  let oldHyp = diff.oldHyp;
-                  let newHyp = diff.newHyp;
-                  if (JSON.stringify(oldHyp.hType) !== JSON.stringify(newHyp.hType)) {
+                  // d.removedSelections[diffId].exit()
+                  //     .remove()
+                  // ;
 
-                    d3.select(this).select("path")
-                      .attr(
-                      "d",
-                      connectRects(
-                        elmtRect0(gp, oldHyp.div),
-                        elmtRect0(d, newHyp.div),
-                        undefined //d.parent.cX + d.parent.width/2
-                        )
-                      )
-                      .transition()
-                      .duration(animationDuration)
-                      .attr(
-                      "d",
-                      connectRects(
-                        elmtRect(gp, oldHyp.div),
-                        elmtRect(d, newHyp.div),
-                        undefined //d.parent.cX + d.parent.width/2
-                        )
-                      )
-                    ;
+                  // d.addedSelections[diffId] =
+                  //     d.rectsGroup.selectAll("rect.added")
+                  //     .data(subdiff.added)
+                  // ;
 
-                    let subdiff = spotTheDifferences(
-                      oldHyp.div,
-                      newHyp.div
-                      );
+                  // d.addedSelections[diffId].enter()
+                  //     .append("rect")
+                  //     .classed("added", true)
+                  //     .attr("fill", function(d, ndx) {
+                  //         return colorScale(ndx);
+                  //     })
+                  //     .attr("opacity", diffOpacity)
+                  // ;
 
-                    // let diffId = byDiffId(diff);
-                    // d.removedSelections[diffId] =
-                    //     d.rectsGroup.selectAll("rect.removed")
-                    //     .data(subdiff.removed)
-                    // ;
+                  // d.addedSelections[diffId].exit()
+                  //     .remove()
+                  // ;
 
-                    // d.removedSelections[diffId].enter()
-                    //     .append("rect")
-                    //     .classed("removed", true)
-                    //     .attr("fill", function(d, ndx) {
-                    //         return colorScale(ndx);
-                    //     })
-                    //     .attr("opacity", diffOpacity)
-                    // ;
+                  // // TODO: there is a bug here where this does not get
+                  // // refreshed properly when nodes show up. To
+                  // // reproduce, load bigtheorem.v, run intros, and
+                  // // move down one tactic quickly.
+                  // //console.log(diff, byDiffId(diff));
+                  // let diffId = byDiffId(diff);
 
-                    // d.removedSelections[diffId].exit()
-                    //     .remove()
-                    // ;
+                  // d.removedSelections[diffId]
+                  //     .each(function(jSpan) {
+                  //         let rect0 = elmtRect0(gp, jSpan[0]);
+                  //         let rect = elmtRect(gp, jSpan[0]);
+                  //         d3.select(this)
+                  //             .attr("width", rect.width)
+                  //             .attr("height", rect.height)
+                  //             .attr("x", rect0.left)
+                  //             .attr("y", rect0.top)
+                  //             .transition()
+                  //             .duration(animationDuration)
+                  //             .attr("x", rect.left)
+                  //             .attr("y", rect.top)
+                  //         ;
+                  //     })
+                  //         ;
 
-                    // d.addedSelections[diffId] =
-                    //     d.rectsGroup.selectAll("rect.added")
-                    //     .data(subdiff.added)
-                    // ;
-
-                    // d.addedSelections[diffId].enter()
-                    //     .append("rect")
-                    //     .classed("added", true)
-                    //     .attr("fill", function(d, ndx) {
-                    //         return colorScale(ndx);
-                    //     })
-                    //     .attr("opacity", diffOpacity)
-                    // ;
-
-                    // d.addedSelections[diffId].exit()
-                    //     .remove()
-                    // ;
-
-                    // // TODO: there is a bug here where this does not get
-                    // // refreshed properly when nodes show up. To
-                    // // reproduce, load bigtheorem.v, run intros, and
-                    // // move down one tactic quickly.
-                    // //console.log(diff, byDiffId(diff));
-                    // let diffId = byDiffId(diff);
-
-                    // d.removedSelections[diffId]
-                    //     .each(function(jSpan) {
-                    //         let rect0 = elmtRect0(gp, jSpan[0]);
-                    //         let rect = elmtRect(gp, jSpan[0]);
-                    //         d3.select(this)
-                    //             .attr("width", rect.width)
-                    //             .attr("height", rect.height)
-                    //             .attr("x", rect0.left)
-                    //             .attr("y", rect0.top)
-                    //             .transition()
-                    //             .duration(animationDuration)
-                    //             .attr("x", rect.left)
-                    //             .attr("y", rect.top)
-                    //         ;
-                    //     })
-                    //         ;
-
-                    // d.addedSelections[diffId]
-                    //     .each(function(jSpan) {
-                    //         let rect0 = elmtRect0(d, jSpan[0]);
-                    //         let rect = elmtRect(d, jSpan[0]);
-                    //         d3.select(this)
-                    //             .attr("width", rect.width)
-                    //             .attr("height", rect.height)
-                    //             .attr("x", rect0.left)
-                    //             .attr("y", rect0.top)
-                    //             .transition()
-                    //             .duration(animationDuration)
-                    //             .attr("x", rect.left)
-                    //             .attr("y", rect.top)
-                    //         ;
-                    //     })
-                    //         ;
-
-                  }
-
-                  leftY0 = elmtRect0(gp, oldHyp.div).bottom;
-                  leftY = elmtRect(gp, oldHyp.div).bottom;
-
-
-                    we don't want to move the right cursor if the
-                    right hypothesis was not the very next
-                    hypothesis. this happens when a hypothesis gets
-                    moved down the list of hypotheses.
-
-
-                  if (!diff.isJump) {
-                    rightY0 = elmtRect0(d, newHyp.div).bottom;
-                    rightY = elmtRect(d, newHyp.div).bottom;
-                  }
+                  // d.addedSelections[diffId]
+                  //     .each(function(jSpan) {
+                  //         let rect0 = elmtRect0(d, jSpan[0]);
+                  //         let rect = elmtRect(d, jSpan[0]);
+                  //         d3.select(this)
+                  //             .attr("width", rect.width)
+                  //             .attr("height", rect.height)
+                  //             .attr("x", rect0.left)
+                  //             .attr("y", rect0.top)
+                  //             .transition()
+                  //             .duration(animationDuration)
+                  //             .attr("x", rect.left)
+                  //             .attr("y", rect.top)
+                  //         ;
+                  //     })
+                  //         ;
 
                 }
 
-              })
-              ;
+                leftY0 = elmtRect0(gp, oldHyp.div).bottom;
+                leftY = elmtRect(gp, oldHyp.div).bottom;
 
-              d.diffListSelection.exit()
-                .remove()
-              ;
 
-            });
+                  we don't want to move the right cursor if the
+                  right hypothesis was not the very next
+                  hypothesis. this happens when a hypothesis gets
+                  moved down the list of hypotheses.
 
-            diffSelection.exit()
+
+                if (!diff.isJump) {
+                  rightY0 = elmtRect0(d, newHyp.div).bottom;
+                  rightY = elmtRect(d, newHyp.div).bottom;
+                }
+
+              }
+
+            })
+            ;
+
+            d.diffListSelection.exit()
               .remove()
             ;
-      */
 
-      // refocus the viewport
+          });
 
-      self.viewportX = - (
-        curNode.getParent().caseOf({
-          // TODO: could do some math to align it the same way
-          nothing: () => curNode.cX,
-          just: (p) => p.cX,
-        })
-      );
+          diffSelection.exit()
+            .remove()
+          ;
+    */
 
-      self.viewportY = - (curNode.cY + curNode.height / 2 - self.height / 2);
-      // - (
-      //   curNode instanceof GoalNode
-      //     ? (curNode.cY + curNode.height / 2 - self.height / 2)
-      //     : (curNode.parent.cY + curNode.parent.height / 2 - self.height / 2)
-      // )
-      // ;
+    // refocus the viewport
 
-      self.viewport
-        .transition()
-        .duration(animationDuration)
-        .attr("transform",
-        "translate(" + self.viewportX + ", " + self.viewportY + ")"
-        )
-        ;
+    self.viewportX = - (
+      curNode.getParent().caseOf({
+        // TODO: could do some math to align it the same way
+        nothing: () => curNode.cX,
+        just: (p) => p.cX,
+      })
+    );
 
-      /*
-        It is important to update cX0 for all nodes so that we can uniformly
-        initialize links to start between their source's cX0 and their
-        target's cX0.  Without this, links created from nodes that have moved
-        away from their cX0 will seem to appear from the node's old position
-        rather than its current one.
-      */
-      _(nodes).each(function(d) {
-        d.x0 = d.x;
-        d.y0 = d.y;
-        d.originalScaledX = d.cX;
-        d.originalScaledY = d.cY;
-      });
+    self.viewportY = - (curNode.cY + curNode.height / 2 - self.height / 2);
+    // - (
+    //   curNode instanceof GoalNode
+    //     ? (curNode.cY + curNode.height / 2 - self.height / 2)
+    //     : (curNode.parent.cY + curNode.parent.height / 2 - self.height / 2)
+    // )
+    // ;
 
-      //this.updateDebug();
+    self.viewport
+      .transition()
+      .duration(animationDuration)
+      .attr("transform",
+      "translate(" + self.viewportX + ", " + self.viewportY + ")"
+      )
+      ;
 
-      onFulfilled();
-
+    /*
+      It is important to update cX0 for all nodes so that we can uniformly
+      initialize links to start between their source's cX0 and their
+      target's cX0.  Without this, links created from nodes that have moved
+      away from their cX0 will seem to appear from the node's old position
+      rather than its current one.
+    */
+    _(nodes).each(function(d) {
+      d.x0 = d.x;
+      d.y0 = d.y;
+      d.originalScaledX = d.cX;
+      d.originalScaledY = d.cY;
     });
+
+    //this.updateDebug();
+
+    return onFulfilled();
 
   }
 
