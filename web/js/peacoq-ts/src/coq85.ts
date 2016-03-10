@@ -289,7 +289,7 @@ rejects if the command was rejected (the catch only cleans up, but
 throws the error again)
 */
 function onNext(doc: CoqDocument): Promise<void> {
-  clearCoqtopTabs();
+  //clearCoqtopTabs();
   let lastEditStopPos = doc.getLastEditStop();
   let endPos = doc.endAnchor.getPosition();
   let unprocessedRange =
@@ -366,7 +366,7 @@ function onGotoCaret(doc: CoqDocument): Promise<void> {
 }
 
 function onPrevious(doc: CoqDocument): Promise<void> {
-  clearCoqtopTabs();
+  //clearCoqtopTabs();
   if (isJust(doc.editBeingProcessed) || doc.editsToProcess.length > 0) {
     return Promise.resolve();
   }

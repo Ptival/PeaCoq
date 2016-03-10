@@ -90,6 +90,7 @@ $(document).ready(() => {
   // peaCoqAddHandlers.push(proofTreeOnAdd);
   // peaCoqGetContextHandlers.push(proofTreeOnGetContext);
   peaCoqEditAtHandlers.push(proofTreeOnEditAt);
+  peaCoqEditAtHandlers.push(editorOnEditAt);
   // peaCoqGoalHandlers.push(proofTreeOnGoal);
   peaCoqStatusHandlers.push(proofTreeOnStatus);
   editHandlers.push(proofTreeOnEdit);
@@ -97,8 +98,23 @@ $(document).ready(() => {
 
 let lastStatus: Status;
 
+function editorOnEditAt(sid: number) {
+  let edit = _(coqDocument.editsProcessed).find((e) => e.stateId === sid);
+  if (edit) {
+    updateCoqtopTabs(edit.goals, edit.context);
+  }
+}
+
 function proofTreeOnStatus(s) {
   lastStatus = s;
+}
+
+function updateCoqtopTabs(goals: Goals, context: PeaCoqContext) {
+  clearCoqtopTabs();
+  if (context.length > 0) {
+    pretty.div.append(context[0].getHTML());
+    foreground.setValue(goals.fgGoals[0].toString(), false);
+  }
 }
 
 function proofTreeOnEdit(
@@ -112,10 +128,7 @@ function proofTreeOnEdit(
 
   let trimmed = coqTrim(query);
 
-  if (context.length > 0) {
-    pretty.div.append(context[0].getHTML());
-    foreground.setValue(goals.fgGoals[0].toString(), false);
-  }
+  updateCoqtopTabs(goals, context);
 
   if (
     lastStatus.statusAllProofs.length + 1 === status.statusAllProofs.length
