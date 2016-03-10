@@ -563,8 +563,8 @@ class ProofTree {
       .classed("tactic", (d) => d instanceof TacticGroupNode)
       .attr("width", function(d) { return d.width; })
       .attr("height", function(d) { return d.height; })
-      .attr("x", (d) => d.originalScaledX)
-      .attr("y", (d) => d.originalScaledY)
+      .attr("x", (d) => d.getOriginalScaledX())
+      .attr("y", (d) => d.getOriginalScaledY())
       .attr("rx", function(d) { return d instanceof GoalNode ? 0 : 10; })
       ;
   }
@@ -969,22 +969,8 @@ class ProofTree {
     // now we need to set the x and y attributes of the entering foreignObjects,
     // so we need to reuse the selection
     textEnter
-      .attr("x", function(d) {
-        d.getParent().caseOf({
-          nothing: () => {
-            // the root needs to spawn somewhere arbitrary: (0, 0.5)
-            d.originalScaledX = self.xOffset(d);
-            d.originalScaledY = 0.5 * self.yFactor + self.yOffset(d);
-          },
-          just: (p) => {
-            // non-roots are spawned at their parent's (cX0, cY0)
-            d.originalScaledX = p.originalScaledX;
-            d.originalScaledY = p.originalScaledY;
-          },
-        });
-        return d.originalScaledX;
-      })
-      .attr("y", function(d, ndx) { return d.originalScaledY; })
+      .attr("x", function(d) { return d.getOriginalScaledX(); })
+      .attr("y", function(d) { return d.getOriginalScaledY(); })
       ;
 
     textSelection
@@ -1550,8 +1536,8 @@ class ProofTree {
     _(nodes).each(function(d) {
       d.x0 = d.x;
       d.y0 = d.y;
-      d.originalScaledX = d.cX;
-      d.originalScaledY = d.cY;
+      //d.originalScaledX = d.cX;
+      //d.originalScaledY = d.cY;
     });
 
     //this.updateDebug();

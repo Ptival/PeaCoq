@@ -1,9 +1,7 @@
 
 abstract class ProofTreeNode {
-  private _cX: number;
-  private cX0: number;
-  private _cY: number;
-  private cY0: number;
+  cX: number;
+  cY: number;
   depth: number;
   height: number;
   id: string;
@@ -26,52 +24,43 @@ abstract class ProofTreeNode {
 
   abstract click(): void;
 
-  get cX(): number {
-    if (this._cX === undefined) {
-      throw this;
-    }
-    return this._cX;
-  }
-  set cX(x: number) {
-    this._cX = x;
-  }
-  get cY(): number {
-    if (this._cY === undefined) {
-      throw this;
-    }
-    return this._cY;
-  }
-  set cY(y: number) {
-    this._cY = y;
-  }
-
   abstract getAllDescendants(): ProofTreeNode[];
   abstract getAllGoalDescendants(): GoalNode[];
   abstract getFocusedChild(): Maybe<ProofTreeNode>;
 
-  get originalScaledX(): number {
-    if (this.cX0 === undefined) {
-      throw this;
-    }
-    return this.cX0;
+  getOriginalScaledX(): number {
+    let self = this;
+    return this.getParent().caseOf({
+      // the root needs to spawn somewhere arbitrary: (0, 0.5)
+      nothing: () => self.proofTree.xOffset(self),
+      // non-roots are spawned at their parent's (cX0, cY0)
+      just: (p) => p.getOriginalScaledX(),
+    });
   }
 
-  set originalScaledX(x: number) {
-    this.cX0 = x;
-  }
-
-  get originalScaledY(): number {
-    if (this.cY0 === undefined) {
-      throw this;
-    }
-    return this.cY0;
-  }
-
-  set originalScaledY(x: number) {
-    this.cY0 = x;
+  getOriginalScaledY(): number {
+    let self = this;
+    let tree = this.proofTree;
+    return this.getParent().caseOf({
+      // the root needs to spawn somewhere arbitrary: (0, 0.5)
+      nothing: () => 0.5 * tree.xOffset(self) + tree.yOffset(self),
+      // non-roots are spawned at their parent's (cX0, cY0)
+      just: (p) => p.getOriginalScaledY(),
+    });
   }
 
   abstract getParent(): Maybe<ProofTreeNode>;
+
+  getScaledX(): number {
+    let tree = this.proofTree;
+    return nodeX(this) * tree.xFactor + tree.xOffset(this);
+  }
+
+  getScaledY(): number {
+    let tree = this.proofTree;
+    return nodeY(this) * tree.yFactor + tree.yOffset(this);
+  }
+
   abstract getViewChildren(): ProofTreeNode[];
 
   getViewGrandChildren(): ProofTreeNode[] {
