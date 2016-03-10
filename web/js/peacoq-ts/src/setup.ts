@@ -25,6 +25,7 @@ $(document).ready(() => {
     let cursorPosition = editor.selection.getCursor();
     _(coqDocument.editsProcessed).each((e: ProcessedEdit) => {
       if (e.containsPosition(cursorPosition)) {
+        updateCoqtopTabs(e.goals, e.context);
         console.log(e.stateId);
       }
     });
