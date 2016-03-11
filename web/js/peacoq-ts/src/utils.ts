@@ -166,8 +166,8 @@ function emptyRect(node: ProofTreeNode, currentY: number): Rectangle {
   return $.extend(
     {
       "left": node.cX,
-      "right": node.cX + node.width,
-      "width": node.width
+      "right": node.cX + node.getWidth(),
+      "width": node.getWidth()
     },
     {
       "top": currentY - delta,
@@ -182,8 +182,8 @@ function emptyRect0(node: ProofTreeNode, currentY: number): Rectangle {
   return $.extend(
     {
       "left": node.getOriginalScaledX(),
-      "right": node.getOriginalScaledY() + node.width,
-      "width": node.width
+      "right": node.getOriginalScaledY() + node.getWidth(),
+      "width": node.getWidth()
     },
     {
       "top": currentY - delta,

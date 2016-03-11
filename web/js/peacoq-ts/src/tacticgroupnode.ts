@@ -51,6 +51,12 @@ class TacticGroupNode extends ProofTreeNode {
     );
   }
 
+  getHeight(): number {
+    let node = this.getHTMLElement();
+    let rect = (<HTMLElement>node.firstChild).getBoundingClientRect();
+    return Math.ceil(rect.height);
+  }
+
   getParent(): Maybe<GoalNode> { return just(this.parent); }
 
   getTactics(): Tactic[] {
@@ -62,6 +68,10 @@ class TacticGroupNode extends ProofTreeNode {
     if (this.tactics.length === 0) { return []; }
     let focusedTactic = this.tactics[this.tacticIndex];
     return focusedTactic.goals;
+  }
+
+  getWidth(): number {
+    return this.proofTree.getTacticWidth();
   }
 
   isSolved(): boolean {

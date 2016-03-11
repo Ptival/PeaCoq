@@ -1,19 +1,19 @@
 
 abstract class ProofTreeNode {
+  private body: HTMLElement;
   cX: number;
   cY: number;
   depth: number;
-  height: number;
   id: string;
   label: string;
   proofTree: ProofTree;
-  width: number;
   x: number;
   x0: number;
   y: number;
   y0: number;
 
   constructor(proofTree: ProofTree, parent: TsMonad.Maybe<ProofTreeNode>) {
+    this.body = undefined;
     this.depth = parent.caseOf({
       nothing: () => 0,
       just: (parent) => parent.depth + 1,
@@ -27,6 +27,12 @@ abstract class ProofTreeNode {
   abstract getAllDescendants(): ProofTreeNode[];
   abstract getAllGoalDescendants(): GoalNode[];
   abstract getFocusedChild(): Maybe<ProofTreeNode>;
+  abstract getHeight(): number;
+
+  getHTMLElement(): HTMLElement {
+    assert(this.body !== undefined, "ProofTreeNode.getHTMLElement");
+    return this.body;
+  }
 
   getOriginalScaledX(): number {
     let self = this;
@@ -72,6 +78,8 @@ abstract class ProofTreeNode {
     );
   }
 
+  abstract getWidth(): number;
+
   hasGrandParent(): boolean {
     return this.hasParentSuchThat((p) => p.hasParent());
   }
@@ -93,5 +101,9 @@ abstract class ProofTreeNode {
 
   abstract isSolved(): boolean;
   abstract nodeWidth(): number;
+
+  setHTMLElement(e: HTMLElement): void {
+    this.body = e;
+  }
 
 }

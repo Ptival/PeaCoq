@@ -9,7 +9,7 @@ let svgPanEnabled: boolean = false;
 let nodeVSpacing = 10;
 let nodeStroke = 2;
 let rectMargin = { top: 2, right: 8, bottom: 2, left: 8 };
-let animationDuration = 200;
+let animationDuration = 2000;
 let keyboardDelay = 100;
 let keyboardPaused = false;
 
@@ -229,7 +229,7 @@ class ProofTree {
           let hrDelta = curNode.html[0].offsetTop - d.html[0].offsetTop;
           this.descendantsOffset = (
             this.yFactor * (nodeY(curNode) - nodeY(d))
-            - (curNode.height - d.height) / 2
+            - (curNode.getHeight() - d.getHeight()) / 2
             + hrDelta
           );
         } else {
@@ -297,7 +297,7 @@ class ProofTree {
       .map(function(e) {
         let a = e[0], b = e[1];
         let yDistance = nodeY(b) - nodeY(a);
-        let wantedSpacing = ((a.height + b.height) / 2) + nodeVSpacing;
+        let wantedSpacing = ((a.getHeight() + b.getHeight()) / 2) + nodeVSpacing;
         return wantedSpacing / yDistance;
       })
       .value()
@@ -561,8 +561,8 @@ class ProofTree {
       .append("rect")
       .classed("goal", (d) => d instanceof GoalNode)
       .classed("tactic", (d) => d instanceof TacticGroupNode)
-      .attr("width", function(d) { return d.width; })
-      .attr("height", function(d) { return d.height; })
+      .attr("width", function(d) { return d.getWidth(); })
+      .attr("height", function(d) { return d.getHeight(); })
       .attr("x", (d) => d.getOriginalScaledX())
       .attr("y", (d) => d.getOriginalScaledY())
       .attr("rx", function(d) { return d instanceof GoalNode ? 0 : 10; })
@@ -820,12 +820,16 @@ class ProofTree {
 
     textEnter
       .append("xhtml:body")
+      // nodes must know their element to computer their own size
+      .each(function(d) {
+        d.setHTMLElement(<HTMLElement><any>d3.select(this).node());
+      })
       //.classed("svg", true)
       .style("margin", 0) // keep this line for svg_datatourl
       .style("padding", function(d) {
         return d instanceof GoalNode ? goalBodyPadding + "px" : "0px 0px";
       })
-      .style("background-color", "rgba(0, 0, 0, 0)")
+      .style("background-color", "transparent")
       // should make it less painful on 800x600 videoprojector
       // TODO: fix computing diffs so that zooming is possible
       .style("font-size", (self.width < 1000) ? "12px" : "14px")
@@ -945,19 +949,9 @@ class ProofTree {
             jqBody.append(jQContents);
           }*/
       })
-      .each(function(d) {
-        let nodeDOM = d3.select(this).node();
-        self.updateNodeMeasures(nodeDOM, d);
-      })
       // preset the width to update measures correctly
-      .attr("width", function(d) {
-        return d instanceof GoalNode ? self.getGoalWidth() : self.getTacticWidth();
-      })
+      .attr("width", (d) => d.getWidth())
       .attr("height", 0)
-      .each(function(d) {
-        let nodeDOM = d3.select(this).node().firstChild;
-        self.updateNodeMeasures(nodeDOM, d);
-      })
       ;
 
     // Now that the nodes have a size, we can compute the factors
@@ -979,8 +973,8 @@ class ProofTree {
         d.cY = nodeY(d) * self.yFactor + self.yOffset(d);
       })
       // preset the width to update measures correctly
-      .attr("width", function(d) { return d.width; })
-      .attr("height", function(d) { return d.height; })
+      .attr("width", function(d) { return d.getWidth(); })
+      .attr("height", function(d) { return d.getHeight(); })
       .transition()
       .duration(animationDuration)
       .style("opacity", "1")
@@ -1039,8 +1033,8 @@ class ProofTree {
       .transition()
       .duration(animationDuration)
       .style("opacity", "1")
-      .attr("width", function(d) { return d.width; })
-      .attr("height", function(d) { return d.height / self.getCurrentScale(); })
+      .attr("width", function(d) { return d.getWidth(); })
+      .attr("height", function(d) { return d.getHeight() / self.getCurrentScale(); })
       .attr("x", function(d) { return d.cX; })
       .attr("y", function(d) { return d.cY; })
       ;
@@ -1510,13 +1504,11 @@ class ProofTree {
       })
     );
 
-    self.viewportY = - (curNode.cY + curNode.height / 2 - self.height / 2);
-    // - (
-    //   curNode instanceof GoalNode
-    //     ? (curNode.cY + curNode.height / 2 - self.height / 2)
-    //     : (curNode.parent.cY + curNode.parent.height / 2 - self.height / 2)
-    // )
-    // ;
+    self.viewportY = - (
+      curNode.cY
+      + curNode.getHeight() / 2
+      - self.height / 2
+    );
 
     self.viewport
       .transition()
@@ -1546,25 +1538,12 @@ class ProofTree {
 
   }
 
-  updateNodeMeasures(nodeDOM: Node, d: ProofTreeNode) {
-    let elementToMeasure: HTMLElement =
-      <HTMLElement>(
-        d instanceof GoalNode
-          ? nodeDOM // get the foreignObject itself
-          : nodeDOM.firstChild // get the span
-      );
-    // we save in the rect field the size of the text rectangle
-    let rect = elementToMeasure.getBoundingClientRect();
-    d.width = d.nodeWidth();
-    d.height = Math.ceil(rect.height);
-  }
-
   xOffset(d: ProofTreeNode): number {
     return - d.nodeWidth() / 2; // position the center
   }
 
   yOffset(d: ProofTreeNode): number {
-    let offset = - d.height / 2; // for the center
+    let offset = - d.getHeight() / 2; // for the center
     let focusedChild = this.curNode.getFocusedChild();
 
     // all tactic nodes are shifted such that the current tactic is centered

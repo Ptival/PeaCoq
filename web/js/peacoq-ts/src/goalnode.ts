@@ -82,6 +82,12 @@ class GoalNode extends ProofTreeNode {
     });
   }
 
+  getHeight(): number {
+    let node = this.getHTMLElement();
+    let rect = node.getBoundingClientRect();
+    return Math.ceil(rect.height);
+  }
+
   getParent(): Maybe<TacticGroupNode> { return this.parentGroup; }
 
   getTactics(): Tactic[] {
@@ -111,6 +117,10 @@ class GoalNode extends ProofTreeNode {
     } else {
       return [];
     }
+  }
+
+  getWidth(): number {
+    return this.proofTree.getGoalWidth();
   }
 
   isSolved(): boolean {

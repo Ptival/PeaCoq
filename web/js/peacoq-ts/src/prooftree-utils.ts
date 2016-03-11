@@ -122,28 +122,28 @@ let centerRightOffset = -10;
 function centerLeft0(d: ProofTreeNode): XY {
   return {
     "x": d.getOriginalScaledX() + centerLeftOffset,
-    "y": d.getOriginalScaledY() + d.height / 2,
+    "y": d.getOriginalScaledY() + d.getHeight() / 2,
   };
 }
 
 function centerRight0(d: ProofTreeNode): XY {
   return {
-    "x": d.getOriginalScaledX() + d.width + centerRightOffset,
-    "y": d.getOriginalScaledY() + d.height / 2,
+    "x": d.getOriginalScaledX() + d.getWidth() + centerRightOffset,
+    "y": d.getOriginalScaledY() + d.getHeight() / 2,
   };
 }
 
 function centerLeft(d: ProofTreeNode): XY {
   return {
     "x": d.cX + centerLeftOffset,
-    "y": d.cY + d.height / 2,
+    "y": d.cY + d.getHeight() / 2,
   };
 }
 
 function centerRight(d: ProofTreeNode): XY {
   return {
-    "x": d.cX + d.width + centerRightOffset,
-    "y": d.cY + d.height / 2,
+    "x": d.cX + d.getWidth() + centerRightOffset,
+    "y": d.cY + d.getHeight() / 2,
   };
 }
 
