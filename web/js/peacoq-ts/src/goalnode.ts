@@ -4,7 +4,6 @@ class GoalNode extends ProofTreeNode {
   goal: PeaCoqGoal;
   goals: Goals;
   html: JQuery;
-  nodeHTML: JQuery;
   openBraces: number;
   // DO NOT USE "parent" AS D3 WILL OVERWRITE
   private parentGroup: Maybe<TacticGroupNode>;

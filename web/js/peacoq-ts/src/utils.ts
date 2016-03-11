@@ -17,6 +17,16 @@ function isJust<T>(m: Maybe<T>): boolean {
   return m.caseOf({ nothing: () => false, just: (x) => true });
 }
 
+function bindAll<T, U>(l: Maybe<T>[], f: (...args: T[]) => U): Maybe<U> {
+  if (l.length === 0) { return just(f()); }
+  return l[0].caseOf({
+    nothing: () => nothing<U>(),
+    just: (l0) => {
+      return bindAll(l.slice(1), (...args) => f(l0, ...args))
+    }
+  })
+}
+
 function assert(condition: boolean, message: string): void {
   if (!condition) {
     alert("Assertion failed: " + message);

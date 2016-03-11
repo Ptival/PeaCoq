@@ -95,7 +95,7 @@ abstract class ProofTreeNode {
 
   isCurNodeAncestor() {
     let curNode = this.proofTree.curNode;
-    let common = this.proofTree.commonAncestor(curNode, this);
+    let common = commonAncestor(curNode, this);
     return this.id === common.id;
   }
 

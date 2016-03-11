@@ -151,23 +151,6 @@ class ProofTree {
 
   }
 
-  commonAncestor(n1: ProofTreeNode, n2: ProofTreeNode): ProofTreeNode {
-    if (n1.id === this.rootNode.id || n2.id === this.rootNode.id) {
-      return this.rootNode;
-    }
-    if (n1.id === n2.id) { return n1; }
-    if (n1.depth < n2.depth) {
-      return this.commonAncestor(n1, fromJust(n2.getParent()));
-    } else if (n1.depth > n2.depth) {
-      return this.commonAncestor(fromJust(n1.getParent()), n2);
-    } else {
-      return this.commonAncestor(
-        fromJust(n1.getParent()),
-        fromJust(n2.getParent())
-      );
-    }
-  }
-
   curGoal(): GoalNode {
     return getClosestGoal(this.curNode);
   }
@@ -345,7 +328,7 @@ class ProofTree {
   isCurNode(n: ProofTreeNode): boolean { return n.id === this.curNode.id; }
 
   isCurNodeAncestor(strictly: Strictly, n: ProofTreeNode): boolean {
-    let common = this.commonAncestor(n, this.curNode);
+    let common = commonAncestor(n, this.curNode);
     let commonAncestorIsNode = common.id === n.id;
     switch (strictly) {
       case Strictly.Yes: return commonAncestorIsNode && !this.isCurNode(n);
@@ -359,7 +342,7 @@ class ProofTree {
   }
 
   isCurNodeDescendant(strictly: Strictly, n: ProofTreeNode): boolean {
-    let common = this.commonAncestor(n, this.curNode);
+    let common = commonAncestor(n, this.curNode);
     let commonAncestorIsCurNode = common.id === this.curNode.id;
     switch (strictly) {
       case Strictly.Yes: return commonAncestorIsCurNode && !this.isCurNode(n);
@@ -1537,3 +1520,22 @@ function mkDiagonal(cL, cR) {
 
 let diagonal0 = mkDiagonal(centerLeft0, centerRight0);
 let diagonal = mkDiagonal(centerLeft, centerRight);
+
+function commonAncestor(n1: ProofTreeNode, n2: ProofTreeNode): ProofTreeNode {
+  return n1.getParent().caseOf({
+    nothing: () => n1,
+    just: (n1p) => n2.getParent().caseOf({
+      nothing: () => n2,
+      just: (n2p) => {
+        if (n1.id === n2.id) { return n1; }
+        if (n1.depth < n2.depth) {
+          return commonAncestor(n1, n2p);
+        } else if (n1.depth > n2.depth) {
+          return this.commonAncestor(n1p, n2);
+        } else {
+          return this.commonAncestor(n1p, n2p);
+        }
+      }
+    })
+  });
+}
