@@ -2,6 +2,26 @@
   Stuff that is somewhat general but mostly useful for the proof tree.
  */
 
+ function getActiveProofTree(): ProofTree {
+   return proofTrees[0];
+ }
+
+ type Hypothesis = {
+   div: HTMLElement;
+   hName: string;
+   hValue: string;
+   hType: string;
+ }
+
+ type ProofTreeLink = d3.svg.diagonal.Link<ProofTreeNode>;
+
+ type TacticGroup = {
+   name: string;
+   tactics: string[];
+ }
+
+ type WorklistItem = () => Promise<TacticGroup[]>;
+ 
 /*
  * Returns a rect of the absolute position of [elmt] within the canvas. It needs
  * [node] in order to return absolute values, where [node] is the node element

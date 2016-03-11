@@ -1,44 +1,17 @@
+/* Globals to be configured */
+let animationDuration = 2000;
+// let diffBlue = "#8888EE";
+// let diffGreen = "#88EE88";
+// let diffOrange = "#FFB347";
+// let diffOpacity = 0.75;
+// let diffRed = "#EE8888";
+let goalBodyPadding = 4;
+let verticalSpacingBetweenNodes = 10;
 
-// TODO: add #loading to HTML
-
-// TODO: fix asyncLog and uncomment calls to it
+/* Globals not to be touched */
 
 /* 0 is the active tree, rest is stack of background ones*/
 let proofTrees: ProofTree[] = [];
-let svgPanEnabled: boolean = false;
-let nodeVSpacing = 10;
-let nodeStroke = 2;
-let rectMargin = { top: 2, right: 8, bottom: 2, left: 8 };
-let animationDuration = 2000;
-let keyboardDelay = 100;
-let keyboardPaused = false;
-
-let diffRed = "#EE8888";
-let diffGreen = "#88EE88";
-let diffBlue = "#8888EE";
-let diffOrange = "#FFB347";
-let diffOpacity = 0.75;
-let goalBodyPadding = 4;
-
-function getActiveProofTree(): ProofTree {
-  return proofTrees[0];
-}
-
-type Hypothesis = {
-  div: HTMLElement;
-  hName: string;
-  hValue: string;
-  hType: string;
-}
-
-type ProofTreeLink = d3.svg.diagonal.Link<ProofTreeNode>;
-
-type TacticGroup = {
-  name: string;
-  tactics: string[];
-}
-
-type WorklistItem = () => Promise<TacticGroup[]>;
 
 class ProofTree {
   anchor: d3.Selection<HTMLElement>;
@@ -49,8 +22,6 @@ class ProofTree {
   //diagonal: d3.svg.Diagonal<ProofTreeLink, ProofTreeNode>;
   height: number;
   name: string;
-  onEndProcessing: () => void;
-  onStartProcessing: () => void;
   paused: boolean;
   /* true until the user uses their mouse */
   usingKeyboard: boolean;
@@ -79,8 +50,9 @@ class ProofTree {
 
   constructor(
     name: string,
-    anchor: HTMLElement, width: number, height: number,
-    onStartProcessing: () => void, onEndProcessing: () => void
+    anchor: HTMLElement,
+    width: number,
+    height: number
   ) {
     let self = this;
 
@@ -91,8 +63,6 @@ class ProofTree {
     this.anchor = d3.select(anchor);
     this.width = width;
     this.height = height;
-    this.onStartProcessing = onStartProcessing;
-    this.onEndProcessing = onEndProcessing;
 
     this.paused = false;
     this.svgId = _.uniqueId();
@@ -175,9 +145,9 @@ class ProofTree {
     this.tipsLayer = this.viewport.append("g").attr("id", "tips-layer");
     // to top layers
 
-    if (svgPanEnabled) {
-      this.svg.insert("script", ":first-child").attr("xlink:href", "SVGPan.js");
-    }
+    // if (svgPanEnabled) {
+    //   this.svg.insert("script", ":first-child").attr("xlink:href", "SVGPan.js");
+    // }
 
   }
 
@@ -297,7 +267,7 @@ class ProofTree {
       .map(function(e) {
         let a = e[0], b = e[1];
         let yDistance = nodeY(b) - nodeY(a);
-        let wantedSpacing = ((a.getHeight() + b.getHeight()) / 2) + nodeVSpacing;
+        let wantedSpacing = ((a.getHeight() + b.getHeight()) / 2) + verticalSpacingBetweenNodes;
         return wantedSpacing / yDistance;
       })
       .value()
@@ -577,10 +547,7 @@ class ProofTree {
       the tactic to the current node
     */
 
-    this.onStartProcessing();
-
     if (_(this.tacticsWorklist).isEmpty()) {
-      this.onEndProcessing();
       return Promise.resolve();
     }
 

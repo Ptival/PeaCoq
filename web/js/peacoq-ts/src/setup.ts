@@ -142,9 +142,7 @@ function proofTreeOnEdit(
       status.statusProofName,
       $("#prooftree")[0],
       $("#prooftree").parent().width(),
-      $("#prooftree").parent().height(),
-      function() { $("#loading").css("display", ""); },
-      function() { $("#loading").css("display", "none"); }
+      $("#prooftree").parent().height()
     );
     proofTrees.unshift(pt);
     assert(context.length === 1, "proofTreeOnGetContext: c.length === 1, c.length: " + context.length);
