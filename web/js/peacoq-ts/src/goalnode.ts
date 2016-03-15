@@ -58,6 +58,10 @@ class GoalNode extends ProofTreeNode {
     return just(viewChildren[this.tacticIndex]);
   }
 
+  getGoalAncestor(): Maybe<GoalNode> {
+    return this.parentGroup.bind((g) => g.getGoalAncestor());
+  }
+
   getFocusedTacticGroup(): TsMonad.Maybe<TacticGroupNode> {
     let nonEmptyTacticGroups: TacticGroupNode[] = _(this.tacticGroups)
       .filter(function(group) { return (group.tactics.length > 0); })
@@ -77,7 +81,7 @@ class GoalNode extends ProofTreeNode {
   getGrandParent(): Maybe<GoalNode> {
     return this.parentGroup.caseOf({
       nothing: () => nothing(),
-      just: (p: TacticGroupNode) => just(p.parent),
+      just: (p: TacticGroupNode) => p.getParent(),
     });
   }
 

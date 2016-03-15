@@ -3,7 +3,8 @@ let userTacticsGroupName = "PeaCoq user tactics";
 class TacticGroupNode extends ProofTreeNode {
   isProcessed: boolean;
   name: string;
-  parent: GoalNode;
+  // do not use parent, D3 will overwrite
+  private parentGoal: GoalNode;
   span: JQuery;
   tacticIndex: number;
   tactics: Tactic[];
@@ -16,7 +17,7 @@ class TacticGroupNode extends ProofTreeNode {
     super(proofTree, just(parent));
     this.isProcessed = false;
     this.name = name;
-    this.parent = parent;
+    this.parentGoal = parent;
     this.tactics = [];
     this.tacticIndex = 0;
   }
@@ -51,13 +52,17 @@ class TacticGroupNode extends ProofTreeNode {
     );
   }
 
+  getGoalAncestor(): Maybe<GoalNode> { return just(this.parentGoal); }
+
   getHeight(): number {
     let node = this.getHTMLElement();
     let rect = (<HTMLElement>node.firstChild).getBoundingClientRect();
     return Math.ceil(rect.height);
   }
 
-  getParent(): Maybe<GoalNode> { return just(this.parent); }
+  getParent(): Maybe<GoalNode> { return just(this.parentGoal); }
+
+  getParentGoal(): GoalNode { return this.parentGoal; }
 
   getTactics(): Tactic[] {
     return this.tactics;
@@ -102,10 +107,10 @@ class TacticGroupNode extends ProofTreeNode {
 
   onSolved(sid: number): void {
     let self = this;
-    this.proofTree.curNode = this.parent;
+    this.proofTree.curNode = this.parentGoal;
     this.proofTree.update()
       .then(function() {
-        self.parent.onChildSolved(sid);
+        self.parentGoal.onChildSolved(sid);
       })
       ;
   }

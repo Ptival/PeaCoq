@@ -100,15 +100,6 @@ function byLinkId(d: ProofTreeLink): string { return d.source.id + "," + d.targe
 function nodeX(d: ProofTreeNode): number { return d.y; }
 function nodeY(d: ProofTreeNode): number { return d.x; }
 
-function getClosestGoal(node: ProofTreeNode): GoalNode {
-  if (node instanceof GoalNode) { return node; }
-  // if it is not a goal, it ought to have a parent
-  if (node instanceof TacticGroupNode) {
-    assert(node.parent instanceof GoalNode, "getClosestGoal");
-    return <GoalNode>node.parent;
-  }
-  throw node;
-}
 function goalNodeUnicityRepr(node: GoalNode): string {
   throw ("TOREDO");
   /*

@@ -27,6 +27,7 @@ abstract class ProofTreeNode {
   abstract getAllDescendants(): ProofTreeNode[];
   abstract getAllGoalDescendants(): GoalNode[];
   abstract getFocusedChild(): Maybe<ProofTreeNode>;
+  abstract getGoalAncestor(): Maybe<GoalNode>;
   abstract getHeight(): number;
 
   getHTMLElement(): HTMLElement {
