@@ -683,6 +683,16 @@ function coqTrimRight(s: string): string {
   return "";
 }
 
+// undocumented features
+declare module AceAjax {
+  export interface Anchor {
+    $insertRight: boolean;
+  }
+  export interface IEditSession {
+    _signal(s: string): void;
+  }
+}
+
 class Anchor {
   anchor: AceAjax.Anchor;
   marker: any;
