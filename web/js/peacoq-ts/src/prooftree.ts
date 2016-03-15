@@ -35,7 +35,7 @@ class ProofTree {
   tree: d3.layout.Tree<ProofTreeNode>;
   viewportX: number;
   viewportY: number;
-  width: number;
+  private width: number;
   xFactor: number;
   yFactor: number;
 

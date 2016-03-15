@@ -137,20 +137,22 @@ function proofTreeOnEdit(
     proofTrees.length + 1 === status.statusAllProofs.length
   ) {
     // we are behind on the number of proof trees, create one
-    showProofTreePanel(); // needs to be before for width/height
-    let pt = new ProofTree(
-      status.statusProofName,
-      $("#prooftree")[0],
-      $("#prooftree").parent().width(),
-      $("#prooftree").parent().height()
-    );
-    proofTrees.unshift(pt);
-    assert(context.length === 1, "proofTreeOnGetContext: c.length === 1, c.length: " + context.length);
-    let g = new GoalNode(pt, nothing(), goals, context[0]);
-    assert(pt.rootNode !== undefined, "proofTreeOnGetContext: new GoalNode should set rootNode");
-    g.stateIds.push(stateId);
-    pt.curNode = g;
-    pt.update();
+    showProofTreePanel()
+      .then(() => { // needs to be before for width/height
+        let pt = new ProofTree(
+          status.statusProofName,
+          $("#prooftree")[0],
+          $("#prooftree").parent().width(),
+          $("#prooftree").parent().height()
+        );
+        proofTrees.unshift(pt);
+        assert(context.length === 1, "proofTreeOnGetContext: c.length === 1, c.length: " + context.length);
+        let g = new GoalNode(pt, nothing(), goals, context[0]);
+        assert(pt.rootNode !== undefined, "proofTreeOnGetContext: new GoalNode should set rootNode");
+        g.stateIds.push(stateId);
+        pt.curNode = g;
+        pt.update();
+      });
     return;
   } else {
     // multiple trees might have been finished at once?
@@ -320,6 +322,13 @@ function hideProofTreePanel(): void {
   layout.hide("bottom");
 }
 
-function showProofTreePanel(): void {
-  layout.show("bottom");
+function showProofTreePanel(): Promise<{}> {
+  return new Promise(function(onFulfilled) {
+    let handler = function(event) {
+      event.onComplete = onFulfilled;
+      layout.off("show", handler);
+    };
+    layout.on("show", handler);
+    layout.show("bottom");
+  });
 }
