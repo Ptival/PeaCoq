@@ -505,7 +505,7 @@ class ProofTree {
 
   }
 
-  onRectSelectionEnter(s: d3.selection.Enter<ProofTreeNode>): void {
+  onRectEnter(s: d3.selection.Enter<ProofTreeNode>): void {
     s
       .append("rect")
       .classed("goal", (d) => d instanceof GoalNode)
@@ -518,12 +518,111 @@ class ProofTree {
       ;
   }
 
+  onTextEnter(s: d3.Selection<ProofTreeNode>): void {
+    let self = this;
+
+    s
+      .classed("monospace", true)
+      // the goal nodes need to be rendered at fixed width goalWidth
+      // the tactic nodes will be resized to their actual width later
+      .attr("width", function(d) {
+        return d instanceof GoalNode ? self.getGoalWidth() : self.getTacticWidth();
+      })
+      ;
+
+    s
+      .append("xhtml:body")
+      .style("background-color", "transparent")
+      .style("font-family", "monospace")
+      .style("padding", "2px")
+      .each(function(d) {
+        // nodes must know their element to computer their own size
+        d.setHTMLElement(<HTMLElement><any>d3.select(this).node());
+        let jqBody = $(d3.select(this).node());
+        if (d instanceof GoalNode) { jqBody.append(d.html); }
+      })
+      ;
+    ;
+  }
+
+  onTextUpdate(s: d3.selection.Enter<ProofTreeNode>): void {
+  }
+
+  onTextUpdateMergeEnter(s: d3.selection.Enter<ProofTreeNode>): void {
+    s
+      // the tactic groups need to be updated every time
+      .each(function(d) {
+        let jqBody = $(d3.select(this).select("body").node());
+        let jQContents;
+        if (d instanceof TacticGroupNode) {
+          let focusedTactic = d.tactics[d.tacticIndex];
+          let nbTactics = d.tactics.length;
+          d.span = $("<div>")
+            .addClass("tacticNode")
+            .css("padding", "4px")
+            .css("text-align", "center")
+            ;
+
+          // prepend a tactic node selector if necessary
+          if (nbTactics > 1) {
+
+            if (d.tacticIndex > 0) {
+              d.span.append(
+                $("<a>")
+                  .attr("href", "#")
+                  .text('◀')
+                  .click(function(e) {
+                    e.stopImmediatePropagation();
+                    d.shiftPrevInGroup();
+                  })
+              );
+            } else {
+              d.span.append(nbsp);
+            }
+
+            d.span.append(
+              '[' + (d.tacticIndex + 1) + '/' + d.tactics.length + ']'
+            );
+
+            if (d.tacticIndex < d.tactics.length - 1) {
+              d.span.append(
+                $("<a>")
+                  .attr("href", "#")
+                  .text('▶')
+                  .click(function(e) {
+                    e.stopImmediatePropagation();
+                    d.shiftNextInGroup();
+                  })
+              );
+            } else {
+              d.span.append(nbsp);
+            }
+
+            d.span.append($("<br>"));
+
+          }
+
+          d.span.append(
+            focusedTactic.tactic
+          );
+
+          jQContents = d.span;
+          jqBody.empty();
+          jqBody.append(jQContents);
+        }
+      })
+      // preset the width to update measures correctly
+      .attr("width", (d) => d.getWidth())
+      .attr("height", 0)
+      ;
+  }
+
   processTactics(): Promise<any> {
 
     /*
       every time curNode is changed, the tacticsWorklist should be
       flushed, so that [runTactic] can reliably add the results of running
-      the tactic to the current node
+       the tactic to the current node
     */
 
     if (_(this.tacticsWorklist).isEmpty()) {
@@ -750,156 +849,19 @@ class ProofTree {
       .selectAll(function() {
         return this.getElementsByTagName("foreignObject");
       })
-      .data(nodes, function(d) { return d.id || (d.id = _.uniqueId()); })
-      ;
-
-    let textEnter = textSelection.enter()
-      .append("foreignObject")
-      .classed("monospace", true)
-      // the goal nodes need to be rendered at fixed width goalWidth
-      // the tactic nodes will be resized to their actual width later
-      .attr("width", function(d) {
-        return d instanceof GoalNode ? self.getGoalWidth() : self.getTacticWidth();
+      .data(nodes, function(d) {
+        return d.id || (d.id = _.uniqueId());
       })
       ;
 
-    textEnter
-      .append("xhtml:body")
-      // nodes must know their element to computer their own size
-      .each(function(d) {
-        d.setHTMLElement(<HTMLElement><any>d3.select(this).node());
-      })
-      //.classed("svg", true)
-      .style("margin", 0) // keep this line for svg_datatourl
-      .style("padding", function(d) {
-        return d instanceof GoalNode ? goalBodyPadding + "px" : "0px 0px";
-      })
-      .style("background-color", "transparent")
-      // should make it less painful on 800x600 videoprojector
-      // TODO: fix computing diffs so that zooming is possible
-      .style("font-size", (self.width < 1000) ? "12px" : "14px")
-      .style("font-family", "monospace")
-      .each(function(d) {
-        let jqBody = $(d3.select(this).node());
-
-        /*
-        let jQContents;
-        if (d instanceof TacticNode) {
-          d.span = $("<div>")
-            .addClass("tacticNode")
-            .css("padding", "4px")
-            .css("text-align", "center")
-            .text(d.tactic);
-          jQContents = d.span;
-        } else if (d instanceof TacticGroupNode) {
-          return; // needs to be refreshed on every update, see below
-        } else if (d instanceof GoalNode) {
-          jQContents = makeGoalNodePre();
-          _(d.hyps).each(function(h) {
-            let jQDiv = $("<div>")
-              .html(showHypothesis(h))
-              .attr("id", _.uniqueId())
-              ;
-            h.div = jQDiv[0];
-            jQContents.append(h.div);
-          });
-          jQContents.append(makeContextDivider());
-          d.goalSpan = $("<div>").html(showTerm(d.goalTerm));
-          jQContents.append(d.goalSpan);
-        } else {
-          throw d;
-        }
-        jqBody.append(jQContents);
-        */
-
-        if (d instanceof GoalNode) { jqBody.append(d.html); }
-      })
-      ;
+    self.onTextUpdate(textSelection);
+    let textEnter = textSelection.enter().append("foreignObject");
+    self.onTextEnter(textEnter);
+    self.onTextUpdateMergeEnter(textSelection);
 
     textSelection
-      // the tactic groups need to be updated every time
-      .each(function(d) {
-        let jqBody = $(d3.select(this).select("body").node());
-        let jQContents;
-        if (d instanceof TacticGroupNode) {
-          let focusedTactic = d.tactics[d.tacticIndex];
-          let nbTactics = d.tactics.length;
-          d.span = $("<div>")
-            .addClass("tacticNode")
-            .css("padding", "4px")
-            .css("text-align", "center")
-            ;
 
-          // prepend a tactic node selector if necessary
-          if (nbTactics > 1) {
-
-            if (d.tacticIndex > 0) {
-              d.span.append(
-                $("<a>")
-                  .attr("href", "#")
-                  .text('◀')
-                  .click(function(e) {
-                    e.stopImmediatePropagation();
-                    d.shiftPrevInGroup();
-                  })
-              );
-            } else {
-              d.span.append(nbsp);
-            }
-
-            d.span.append(
-              '[' + (d.tacticIndex + 1) + '/' + d.tactics.length + ']'
-            );
-
-            if (d.tacticIndex < d.tactics.length - 1) {
-              d.span.append(
-                $("<a>")
-                  .attr("href", "#")
-                  .text('▶')
-                  .click(function(e) {
-                    e.stopImmediatePropagation();
-                    d.shiftNextInGroup();
-                  })
-              );
-            } else {
-              d.span.append(nbsp);
-            }
-
-            d.span.append($("<br>"));
-
-          }
-
-          d.span.append(
-            focusedTactic.tactic
-          );
-
-          jQContents = d.span;
-          jqBody.empty();
-          jqBody.append(jQContents);
-        }/* else if (d instanceof GoalNode) {
-            jQContents = makeGoalNodePre();
-            _(d.hyps).each(function(h) {
-              let jQDiv = $("<div>")
-                .html(showHypothesis(h))
-                .attr("id", _.uniqueId())
-                ;
-              h.div = jQDiv[0];
-              jQContents.append(h.div);
-            });
-
-            jQContents.append(makeContextDivider());
-            d.goalSpan = $("<div>").html(showTerm(d.goalTerm));
-            jQContents.append(d.goalSpan);
-            jqBody.empty();
-            jqBody.append(jQContents);
-          }*/
-      })
-      // preset the width to update measures correctly
-      .attr("width", (d) => d.getWidth())
-      .attr("height", 0)
-      ;
-
-    // Now that the nodes have a size, we can compute the factors
+    // nodes now have a size, we can compute zooming factors
     self.computeXYFactors();
 
     // compute how much descendants must be moved to center current
@@ -907,8 +869,6 @@ class ProofTree {
 
     d3.transition().duration(animationDuration).each(function() {
 
-      // now we need to set the x and y attributes of the entering foreignObjects,
-      // so we need to reuse the selection
       textEnter
         .attr("x", function(d) { return d.getOriginalScaledX(); })
         .attr("y", function(d) { return d.getOriginalScaledY(); })
@@ -930,11 +890,8 @@ class ProofTree {
           // this is in "end" so that it does not trigger before nodes are positioned
           d3.select(this)
             .on("click", function(d) {
-
               //asyncLog("CLICK " + nodeString(d));
-
               d.click();
-
             })
             ;
         })
@@ -964,19 +921,12 @@ class ProofTree {
         ;
 
       let rectSelection = self.rectLayer.selectAll("rect").data(nodes, byNodeId);
-      self.onRectSelectionEnter(rectSelection.enter());
+      self.onRectEnter(rectSelection.enter());
 
       rectSelection
-        .classed("current", function(d) { return self.isCurNode(d); })
-        .style("stroke", function(d) {
-          return self.isCurNode(d) ? "#03C03C" : "";
-        })
-        .style("stroke-width", function(d) {
-          return self.isCurNode(d) ? "4px" : "";
-        })
+        .classed("currentnode", function(d) { return self.isCurNode(d); })
         .classed("solved", function(d) { return d.isSolved(); })
         .transition()
-        .style("opacity", "1")
         .attr("width", function(d) { return d.getWidth(); })
         .attr("height", function(d) { return d.getHeight() / self.getCurrentScale(); })
         .attr("x", function(d) { return d.cX; })

@@ -46,24 +46,6 @@ a, button {
   z-index: 5;
 }
 
-/* Syntax highlighting */
-
-.ace_coqcomment {
-  color: rgb(165, 42, 42);
-}
-.ace_gallina {
-  color: rgb(0, 0, 255);
-}
-.ace_tactic {
-  color: rgb(147, 112, 219);
-}
-.ace_terminator {
-  color: rgb(255, 0, 0);
-}
-.ace_vernacular {
-  color: rgb(255, 69, 0);
-}
-
 /* Visualization */
 
 #pretty-content {
@@ -84,15 +66,6 @@ a, button {
 .hyp {
   display: flex;
   align-items: center;
-}
-.tag-keyword {
-  color: red;
-}
-.tag-notation {
-  color: brown;
-}
-.tag-variable {
-  color: blue;
 }
 .peacoq-diff {
   background-color: #FFE0B2;
