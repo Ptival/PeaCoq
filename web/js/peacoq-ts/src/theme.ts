@@ -31,7 +31,7 @@ namespace DarkTheme {
   export let background = "rgba(39, 40, 34, 1)";
   export let css = cssPath + "w2ui-dark.min.css";
   export let foreground = "white";
-  export let goalFill = "#7F827B";
+  export let goalFill = "rgb(29, 30, 24)";
   export let processed = "rgba(44, 138, 44, 1)";
   export let processing = "rgba(185, 109, 01, 1)";
   export let separatorColor = "#999999";
