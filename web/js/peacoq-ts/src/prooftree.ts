@@ -151,10 +151,6 @@ class ProofTree {
 
   }
 
-  curGoal(): GoalNode {
-    return getClosestGoal(this.curNode);
-  }
-
   /*
     here we are looking for the descendant which should align with the current
     node. it used to be at the top of the view, now it's centered.
@@ -196,7 +192,7 @@ class ProofTree {
   }
 
   computeXYFactors() {
-    let curGoal = this.curGoal();
+    let curGoal = this.curNode;
     let visibleChildren = _(curGoal.getViewChildren());
     let visibleGrandChildren = _(curGoal.getViewGrandChildren());
     let emptyNodeArray: ProofTreeNode[] = [];
@@ -312,7 +308,7 @@ class ProofTree {
   */
 
   isCurGoal(n: ProofTreeNode): boolean {
-    return n.id === this.curGoal().id;
+    return n.id === this.curNode.id;
   }
 
   isCurGoalChild(n: ProofTreeNode): boolean {

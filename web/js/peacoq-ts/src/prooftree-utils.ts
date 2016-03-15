@@ -21,7 +21,7 @@
  }
 
  type WorklistItem = () => Promise<TacticGroup[]>;
- 
+
 /*
  * Returns a rect of the absolute position of [elmt] within the canvas. It needs
  * [node] in order to return absolute values, where [node] is the node element
