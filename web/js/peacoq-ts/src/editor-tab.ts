@@ -33,6 +33,10 @@ class EditorTab extends Tab {
     this.editor.scrollToLine(pos.row, true, true, () => { });
   }
 
+  setOption(name: string, value: any): void {
+    this.editor.setOption(name, value);
+  }
+
   setTheme(s: string): void { this.editor.setTheme(s); }
 
   setValue(s: string, switchToTab: boolean) {

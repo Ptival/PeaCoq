@@ -28,18 +28,18 @@ a, button {
   position: absolute;
   z-index: 5;
 }
-.begin-marker {
+/*.begin-marker {
   position: absolute;
   border-left: 2px solid green;
-}
+}*/
 .marker {
   position: absolute;
   /*border-left: 2px solid blue;*/
 }
-.end-marker {
+/*.end-marker {
   position: absolute;
   border-left: 2px solid red;
-}
+}*/
 .processing, .processed, .toprocess {
   border-radius: 0 !important;
   position: absolute;
@@ -76,4 +76,7 @@ a, button {
 .horizontal-separator {
   height: 4px;
   background-color: black;
+}
+svg body {
+  font-size: 12px;
 }

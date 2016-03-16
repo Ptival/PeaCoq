@@ -272,11 +272,10 @@ function onResize(): void {
   coqDocument.editor.resize();
   //foreground.onResize();
   //background.onResize();
-  let activeProofTree = getActiveProofTree();
-  if (activeProofTree) {
+  getActiveProofTree().fmap((t) => {
     let parent = $("#prooftree").parent();
-    activeProofTree.resize(parent.width(), parent.height());
-  }
+    t.resize(parent.width(), parent.height());
+  });
 }
 
 function setupToolbar(): void {
@@ -310,6 +309,10 @@ function setupToolbar(): void {
       { type: 'button', id: 'toolbar-previous', caption: 'Previous', img: 'glyphicon glyphicon-arrow-up', onClick: () => onPrevious(coqDocument) },
       { type: 'button', id: 'toolbar-next', caption: 'Next', img: 'glyphicon glyphicon-arrow-down', onClick: () => onNext(coqDocument) },
       { type: 'button', id: 'toolbar-to-caret', caption: 'To Caret', img: 'glyphicon glyphicon-arrow-right', onClick: () => onGotoCaret(coqDocument) },
+      { type: 'break' },
+      { type: 'button', id: 'font-decrease', caption: '', img: 'glyphicon glyphicon-minus', onClick: () => fontDecrease(coqDocument) },
+      { type: 'button', id: 'font', caption: '', img: 'glyphicon glyphicon-text-height', disabled: true },
+      { type: 'button', id: 'font-increase', caption: '', img: 'glyphicon glyphicon-plus', onClick: () => fontIncrease(coqDocument) },
       { type: 'spacer' },
       { type: 'radio', id: 'bright', group: '1', caption: 'Bright', checked: true, onClick: Theme.switchToBright },
       { type: 'radio', id: 'dark', group: '1', caption: 'Dark', onClick: Theme.switchToDark },
@@ -331,4 +334,24 @@ function showProofTreePanel(): Promise<{}> {
     layout.on("show", handler);
     layout.show("bottom");
   });
+}
+
+let fontSize = 12;
+
+function fontIncrease(d: CoqDocument):void {
+  fontSize += 1; updateFontSize(d);
+}
+
+function fontDecrease(d: CoqDocument):void {
+  fontSize -= 1; updateFontSize(d);
+}
+
+function updateFontSize(d: CoqDocument): void {
+  d.editor.setOption("fontSize", fontSize);
+  _(allEditorTabs).each((e: EditorTab) => {
+    e.setOption("fontSize", fontSize);
+  });
+  jss.set("#pretty-content", { "font-size": fontSize + "px" });
+  jss.set("svg body", { "font-size": fontSize + "px" });
+  getActiveProofTree().fmap((t) => t.update());
 }

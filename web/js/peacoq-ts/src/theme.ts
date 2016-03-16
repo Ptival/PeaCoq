@@ -50,7 +50,7 @@ namespace DarkTheme {
   export let css              = cssPath + "w2ui-dark.min.css";
   export let foreground       = "white";
   export let goalStroke       = "white";
-  export let processed        = "rgba(44, 138, 44, 1)";
+  export let processed        = "rgba(4, 98, 4, 1)";
   export let processing       = "rgba(185, 109, 01, 1)";
   export let separatorColor   = "#999999";
   export let svgBackground    = "black";

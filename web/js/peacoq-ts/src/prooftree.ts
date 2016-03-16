@@ -548,7 +548,7 @@ class ProofTree {
   onTextUpdate(s: d3.selection.Enter<ProofTreeNode>): void {
   }
 
-  onTextUpdateMergeEnter(s: d3.selection.Enter<ProofTreeNode>): void {
+  onTextUpdateMergeEnter(s: d3.Selection<ProofTreeNode>): void {
     s
       // the tactic groups need to be updated every time
       .each(function(d) {

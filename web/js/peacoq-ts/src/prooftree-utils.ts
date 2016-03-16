@@ -2,8 +2,12 @@
   Stuff that is somewhat general but mostly useful for the proof tree.
  */
 
- function getActiveProofTree(): ProofTree {
-   return proofTrees[0];
+ function getActiveProofTree(): Maybe<ProofTree> {
+   return (
+     proofTrees.length > 0
+     ? just(proofTrees[0])
+     : nothing()
+   );
  }
 
  type Hypothesis = {
