@@ -254,6 +254,18 @@ let keybindings: KeyBinding[] = [
     aceMac: "Option-Command-Right",
     handler: () => onGotoCaret(coqDocument)
   },
+  {
+    jQ: "alt+ctrl+=",
+    aceWin: "Alt-Ctrl-=",
+    aceMac: "Option-Command-=",
+    handler: () => fontIncrease(coqDocument),
+  },
+  {
+    jQ: "alt+ctrl+-",
+    aceWin: "Alt-Ctrl--",
+    aceMac: "Option-Command--",
+    handler: () => fontDecrease(coqDocument),
+  },
 ];
 
 let unlockedAnchor;
