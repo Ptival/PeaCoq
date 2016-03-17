@@ -6,6 +6,8 @@ abstract class ProofTreeNode {
   depth: number;
   id: string;
   label: string;
+  lastScaledX: number;
+  lastScaledY: number;
   proofTree: ProofTree;
   x: number;
   x0: number;
@@ -37,35 +39,42 @@ abstract class ProofTreeNode {
 
   getOriginalScaledX(): number {
     let self = this;
-    return this.getParent().caseOf({
+    return this.getGoalAncestor().caseOf({
       // the root needs to spawn somewhere arbitrary: (0, 0.5)
       nothing: () => self.proofTree.xOffset(self),
       // non-roots are spawned at their parent's (cX0, cY0)
-      just: (p) => p.getOriginalScaledX(),
+      just: (p) => p.getLastScaledX(),
     });
   }
 
   getOriginalScaledY(): number {
     let self = this;
     let tree = this.proofTree;
-    return this.getParent().caseOf({
+    return this.getGoalAncestor().caseOf({
       // the root needs to spawn somewhere arbitrary: (0, 0.5)
       nothing: () => 0.5 * tree.xOffset(self) + tree.yOffset(self),
       // non-roots are spawned at their parent's (cX0, cY0)
-      just: (p) => p.getOriginalScaledY(),
+      just: (p) => p.getLastScaledY(),
     });
   }
 
   abstract getParent(): Maybe<ProofTreeNode>;
 
+  getLastScaledX(): number {
+    return this.lastScaledX;
+  }
+  getLastScaledY(): number { return this.lastScaledY; }
+
   getScaledX(): number {
     let tree = this.proofTree;
-    return nodeX(this) * tree.xFactor + tree.xOffset(this);
+    this.lastScaledX = nodeX(this) * tree.xFactor + tree.xOffset(this);
+    return this.lastScaledX;
   }
 
   getScaledY(): number {
     let tree = this.proofTree;
-    return nodeY(this) * tree.yFactor + tree.yOffset(this);
+    this.lastScaledY = nodeY(this) * tree.yFactor + tree.yOffset(this);
+    return this.lastScaledY;
   }
 
   abstract getViewChildren(): ProofTreeNode[];

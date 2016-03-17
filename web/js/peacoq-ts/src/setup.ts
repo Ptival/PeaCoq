@@ -1,3 +1,5 @@
+let fontSize = 16;
+
 let coqDocument: CoqDocument = undefined;
 let layout: W2UI.W2Layout;
 let rightLayout: W2UI.W2Layout;
@@ -70,6 +72,8 @@ $(document).ready(() => {
     jobs = new EditorTab("jobs", "Jobs", "right-layout", "bottom");
     feedback = new EditorTab("feedback", "Feedback", "right-layout", "bottom");
     coqtopTabs.click("notices");
+
+    updateFontSize(coqDocument);
   })
 
   layout.content("main", rightLayout);
@@ -335,8 +339,6 @@ function showProofTreePanel(): Promise<{}> {
     layout.show("bottom");
   });
 }
-
-let fontSize = 12;
 
 function fontIncrease(d: CoqDocument):void {
   fontSize += 1; updateFontSize(d);

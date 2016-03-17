@@ -3,9 +3,11 @@ let cssPath = "js/lib/w2ui/";
 interface Theme {
   aceTheme: string;
   background: string;
+  contextDivider: string;
   css: string;
   foreground: string;
   goalStroke: string;
+  linkStroke: string;
   processed: string;
   processing: string;
   separatorColor: string;
@@ -26,8 +28,10 @@ namespace BrightTheme {
   export let aceTheme         = "";
   export let background       = "rgba(255, 255, 255, 1)";
   export let css              = cssPath + "w2ui.min.css";
+  export let contextDivider   = "1px solid black";
   export let foreground       = "black";
   export let goalStroke       = "black";
+  export let linkStroke       = "black";
   export let processed        = "rgba(144, 238, 144, 1)";
   export let processing       = "rgba(255, 179, 71, 1)";
   export let separatorColor   = "#999999";
@@ -48,8 +52,10 @@ namespace DarkTheme {
   export let aceTheme         = "ace/theme/monokai";
   export let background       = "rgba(39, 40, 34, 1)";
   export let css              = cssPath + "w2ui-dark.min.css";
+  export let contextDivider   = "1px solid white";
   export let foreground       = "white";
   export let goalStroke       = "white";
+  export let linkStroke       = "white";
   export let processed        = "rgba(4, 98, 4, 1)";
   export let processing       = "rgba(185, 109, 01, 1)";
   export let separatorColor   = "#999999";
@@ -112,6 +118,11 @@ namespace Theme {
     jss.set(".tag-keyword", { "color": theme.syntaxKeyword });
     jss.set(".tag-notation", { "color": theme.syntaxNotation });
     jss.set(".tag-variable", { "color": theme.syntaxVariable });
+    jss.set(".context-divider", {
+      "border": "0",
+      "border-top": theme.contextDivider,
+      "margin": "0",
+    });
 
     jss.set(".goal", {
       "stroke": theme.goalStroke,
@@ -122,6 +133,8 @@ namespace Theme {
       "stroke": "#03C03C",
       "stroke-width": "4px",
     });
+
+    jss.set(".link", { "stroke": theme.linkStroke });
 
     jss.set(".w2ui-layout>div .w2ui-resizer", { "background-color": theme.separatorColor });
 

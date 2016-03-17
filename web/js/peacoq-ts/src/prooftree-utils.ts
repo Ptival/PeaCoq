@@ -80,12 +80,7 @@ function makeGoalNodePre() {
 }
 
 function makeContextDivider() {
-  return $("<hr>")
-    // inlining the CSS for svg_datatourl
-    .css("border", 0)
-    .css("border-top", "1px solid black")
-    .css("margin", 0)
-    ;
+  return $("<hr>", { class: "context-divider" });
 }
 
 type XY = { x: number; y: number; }
