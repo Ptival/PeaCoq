@@ -10,6 +10,7 @@ requirejs.config({
     'jquery.hotkeys': { deps: ['jquery'] },
     'MathJax-master/MathJax': { deps: ['jquery'] },
     'peacoq-ts/coq85': { deps: ['peacoq-ts/coqtop85', 'peacoq-ts/utils'] },
+    'peacoq-ts/coq-pretty-printer': { deps: ['peacoq-ts/coq-definitions' },
     'peacoq-ts/editor-tab': { deps: ['peacoq-ts/tab'] },
     'peacoq-ts/fakenode': { deps: ['peacoq-ts/prooftreenode'] },
     'peacoq-ts/goalnode': { deps: ['peacoq-ts/prooftreenode'] },
