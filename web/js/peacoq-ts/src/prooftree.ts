@@ -509,6 +509,43 @@ class ProofTree {
 
   }
 
+  onLinkEnter(s: d3.selection.Enter<ProofTreeLink>): void {
+    s
+      .append("path")
+      .classed("link", true)
+      .attr("fill", "none")
+      .attr("d", (d) => {
+        //let src = swapXY(centerRight0(d.source));
+        //let tgt = swapXY(centerLeft0(d.target));
+        //return self.diagonal({ "source": src, "target": tgt });
+        return diagonal0({ "source": d.source, "target": d.target });
+      })
+      ;
+  }
+
+  onLinkExit(s: d3.Selection<ProofTreeLink>): void {
+    s
+      .transition()
+      .attr("d", (d) => {
+        return diagonal({ "source": d.source, "target": d.target });
+      })
+      .style("opacity", "0")
+      .remove()
+      ;
+  }
+
+  onLinkUpdatePostMerge(s: d3.Selection<ProofTreeLink>): void {
+    let self = this;
+    s
+      .transition()
+      .style("opacity", 1)
+      .attr("d", (d) => {
+        return diagonal({ "source": d.source, "target": d.target });
+      })
+      .attr("stroke-width", self.linkWidth.bind(self))
+      ;
+  }
+
   onRectEnter(s: d3.selection.Enter<ProofTreeNode>): void {
     s
       .append("rect")
@@ -549,6 +586,11 @@ class ProofTree {
   onTextEnter(s: d3.Selection<ProofTreeNode>): void {
     let self = this;
     s
+      // right now we need thihs here so that getHeight returns something
+      // correct, but it would be nice to improve
+      .each(function(d) {
+        if (d instanceof TacticGroupNode) { d.updateNode(); }
+      })
       .attr("x", function(d) { return d.getOriginalScaledX(); })
       .attr("y", function(d) { return d.getOriginalScaledY(); })
       .attr("width", function(d) { return d.getWidth(); })
@@ -578,66 +620,8 @@ class ProofTree {
 
   onTextUpdatePostMerge(s: d3.Selection<ProofTreeNode>): void {
     s
-      // the tactic groups need to be updated every time
       .each(function(d) {
-        let jqBody = $(d3.select(this).select("body").node());
-        let jQContents;
-        if (d instanceof TacticGroupNode) {
-          let focusedTactic = d.tactics[d.tacticIndex];
-          let nbTactics = d.tactics.length;
-          d.span = $("<div>")
-            .addClass("tacticNode")
-            .css("padding", "4px")
-            .css("text-align", "center")
-            ;
-
-          // prepend a tactic node selector if necessary
-          if (nbTactics > 1) {
-
-            if (d.tacticIndex > 0) {
-              d.span.append(
-                $("<a>")
-                  .attr("href", "#")
-                  .text('◀')
-                  .click(function(e) {
-                    e.stopImmediatePropagation();
-                    d.shiftPrevInGroup();
-                  })
-              );
-            } else {
-              d.span.append(nbsp);
-            }
-
-            d.span.append(
-              '[' + (d.tacticIndex + 1) + '/' + d.tactics.length + ']'
-            );
-
-            if (d.tacticIndex < d.tactics.length - 1) {
-              d.span.append(
-                $("<a>")
-                  .attr("href", "#")
-                  .text('▶')
-                  .click(function(e) {
-                    e.stopImmediatePropagation();
-                    d.shiftNextInGroup();
-                  })
-              );
-            } else {
-              d.span.append(nbsp);
-            }
-
-            d.span.append($("<br>"));
-
-          }
-
-          d.span.append(
-            focusedTactic.tactic
-          );
-
-          jQContents = d.span;
-          jqBody.empty();
-          jqBody.append(jQContents);
-        }
+        if (d instanceof TacticGroupNode) { d.updateNode(); }
       })
       .transition()
       .style("opacity", "1")
@@ -896,6 +880,7 @@ class ProofTree {
 
       let textEnter = textSelection.enter().append("foreignObject");
       let rectSelection = self.rectLayer.selectAll("rect").data(nodes, byNodeId);
+      let linkSelection = self.linkLayer.selectAll("path").data(links, byLinkId);
 
       textEnter
         .append("xhtml:body")
@@ -918,54 +903,12 @@ class ProofTree {
       self.onTextUpdatePostMerge(textSelection);
       self.onRectUpdatePostMerge(rectSelection);
 
+      self.onLinkEnter(linkSelection.enter());
+      self.onLinkUpdatePostMerge(linkSelection);
+
       self.onTextExit(textSelection.exit());
       self.onRectExit(rectSelection.exit());
-
-      let linkSelection = self.linkLayer.selectAll("path").data(links, byLinkId);
-
-      linkSelection.enter()
-        .append("path")
-        .classed("link", true)
-        .attr("fill", "none")
-        .attr("d",
-        (d: ProofTreeLink) => {
-          //let src = swapXY(centerRight0(d.source));
-          //let tgt = swapXY(centerLeft0(d.target));
-          //return self.diagonal({ "source": src, "target": tgt });
-          return diagonal0({ "source": d.source, "target": d.target });
-        })
-        // .attr("stroke",
-        // (d: ProofTreeLink) => {
-        //   let t = d.target;
-        //   if (
-        //     t instanceof TacticGroupNode
-        //     && fromJust(t.getFocusedTactic()).goals.length === 0
-        //   ) {
-        //     return "#00FF00";
-        //   } else {
-        //     return "#000000";
-        //   }
-        // })
-        ;
-
-      linkSelection
-        .transition()
-        .style("opacity", 1)
-        .attr("d",
-        (d) => {
-          return diagonal({ "source": d.source, "target": d.target });
-        })
-        .attr("stroke-width", self.linkWidth.bind(self))
-        ;
-
-      linkSelection.exit()
-        .transition()
-        .attr("d", function(d) {
-          return diagonal({ "source": d.source, "target": d.target });
-        })
-        .style("opacity", "0")
-        .remove()
-        ;
+      self.onLinkExit(linkSelection.exit());
 
       self.viewportX = - (
         curNode.getParent().caseOf({
@@ -989,22 +932,6 @@ class ProofTree {
         ;
 
     });
-
-    /*
-      It is important to update cX0 for all nodes so that we can uniformly
-      initialize links to start between their source's cX0 and their
-      target's cX0.  Without this, links created from nodes that have moved
-      away from their cX0 will seem to appear from the node's old position
-      rather than its current one.
-    */
-    _(nodes).each(function(d) {
-      //d.x0 = d.x;
-      //d.y0 = d.y;
-      //d.originalScaledX = d.getScaledX();
-      //d.originalScaledY = d.getScaledY();
-    });
-
-    //this.updateDebug();
 
     return onFulfilled();
 

@@ -130,4 +130,67 @@ class TacticGroupNode extends ProofTreeNode {
     }
   }
 
+  updateNode(): void {
+    let d = this;
+    let jqBody = $(this.getHTMLElement());
+    let jQContents;
+    if (d instanceof TacticGroupNode) {
+      let focusedTactic = d.tactics[d.tacticIndex];
+      let nbTactics = d.tactics.length;
+      d.span = $("<div>")
+        .addClass("tacticNode")
+        .css("padding", "4px")
+        .css("text-align", "center")
+        ;
+
+      // prepend a tactic node selector if necessary
+      if (nbTactics > 1) {
+
+        if (d.tacticIndex > 0) {
+          d.span.append(
+            $("<a>")
+              .attr("href", "#")
+              .text('◀')
+              .click(function(e) {
+                e.stopImmediatePropagation();
+                d.shiftPrevInGroup();
+              })
+          );
+        } else {
+          d.span.append(nbsp);
+        }
+
+        d.span.append(
+          '[' + (d.tacticIndex + 1) + '/' + d.tactics.length + ']'
+        );
+
+        if (d.tacticIndex < d.tactics.length - 1) {
+          d.span.append(
+            $("<a>")
+              .attr("href", "#")
+              .text('▶')
+              .click(function(e) {
+                e.stopImmediatePropagation();
+                d.shiftNextInGroup();
+              })
+          );
+        } else {
+          d.span.append(nbsp);
+        }
+
+        d.span.append($("<br>"));
+
+      }
+
+      d.span.append(
+        focusedTactic.tactic
+      );
+
+      jQContents = d.span;
+      jqBody.empty();
+      jqBody.append(jQContents);
+    }
+
+  }
+
 }
