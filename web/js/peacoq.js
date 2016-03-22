@@ -17,6 +17,7 @@ requirejs.config({
     'peacoq-ts/setup': { deps: ['peacoq-ts/coq85', 'peacoq-ts/coqtop85', 'peacoq-ts/editor-tab', 'peacoq-ts/prooftree', 'peacoq-ts/theme'] },
     'peacoq-ts/utils': { deps: ['tsmonad'] },
     'peacoq-ts/prooftree': { deps: ['peacoq-ts/prooftree-utils']},
+    'w2ui/w2ui': { deps: ['jquery'] },
   }
 });
 

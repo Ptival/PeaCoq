@@ -28,7 +28,7 @@ $(document).ready(() => {
     _(coqDocument.editsProcessed).each((e: ProcessedEdit) => {
       if (e.containsPosition(cursorPosition)) {
         updateCoqtopTabs(e.goals, e.context);
-        console.log(e.stateId);
+        //console.log(e.stateId);
       }
     });
   });

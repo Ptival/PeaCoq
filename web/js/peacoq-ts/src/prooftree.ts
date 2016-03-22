@@ -1,5 +1,5 @@
 /* Globals to be configured */
-let animationDuration = 2000;
+let animationDuration = 5000;
 // let diffBlue = "#8888EE";
 // let diffGreen = "#88EE88";
 // let diffOrange = "#FFB347";
@@ -246,12 +246,16 @@ class ProofTree {
       .map(function(e) {
         let a = e[0], b = e[1];
         let yDistance = nodeY(b) - nodeY(a);
+        console.log(a.getHeight(), b.getHeight());
         let wantedSpacing = ((a.getHeight() + b.getHeight()) / 2) + verticalSpacingBetweenNodes;
         return wantedSpacing / yDistance;
       })
       .value()
       ;
     this.yFactor = _.isEmpty(yFactors) ? this.height : _.max(yFactors);
+
+    console.log("xFactor", this.xFactor);
+    console.log("yFactor", this.yFactor);
   }
 
   get curNode(): GoalNode { return this._curNode; }
@@ -518,35 +522,61 @@ class ProofTree {
       ;
   }
 
+  onRectExit(s: d3.Selection<ProofTreeNode>): void {
+    s
+      .transition()
+      .attr("x", function(d) { return d.getScaledX(); })
+      .attr("y", function(d) { return d.getScaledY(); })
+      .style("opacity", "0")
+      .remove()
+      ;
+
+  }
+
+  onRectUpdatePostMerge(s: d3.Selection<ProofTreeNode>): void {
+    let self = this;
+    s
+      .classed("currentnode", function(d) { return self.isCurNode(d); })
+      .classed("solved", function(d) { return d.isSolved(); })
+      .transition()
+      .attr("width", function(d) { return d.getWidth(); })
+      .attr("height", function(d) { return d.getHeight() / self.getCurrentScale(); })
+      .attr("x", function(d) { return d.getScaledX(); })
+      .attr("y", function(d) { return d.getScaledY(); })
+      ;
+  }
+
   onTextEnter(s: d3.Selection<ProofTreeNode>): void {
     let self = this;
-
     s
-      .classed("monospace", true)
-      // the goal nodes need to be rendered at fixed width goalWidth
-      // the tactic nodes will be resized to their actual width later
-      .attr("width", (d) => d.getWidth())
+      .attr("x", function(d) { return d.getOriginalScaledX(); })
+      .attr("y", function(d) { return d.getOriginalScaledY(); })
+      .attr("width", function(d) { return d.getWidth(); })
+      .attr("height", function(d) { return d.getHeight(); })
       ;
+  }
 
+  onTextExit(s: d3.Selection<ProofTreeNode>): void {
     s
-      .append("xhtml:body")
-      .style("background-color", "transparent")
-      .style("font-family", "monospace")
-      .style("padding", "2px")
-      .each(function(d) {
-        // nodes must know their element to computer their own size
-        d.setHTMLElement(<HTMLElement><any>d3.select(this).node());
-        let jqBody = $(d3.select(this).node());
-        if (d instanceof GoalNode) { jqBody.append(d.html); }
+      .transition()
+      .attr("x", function(d) {
+        return d.getGoalAncestor().caseOf({
+          nothing: () => d.getScaledX(),
+          just: (gp) => gp.getScaledX(),
+        });
       })
+      .attr("y", function(d) {
+        return d.getGoalAncestor().caseOf({
+          nothing: () => d.getScaledY(),
+          just: (gp) => gp.getScaledY(),
+        });
+      })
+      .style("opacity", "0")
+      .remove()
       ;
-    ;
   }
 
-  onTextUpdate(s: d3.selection.Enter<ProofTreeNode>): void {
-  }
-
-  onTextUpdateMergeEnter(s: d3.Selection<ProofTreeNode>): void {
+  onTextUpdatePostMerge(s: d3.Selection<ProofTreeNode>): void {
     s
       // the tactic groups need to be updated every time
       .each(function(d) {
@@ -609,9 +639,19 @@ class ProofTree {
           jqBody.append(jQContents);
         }
       })
-      // preset the width to update measures correctly
-      .attr("width", (d) => d.getWidth())
-      .attr("height", 0)
+      .transition()
+      .style("opacity", "1")
+      .attr("x", function(d) { return d.getScaledX(); })
+      .attr("y", function(d) { return d.getScaledY(); })
+      .each("end", function() {
+        // this is in "end" so that it does not trigger before nodes are positioned
+        d3.select(this)
+          .on("click", function(d) {
+            //asyncLog("CLICK " + nodeString(d));
+            d.click();
+          })
+          ;
+      })
       ;
   }
 
@@ -852,90 +892,34 @@ class ProofTree {
       })
       ;
 
-    self.onTextUpdate(textSelection);
-    let textEnter = textSelection.enter().append("foreignObject");
-    self.onTextEnter(textEnter);
-    self.onTextUpdateMergeEnter(textSelection);
+    d3.transition().duration(animationDuration).each(() => {
 
-    // nodes now have a size, we can compute zooming factors
-    self.computeXYFactors();
-
-    // compute how much descendants must be moved to center current
-    self.computeDescendantsOffset();
-
-    d3.transition().duration(animationDuration).each(function() {
+      let textEnter = textSelection.enter().append("foreignObject");
+      let rectSelection = self.rectLayer.selectAll("rect").data(nodes, byNodeId);
 
       textEnter
-        .attr("x", function(d) { return d.getOriginalScaledX(); })
-        .attr("y", function(d) { return d.getOriginalScaledY(); })
-        ;
-
-      textSelection
+        .append("xhtml:body")
         .each(function(d) {
-          d.cX = nodeX(d) * self.xFactor + self.xOffset(d);
-          d.cY = nodeY(d) * self.yFactor + self.yOffset(d);
-        })
-        // preset the width to update measures correctly
-        .attr("width", function(d) { return d.getWidth(); })
-        .attr("height", function(d) { return d.getHeight(); })
-        .transition()
-        .style("opacity", "1")
-        .attr("x", function(d) { return d.cX; })
-        .attr("y", function(d) { return d.cY; })
-        .each("end", function() {
-          // this is in "end" so that it does not trigger before nodes are positioned
-          d3.select(this)
-            .on("click", function(d) {
-              //asyncLog("CLICK " + nodeString(d));
-              d.click();
-            })
-            ;
-        })
-        ;
+          let body = d3.select(this).node();
+          // nodes must know their element to compute their own size
+          d.setHTMLElement(<HTMLElement><any>body);
+          if (d instanceof GoalNode) { $(body).append(d.html); }
+        });
 
-      textSelection.exit()
-        .transition()
-        .attr("x", function(d) {
-          // in general, nodes should move towards the parent goal node
-          if (!d.hasParent() || self.isRootNode(d)) {
-            return d.cX;
-          }
-          if (d instanceof GoalNode) {
-            let nodeToReach = fromJust(d.getGrandParent());
-            d.cX = nodeToReach.cX;
-            d.cY = nodeToReach.cY;
-          } else {
-            let nodeToReach = fromJust(d.getParent());
-            d.cX = nodeToReach.cX;
-            d.cY = nodeToReach.cY;
-          }
-          return d.cX;
-        })
-        .attr("y", function(d) { return d.cY; })
-        .style("opacity", "0")
-        .remove()
-        ;
-
-      let rectSelection = self.rectLayer.selectAll("rect").data(nodes, byNodeId);
+      // This must set x, y before computeXYFactors
+      self.onTextEnter(textEnter);
       self.onRectEnter(rectSelection.enter());
 
-      rectSelection
-        .classed("currentnode", function(d) { return self.isCurNode(d); })
-        .classed("solved", function(d) { return d.isSolved(); })
-        .transition()
-        .attr("width", function(d) { return d.getWidth(); })
-        .attr("height", function(d) { return d.getHeight() / self.getCurrentScale(); })
-        .attr("x", function(d) { return d.cX; })
-        .attr("y", function(d) { return d.cY; })
-        ;
+      // nodes now have a size, we can compute zooming factors
+      self.computeXYFactors();
+      // compute how much descendants must be moved to center current
+      self.computeDescendantsOffset();
 
-      rectSelection.exit()
-        .transition()
-        .attr("x", function(d) { return d.cX; })
-        .attr("y", function(d) { return d.cY; })
-        .style("opacity", "0")
-        .remove()
-        ;
+      self.onTextUpdatePostMerge(textSelection);
+      self.onRectUpdatePostMerge(rectSelection);
+
+      self.onTextExit(textSelection.exit());
+      self.onRectExit(rectSelection.exit());
 
       let linkSelection = self.linkLayer.selectAll("path").data(links, byLinkId);
 
@@ -985,13 +969,13 @@ class ProofTree {
 
       self.viewportX = - (
         curNode.getParent().caseOf({
-          nothing: () => curNode.cX,
-          just: (p) => p.cX,
+          nothing: () => curNode.getScaledX(),
+          just: (p) => p.getScaledX(),
         })
       );
 
       self.viewportY = - (
-        curNode.cY
+        curNode.getScaledY()
         + curNode.getHeight() / 2
         - self.height / 2
       );
@@ -1016,8 +1000,8 @@ class ProofTree {
     _(nodes).each(function(d) {
       //d.x0 = d.x;
       //d.y0 = d.y;
-      //d.originalScaledX = d.cX;
-      //d.originalScaledY = d.cY;
+      //d.originalScaledX = d.getScaledX();
+      //d.originalScaledY = d.getScaledY();
     });
 
     //this.updateDebug();

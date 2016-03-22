@@ -138,6 +138,12 @@ namespace Theme {
 
     jss.set(".w2ui-layout>div .w2ui-resizer", { "background-color": theme.separatorColor });
 
+    jss.set("svg body", {
+      "background-color": "transparent",
+      "font-family": "monospace",
+      "padding": "2px",
+    })
+
     coqDocument.editor.setTheme(theme.aceTheme);
     _(allEditorTabs).each((et) => { et.setTheme(theme.aceTheme); })
   }

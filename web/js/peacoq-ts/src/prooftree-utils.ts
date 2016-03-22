@@ -34,8 +34,8 @@
 function elmtRect(node, elmt) {
   let rect = elmt.getBoundingClientRect();
   let containerRect = $(elmt).parents("foreignObject")[0].getBoundingClientRect();
-  let left = node.cX + deltaX(containerRect, rect);
-  let top = node.cY + deltaY(containerRect, rect);
+  let left = node.getScaledX() + deltaX(containerRect, rect);
+  let top = node.getScaledY() + deltaY(containerRect, rect);
   return {
     "left": left, "right": left + rect.width, "width": rect.width,
     "top": top, "bottom": top + rect.height, "height": rect.height,
@@ -145,15 +145,15 @@ function centerRight0(d: ProofTreeNode): XY {
 
 function centerLeft(d: ProofTreeNode): XY {
   return {
-    "x": d.cX + centerLeftOffset,
-    "y": d.cY + d.getHeight() / 2,
+    "x": d.getScaledX() + centerLeftOffset,
+    "y": d.getScaledY() + d.getHeight() / 2,
   };
 }
 
 function centerRight(d: ProofTreeNode): XY {
   return {
-    "x": d.cX + d.getWidth() + centerRightOffset,
-    "y": d.cY + d.getHeight() / 2,
+    "x": d.getScaledX() + d.getWidth() + centerRightOffset,
+    "y": d.getScaledY() + d.getHeight() / 2,
   };
 }
 

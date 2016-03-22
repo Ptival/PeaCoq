@@ -55,8 +55,7 @@ class TacticGroupNode extends ProofTreeNode {
   getGoalAncestor(): Maybe<GoalNode> { return just(this.parentGoal); }
 
   getHeight(): number {
-    let node = this.getHTMLElement();
-    let rect = (<HTMLElement>node.firstChild).getBoundingClientRect();
+    let rect = this.getHTMLElement().getBoundingClientRect();
     return Math.ceil(rect.height);
   }
 

@@ -1,13 +1,9 @@
 
 abstract class ProofTreeNode {
   private body: HTMLElement;
-  cX: number;
-  cY: number;
   depth: number;
   id: string;
   label: string;
-  lastScaledX: number;
-  lastScaledY: number;
   proofTree: ProofTree;
   x: number;
   x0: number;
@@ -43,7 +39,7 @@ abstract class ProofTreeNode {
       // the root needs to spawn somewhere arbitrary: (0, 0.5)
       nothing: () => self.proofTree.xOffset(self),
       // non-roots are spawned at their parent's (cX0, cY0)
-      just: (p) => p.getLastScaledX(),
+      just: (p) => + $(p.body.parentElement).attr("x"),
     });
   }
 
@@ -54,27 +50,20 @@ abstract class ProofTreeNode {
       // the root needs to spawn somewhere arbitrary: (0, 0.5)
       nothing: () => 0.5 * tree.xOffset(self) + tree.yOffset(self),
       // non-roots are spawned at their parent's (cX0, cY0)
-      just: (p) => p.getLastScaledY(),
+      just: (p) => + $(p.body.parentElement).attr("y"),
     });
   }
 
   abstract getParent(): Maybe<ProofTreeNode>;
 
-  getLastScaledX(): number {
-    return this.lastScaledX;
-  }
-  getLastScaledY(): number { return this.lastScaledY; }
-
   getScaledX(): number {
     let tree = this.proofTree;
-    this.lastScaledX = nodeX(this) * tree.xFactor + tree.xOffset(this);
-    return this.lastScaledX;
+    return nodeX(this) * tree.xFactor + tree.xOffset(this);
   }
 
   getScaledY(): number {
     let tree = this.proofTree;
-    this.lastScaledY = nodeY(this) * tree.yFactor + tree.yOffset(this);
-    return this.lastScaledY;
+    return nodeY(this) * tree.yFactor + tree.yOffset(this);
   }
 
   abstract getViewChildren(): ProofTreeNode[];
