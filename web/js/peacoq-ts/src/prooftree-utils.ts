@@ -130,7 +130,6 @@ let centerLeftOffset = +10;
 let centerRightOffset = -10;
 
 function centerLeft0(d: ProofTreeNode): XY {
-  console.log(d, d.getOriginalScaledX(), d.getOriginalScaledY(), d.getHeight());
   return {
     "x": d.getOriginalScaledX() + centerLeftOffset,
     "y": d.getOriginalScaledY() + d.getHeight() / 2,
@@ -145,7 +144,6 @@ function centerRight0(d: ProofTreeNode): XY {
 }
 
 function centerLeft(d: ProofTreeNode): XY {
-  console.log(d, d.getScaledX(), d.getScaledY(), d.getHeight());
   return {
     "x": d.getScaledX() + centerLeftOffset,
     "y": d.getScaledY() + d.getHeight() / 2,

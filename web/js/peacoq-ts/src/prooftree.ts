@@ -248,16 +248,12 @@ class ProofTree {
       .map(function(e) {
         let a = e[0], b = e[1];
         let yDistance = nodeY(b) - nodeY(a);
-        console.log(a.getHeight(), b.getHeight());
         let wantedSpacing = ((a.getHeight() + b.getHeight()) / 2) + verticalSpacingBetweenNodes;
         return wantedSpacing / yDistance;
       })
       .value()
       ;
     this.yFactor = _.isEmpty(yFactors) ? this.height : _.max(yFactors);
-
-    console.log("xFactor", this.xFactor);
-    console.log("yFactor", this.yFactor);
   }
 
   get curNode(): GoalNode { return this._curNode; }

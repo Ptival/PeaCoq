@@ -34,7 +34,6 @@ abstract class ProofTreeNode {
   }
 
   getOriginalScaledX(): number {
-    console.log(this.getScaledX());
     return this.getScaledX();
     // let self = this;
     // return this.getGoalAncestor().caseOf({
@@ -47,7 +46,6 @@ abstract class ProofTreeNode {
   }
 
   getOriginalScaledY(): number {
-    console.log(this.getScaledY());
     return this.getScaledY();
     // let self = this;
     // let tree = this.proofTree;
