@@ -1,5 +1,5 @@
 /* Globals to be configured */
-let animationDuration = 5000;
+let animationDuration = 2000;
 // let diffBlue = "#8888EE";
 // let diffGreen = "#88EE88";
 // let diffOrange = "#FFB347";
@@ -124,6 +124,8 @@ class ProofTree {
       //.attr("focusable", true)
       // this creates a blue outline that changes the width weirdly
       //.attr("tabindex", 0)
+      // for debugging, this is useful
+      // .attr("viewBox", "0 -100 1000 400")
       ;
 
     this.viewport =
@@ -551,10 +553,10 @@ class ProofTree {
       .append("rect")
       .classed("goal", (d) => d instanceof GoalNode)
       .classed("tactic", (d) => d instanceof TacticGroupNode)
-      .attr("width", function(d) { return d.getWidth(); })
-      .attr("height", function(d) { return d.getHeight(); })
       .attr("x", (d) => d.getOriginalScaledX())
       .attr("y", (d) => d.getOriginalScaledY())
+      .attr("width", function(d) { return d.getWidth(); })
+      .attr("height", function(d) { return d.getHeight(); })
       .attr("rx", function(d) { return d instanceof GoalNode ? 0 : 10; })
       ;
   }
@@ -567,7 +569,6 @@ class ProofTree {
       .style("opacity", "0")
       .remove()
       ;
-
   }
 
   onRectUpdatePostMerge(s: d3.Selection<ProofTreeNode>): void {
@@ -586,11 +587,6 @@ class ProofTree {
   onTextEnter(s: d3.Selection<ProofTreeNode>): void {
     let self = this;
     s
-      // right now we need thihs here so that getHeight returns something
-      // correct, but it would be nice to improve
-      .each(function(d) {
-        if (d instanceof TacticGroupNode) { d.updateNode(); }
-      })
       .attr("x", function(d) { return d.getOriginalScaledX(); })
       .attr("y", function(d) { return d.getOriginalScaledY(); })
       .attr("width", function(d) { return d.getWidth(); })
@@ -882,28 +878,41 @@ class ProofTree {
       let rectSelection = self.rectLayer.selectAll("rect").data(nodes, byNodeId);
       let linkSelection = self.linkLayer.selectAll("path").data(links, byLinkId);
 
+      /*
+      Here, we must rely on the DOM to compute the height of nodes, so
+      that we can position them accordingly. However, the height is
+      dictated by how the HTML will render for the given width of the
+      nodes. Therefore, we must initially include the HTML within the
+      yet-to-be-placed nodes, and we must set their width so that the
+      renderer computes their height.
+
+      Once nodes have a height, we can query it, compute the zooming
+      and translating factors, offset the descendant nodes to center
+      the focused one, and start positioning nodes.
+      */
+
       textEnter
         .append("xhtml:body")
         .each(function(d) {
           let body = d3.select(this).node();
-          // nodes must know their element to compute their own size
           d.setHTMLElement(<HTMLElement><any>body);
           if (d instanceof GoalNode) { $(body).append(d.html); }
+          if (d instanceof TacticGroupNode) { d.updateNode(); }
         });
-
-      // This must set x, y before computeXYFactors
-      self.onTextEnter(textEnter);
-      self.onRectEnter(rectSelection.enter());
+      textEnter.attr("width", (d) => d.getWidth());
 
       // nodes now have a size, we can compute zooming factors
       self.computeXYFactors();
       // compute how much descendants must be moved to center current
       self.computeDescendantsOffset();
 
+      self.onTextEnter(textEnter);
+      self.onRectEnter(rectSelection.enter());
+      self.onLinkEnter(linkSelection.enter());
+
       self.onTextUpdatePostMerge(textSelection);
       self.onRectUpdatePostMerge(rectSelection);
 
-      self.onLinkEnter(linkSelection.enter());
       self.onLinkUpdatePostMerge(linkSelection);
 
       self.onTextExit(textSelection.exit());
