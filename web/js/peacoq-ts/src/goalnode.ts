@@ -107,7 +107,10 @@ class GoalNode extends ProofTreeNode {
    * ancestor of the current node, so that the current node is reachable.
    */
   getViewChildren(): TacticGroupNode[] {
-    if (this.isSolved()) { return []; }
+    if (this.isSolved()
+      && !this.proofTree.isCurNodeAncestor(Strictly.Yes, this)) {
+      return [];
+    }
     let nonEmptyTacticGroups = _(this.tacticGroups)
       .filter(function(group) { return (group.tactics.length > 0); })
       .value()
@@ -136,12 +139,7 @@ class GoalNode extends ProofTreeNode {
   }
 
   onChildSolved(sid: number): void {
-    let self = this;
-    this.proofTree.update()
-      .then(function() {
-        self.onSolved(sid);
-      })
-      ;
+    this.onSolved(sid);
   }
 
   onSolved(sid: number): void {

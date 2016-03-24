@@ -2,29 +2,29 @@
   Stuff that is somewhat general but mostly useful for the proof tree.
  */
 
- function getActiveProofTree(): Maybe<ProofTree> {
-   return (
-     proofTrees.length > 0
-     ? just(proofTrees[0])
-     : nothing()
-   );
- }
+function getActiveProofTree(): Maybe<ProofTree> {
+  return (
+    proofTrees.length > 0
+      ? just(proofTrees[0])
+      : nothing()
+  );
+}
 
- type Hypothesis = {
-   div: HTMLElement;
-   hName: string;
-   hValue: string;
-   hType: string;
- }
+type Hypothesis = {
+  div: HTMLElement;
+  hName: string;
+  hValue: string;
+  hType: string;
+}
 
- type ProofTreeLink = d3.svg.diagonal.Link<ProofTreeNode>;
+type ProofTreeLink = d3.svg.diagonal.Link<ProofTreeNode>;
 
- type TacticGroup = {
-   name: string;
-   tactics: string[];
- }
+type TacticGroup = {
+  name: string;
+  tactics: string[];
+}
 
- type WorklistItem = () => Promise<TacticGroup[]>;
+type WorklistItem = () => Promise<TacticGroup[]>;
 
 /*
  * Returns a rect of the absolute position of [elmt] within the canvas. It needs
@@ -96,8 +96,18 @@ function byNodeId(d: ProofTreeNode): string { return d.id; }
 function byLinkId(d: ProofTreeLink): string { return d.source.id + "," + d.target.id; }
 
 // transposition accessors
-function nodeX(d: ProofTreeNode): number { return d.y; }
-function nodeY(d: ProofTreeNode): number { return d.x; }
+function nodeX(d: ProofTreeNode): number {
+  if (d === undefined) {
+    throw "nodeX";
+  }
+  return d.y;
+}
+function nodeY(d: ProofTreeNode): number {
+  if (d === undefined) {
+    throw "nodeY";
+  }
+  return d.x;
+}
 
 function goalNodeUnicityRepr(node: GoalNode): string {
   throw ("TOREDO");

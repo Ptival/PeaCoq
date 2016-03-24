@@ -68,7 +68,10 @@ class TacticGroupNode extends ProofTreeNode {
   }
 
   getViewChildren(): GoalNode[] {
-    if (this.isSolved()) { return []; }
+    if (this.isSolved()
+      && !this.proofTree.isCurNodeAncestor(Strictly.Yes, this)) {
+      return [];
+    }
     if (this.tactics.length === 0) { return []; }
     let focusedTactic = this.tactics[this.tacticIndex];
     return focusedTactic.goals;

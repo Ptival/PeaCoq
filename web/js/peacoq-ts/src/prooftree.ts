@@ -257,7 +257,10 @@ class ProofTree {
   }
 
   get curNode(): GoalNode { return this._curNode; }
-  set curNode(n: GoalNode) { this._curNode = n; }
+  set curNode(n: GoalNode) {
+    // console.log("Switching current node to", n);
+    this._curNode = n;
+  }
 
   findOrCreateGroup(goalNode: GoalNode, groupName: string): TacticGroupNode {
     let found = _(goalNode.tacticGroups)
@@ -525,7 +528,10 @@ class ProofTree {
     s
       .transition()
       .attr("d", (d) => {
-        return diagonal({ "source": d.source, "target": d.target });
+        return d.source.getGoalAncestor().caseOf({
+          nothing: () => diagonal({ "source": d.source, "target": d.source }),
+          just: (g) => diagonal({ "source": g, "target": g })
+        });
       })
       .style("opacity", "0")
       .remove()
@@ -560,8 +566,18 @@ class ProofTree {
   onRectExit(s: d3.Selection<ProofTreeNode>): void {
     s
       .transition()
-      .attr("x", function(d) { return d.getScaledX(); })
-      .attr("y", function(d) { return d.getScaledY(); })
+      .attr("x", function(d) {
+        return d.getGoalAncestor().caseOf({
+          nothing: () => d.getScaledX(),
+          just: (gp) => gp.getScaledX(),
+        });
+      })
+      .attr("y", function(d) {
+        return d.getGoalAncestor().caseOf({
+          nothing: () => d.getScaledY(),
+          just: (gp) => gp.getScaledY(),
+        });
+      })
       .style("opacity", "0")
       .remove()
       ;
@@ -834,11 +850,11 @@ class ProofTree {
   update(): Promise<{}> {
     let self = this;
     return new Promise(function(onFulfilled, onRejected) {
-      return self.updatePromise(onFulfilled, onRejected);
+      self.updatePromise(onFulfilled, onRejected);
     });
   }
 
-  updatePromise<T>(onFulfilled: () => T, onRejected: () => void): T {
+  updatePromise<T>(onFulfilled: () => void, onRejected: () => void): void {
     let self = this;
     let curNode = self.curNode;
 
@@ -936,9 +952,7 @@ class ProofTree {
         )
         ;
 
-    });
-
-    return onFulfilled();
+    }).each("end", onFulfilled);
 
   }
 
