@@ -328,15 +328,19 @@ let editHandlers: EditHandler[] = [];
 function rewindToPosition(
   doc: CoqDocument,
   targetPos: AceAjax.Position
-): Promise<void> {
+): Promise<any> {
   let lastEditStopPos = doc.getLastEditStop();
-  if (isAfter(Strictly.Yes, targetPos, lastEditStopPos)) {
+  if (isAfter(Strictly.Yes, targetPos, lastEditStopPos)
+    || coqDocument.editsToProcess.length > 0
+    || isJust(coqDocument.editBeingProcessed)
+  ) {
     return Promise.resolve();
   } else {
-    return (
-      onPrevious(doc)
-        .then(() => rewindToPosition(doc, targetPos))
+    let cursorPosition = coqDocument.editor.selection.getCursor();
+    let editToRewindTo = _(coqDocument.editsProcessed).find(
+      (e: ProcessedEdit) => e.containsPosition(cursorPosition)
     );
+    return peaCoqEditAt(editToRewindTo.stateId);
   }
 }
 
@@ -354,7 +358,10 @@ function forwardToPosition(
 
   //console.log(lastEditStopPos, targetPos, coqTrim(textRange), textRange);
 
-  return onNext(doc).then(() => forwardToPosition(doc, targetPos));
+  //return onNext(doc).then(() => forwardToPosition(doc, targetPos));
+
+  onNext(doc);
+  return forwardToPosition(doc, targetPos);
 }
 
 /*

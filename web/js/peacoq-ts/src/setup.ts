@@ -106,6 +106,7 @@ let lastStatus: Status;
 function editorOnEditAt(sid: number) {
   let edit = _(coqDocument.editsProcessed).find((e) => e.stateId === sid);
   if (edit) {
+    killEditsAfterPosition(coqDocument, edit.getStopPosition());
     updateCoqtopTabs(edit.goals, edit.context);
   }
 }
