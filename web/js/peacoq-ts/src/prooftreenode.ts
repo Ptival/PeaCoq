@@ -29,7 +29,10 @@ abstract class ProofTreeNode {
   abstract getHeight(): number;
 
   getHTMLElement(): HTMLElement {
-    assert(this.body !== undefined, "ProofTreeNode.getHTMLElement");
+    if (!this.body) {
+      console.log("BAD: missing this.body", this);
+    }
+    //assert(this.body !== undefined, "ProofTreeNode.getHTMLElement");
     return this.body;
   }
 

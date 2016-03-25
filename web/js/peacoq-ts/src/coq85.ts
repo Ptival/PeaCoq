@@ -271,8 +271,10 @@ let keybindings: KeyBinding[] = [
 let unlockedAnchor;
 let unlockedMarker;
 
-function clearCoqtopTabs() {
-  _([foreground, background, shelved, givenUp, notices, warnings, errors, infos, debug, failures])
+function clearCoqtopTabs(clearFailures: boolean): void {
+  let tabsToClear = [foreground, background, shelved, givenUp, notices, warnings, errors, infos];
+  if (clearFailures) { tabsToClear.push(failures); }
+  _(tabsToClear)
     .each((et: EditorTab) => {
       et.clearValue();
     });
@@ -400,8 +402,7 @@ function onPrevious(doc: CoqDocument): Promise<void> {
           return peaCoqEditAt(pe.stateId);
         },
       })
-      .then(
-      () => {
+      .then(() => {
         lastEdit.remove();
         doc.session.selection.clearSelection();
         doc.editor.moveCursorToPosition(lastEdit.getStartPosition());

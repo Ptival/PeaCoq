@@ -116,7 +116,7 @@ function proofTreeOnStatus(s) {
 }
 
 function updateCoqtopTabs(goals: Goals, context: PeaCoqContext) {
-  clearCoqtopTabs();
+  clearCoqtopTabs(false);
   if (context.length > 0) {
     pretty.div.append(context[0].getHTML());
     foreground.setValue(goals.fgGoals[0].toString(), false);

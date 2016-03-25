@@ -527,12 +527,12 @@ class ProofTree {
   onLinkExit(s: d3.Selection<ProofTreeLink>): void {
     s
       .transition()
-      .attr("d", (d) => {
-        return d.source.getGoalAncestor().caseOf({
-          nothing: () => diagonal({ "source": d.source, "target": d.source }),
-          just: (g) => diagonal({ "source": g, "target": g })
-        });
-      })
+      // .attr("d", (d) => {
+      //   return d.source.getGoalAncestor().caseOf({
+      //     nothing: () => diagonal({ "source": d.source, "target": d.source }),
+      //     just: (g) => diagonal({ "source": g, "target": g })
+      //   });
+      // })
       .style("opacity", "0")
       .remove()
       ;
@@ -566,18 +566,18 @@ class ProofTree {
   onRectExit(s: d3.Selection<ProofTreeNode>): void {
     s
       .transition()
-      .attr("x", function(d) {
-        return d.getGoalAncestor().caseOf({
-          nothing: () => d.getScaledX(),
-          just: (gp) => gp.getScaledX(),
-        });
-      })
-      .attr("y", function(d) {
-        return d.getGoalAncestor().caseOf({
-          nothing: () => d.getScaledY(),
-          just: (gp) => gp.getScaledY(),
-        });
-      })
+      // .attr("x", function(d) {
+      //   return d.getGoalAncestor().caseOf({
+      //     nothing: () => d.getScaledX(),
+      //     just: (gp) => gp.getScaledX(),
+      //   });
+      // })
+      // .attr("y", function(d) {
+      //   return d.getGoalAncestor().caseOf({
+      //     nothing: () => d.getScaledY(),
+      //     just: (gp) => gp.getScaledY(),
+      //   });
+      // })
       .style("opacity", "0")
       .remove()
       ;
@@ -609,18 +609,18 @@ class ProofTree {
   onTextExit(s: d3.Selection<ProofTreeNode>): void {
     s
       .transition()
-      .attr("x", function(d) {
-        return d.getGoalAncestor().caseOf({
-          nothing: () => d.getScaledX(),
-          just: (gp) => gp.getScaledX(),
-        });
-      })
-      .attr("y", function(d) {
-        return d.getGoalAncestor().caseOf({
-          nothing: () => d.getScaledY(),
-          just: (gp) => gp.getScaledY(),
-        });
-      })
+      // .attr("x", function(d) {
+      //   return d.getGoalAncestor().caseOf({
+      //     nothing: () => d.getScaledX(),
+      //     just: (gp) => gp.getScaledX(),
+      //   });
+      // })
+      // .attr("y", function(d) {
+      //   return d.getGoalAncestor().caseOf({
+      //     nothing: () => d.getScaledY(),
+      //     just: (gp) => gp.getScaledY(),
+      //   });
+      // })
       .style("opacity", "0")
       .remove()
       ;
