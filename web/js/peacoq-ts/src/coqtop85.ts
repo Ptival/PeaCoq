@@ -102,7 +102,7 @@ function peaCoqAddPrime(s: string): Promise<any> {
         r = {
           "stateId": r[0],
           "eitherNullStateId": r[1][0],
-          "output": r[1][0],
+          "output": r[1][1],
         };
         _(peaCoqAddHandlers).each((h) => { h(s, r); });
         return r;
