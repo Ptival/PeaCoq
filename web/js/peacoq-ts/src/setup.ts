@@ -88,17 +88,19 @@ $(document).ready(() => {
     $(document).bind("keydown", binding.jQ, binding.handler);
   });
 
-  setupToolbar();
+  let toolbarInputStreams = setupToolbar();
   setupSyntaxHovering();
   Theme.setupTheme();
 
+  setupCoqtopCommunication(toolbarInputStreams);
+
   // peaCoqAddHandlers.push(proofTreeOnAdd);
   // peaCoqGetContextHandlers.push(proofTreeOnGetContext);
-  peaCoqEditAtHandlers.push(proofTreeOnEditAt);
-  peaCoqEditAtHandlers.push(editorOnEditAt);
+  // peaCoqEditAtHandlers.push(proofTreeOnEditAt);
+  // peaCoqEditAtHandlers.push(editorOnEditAt);
   // peaCoqGoalHandlers.push(proofTreeOnGoal);
-  peaCoqStatusHandlers.push(proofTreeOnStatus);
-  editHandlers.push(proofTreeOnEdit);
+  // peaCoqStatusHandlers.push(proofTreeOnStatus);
+  // editHandlers.push(proofTreeOnEdit);
 });
 
 let lastStatus: Status;
@@ -283,7 +285,7 @@ function onResize(): void {
   });
 }
 
-function setupToolbar(): void {
+function setupToolbar(): Rx.Observable<CoqtopInput>[] {
 
   $("<input>", {
     "id": "filepicker",
@@ -291,10 +293,14 @@ function setupToolbar(): void {
     "style": "display: none;",
   }).appendTo($("body"));
 
+  let loadedFilesStream = setupLoadFile();
+  let resetBecauseFileLoadedStream =
+    loadedFilesStream.map(() => ({ cmd: "editat", args: 1 }));
+
   $("#filepicker").on("change", function() {
     // TODO: warning about resetting Coq/saving file
-    loadFile();
-    $(this).val(""); // forces change when same file is picked
+    //loadFile();
+    //$(this).val(""); // forces change when same file is picked
   });
 
   $("<a>", {
@@ -323,6 +329,8 @@ function setupToolbar(): void {
       { type: 'radio', id: 'dark', group: '1', caption: 'Dark', onClick: Theme.switchToDark },
     ]
   });
+
+  return [resetBecauseFileLoadedStream];
 
 }
 

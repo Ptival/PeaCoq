@@ -192,9 +192,10 @@ function halfParentHeight(): string {
 }
 
 function resetCoqtop(): Promise<any> {
-  return peaCoqEditAt(1)
-    .then(() => peaCoqAddPrime("Require Import PeaCoq.PeaCoq."))
-    .then(() => peaCoqStatus(false));
+  return Promise.resolve();
+  // return peaCoqEditAt(1)
+  //   .then(() => peaCoqAddPrime("Require Import PeaCoq.PeaCoq."))
+  //   .then(() => peaCoqStatus(false));
 }
 
 function setupSyntaxHovering() {

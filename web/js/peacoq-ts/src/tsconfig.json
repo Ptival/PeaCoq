@@ -20,6 +20,7 @@
     "coq-pretty-printer.ts",
     "coq85.ts",
     "coqtop85.ts",
+    "coqtop-rx.ts",
     "editor-tab.ts",
     "edits.ts",
     "fakenode.ts",
@@ -35,6 +36,7 @@
     "tacticgroupnode.ts",
     "tactic.ts",
     "theme.ts",
+    "ui-rx.ts",
     "utils.ts",
     "visualizations.ts",
     "DefinitelyTyped/ace/ace.d.ts",
@@ -44,6 +46,7 @@
     "DefinitelyTyped/jquery/jquery.d.ts",
     "DefinitelyTyped/jss/jss.d.ts",
     "DefinitelyTyped/mathjax/mathjax.d.ts",
+    "DefinitelyTyped/rx/rx.all.d.ts",
     "DefinitelyTyped/tsmonad/tsmonad.d.ts",
     "DefinitelyTyped/w2ui/w2ui.d.ts"
   ],

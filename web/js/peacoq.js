@@ -33,6 +33,7 @@ requirejs([
     'jss',
     'lodash',
     'MathJax-master/MathJax',
+    'rx.all',
     'tsmonad',
     'w2ui/w2ui',
   ],
@@ -42,6 +43,7 @@ requirejs([
       'ace/mode/ocaml',
       'peacoq-js/highlight-coq',
       'peacoq-js/mode-coq',
+      'peacoq-ts/coqtop-rx',
       'peacoq-ts/coqtop85',
       'peacoq-ts/coq85',
       'peacoq-ts/setup',
@@ -49,6 +51,7 @@ requirejs([
       'peacoq-ts/tab',
       'peacoq-ts/theme',
       'peacoq-ts/prooftree',
+      'peacoq-ts/ui-rx',
     ], function() {
       requirejs(['peacoq-ts/coq-constr-expr']);
       requirejs(['peacoq-ts/coq-definitions']);
