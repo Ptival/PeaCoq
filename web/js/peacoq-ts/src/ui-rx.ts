@@ -8,16 +8,21 @@ function setupLoadFile(): Rx.Observable<string> {
     "style": "display: none;",
   }).appendTo($("body"));
 
-  let filesToBeLoadedStream: Rx.Observable<File> =
+  let inputChangeStream: Rx.ConnectableObservable<File> =
     Rx.Observable
-      .fromEvent(input, "change")
+      .fromEvent<Event>(input, "change")
       .map((event) => {
-        return (<HTMLInputElement>input.get(0)).files[0];
+        let file = (<HTMLInputElement>input.get(0)).files[0];
+        // necessary for change to fire upon reopening same file
+        $(event.target).val("");
+        return file;
       })
+      .publish()
     ;
+  inputChangeStream.connect();
 
-  let loadedFilesStream: Rx.Observable<string> =
-    filesToBeLoadedStream
+  let loadedFilesStream: Rx.ConnectableObservable<string> =
+    inputChangeStream
       .flatMap((file) => {
         let reader = new FileReader();
         let promise: Promise<string> = new Promise((onResolve) => {
@@ -26,7 +31,9 @@ function setupLoadFile(): Rx.Observable<string> {
         reader.readAsText(file);
         return Rx.Observable.fromPromise(promise);
       })
+      .publish()
     ;
+  loadedFilesStream.connect();
 
   // TODO: This belongs somewhere else (document-related)
   loadedFilesStream.subscribe((text) => {

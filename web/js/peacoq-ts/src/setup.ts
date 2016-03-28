@@ -1,4 +1,5 @@
-let fontSize = 16;
+let fontSize = 16; // pixels
+let resizeBufferingTime = 200; // milliseconds
 
 let coqDocument: CoqDocument = undefined;
 let layout: W2UI.W2Layout;
@@ -10,15 +11,15 @@ $(document).ready(() => {
 
   resetCoqtop();
 
-  let pstyle = "";// "border: 1px solid #dfdfdf;";
+  let style = "";// "border: 1px solid #dfdfdf;";
 
   $("#interface").w2layout({
     name: "layout",
     panels: [
-      { type: "top", size: 34, resizable: false, style: pstyle, content: $("<div>", { id: "toolbar" }) },
-      { type: "left", size: "50%", overflow: "hidden", resizable: true, style: pstyle, content: $("<div>", { id: "editor", style: "height: 100%" }) },
-      { type: "main", size: "50%", style: pstyle, overflow: "hidden", content: $("<div>", { id: "right" }) },
-      { type: "bottom", hidden: true, size: "30%", overflow: "hidden", resizable: true, style: pstyle, content: $("<div>", { id: "prooftree" }) },
+      { type: "top", size: 34, resizable: false, style: style, content: $("<div>", { id: "toolbar" }) },
+      { type: "left", size: "50%", overflow: "hidden", resizable: true, style: style, content: $("<div>", { id: "editor", style: "height: 100%" }) },
+      { type: "main", size: "50%", style: style, overflow: "hidden", content: $("<div>", { id: "right" }) },
+      { type: "bottom", hidden: true, size: "30%", overflow: "hidden", resizable: true, style: style, content: $("<div>", { id: "prooftree" }) },
     ]
   });
 
@@ -41,8 +42,8 @@ $(document).ready(() => {
   $().w2layout({
     name: "right-layout",
     panels: [
-      { type: "main", size: "50%", resizable: true, style: pstyle, tabs: { tabs: [], } },
-      { type: "bottom", size: "50%", resizable: true, style: pstyle, tabs: { tabs: [], } },
+      { type: "main", size: "50%", resizable: true, style: style, tabs: { tabs: [], } },
+      { type: "bottom", size: "50%", resizable: true, style: style, tabs: { tabs: [], } },
     ],
   });
 
@@ -78,21 +79,42 @@ $(document).ready(() => {
 
   layout.content("main", rightLayout);
 
-  $(window).resize(onResize);
-  layout.on({ type: "resize", execute: "after" }, onResize);
-  rightLayout.on({ type: "resize", execute: "after" }, onResize);
-  layout.on({ type: "hide", execute: "after" }, () => { coqDocument.recenterEditor(); });
-  layout.on({ type: "show", execute: "after" }, () => { coqDocument.recenterEditor(); });
+  let windowResizeStream: Rx.Observable<{}> =
+    Rx.Observable.fromEvent($(window), "resize");
+
+  let layoutResizeStream: Rx.Observable<{}> =
+    Rx.Observable.create((observer) => {
+      layout.on({ type: "resize", execute: "after" }, () => observer.onNext({}));
+    });
+  subscribeAndLog(layoutResizeStream);
+
+  let rightLayoutResizeStream: Rx.Observable<{}> =
+    Rx.Observable.create((observer) => {
+      layout.on({ type: "resize", execute: "after" }, () => observer.onNext({}));
+    });
+  subscribeAndLog(rightLayoutResizeStream);
+
+  Rx.Observable.merge(windowResizeStream, layoutResizeStream, rightLayoutResizeStream)
+    // only fire once every <resizeBufferingTime> milliseconds
+    .bufferWithTime(resizeBufferingTime).filter((a) => !_.isEmpty(a))
+    .subscribe(onResize)
+    ;
+
+  //layout.on({ type: "hide", execute: "after" }, () => { coqDocument.recenterEditor(); });
+  //layout.on({ type: "show", execute: "after" }, () => { coqDocument.recenterEditor(); });
 
   _(keybindings).each(function(binding) {
     $(document).bind("keydown", binding.jQ, binding.handler);
   });
 
-  let toolbarInputStreams = setupToolbar();
+  let toolbarStreams = setupToolbar();
   setupSyntaxHovering();
   Theme.setupTheme();
 
-  setupCoqtopCommunication(toolbarInputStreams);
+  setupCoqtopCommunication([
+    // reset Coqtop when a file is loaded
+    toolbarStreams.loadedFiles.map(() => ({ cmd: "editat", args: 1 }))
+  ]);
 
   // peaCoqAddHandlers.push(proofTreeOnAdd);
   // peaCoqGetContextHandlers.push(proofTreeOnGetContext);
@@ -275,6 +297,7 @@ function proofTreeOnEditAt(sid: number): void {
 }
 
 function onResize(): void {
+  console.log("onResize");
   //$("#editor").css("height", parentHeight);
   coqDocument.editor.resize();
   //foreground.onResize();
@@ -285,17 +308,17 @@ function onResize(): void {
   });
 }
 
-function setupToolbar(): Rx.Observable<CoqtopInput>[] {
+interface ToolbarStreams {
+  loadedFiles: Rx.Observable<string>;
+}
+
+function setupToolbar(): ToolbarStreams {
 
   let loadedFilesStream = setupLoadFile();
+
+  // TODO: move this in caller
   let resetBecauseFileLoadedStream =
     loadedFilesStream.map(() => ({ cmd: "editat", args: 1 }));
-
-  $("#filepicker").on("change", function() {
-    // TODO: warning about resetting Coq/saving file
-    //loadFile();
-    //$(this).val(""); // forces change when same file is picked
-  });
 
   $("<a>", {
     "download": "output.v",
@@ -313,16 +336,18 @@ function setupToolbar(): Rx.Observable<CoqtopInput>[] {
   let toCaretClickStream = addButton(toolbar, "To Caret", "arrow-right");
   let nextClickStream = addButton(toolbar, "Next", "arrow-down");
   toolbar.add([
-      { type: "break", id: "toolbar-break-1" },
-      { type: "button", id: "toolbar-font-decrease", img: "glyphicon glyphicon-minus", onClick: () => fontDecrease(coqDocument) },
-      { type: "button", id: "toolbar-font", img: "glyphicon glyphicon-text-height", disabled: true },
-      { type: "button", id: "toolbar-font-increase", img: "glyphicon glyphicon-plus", onClick: () => fontIncrease(coqDocument) },
-      { type: "spacer", id: "toolbar-spacer" },
-      { type: "radio", id: "toolbar-bright", group: "1", caption: "Bright", checked: true, onClick: Theme.switchToBright },
-      { type: "radio", id: "toolbar-dark", group: "1", caption: "Dark", onClick: Theme.switchToDark },
-    ]);
+    { type: "break", id: "toolbar-break-1" },
+    { type: "button", id: "toolbar-font-decrease", img: "glyphicon glyphicon-minus", onClick: () => fontDecrease(coqDocument) },
+    { type: "button", id: "toolbar-font", img: "glyphicon glyphicon-text-height", disabled: true },
+    { type: "button", id: "toolbar-font-increase", img: "glyphicon glyphicon-plus", onClick: () => fontIncrease(coqDocument) },
+    { type: "spacer", id: "toolbar-spacer" },
+    { type: "radio", id: "toolbar-bright", group: "1", caption: "Bright", checked: true, onClick: Theme.switchToBright },
+    { type: "radio", id: "toolbar-dark", group: "1", caption: "Dark", onClick: Theme.switchToDark },
+  ]);
 
-  return [resetBecauseFileLoadedStream];
+  return {
+    loadedFiles: loadedFilesStream,
+  };
 
 }
 
@@ -341,11 +366,11 @@ function showProofTreePanel(): Promise<{}> {
   });
 }
 
-function fontIncrease(d: CoqDocument):void {
+function fontIncrease(d: CoqDocument): void {
   fontSize += 1; updateFontSize(d);
 }
 
-function fontDecrease(d: CoqDocument):void {
+function fontDecrease(d: CoqDocument): void {
   fontSize -= 1; updateFontSize(d);
 }
 

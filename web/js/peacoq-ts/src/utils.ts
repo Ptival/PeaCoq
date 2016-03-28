@@ -1,3 +1,7 @@
+function subscribeAndLog(s: Rx.Observable<any>): void {
+  s.subscribe((x) => { console.log(x); })
+}
+
 type Maybe<T> = TsMonad.Maybe<T>;
 let nothing = TsMonad.Maybe.nothing;
 let just = TsMonad.Maybe.just;
