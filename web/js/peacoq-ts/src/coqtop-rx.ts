@@ -26,7 +26,7 @@ interface CoqtopOutputStreams {
 }
 
 function setupCoqtopCommunication(
-  inputs: Rx.ConnectableObservable<CoqtopInput>[]
+  inputs: Rx.Observable<CoqtopInput>[]
 ): CoqtopOutputStreams {
 
   let coqtopAddPrimeStream: Rx.Observable<CoqtopInput> =
@@ -54,7 +54,7 @@ function setupCoqtopCommunication(
     Rx.Observable
       .merge(
       coqtopAddPrimeStream,
-      coqtopStatusStream,
+      // coqtopStatusStream,
       ...inputs
       )
       .startWith({ cmd: "editat", args: 1 })

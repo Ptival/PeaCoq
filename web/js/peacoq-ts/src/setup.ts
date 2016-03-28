@@ -10,15 +10,15 @@ $(document).ready(() => {
 
   resetCoqtop();
 
-  let pstyle = '';// 'border: 1px solid #dfdfdf;';
+  let pstyle = "";// "border: 1px solid #dfdfdf;";
 
-  $('#interface').w2layout({
-    name: 'layout',
+  $("#interface").w2layout({
+    name: "layout",
     panels: [
-      { type: 'top', size: 34, resizable: false, style: pstyle, content: $("<div>", { id: "toolbar" }) },
-      { type: 'left', size: "50%", overflow: 'hidden', resizable: true, style: pstyle, content: $("<div>", { id: "editor", style: "height: 100%" }) },
-      { type: 'main', size: "50%", style: pstyle, overflow: 'hidden', content: $("<div>", { id: "right" }) },
-      { type: 'bottom', hidden: true, size: "30%", overflow: 'hidden', resizable: true, style: pstyle, content: $("<div>", { id: "prooftree" }) },
+      { type: "top", size: 34, resizable: false, style: pstyle, content: $("<div>", { id: "toolbar" }) },
+      { type: "left", size: "50%", overflow: "hidden", resizable: true, style: pstyle, content: $("<div>", { id: "editor", style: "height: 100%" }) },
+      { type: "main", size: "50%", style: pstyle, overflow: "hidden", content: $("<div>", { id: "right" }) },
+      { type: "bottom", hidden: true, size: "30%", overflow: "hidden", resizable: true, style: pstyle, content: $("<div>", { id: "prooftree" }) },
     ]
   });
 
@@ -39,10 +39,10 @@ $(document).ready(() => {
   editor.focus();
 
   $().w2layout({
-    name: 'right-layout',
+    name: "right-layout",
     panels: [
-      { type: 'main', size: "50%", resizable: true, style: pstyle, tabs: { tabs: [], } },
-      { type: 'bottom', size: "50%", resizable: true, style: pstyle, tabs: { tabs: [], } },
+      { type: "main", size: "50%", resizable: true, style: pstyle, tabs: { tabs: [], } },
+      { type: "bottom", size: "50%", resizable: true, style: pstyle, tabs: { tabs: [], } },
     ],
   });
 
@@ -50,7 +50,7 @@ $(document).ready(() => {
   rightLayout = w2ui["right-layout"];
   contextTabs = w2ui["right-layout_main_tabs"];
   contextTabs.onClick = function(event) {
-    $('#myTabsContent').html(event.target);
+    $("#myTabsContent").html(event.target);
   };
   coqtopTabs = w2ui["right-layout_bottom_tabs"];
 
@@ -238,7 +238,7 @@ function proofTreeOnEdit(
 }
 
 /*
-  For now, let's just rewind within the tree or give up. Eventually,
+  For now, let"s just rewind within the tree or give up. Eventually,
   we could rewind into old trees.
  */
 function proofTreeOnEditAt(sid: number): void {
@@ -287,12 +287,6 @@ function onResize(): void {
 
 function setupToolbar(): Rx.Observable<CoqtopInput>[] {
 
-  $("<input>", {
-    "id": "filepicker",
-    "type": "file",
-    "style": "display: none;",
-  }).appendTo($("body"));
-
   let loadedFilesStream = setupLoadFile();
   let resetBecauseFileLoadedStream =
     loadedFilesStream.map(() => ({ cmd: "editat", args: 1 }));
@@ -311,24 +305,22 @@ function setupToolbar(): Rx.Observable<CoqtopInput>[] {
     .appendTo($("body"))
     ;
 
-  $("#toolbar").w2toolbar({
-    name: 'w2toolbar',
-    items: [
-      { type: 'button', id: 'toolbar-load-local', caption: 'Load', img: 'glyphicon glyphicon-floppy-open', onClick: () => loadLocal() },
-      { type: 'button', id: 'toolbar-save-local', caption: 'Save', img: 'glyphicon glyphicon-floppy-save', onClick: () => saveLocal() },
-      { type: 'break' },
-      { type: 'button', id: 'toolbar-previous', caption: 'Previous', img: 'glyphicon glyphicon-arrow-up', onClick: () => onPrevious(coqDocument) },
-      { type: 'button', id: 'toolbar-next', caption: 'Next', img: 'glyphicon glyphicon-arrow-down', onClick: () => onNext(coqDocument) },
-      { type: 'button', id: 'toolbar-to-caret', caption: 'To Caret', img: 'glyphicon glyphicon-arrow-right', onClick: () => onGotoCaret(coqDocument) },
-      { type: 'break' },
-      { type: 'button', id: 'font-decrease', caption: '', img: 'glyphicon glyphicon-minus', onClick: () => fontDecrease(coqDocument) },
-      { type: 'button', id: 'font', caption: '', img: 'glyphicon glyphicon-text-height', disabled: true },
-      { type: 'button', id: 'font-increase', caption: '', img: 'glyphicon glyphicon-plus', onClick: () => fontIncrease(coqDocument) },
-      { type: 'spacer' },
-      { type: 'radio', id: 'bright', group: '1', caption: 'Bright', checked: true, onClick: Theme.switchToBright },
-      { type: 'radio', id: 'dark', group: '1', caption: 'Dark', onClick: Theme.switchToDark },
-    ]
-  });
+  let toolbar = $("#toolbar").w2toolbar({ name: "w2toolbar" });
+  let loadClickStream = addButton(toolbar, "Load", "floppy-open");
+  let saveClickStream = addButton(toolbar, "Save", "floppy-save");
+  toolbar.add({ type: "break", id: "toolbar-break-0" });
+  let previousClickStream = addButton(toolbar, "Previous", "arrow-up");
+  let toCaretClickStream = addButton(toolbar, "To Caret", "arrow-right");
+  let nextClickStream = addButton(toolbar, "Next", "arrow-down");
+  toolbar.add([
+      { type: "break", id: "toolbar-break-1" },
+      { type: "button", id: "toolbar-font-decrease", img: "glyphicon glyphicon-minus", onClick: () => fontDecrease(coqDocument) },
+      { type: "button", id: "toolbar-font", img: "glyphicon glyphicon-text-height", disabled: true },
+      { type: "button", id: "toolbar-font-increase", img: "glyphicon glyphicon-plus", onClick: () => fontIncrease(coqDocument) },
+      { type: "spacer", id: "toolbar-spacer" },
+      { type: "radio", id: "toolbar-bright", group: "1", caption: "Bright", checked: true, onClick: Theme.switchToBright },
+      { type: "radio", id: "toolbar-dark", group: "1", caption: "Dark", onClick: Theme.switchToDark },
+    ]);
 
   return [resetBecauseFileLoadedStream];
 
