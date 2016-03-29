@@ -10,38 +10,6 @@ to both the page and each editor...
 //   aceMac: string;
 //   handler: () => void
 // };
-//
-// let keybindings: KeyBinding[] = [
-//   {
-//     jQ: "alt+ctrl+l",
-//     aceWin: "Alt-Ctrl-L",
-//     aceMac: "Option-Command-L",
-//     handler: onAltCtrlL,
-//   },
-//   {
-//     jQ: "alt+ctrl+s",
-//     aceWin: "Alt-Ctrl-S",
-//     aceMac: "Option-Command-S",
-//     handler: saveLocal,
-//   },
-//   {
-//     jQ: "alt+ctrl+down",
-//     aceWin: "Alt-Ctrl-Down",
-//     aceMac: "Option-Command-Down",
-//     handler: () => onNext(coqDocument)
-//   },
-//   {
-//     jQ: "alt+ctrl+up",
-//     aceWin: "Alt-Ctrl-Up",
-//     aceMac: "Option-Command-Down",
-//     handler: () => onPrevious(coqDocument)
-//   },
-//   {
-//     jQ: "alt+ctrl+right",
-//     aceWin: "Alt-Ctrl-Right",
-//     aceMac: "Option-Command-Right",
-//     handler: () => onGotoCaret(coqDocument)
-//   },
 //   {
 //     jQ: "alt+ctrl+=",
 //     aceWin: "Alt-Ctrl-=",
@@ -61,6 +29,8 @@ let aceWindowsPrefix = "Alt-Ctrl-";
 let aceMacPrefix = "Option-Command-";
 
 interface ShortcutsStreams {
+  fontIncrease: Rx.Observable<{}>;
+  fontDecrease: Rx.Observable<{}>;
   gotoCaret: Rx.Observable<{}>;
   load: Rx.Observable<{}>;
   next: Rx.Observable<{}>;
@@ -86,6 +56,8 @@ function createBindingForKey(key: string): Rx.Observable<{}> {
 
 function setupKeybindings(): ShortcutsStreams {
   return {
+    fontDecrease: createBindingForKey("-"),
+    fontIncrease: createBindingForKey("="),
     gotoCaret: createBindingForKey("right"),
     load: createBindingForKey("l"),
     next: createBindingForKey("down"),

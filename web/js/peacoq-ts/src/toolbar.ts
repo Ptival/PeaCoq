@@ -1,50 +1,57 @@
+let filePickerId = "filepicker";
 
 interface ToolbarStreams {
-  goToCaretClick: Rx.Observable<{}>;
-  loadClick: Rx.Observable<{}>;
-  nextClick: Rx.Observable<{}>;
-  previousClick: Rx.Observable<{}>;
+  fontDecrease: Rx.Observable<{}>;
+  fontIncrease: Rx.Observable<{}>;
+  goToCaret: Rx.Observable<{}>;
+  load: Rx.Observable<{}>;
+  next: Rx.Observable<{}>;
+  previous: Rx.Observable<{}>;
 }
 
 function setupToolbar(): ToolbarStreams {
 
   let toolbar = $("#toolbar").w2toolbar({ name: "w2toolbar" });
-  let loadClickStream = addButton(toolbar, "Load", "floppy-open");
-  let saveClickStream = addButton(toolbar, "Save", "floppy-save");
+  let loadClickStream = addButton(toolbar, { caption: "Load", icon: "floppy-open" });
+  let saveClickStream = addButton(toolbar, { caption: "Save", icon: "floppy-save" });
   toolbar.add({ type: "break", id: "toolbar-break-0" });
-  let previousClickStream = addButton(toolbar, "Previous", "arrow-up");
-  let goToCaretClickStream = addButton(toolbar, "To Caret", "arrow-right");
-  let nextClickStream = addButton(toolbar, "Next", "arrow-down");
+  let previousClickStream = addButton(toolbar, { caption: "Previous", icon: "arrow-up" });
+  let goToCaretClickStream = addButton(toolbar, { caption: "To Caret", icon: "arrow-right" });
+  let nextClickStream = addButton(toolbar, { caption: "Next", icon: "arrow-down" });
   toolbar.add([
     { type: "break", id: "toolbar-break-1" },
-    { type: "button", id: "toolbar-font-decrease", img: "glyphicon glyphicon-minus", onClick: () => fontDecrease(coqDocument) },
+  ]);
+  let fontDecreaseClickStream = addButton(toolbar, { id: "font-decrease", icon: "minus" });
+  toolbar.add([
     { type: "button", id: "toolbar-font", img: "glyphicon glyphicon-text-height", disabled: true },
-    { type: "button", id: "toolbar-font-increase", img: "glyphicon glyphicon-plus", onClick: () => fontIncrease(coqDocument) },
+  ]);
+  let fontIncreaseClickStream = addButton(toolbar, { id: "font-increase", icon: "plus" });
+  toolbar.add([
     { type: "spacer", id: "toolbar-spacer" },
     { type: "radio", id: "toolbar-bright", group: "1", caption: "Bright", checked: true, onClick: Theme.switchToBright },
     { type: "radio", id: "toolbar-dark", group: "1", caption: "Dark", onClick: Theme.switchToDark },
   ]);
 
   return {
-    goToCaretClick: goToCaretClickStream,
-    loadClick: loadClickStream,
-    nextClick: nextClickStream,
-    previousClick: previousClickStream,
+    fontDecrease: fontDecreaseClickStream,
+    fontIncrease: fontIncreaseClickStream,
+    goToCaret: goToCaretClickStream,
+    load: loadClickStream,
+    next: nextClickStream,
+    previous: previousClickStream,
   };
 
 }
 
 function setupLoadFile(): Rx.Observable<string> {
 
-  let id = "filepicker";
-
   let input = $("<input>", {
-    "id": id,
+    "id": filePickerId,
     "type": "file",
     "style": "display: none;",
   }).appendTo($("body"));
 
-  let inputChangeStream: Rx.ConnectableObservable<File> =
+  let inputChangeStream: Rx.Observable<File> =
     Rx.Observable
       .fromEvent<Event>(input, "change")
       .map((event) => {
@@ -53,11 +60,10 @@ function setupLoadFile(): Rx.Observable<string> {
         $(event.target).val("");
         return file;
       })
-      .publish()
+      .share()
     ;
-  inputChangeStream.connect();
 
-  let loadedFilesStream: Rx.ConnectableObservable<string> =
+  let loadedFilesStream: Rx.Observable<string> =
     inputChangeStream
       .flatMap((file) => {
         let reader = new FileReader();
@@ -67,9 +73,8 @@ function setupLoadFile(): Rx.Observable<string> {
         reader.readAsText(file);
         return Rx.Observable.fromPromise(promise);
       })
-      .publish()
+      .share()
     ;
-  loadedFilesStream.connect();
 
   // TODO: This belongs somewhere else (document-related)
   loadedFilesStream.subscribe((text) => {
@@ -81,20 +86,51 @@ function setupLoadFile(): Rx.Observable<string> {
 
 }
 
+function setupSaveFile() {
+  $("<a>", {
+    "download": "output.v",
+    "id": "save-local-link",
+  })
+    .css("display", "none")
+    .appendTo($("body"))
+    ;
+}
+
+interface ButtonSpecification {
+  caption?: string;
+  id?: string;
+  icon: string;
+}
+
 function addButton(
   toolbar: W2UI.W2Toolbar,
-  caption: string,
-  glyphicon: string
+  spec: ButtonSpecification
 ): Rx.Observable<{}> {
-  let clickStream = Rx.Observable.create((observer) => {
-    toolbar.add({
-      type: "button",
-      id: "button-" + caption,
-      caption: caption,
-      img: "glyphicon glyphicon-" + glyphicon,
-      onClick: () => observer.onNext({}),
-    });
-  }).publish();
-  clickStream.connect();
-  return clickStream;
+  if (!(spec.hasOwnProperty || spec.id)) { throw "addButton: needs a caption or an id"; }
+  let id = "button-" + (spec.id ? spec.id : spec.caption);
+  // add the button regardless of subscriptions
+  let button = toolbar.add({
+    type: "button",
+    id: id,
+    caption: spec.caption ? spec.caption : "",
+    img: "glyphicon glyphicon-" + spec.icon,
+  });
+  return Rx.Observable.create((observer) => {
+    toolbar.get(id)["onClick"] = () => observer.onNext({});
+  }).share();
+}
+
+function onPickFile(): void {
+  $("#" + filePickerId).click();
+}
+
+function saveFile(): void {
+  let editor = coqDocument.editor;
+  let text = editor.getValue();
+  let blob = new Blob([text], { type: 'text/plain;charset=UTF-8' });
+  let url = window.URL.createObjectURL(blob);
+  $("#save-local-link").attr("href", url);
+  $("#save-local-link")[0].click();
+  // TODO: this should be done elsewhere
+  editor.focus();
 }

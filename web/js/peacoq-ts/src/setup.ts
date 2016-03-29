@@ -9,8 +9,6 @@ let coqtopTabs: W2UI.W2Tabs;
 
 $(document).ready(() => {
 
-  resetCoqtop();
-
   let style = "";// "border: 1px solid #dfdfdf;";
 
   $("#interface").w2layout({
@@ -23,7 +21,7 @@ $(document).ready(() => {
     ]
   });
 
-  let editor: AceAjax.Editor = ace.edit("editor");
+  let editor = ace.edit("editor");
   editor.selection.on("changeCursor", (e) => {
     let cursorPosition = editor.selection.getCursor();
     _(coqDocument.editsProcessed).each((e: ProcessedEdit) => {
@@ -36,7 +34,6 @@ $(document).ready(() => {
   //editor.selection.on("changeSelection", (e) => { console.log(e); });
   coqDocument = new CoqDocument(editor);
   setupEditor(editor);
-  editor.resize();
   editor.focus();
 
   $().w2layout({
@@ -82,15 +79,8 @@ $(document).ready(() => {
   let windowResizeStream: Rx.Observable<{}> =
     Rx.Observable.fromEvent($(window), "resize");
 
-  let layoutResizeStream: Rx.Observable<{}> =
-    Rx.Observable.create((observer) => {
-      layout.on({ type: "resize", execute: "after" }, () => observer.onNext({}));
-    });
-
-  let rightLayoutResizeStream: Rx.Observable<{}> =
-    Rx.Observable.create((observer) => {
-      layout.on({ type: "resize", execute: "after" }, () => observer.onNext({}));
-    });
+  let layoutResizeStream = setupW2LayoutResizeStream(layout);
+  let rightLayoutResizeStream = setupW2LayoutResizeStream(rightLayout);
 
   Rx.Observable.merge(windowResizeStream, layoutResizeStream, rightLayoutResizeStream)
     // only fire once every <resizeBufferingTime> milliseconds
@@ -103,28 +93,24 @@ $(document).ready(() => {
   //layout.on({ type: "show", execute: "after" }, () => { coqDocument.recenterEditor(); });
 
   let toolbarStreams = setupToolbar();
+  let shortcutsStreams = setupKeybindings();
+
   setupSyntaxHovering();
   Theme.setupTheme();
 
   let loadedFilesStream = setupLoadFile();
 
-  $("<a>", {
-    "download": "output.v",
-    "id": "save-local-link",
-  })
-    .css("display", "none")
-    .appendTo($("body"))
-    ;
-
-  let shortcutsStreams = setupKeybindings();
-
-  setupCoqtopCommunication([
+  let coqtopOutputStreams = setupCoqtopCommunication([
     // reset Coqtop when a file is loaded
     loadedFilesStream.map(() => ({ cmd: "editat", args: 1 }))
   ]);
 
-  Rx.Observable.merge(toolbarStreams.nextClick, shortcutsStreams.next).subscribe(() => onNext(coqDocument));
-  Rx.Observable.merge(toolbarStreams.loadClick, shortcutsStreams.load).subscribe(() => $("#filepicker").click());
+  let fontIncreasedStream = Rx.Observable.merge(toolbarStreams.fontIncrease, shortcutsStreams.fontIncrease).do(() => { fontSize++; });
+  let fontDecreasedStream = Rx.Observable.merge(toolbarStreams.fontDecrease, shortcutsStreams.fontDecrease).do(() => { fontSize--; });
+  Rx.Observable.merge(fontIncreasedStream, fontDecreasedStream).subscribe(() => { updateFontSize(coqDocument); });
+
+  Rx.Observable.merge(toolbarStreams.next, shortcutsStreams.next).subscribe(() => onNext(coqDocument));
+  Rx.Observable.merge(toolbarStreams.load, shortcutsStreams.load).subscribe(onPickFile);
 
   // peaCoqAddHandlers.push(proofTreeOnAdd);
   // peaCoqGetContextHandlers.push(proofTreeOnGetContext);
@@ -332,14 +318,6 @@ function showProofTreePanel(): Promise<{}> {
   });
 }
 
-function fontIncrease(d: CoqDocument): void {
-  fontSize += 1; updateFontSize(d);
-}
-
-function fontDecrease(d: CoqDocument): void {
-  fontSize -= 1; updateFontSize(d);
-}
-
 function updateFontSize(d: CoqDocument): void {
   d.editor.setOption("fontSize", fontSize);
   _(allEditorTabs).each((e: EditorTab) => {
@@ -348,4 +326,13 @@ function updateFontSize(d: CoqDocument): void {
   jss.set("#pretty-content", { "font-size": fontSize + "px" });
   jss.set("svg body", { "font-size": fontSize + "px" });
   getActiveProofTree().fmap((t) => t.update());
+}
+
+function setupW2LayoutResizeStream(layout: W2UI.W2Layout): Rx.Observable<{}> {
+  return Rx.Observable
+    .create((observer) => {
+      layout.on({ type: "resize", execute: "after" }, () => observer.onNext({}));
+    })
+    .share()
+    ;
 }
