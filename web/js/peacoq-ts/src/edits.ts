@@ -76,14 +76,14 @@ class ProcessedEdit extends Edit {
   stateId: number;
   status: Status;
 
-  constructor(e: EditBeingProcessed, sid: number, s: Status, gs: Goals, c: PeaCoqContext) {
+  constructor(e: EditBeingProcessed) {//, s: Status, gs: Goals, c: PeaCoqContext) {
     super(e.promoteMarker());
-    this.context = c;
+    // this.context = c;
     this.document = e.document;
-    this.goals = gs;
+    // this.goals = gs;
     this.editId = freshEditId();
-    this.stateId = sid;
-    this.status = s;
+    this.stateId = e.stateId;
+    // this.status = s;
     this.previousEdit = this.document.editsProcessed.length === 0 ? nothing() : just(_(this.document.editsProcessed).last());
   }
 

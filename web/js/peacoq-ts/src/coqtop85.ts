@@ -383,6 +383,7 @@ class Message {
 }
 
 class Feedback {
+  // TODO: give this a less lame type
   editOrState: string;
   editOrStateId: number;
   feedbackContent: FeedbackContent;
@@ -415,14 +416,17 @@ function mkFeedbackContent(f) {
   switch (this.tag) {
     case "AddedAxiom":
     case "Custom":
+      console.log("TODO: FeedbackContent for " + this.tag, f);
+      break;
     case "ErrorMsg":
+      return new ErrorMsg(f.contents);
     case "FileDependency":
     case "FileLoaded":
     case "GlobDef":
     case "GlobRef":
     case "Goals":
     case "Message":
-      //console.log("TODO: FeedbackContent for " + this.tag, f);
+      console.log("TODO: FeedbackContent for " + this.tag, f);
       break;
     case "Processed":
       return new Processed();
@@ -438,6 +442,19 @@ function mkFeedbackContent(f) {
 }
 
 class FeedbackContent { }
+
+class ErrorMsg extends FeedbackContent {
+  message: string;
+  start: number;
+  stop: number;
+  constructor(c) {
+    super();
+    let [[start, stop], message] = c;
+    this.start = start;
+    this.stop = stop;
+    this.message = message;
+  }
+}
 
 class Processed extends FeedbackContent {
   toString() { return "Processed"; }

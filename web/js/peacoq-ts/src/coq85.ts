@@ -152,7 +152,6 @@ class CoqDocument {
 
 //let coqDocument: CoqDocument;
 
-let statusPeriod = 3000;
 let maxLength = 2000;
 
 function onFeedback(f: Feedback) {
@@ -175,12 +174,6 @@ function isQueryWarning(m: Message) {
 
 function onMessage(m: Message) {
   m.display();
-}
-
-function periodicallyStatus(): void {
-  coqtop("status", false, true).then(function(status) {
-    window.setTimeout(periodicallyStatus, statusPeriod);
-  });
 }
 
 function parentHeight(): string {

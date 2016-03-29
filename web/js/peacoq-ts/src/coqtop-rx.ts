@@ -1,3 +1,4 @@
+let statusPeriod = 200; // milliseconds
 
 interface CoqtopInput {
   cmd: string;
@@ -36,22 +37,18 @@ function setupCoqtopCommunication(
 
   let coqtopStatusStream: Rx.Observable<CoqtopInput> =
     Rx.Observable
-      .interval(2000)
+      .interval(statusPeriod)
       .map(() => ({ cmd: "status", args: false }));
 
   let coqtopInputStream: Rx.Observable<CoqtopInput> =
     Rx.Observable
       .merge(
-      // coqtopStatusStream,
+      coqtopStatusStream,
       ...inputs
       )
       .startWith({ cmd: "editat", args: 1 })
     // .concat(Rx.Observable.return({ cmd: "quit", args: [] }))
     ;
-
-  coqtopInputStream.subscribe((input) => {
-    console.log("coqtop ⟸ ", input);
-  });
 
   let coqtopOutputStream: Rx.ConnectableObservable<CoqtopOutput> =
     coqtopInputStream
@@ -79,9 +76,13 @@ function setupCoqtopCommunication(
   coqtopOutputStream.connect();
 
   let coqtopResponseStream = coqtopOutputStream.map((r) => r.response);
-  coqtopResponseStream.subscribe(
-    (r) => { console.log("coqtop ⟹ ", r.input, r.contents); }
-  );
+
+  coqtopInputStream
+    .filter((i) => i.cmd !== "status")
+    .subscribe((input) => { console.log("coqtop ⟸ ", input); });
+  coqtopResponseStream
+    .filter((r) => r.input.cmd !== "status")
+    .subscribe((r) => { console.log("coqtop ⟹ ", r.input, r.contents); });
 
   let coqtopGoodResponseStream =
     coqtopResponseStream.filter((r) => r.tag === "ValueGood")

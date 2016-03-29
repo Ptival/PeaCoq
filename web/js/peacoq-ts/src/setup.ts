@@ -140,7 +140,7 @@ $(document).ready(() => {
     addsToProcessStream,
   ]);
 
-  let editsBeingProcessed = [];
+  let editsBeingProcessed: EditBeingProcessed[] = [];
 
   coqtopOutputStreams.goodResponse
     // keep only responses for adds produced by PeaCoq
@@ -152,6 +152,33 @@ $(document).ready(() => {
       editsBeingProcessed.push(edit);
       console.log(edit);
     });
+
+  subscribeAndLog(
+    coqtopOutputStreams.feedback
+      .filter((f) => !(f.feedbackContent instanceof Processed && f.editOrState === "state"))
+      .filter((f) => !(f.feedbackContent instanceof ProcessingIn && f.editOrState === "state"))
+      .filter((f) => !(f.feedbackContent instanceof ErrorMsg))
+  );
+
+  coqtopOutputStreams.feedback
+    .filter((f) => f.editOrState === "state")
+    .filter((f) => f.feedbackContent instanceof Processed)
+    .subscribe((f) => {
+      let stateId = f.editOrStateId;
+      let editReady = _(editsBeingProcessed).find((e) => e.stateId === stateId);
+      if (editReady) {
+        _(editsBeingProcessed).remove(editReady);
+        let edit = new ProcessedEdit(editReady);
+      }
+    });
+
+  coqtopOutputStreams.feedback
+    .filter((f) => f.feedbackContent instanceof ErrorMsg)
+    .distinctUntilChanged()
+    .subscribe((f) => {
+      let e = <ErrorMsg><any>f.feedbackContent;
+      console.log("[", e.start, ",", e.stop, "]", e.message, f);
+    })
 
   // peaCoqAddHandlers.push(proofTreeOnAdd);
   // peaCoqGetContextHandlers.push(proofTreeOnGetContext);
