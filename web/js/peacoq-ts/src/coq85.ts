@@ -1,5 +1,5 @@
-let AceAnchor = ace.require("ace/anchor").Anchor;
-let AceRange = ace.require("ace/range").Range;
+// let AceAnchor = ace.require("ace/anchor").Anchor;
+// let AceRange = ace.require("ace/range").Range;
 // let AceRangeList = ace.require("ace/range_list").RangeList;
 // let AceSelection = ace.require("ace/selection").Selection;
 
@@ -40,6 +40,7 @@ class CoqDocument {
     // WARNING: This line must stay over calls to mkAnchor
     this.session = editor.getSession();
     this.session.on("change", (change) => {
+      console.log("TODO: remove this");
       killEditsAfterPosition(this, minPos(change.start, change.end));
     });
     this.beginAnchor = mkAnchor(this, 0, 0, "begin-marker", true);
@@ -150,8 +151,6 @@ class CoqDocument {
 
 }
 
-//let coqDocument: CoqDocument;
-
 let maxLength = 2000;
 
 function onFeedback(f: Feedback) {
@@ -244,7 +243,7 @@ function onNextReactive(
       let lastEditStopPos = doc.getLastEditStop();
       let endPos = doc.endAnchor.getPosition();
       let unprocessedRange =
-        new AceRange(
+        new AceAjax.Range(
           lastEditStopPos.row, lastEditStopPos.column,
           endPos.row, endPos.column
         );
@@ -253,7 +252,7 @@ function onNextReactive(
         return;
       }
       let nextIndex = CoqStringUtils.next(unprocessedText);
-      let newStopPos = movePosRight(doc, lastEditStopPos, nextIndex);
+      let newStopPos = movePositionRight(doc, lastEditStopPos, nextIndex);
       let query = unprocessedText.substring(0, nextIndex);
       let e1 = new EditToProcess(coqDocument, lastEditStopPos, newStopPos, query);
       // TODO: this should be downstream
@@ -320,7 +319,7 @@ function forwardToPosition(
   if (isAfter(Strictly.Yes, lastEditStopPos, targetPos)) { return Promise.resolve(); }
 
   // don't move forward if there is only spaces/comments
-  let range = AceRange.fromPoints(lastEditStopPos, targetPos);
+  let range = AceAjax.Range.fromPoints(lastEditStopPos, targetPos);
   let textRange = doc.session.getDocument().getTextRange(range);
   if (CoqStringUtils.coqTrim(textRange) === "") { return Promise.resolve(); }
 
@@ -459,17 +458,22 @@ function countBackgroundGoals(goals: Goals): number {
   );
 }
 
+// TODO: one of Anchor and mkAnchor should disappear
 class Anchor {
   anchor: AceAjax.Anchor;
   marker: any;
   constructor(
     doc: CoqDocument,
-    row: number, column: number, klass: string, insertRight: boolean
+    row: number,
+    column: number,
+    klass: string,
+    insertRight: boolean
   ) {
-    this.anchor = new AceAnchor(doc.session.getDocument(), row, column);
+    this.anchor = new AceAjax.Anchor(doc.session.getDocument(), row, column);
     if (insertRight) { this.anchor.$insertRight = true; }
     this.marker = {};
     this.marker.update = function(html, markerLayer, session, config) {
+      console.log("MARKER UPDATE");
       let screenPos = session.documentToScreenPosition(this.anchor);
       let height = config.lineHeight;
       let width = config.characterWidth;
@@ -491,28 +495,30 @@ class Anchor {
 
 function mkAnchor(
   doc: CoqDocument,
-  row: number, column: number, klass: string, insertRight: boolean
+  row: number, column: number,
+  klass: string, insertRight: boolean
 ): AceAjax.Anchor {
-  let a = new AceAnchor(doc.session.getDocument(), row, column);
+  let a = new AceAjax.Anchor(doc.session.getDocument(), row, column);
   if (insertRight) { a.$insertRight = true; }
-  a.marker = {};
-  a.marker.update = function(html, markerLayer, session, config) {
-    let screenPos = session.documentToScreenPosition(a);
-    let height = config.lineHeight;
-    let width = config.characterWidth;
-    let top = markerLayer.$getTop(screenPos.row, config);
-    let left = markerLayer.$padding + screenPos.column * width;
-    html.push(
-      "<div class='", klass, "' style='",
-      "height:", height, "px;",
-      "top:", top, "px;",
-      "left:", left, "px; width:", width, "px'></div>"
-    );
-  };
-  a.marker = doc.session.addDynamicMarker(a.marker, true);
-  a.on("change", function(change, anchor) {
-    doc.session._signal("changeFrontMarker");
-  });
+  let marker = doc.session.addDynamicMarker(
+    {
+      update: function(html, markerLayer, session, config) {
+        let screenPos = session.documentToScreenPosition(a);
+        let height = config.lineHeight;
+        let width = config.characterWidth;
+        let top = markerLayer.$getTop(screenPos.row, config);
+        let left = markerLayer.$padding + screenPos.column * width;
+        html.push(
+          "<div class='", klass, "' style='",
+          "height:", height, "px;",
+          "top:", top, "px;",
+          "left:", left, "px; width:", width, "px'></div>"
+        );
+      }
+    },
+    true
+  );
+  a.on("change", () => doc.session._signal("changeFrontMarker"));
   return a;
 }
 
@@ -567,7 +573,7 @@ function killEditsAfterPosition(doc: CoqDocument, pos: AceAjax.Position) {
 
 }
 
-function movePosRight(
+function movePositionRight(
   doc: CoqDocument,
   pos: AceAjax.Position,
   n: number
@@ -579,12 +585,12 @@ function movePosRight(
   let column = pos.column;
   let line = doc.session.getLine(row);
   if (column < line.length) {
-    return movePosRight(doc, {
+    return movePositionRight(doc, {
       "row": row,
       "column": column + 1
     }, n - 1);
   } else if (row < doc.session.getLength()) {
-    return movePosRight(doc, {
+    return movePositionRight(doc, {
       "row": row + 1,
       "column": 0
     }, n - 1);

@@ -1,10 +1,12 @@
 let cssPath = "js/lib/w2ui/";
+let errorUnderlineClass = "theme_error_underline";
 
 interface Theme {
   aceTheme: string;
   background: string;
   contextDivider: string;
   css: string;
+  errorUnderlineStyle: string;
   foreground: string;
   goalStroke: string;
   linkStroke: string;
@@ -25,51 +27,53 @@ interface Theme {
 }
 
 namespace BrightTheme {
-  export let aceTheme         = "";
-  export let background       = "rgba(255, 255, 255, 1)";
-  export let css              = cssPath + "w2ui.min.css";
-  export let contextDivider   = "1px solid black";
-  export let foreground       = "black";
-  export let goalStroke       = "black";
-  export let linkStroke       = "black";
-  export let processed        = "rgba(144, 238, 144, 1)";
-  export let processing       = "rgba(255, 179, 71, 1)";
-  export let separatorColor   = "#999999";
-  export let svgBackground    = "white";
-  export let syntaxComment    = "rgb(165, 42, 42)";
-  export let syntaxGallina    = "blue";
-  export let syntaxKeyword    = "red";
-  export let syntaxNotation   = "brown";
-  export let syntaxTactic     = "rgb(147, 112, 219)";
+  export let aceTheme = "";
+  export let background = "rgba(255, 255, 255, 1)";
+  export let css = cssPath + "w2ui.min.css";
+  export let contextDivider = "1px solid black";
+  export let errorUnderlineStyle = "2px dotted red";
+  export let foreground = "black";
+  export let goalStroke = "black";
+  export let linkStroke = "black";
+  export let processed = "rgba(144, 238, 144, 1)";
+  export let processing = "rgba(255, 179, 71, 1)";
+  export let separatorColor = "#999999";
+  export let svgBackground = "white";
+  export let syntaxComment = "rgb(165, 42, 42)";
+  export let syntaxGallina = "blue";
+  export let syntaxKeyword = "red";
+  export let syntaxNotation = "brown";
+  export let syntaxTactic = "rgb(147, 112, 219)";
   export let syntaxTerminator = "red";
-  export let syntaxVariable   = "rgb(147, 112, 219)";
+  export let syntaxVariable = "rgb(147, 112, 219)";
   export let syntaxVernacular = "rgb(255, 69, 0)";
-  export let toprocess        = "rgba(173, 216, 230, 1)";
-  export let tacticFill       = "#FFF056";
+  export let toprocess = "rgba(173, 216, 230, 1)";
+  export let tacticFill = "#FFF056";
 }
 
 namespace DarkTheme {
-  export let aceTheme         = "ace/theme/monokai";
-  export let background       = "rgba(39, 40, 34, 1)";
-  export let css              = cssPath + "w2ui-dark.min.css";
-  export let contextDivider   = "1px solid white";
-  export let foreground       = "white";
-  export let goalStroke       = "white";
-  export let linkStroke       = "white";
-  export let processed        = "rgba(4, 98, 4, 1)";
-  export let processing       = "rgba(185, 109, 01, 1)";
-  export let separatorColor   = "#999999";
-  export let svgBackground    = "black";
-  export let syntaxComment    = "rgb(165, 42, 42)";
-  export let syntaxGallina    = "lightblue";
-  export let syntaxKeyword    = "red";
-  export let syntaxNotation   = "brown";
-  export let syntaxTactic     = "rgb(147, 112, 219)";
+  export let aceTheme = "ace/theme/monokai";
+  export let background = "rgba(39, 40, 34, 1)";
+  export let css = cssPath + "w2ui-dark.min.css";
+  export let contextDivider = "1px solid white";
+  export let errorUnderlineStyle = "2px dotted red";
+  export let foreground = "white";
+  export let goalStroke = "white";
+  export let linkStroke = "white";
+  export let processed = "rgba(4, 98, 4, 1)";
+  export let processing = "rgba(185, 109, 01, 1)";
+  export let separatorColor = "#999999";
+  export let svgBackground = "black";
+  export let syntaxComment = "rgb(165, 42, 42)";
+  export let syntaxGallina = "lightblue";
+  export let syntaxKeyword = "red";
+  export let syntaxNotation = "brown";
+  export let syntaxTactic = "rgb(147, 112, 219)";
   export let syntaxTerminator = "red";
-  export let syntaxVariable   = "rgb(147, 112, 219)";
+  export let syntaxVariable = "rgb(147, 112, 219)";
   export let syntaxVernacular = "rgb(255, 69, 0)";
-  export let toprocess        = "rgba(73, 116, 130, 1)";
-  export let tacticFill       = "#9F9006";
+  export let toprocess = "rgba(73, 116, 130, 1)";
+  export let tacticFill = "#9F9006";
 }
 
 namespace Theme {
@@ -143,6 +147,11 @@ namespace Theme {
       "font-family": "monospace",
       "padding": "2px",
     })
+
+    jss.set("." + errorUnderlineClass, {
+      position: "absolute",
+      "border-bottom": theme.errorUnderlineStyle,
+    });
 
     coqDocument.editor.setTheme(theme.aceTheme);
     _(allEditorTabs).each((et) => { et.setTheme(theme.aceTheme); })

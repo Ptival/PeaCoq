@@ -452,7 +452,7 @@ class ErrorMsg extends FeedbackContent {
     let [[start, stop], message] = c;
     this.start = start;
     this.stop = stop;
-    this.message = message;
+    this.message = replaceNBSPWithSpaces(message);
   }
 }
 

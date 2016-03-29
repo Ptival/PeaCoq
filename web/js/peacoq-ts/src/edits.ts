@@ -9,7 +9,7 @@ class EditMarker {
     this.document = doc;
     this.startPos = start;
     this.stopPos = stop;
-    this.markerRange = new AceRange(start.row, start.column, stop.row, stop.column);
+    this.markerRange = new AceAjax.Range(start.row, start.column, stop.row, stop.column);
     this.markerId = doc.session.addMarker(this.markerRange, "toprocess", "text", false);
   }
 

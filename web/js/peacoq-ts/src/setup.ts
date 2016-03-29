@@ -33,6 +33,20 @@ $(document).ready(() => {
   });
   //editor.selection.on("changeSelection", (e) => { console.log(e); });
   coqDocument = new CoqDocument(editor);
+
+  let editorChange: Rx.Observable<AceAjax.EditorChangeEvent> =
+    Rx.Observable
+      .create<AceAjax.EditorChangeEvent>((observer) => {
+        coqDocument.session.on("change", (e) => observer.onNext(e));
+      })
+      .share();
+
+  let editAtBecauseEditorChange: Rx.Observable<CoqtopInput> =
+    editorChange.flatMap((change) => {
+      console.log("should remove edits after", minPos(change.start, change.end));
+      return [];
+    });
+
   setupEditor(editor);
   editor.focus();
 
@@ -150,9 +164,9 @@ $(document).ready(() => {
       let stateId = r[0];
       let edit = new EditBeingProcessed(r.input["edit"], r.contents[0]);
       editsBeingProcessed.push(edit);
-      console.log(edit);
     });
 
+  // Logging feedbacks that I haven't figured out what to do with yet
   subscribeAndLog(
     coqtopOutputStreams.feedback
       .filter((f) => !(f.feedbackContent instanceof Processed && f.editOrState === "state"))
@@ -177,7 +191,20 @@ $(document).ready(() => {
     .distinctUntilChanged()
     .subscribe((f) => {
       let e = <ErrorMsg><any>f.feedbackContent;
-      console.log("[", e.start, ",", e.stop, "]", e.message, f);
+      assert(f.editOrState === "state", "Expected ErrorMsg to carry a state, not an edit");
+      let failedStateId = f.editOrStateId;
+      let failedEdit = _(editsBeingProcessed).find((e) => e.stateId === failedStateId);
+      if (failedEdit) {
+        failedEdit.onRemove();
+        _(editsBeingProcessed).remove(failedEdit);
+        errors.setValue(e.message, true);
+        let errorStart = movePositionRight(coqDocument, failedEdit.getStartPosition(), e.start);
+        let errorStop = movePositionRight(coqDocument, failedEdit.getStartPosition(), e.stop);
+        let errorRange = new AceAjax.Range(errorStart.row, errorStart.column, errorStop.row, errorStop.column);
+        console.log(errorStart, errorStop);
+        console.log(errorRange);
+        let markerId = coqDocument.session.addMarker(errorRange, errorUnderlineClass, "text", true);
+      }
     })
 
   // peaCoqAddHandlers.push(proofTreeOnAdd);

@@ -47,6 +47,12 @@ requirejs([
   ],
   function(ace, d3, $) {
     window.ace = ace;
+    // not sure how else this is usually done
+    aceRequires = [
+      ace.require("ace/anchor"),
+      ace.require("ace/range"),
+    ];
+    window.AceAjax = $.extend({}, ...aceRequires);
     requirejs([
       'ace/mode/ocaml',
       'peacoq-js/highlight-coq',

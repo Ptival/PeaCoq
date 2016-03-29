@@ -1,3 +1,7 @@
+function replaceNBSPWithSpaces(s: string): string {
+  return s.replace(/\u00A0/g, " ");
+}
+
 function subscribeAndLog(s: Rx.Observable<any>): void {
   s.subscribe((x) => { console.log(x); })
 }
