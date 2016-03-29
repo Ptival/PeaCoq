@@ -86,13 +86,11 @@ $(document).ready(() => {
     Rx.Observable.create((observer) => {
       layout.on({ type: "resize", execute: "after" }, () => observer.onNext({}));
     });
-  subscribeAndLog(layoutResizeStream);
 
   let rightLayoutResizeStream: Rx.Observable<{}> =
     Rx.Observable.create((observer) => {
       layout.on({ type: "resize", execute: "after" }, () => observer.onNext({}));
     });
-  subscribeAndLog(rightLayoutResizeStream);
 
   Rx.Observable.merge(windowResizeStream, layoutResizeStream, rightLayoutResizeStream)
     // only fire once every <resizeBufferingTime> milliseconds
@@ -100,21 +98,33 @@ $(document).ready(() => {
     .subscribe(onResize)
     ;
 
+  // TODO: figure out if this was needed
   //layout.on({ type: "hide", execute: "after" }, () => { coqDocument.recenterEditor(); });
   //layout.on({ type: "show", execute: "after" }, () => { coqDocument.recenterEditor(); });
-
-  _(keybindings).each(function(binding) {
-    $(document).bind("keydown", binding.jQ, binding.handler);
-  });
 
   let toolbarStreams = setupToolbar();
   setupSyntaxHovering();
   Theme.setupTheme();
 
+  let loadedFilesStream = setupLoadFile();
+
+  $("<a>", {
+    "download": "output.v",
+    "id": "save-local-link",
+  })
+    .css("display", "none")
+    .appendTo($("body"))
+    ;
+
+  let shortcutsStreams = setupKeybindings();
+
   setupCoqtopCommunication([
     // reset Coqtop when a file is loaded
-    toolbarStreams.loadedFiles.map(() => ({ cmd: "editat", args: 1 }))
+    loadedFilesStream.map(() => ({ cmd: "editat", args: 1 }))
   ]);
+
+  Rx.Observable.merge(toolbarStreams.nextClick, shortcutsStreams.next).subscribe(() => onNext(coqDocument));
+  Rx.Observable.merge(toolbarStreams.loadClick, shortcutsStreams.load).subscribe(() => $("#filepicker").click());
 
   // peaCoqAddHandlers.push(proofTreeOnAdd);
   // peaCoqGetContextHandlers.push(proofTreeOnGetContext);
@@ -297,7 +307,6 @@ function proofTreeOnEditAt(sid: number): void {
 }
 
 function onResize(): void {
-  console.log("onResize");
   //$("#editor").css("height", parentHeight);
   coqDocument.editor.resize();
   //foreground.onResize();
@@ -306,49 +315,6 @@ function onResize(): void {
     let parent = $("#prooftree").parent();
     t.resize(parent.width(), parent.height());
   });
-}
-
-interface ToolbarStreams {
-  loadedFiles: Rx.Observable<string>;
-}
-
-function setupToolbar(): ToolbarStreams {
-
-  let loadedFilesStream = setupLoadFile();
-
-  // TODO: move this in caller
-  let resetBecauseFileLoadedStream =
-    loadedFilesStream.map(() => ({ cmd: "editat", args: 1 }));
-
-  $("<a>", {
-    "download": "output.v",
-    "id": "save-local-link",
-  })
-    .css("display", "none")
-    .appendTo($("body"))
-    ;
-
-  let toolbar = $("#toolbar").w2toolbar({ name: "w2toolbar" });
-  let loadClickStream = addButton(toolbar, "Load", "floppy-open");
-  let saveClickStream = addButton(toolbar, "Save", "floppy-save");
-  toolbar.add({ type: "break", id: "toolbar-break-0" });
-  let previousClickStream = addButton(toolbar, "Previous", "arrow-up");
-  let toCaretClickStream = addButton(toolbar, "To Caret", "arrow-right");
-  let nextClickStream = addButton(toolbar, "Next", "arrow-down");
-  toolbar.add([
-    { type: "break", id: "toolbar-break-1" },
-    { type: "button", id: "toolbar-font-decrease", img: "glyphicon glyphicon-minus", onClick: () => fontDecrease(coqDocument) },
-    { type: "button", id: "toolbar-font", img: "glyphicon glyphicon-text-height", disabled: true },
-    { type: "button", id: "toolbar-font-increase", img: "glyphicon glyphicon-plus", onClick: () => fontIncrease(coqDocument) },
-    { type: "spacer", id: "toolbar-spacer" },
-    { type: "radio", id: "toolbar-bright", group: "1", caption: "Bright", checked: true, onClick: Theme.switchToBright },
-    { type: "radio", id: "toolbar-dark", group: "1", caption: "Dark", onClick: Theme.switchToDark },
-  ]);
-
-  return {
-    loadedFiles: loadedFilesStream,
-  };
-
 }
 
 function hideProofTreePanel(): void {

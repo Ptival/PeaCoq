@@ -213,62 +213,6 @@ function setupSyntaxHovering() {
 
 }
 
-/*
-I can't seem to make Ace properly bubble key events, or when they bubble,
-jQuery somehow does not recognize them. So fuck it, keybindings are added
-to both the page and each editor...
-*/
-type KeyBinding = {
-  jQ: string;
-  aceWin: string;
-  aceMac: string;
-  handler: () => void
-};
-let keybindings: KeyBinding[] = [
-  {
-    jQ: "alt+ctrl+l",
-    aceWin: "Alt-Ctrl-L",
-    aceMac: "Option-Command-L",
-    handler: onAltCtrlL,
-  },
-  {
-    jQ: "alt+ctrl+s",
-    aceWin: "Alt-Ctrl-S",
-    aceMac: "Option-Command-S",
-    handler: saveLocal,
-  },
-  {
-    jQ: "alt+ctrl+down",
-    aceWin: "Alt-Ctrl-Down",
-    aceMac: "Option-Command-Down",
-    handler: () => onNext(coqDocument)
-  },
-  {
-    jQ: "alt+ctrl+up",
-    aceWin: "Alt-Ctrl-Up",
-    aceMac: "Option-Command-Down",
-    handler: () => onPrevious(coqDocument)
-  },
-  {
-    jQ: "alt+ctrl+right",
-    aceWin: "Alt-Ctrl-Right",
-    aceMac: "Option-Command-Right",
-    handler: () => onGotoCaret(coqDocument)
-  },
-  {
-    jQ: "alt+ctrl+=",
-    aceWin: "Alt-Ctrl-=",
-    aceMac: "Option-Command-=",
-    handler: () => fontIncrease(coqDocument),
-  },
-  {
-    jQ: "alt+ctrl+-",
-    aceWin: "Alt-Ctrl--",
-    aceMac: "Option-Command--",
-    handler: () => fontDecrease(coqDocument),
-  },
-];
-
 let unlockedAnchor;
 let unlockedMarker;
 
@@ -878,16 +822,5 @@ function setupEditor(e: AceAjax.Editor) {
   e.setHighlightActiveLine(false);
   e.session.setUseSoftTabs(true);
   e.$blockScrolling = Infinity; // pestering warning
-
-  // I should be able to use this but it is broken
-  //e.setKeyboardHandler("ace/keyboard/textarea");
-
-  _(keybindings).each(function(binding) {
-    e.commands.addCommand({
-      name: binding.aceWin,
-      bindKey: { win: binding.aceWin, mac: binding.aceMac },
-      exec: binding.handler,
-    })
-  });
 
 }

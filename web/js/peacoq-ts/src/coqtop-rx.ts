@@ -19,27 +19,17 @@ interface CoqtopOutput {
 }
 
 interface CoqtopOutputStreams {
-  responseStream: Rx.Observable<CoqtopResponse>;
-  goodResponseStream: Rx.Observable<CoqtopResponse>;
-  failResponseStream: Rx.Observable<CoqtopResponse>;
-  stateIdStream: Rx.Observable<number>;
+  failResponse: Rx.Observable<CoqtopResponse>;
+  feedback: Rx.Observable<Feedback>;
+  goodResponse: Rx.Observable<CoqtopResponse>;
+  messages: Rx.Observable<Message>;
+  response: Rx.Observable<CoqtopResponse>;
+  stateId: Rx.Observable<number>;
 }
 
 function setupCoqtopCommunication(
   inputs: Rx.Observable<CoqtopInput>[]
 ): CoqtopOutputStreams {
-
-  let coqtopAddPrimeStream: Rx.Observable<CoqtopInput> =
-    Rx.Observable
-      .from([
-        "Theorem test: forall (x: nat), 0 = 0.",
-        "Proof.",
-        "intros.",
-        "reflexivity.",
-        "Qed.",
-      ])
-      .map((s) => ({ cmd: "add'", args: s }))
-    ;
 
   let coqtopEditAtStream: Rx.Observable<CoqtopInput> =
     Rx.Observable.empty<CoqtopInput>();
@@ -53,12 +43,11 @@ function setupCoqtopCommunication(
   let coqtopInputStream: Rx.Observable<CoqtopInput> =
     Rx.Observable
       .merge(
-      coqtopAddPrimeStream,
       // coqtopStatusStream,
       ...inputs
       )
       .startWith({ cmd: "editat", args: 1 })
-      // .concat(Rx.Observable.return({ cmd: "quit", args: [] }))
+    // .concat(Rx.Observable.return({ cmd: "quit", args: [] }))
     ;
 
   coqtopInputStream.subscribe((input) => {
@@ -88,7 +77,7 @@ function setupCoqtopCommunication(
       })
       .publish()
     ;
-  // coqtopOutputStream.subscribe((x) => { console.log(x); });
+  coqtopOutputStream.connect();
 
   let coqtopResponseStream = coqtopOutputStream.map((r) => r.response);
   coqtopResponseStream.subscribe(
@@ -114,27 +103,24 @@ function setupCoqtopCommunication(
     ;
 
   let coqtopStateIdStream = coqtopOutputStream.map((r) => r.stateId);
-  // coqtopStateIdStream.subscribe(
-  //   (sid) => { console.log("State ID", sid); }
-  // );
 
-  let coqtopMessagesStream = coqtopOutputStream.flatMap((r) => r.messages);
-  // coqtopMessagesStream.subscribe(
-  //   (m) => { console.log("Message", new Message(m)); }
-  // );
+  let coqtopMessagesStream: Rx.Observable<Message> =
+    coqtopOutputStream.flatMap(
+      (r) => _(r.messages).map((m) => new Message(m)).value()
+    );
 
-  let coqtopFeedbackStream = coqtopOutputStream.flatMap((r) => r.feedback);
-  coqtopFeedbackStream.subscribe(
-    (f) => { console.log("Feedback", new Feedback(f)); }
-  );
-
-  coqtopOutputStream.connect();
+  let coqtopFeedbackStream: Rx.Observable<Feedback> =
+    coqtopOutputStream.flatMap(
+      (r) => _(r.feedback).map((f) => new Feedback(f)).value()
+    );
 
   return {
-    responseStream: coqtopResponseStream,
-    goodResponseStream: coqtopGoodResponseStream,
-    failResponseStream: coqtopFailResponseStream,
-    stateIdStream: coqtopStateIdStream,
+    failResponse: coqtopFailResponseStream,
+    feedback: coqtopFeedbackStream,
+    goodResponse: coqtopGoodResponseStream,
+    messages: coqtopMessagesStream,
+    response: coqtopResponseStream,
+    stateId: coqtopStateIdStream,
   };
 
 }
