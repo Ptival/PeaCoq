@@ -85,38 +85,38 @@ class CoqDocument {
     }
   }
 
-  processEdits(): Promise<void> {
-    let self = this;
-    if (this.editsToProcess.length === 0 || isJust(this.editBeingProcessed)) {
-      return Promise.resolve();
-    }
-    let ebp = new EditBeingProcessed(this.editsToProcess.shift());
-    this.editBeingProcessed = just(ebp);
-    return (
-      peaCoqAddPrime(ebp.query)
-        .then((response) => {
-          let stopPos = ebp.getStopPosition();
-          self.session.selection.clearSelection();
-          self.editor.moveCursorToPosition(stopPos);
-          self.editor.scrollToLine(stopPos.row, true, true, () => { });
-          self.editor.focus();
-          let sid: number = response.stateId;
-          let ls = lastStatus;
-          let s = peaCoqStatus(false);
-          let g = s.then(peaCoqGoal);
-          let c = g.then(peaCoqGetContext);
-          return Promise.all<any>([s, g, c]).then(
-            ([s, g, c]: [Status, Goals, PeaCoqContext]) => {
-              let e = new ProcessedEdit(ebp, sid, s, g, c);
-              self.editsProcessed.push(e);
-              _(editHandlers).each((h) => h(ebp.query, sid, ls, s, g, c));
-              this.editBeingProcessed = nothing();
-              return self.processEdits();
-            });
-        })
-        .catch(self.onProcessEditsFailure.bind(self))
-    );
-  }
+  // processEdits(): Promise<any> {
+  //   let self = this;
+  //   if (this.editsToProcess.length === 0 || isJust(this.editBeingProcessed)) {
+  //     return Promise.resolve();
+  //   }
+  //   let ebp = new EditBeingProcessed(this.editsToProcess.shift());
+  //   this.editBeingProcessed = just(ebp);
+  //   return (
+  //     peaCoqAddPrime(ebp.query)
+  //       .then((response) => {
+  //         let stopPos = ebp.getStopPosition();
+  //         self.session.selection.clearSelection();
+  //         self.editor.moveCursorToPosition(stopPos);
+  //         self.editor.scrollToLine(stopPos.row, true, true, () => { });
+  //         self.editor.focus();
+  //         let sid: number = response.stateId;
+  //         let ls = lastStatus;
+  //         let s = peaCoqStatus(false);
+  //         let g = s.then(peaCoqGoal);
+  //         let c = g.then(peaCoqGetContext);
+  //         return Promise.all<any>([s, g, c]).then(
+  //           ([s, g, c]: [Status, Goals, PeaCoqContext]) => {
+  //             let e = new ProcessedEdit(ebp, sid, s, g, c);
+  //             self.editsProcessed.push(e);
+  //             _(editHandlers).each((h) => h(ebp.query, sid, ls, s, g, c));
+  //             this.editBeingProcessed = nothing();
+  //             return self.processEdits();
+  //           });
+  //       })
+  //       .catch(self.onProcessEditsFailure.bind(self))
+  //   );
+  // }
 
   pushEdit(e: ProcessedEdit) { this.editsProcessed.push(e); }
 
@@ -243,30 +243,58 @@ function getPreviousEditContext(e: ProcessedEdit): Maybe<PeaCoqContext> {
   return e.previousEdit.fmap((e) => e.context);
 }
 
+function onNextReactive(
+  doc: CoqDocument, next: Rx.Observable<{}>
+): Rx.Observable<EditToProcess> {
+  return next
+    .map(() => {
+      let lastEditStopPos = doc.getLastEditStop();
+      let endPos = doc.endAnchor.getPosition();
+      let unprocessedRange =
+        new AceRange(
+          lastEditStopPos.row, lastEditStopPos.column,
+          endPos.row, endPos.column
+        );
+      let unprocessedText = doc.session.getTextRange(unprocessedRange);
+      if (CoqStringUtils.coqTrimLeft(unprocessedText) === "") {
+        return;
+      }
+      let nextIndex = CoqStringUtils.next(unprocessedText);
+      let newStopPos = movePosRight(doc, lastEditStopPos, nextIndex);
+      let query = unprocessedText.substring(0, nextIndex);
+      let e1 = new EditToProcess(coqDocument, lastEditStopPos, newStopPos, query);
+      // TODO: this should be downstream
+      doc.editsToProcess.push(e1);
+      return e1;
+    })
+    .share()
+    ;
+}
+
 /*
 rejects if the command was rejected (the catch only cleans up, but
 throws the error again)
 */
-function onNext(doc: CoqDocument): Promise<void> {
-  //clearCoqtopTabs();
-  let lastEditStopPos = doc.getLastEditStop();
-  let endPos = doc.endAnchor.getPosition();
-  let unprocessedRange =
-    new AceRange(
-      lastEditStopPos.row, lastEditStopPos.column,
-      endPos.row, endPos.column
-    );
-  let unprocessedText = doc.session.getTextRange(unprocessedRange);
-  if (coqTrimLeft(unprocessedText) === "") {
-    return;
-  }
-  let nextIndex = next(unprocessedText);
-  let newStopPos = movePosRight(doc, lastEditStopPos, nextIndex);
-  let query = unprocessedText.substring(0, nextIndex);
-  let e1 = new EditToProcess(coqDocument, lastEditStopPos, newStopPos, query);
-  doc.editsToProcess.push(e1);
-  return doc.processEdits();
-}
+// function onNext(doc: CoqDocument): Promise<void> {
+//   //clearCoqtopTabs();
+//   let lastEditStopPos = doc.getLastEditStop();
+//   let endPos = doc.endAnchor.getPosition();
+//   let unprocessedRange =
+//     new AceRange(
+//       lastEditStopPos.row, lastEditStopPos.column,
+//       endPos.row, endPos.column
+//     );
+//   let unprocessedText = doc.session.getTextRange(unprocessedRange);
+//   if (CoqStringUtils.coqTrimLeft(unprocessedText) === "") {
+//     return;
+//   }
+//   let nextIndex = CoqStringUtils.next(unprocessedText);
+//   let newStopPos = movePosRight(doc, lastEditStopPos, nextIndex);
+//   let query = unprocessedText.substring(0, nextIndex);
+//   let e1 = new EditToProcess(coqDocument, lastEditStopPos, newStopPos, query);
+//   doc.editsToProcess.push(e1);
+//   return doc.processEdits();
+// }
 
 type EditHandler = (q: string, sid: number, ls: Status, s: Status, g: Goals, c: PeaCoqContext) => void;
 let editHandlers: EditHandler[] = [];
@@ -301,13 +329,13 @@ function forwardToPosition(
   // don't move forward if there is only spaces/comments
   let range = AceRange.fromPoints(lastEditStopPos, targetPos);
   let textRange = doc.session.getDocument().getTextRange(range);
-  if (coqTrim(textRange) === "") { return Promise.resolve(); }
+  if (CoqStringUtils.coqTrim(textRange) === "") { return Promise.resolve(); }
 
   //console.log(lastEditStopPos, targetPos, coqTrim(textRange), textRange);
 
   //return onNext(doc).then(() => forwardToPosition(doc, targetPos));
 
-  onNext(doc);
+  //onNext(doc);
   return forwardToPosition(doc, targetPos);
 }
 
@@ -603,4 +631,20 @@ function setupEditor(e: AceAjax.Editor) {
   e.session.setUseSoftTabs(true);
   e.$blockScrolling = Infinity; // pestering warning
 
+}
+/*
+I guess I need to know which outputs correspond to which inputs.
+There are two ways to go:
+- extend CoqtopInput<T> { metadata: T }, but this will force everyone
+  to use the same T
+- just add the metadata field without mentioning it, and find it in the
+  response, unchanged, this might need a type case
+*/
+
+function processEditsReactive(
+  edit: Rx.Observable<EditToProcess>
+): Rx.Observable<CoqtopInput> {
+  return edit
+    .map((e) => ({ cmd: "add'", args: e.query, edit: e }))
+    .share();
 }

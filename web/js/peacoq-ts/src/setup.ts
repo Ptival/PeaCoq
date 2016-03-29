@@ -102,11 +102,6 @@ $(document).ready(() => {
   let loadedFilesStream = setupLoadFile();
   setupSaveFile();
 
-  let coqtopOutputStreams = setupCoqtopCommunication([
-    // reset Coqtop when a file is loaded
-    loadedFilesStream.map(() => ({ cmd: "editat", args: 1 }))
-  ]);
-
   let fontDecreasedStream =
     Rx.Observable
       .merge(toolbarStreams.fontDecrease, shortcutsStreams.fontDecrease)
@@ -122,9 +117,12 @@ $(document).ready(() => {
   Rx.Observable
     .merge(toolbarStreams.goToCaret, shortcutsStreams.goToCaret)
     .subscribe(() => onGoToCaret(coqDocument));
-  Rx.Observable
-    .merge(toolbarStreams.next, shortcutsStreams.next)
-    .subscribe(() => onNext(coqDocument));
+
+  let nextStream = Rx.Observable
+    .merge(toolbarStreams.next, shortcutsStreams.next);
+  let editsToProcessStream = onNextReactive(coqDocument, nextStream);
+  let addsToProcessStream = processEditsReactive(editsToProcessStream);
+
   Rx.Observable
     .merge(toolbarStreams.previous, shortcutsStreams.previous)
     .subscribe(() => onPrevious(coqDocument));
@@ -135,6 +133,25 @@ $(document).ready(() => {
   Rx.Observable
     .merge(toolbarStreams.save, shortcutsStreams.save)
     .subscribe(saveFile);
+
+  let coqtopOutputStreams = setupCoqtopCommunication([
+    // reset Coqtop when a file is loaded
+    loadedFilesStream.map(() => ({ cmd: "editat", args: 1 })),
+    addsToProcessStream,
+  ]);
+
+  let editsBeingProcessed = [];
+
+  coqtopOutputStreams.goodResponse
+    // keep only responses for adds produced by PeaCoq
+    .filter((r) => r.input.cmd === "add'")
+    .filter((r) => r.input.hasOwnProperty("edit"))
+    .subscribe((r) => {
+      let stateId = r[0];
+      let edit = new EditBeingProcessed(r.input["edit"], r.contents[0]);
+      editsBeingProcessed.push(edit);
+      console.log(edit);
+    });
 
   // peaCoqAddHandlers.push(proofTreeOnAdd);
   // peaCoqGetContextHandlers.push(proofTreeOnGetContext);
@@ -176,7 +193,7 @@ function proofTreeOnEdit(
   context: PeaCoqContext
 ): void {
 
-  let trimmed = coqTrim(query);
+  let trimmed = CoqStringUtils.coqTrim(query);
 
   updateCoqtopTabs(goals, context);
 
@@ -219,7 +236,7 @@ function proofTreeOnEdit(
   let activeProofTree = proofTrees[0];
   let curNode = activeProofTree.curNode;
 
-  if (isUpperCase(trimmed[0]) || _(bullets).includes(trimmed)) {
+  if (isUpperCase(trimmed[0]) || CoqStringUtils.isBullet(trimmed)) {
     curNode.goals = goals;
     curNode.stateIds.push(stateId);
     return;

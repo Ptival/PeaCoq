@@ -37,8 +37,7 @@ function setupCoqtopCommunication(
   let coqtopStatusStream: Rx.Observable<CoqtopInput> =
     Rx.Observable
       .interval(2000)
-      .map(() => ({ cmd: "status", args: false }))
-    ;
+      .map(() => ({ cmd: "status", args: false }));
 
   let coqtopInputStream: Rx.Observable<CoqtopInput> =
     Rx.Observable

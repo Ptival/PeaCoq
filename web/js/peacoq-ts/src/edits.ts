@@ -53,11 +53,13 @@ class EditToProcess extends Edit {
 class EditBeingProcessed extends Edit {
   document: CoqDocument;
   query: string;
-  constructor(e: EditToProcess) {
+  stateId: number;
+  constructor(e: EditToProcess, sid: number) {
     super(e.promoteMarker())
     this.document = e.document;
     this.marker = e.promoteMarker();
     this.query = e.query;
+    this.stateId = sid;
   }
   promoteMarker(): EditMarker {
     this.marker.markProcessed();
