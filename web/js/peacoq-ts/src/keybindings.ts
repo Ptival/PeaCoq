@@ -31,7 +31,7 @@ let aceMacPrefix = "Option-Command-";
 interface ShortcutsStreams {
   fontIncrease: Rx.Observable<{}>;
   fontDecrease: Rx.Observable<{}>;
-  gotoCaret: Rx.Observable<{}>;
+  goToCaret: Rx.Observable<{}>;
   load: Rx.Observable<{}>;
   next: Rx.Observable<{}>;
   previous: Rx.Observable<{}>;
@@ -58,7 +58,7 @@ function setupKeybindings(): ShortcutsStreams {
   return {
     fontDecrease: createBindingForKey("-"),
     fontIncrease: createBindingForKey("="),
-    gotoCaret: createBindingForKey("right"),
+    goToCaret: createBindingForKey("right"),
     load: createBindingForKey("l"),
     next: createBindingForKey("down"),
     previous: createBindingForKey("up"),

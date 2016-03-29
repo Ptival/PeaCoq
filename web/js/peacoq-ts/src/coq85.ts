@@ -316,7 +316,7 @@ TODO: This should add all the necessary edits to be proven immediately
 TODO: Currently, this loops forever if a command fails
 TODO: Ideally, the cursor would not jump on completion of these edits
 */
-function onGotoCaret(doc: CoqDocument): Promise<void> {
+function onGoToCaret(doc: CoqDocument): Promise<void> {
   // first, check if this is going forward or backward from the end
   // of the last edit
   let cursorPos = doc.editor.getCursorPosition();

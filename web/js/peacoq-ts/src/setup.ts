@@ -53,6 +53,8 @@ $(document).ready(() => {
   coqtopTabs = w2ui["right-layout_bottom_tabs"];
 
   rightLayout.on({ type: "render", execute: "after" }, () => {
+
+    // top panes
     pretty = new Tab("pretty", "Pretty", "right-layout", "main");
     pretty.div.css("padding-left", "4px");
     foreground = new EditorTab("foreground", "Foreground", "right-layout", "main");
@@ -61,6 +63,7 @@ $(document).ready(() => {
     givenUp = new EditorTab("givenup", "Given up", "right-layout", "main");
     contextTabs.click("pretty");
 
+    // bottom panes
     notices = new EditorTab("notices", "Notices", "right-layout", "bottom");
     warnings = new EditorTab("warnings", "Warnings", "right-layout", "bottom");
     errors = new EditorTab("errors", "Errors", "right-layout", "bottom");
@@ -71,17 +74,15 @@ $(document).ready(() => {
     feedback = new EditorTab("feedback", "Feedback", "right-layout", "bottom");
     coqtopTabs.click("notices");
 
+    // TODO: stream this
     updateFontSize(coqDocument);
   })
 
   layout.content("main", rightLayout);
 
-  let windowResizeStream: Rx.Observable<{}> =
-    Rx.Observable.fromEvent($(window), "resize");
-
+  let windowResizeStream: Rx.Observable<{}> = Rx.Observable.fromEvent($(window), "resize");
   let layoutResizeStream = setupW2LayoutResizeStream(layout);
   let rightLayoutResizeStream = setupW2LayoutResizeStream(rightLayout);
-
   Rx.Observable.merge(windowResizeStream, layoutResizeStream, rightLayoutResizeStream)
     // only fire once every <resizeBufferingTime> milliseconds
     .bufferWithTime(resizeBufferingTime).filter((a) => !_.isEmpty(a))
@@ -99,18 +100,41 @@ $(document).ready(() => {
   Theme.setupTheme();
 
   let loadedFilesStream = setupLoadFile();
+  setupSaveFile();
 
   let coqtopOutputStreams = setupCoqtopCommunication([
     // reset Coqtop when a file is loaded
     loadedFilesStream.map(() => ({ cmd: "editat", args: 1 }))
   ]);
 
-  let fontIncreasedStream = Rx.Observable.merge(toolbarStreams.fontIncrease, shortcutsStreams.fontIncrease).do(() => { fontSize++; });
-  let fontDecreasedStream = Rx.Observable.merge(toolbarStreams.fontDecrease, shortcutsStreams.fontDecrease).do(() => { fontSize--; });
-  Rx.Observable.merge(fontIncreasedStream, fontDecreasedStream).subscribe(() => { updateFontSize(coqDocument); });
+  let fontDecreasedStream =
+    Rx.Observable
+      .merge(toolbarStreams.fontDecrease, shortcutsStreams.fontDecrease)
+      .do(() => { fontSize--; });
+  let fontIncreasedStream =
+    Rx.Observable
+      .merge(toolbarStreams.fontIncrease, shortcutsStreams.fontIncrease)
+      .do(() => { fontSize++; });
+  Rx.Observable
+    .merge(fontIncreasedStream, fontDecreasedStream)
+    .subscribe(() => { updateFontSize(coqDocument); });
 
-  Rx.Observable.merge(toolbarStreams.next, shortcutsStreams.next).subscribe(() => onNext(coqDocument));
-  Rx.Observable.merge(toolbarStreams.load, shortcutsStreams.load).subscribe(onPickFile);
+  Rx.Observable
+    .merge(toolbarStreams.goToCaret, shortcutsStreams.goToCaret)
+    .subscribe(() => onGoToCaret(coqDocument));
+  Rx.Observable
+    .merge(toolbarStreams.next, shortcutsStreams.next)
+    .subscribe(() => onNext(coqDocument));
+  Rx.Observable
+    .merge(toolbarStreams.previous, shortcutsStreams.previous)
+    .subscribe(() => onPrevious(coqDocument));
+
+  Rx.Observable
+    .merge(toolbarStreams.load, shortcutsStreams.load)
+    .subscribe(pickFile);
+  Rx.Observable
+    .merge(toolbarStreams.save, shortcutsStreams.save)
+    .subscribe(saveFile);
 
   // peaCoqAddHandlers.push(proofTreeOnAdd);
   // peaCoqGetContextHandlers.push(proofTreeOnGetContext);
@@ -293,10 +317,7 @@ function proofTreeOnEditAt(sid: number): void {
 }
 
 function onResize(): void {
-  //$("#editor").css("height", parentHeight);
   coqDocument.editor.resize();
-  //foreground.onResize();
-  //background.onResize();
   getActiveProofTree().fmap((t) => {
     let parent = $("#prooftree").parent();
     t.resize(parent.width(), parent.height());

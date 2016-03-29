@@ -7,6 +7,7 @@ interface ToolbarStreams {
   load: Rx.Observable<{}>;
   next: Rx.Observable<{}>;
   previous: Rx.Observable<{}>;
+  save: Rx.Observable<{}>;
 }
 
 function setupToolbar(): ToolbarStreams {
@@ -39,6 +40,7 @@ function setupToolbar(): ToolbarStreams {
     load: loadClickStream,
     next: nextClickStream,
     previous: previousClickStream,
+    save: saveClickStream,
   };
 
 }
@@ -120,7 +122,7 @@ function addButton(
   }).share();
 }
 
-function onPickFile(): void {
+function pickFile(): void {
   $("#" + filePickerId).click();
 }
 
