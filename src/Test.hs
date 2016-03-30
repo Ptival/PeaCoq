@@ -1,7 +1,9 @@
 module Test where
 
+import Control.Monad.Loops
 import Control.Monad.RWS.Strict
 import Prelude                  hiding (init)
+import System.IO
 
 import Coq.StateId
 import Coq.Value
@@ -23,10 +25,20 @@ main = do
     io :: Handles -> CoqtopIO ()
     io (_, _, _he, _ph) = do
       init Nothing
-      add' "Require Import PeaCoq.PeaCoq."
-      editAt (StateId 1)
-      add' "Require Import ZArith."
-      status False
+      --add' "Require Import PeaCoq.PeaCoq."
+      --editAt (StateId 1)
+      hQuery "Add" "Require Import ZArith."
+      --status False
+      hQuery "Add" "Open Scope Z."
+      (_, ho, he, _) <- ask
+      liftIO $ whileM_ (hReady he) (hGetLine he)
+      liftIO . whileM_ (hReady ho) $ do
+        l <- hGetLine ho
+        putStrLn l
+--      hResponse :: CoqtopIO AddOutput
+      --status False
+      --editAt (StateId 1)
+      --add' "Require Import ZArith."
       -- add' "Require Import PeaCoq.PeaCoq."
       -- add' "Require Import List."
       -- add' "Import ListNotations."

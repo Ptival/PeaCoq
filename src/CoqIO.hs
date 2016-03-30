@@ -62,7 +62,7 @@ hResponse = do
 
     -- flush stderr if needed
     -- TODO: report these errors
-    whileM_ (hReady he) (hGetLine he)
+    whileM_ (hReady he) $ hGetLine he >>= putStrLn
 
     (resumable, messagesAndFeedback) <- xmlSource ho $$+ many parseXMLEither
     let (messages, feedback) = partitionEithers messagesAndFeedback
@@ -75,7 +75,7 @@ hResponse = do
       else return ()
 
     let feedbackStr = unlines . map show $ feedback
-    hResponseDebug $ "Feedback:\n" ++ take feedbackMaxLen feedbackStr
+    hResponseDebug $ "Feedback (" ++ show (length feedback) ++"):\n" ++ take feedbackMaxLen feedbackStr
     if length feedbackStr > feedbackMaxLen
       then putStrLn "..."
       else return ()
