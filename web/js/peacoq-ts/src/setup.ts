@@ -24,13 +24,13 @@ $(document).ready(() => {
   let editor = ace.edit("editor");
   editor.selection.on("changeCursor", (e) => {
     let cursorPosition = editor.selection.getCursor();
-    _(coqDocument.editsProcessed).each((e: ProcessedEdit) => {
-      if (e.containsPosition(cursorPosition)) {
-        updateCoqtopTabs(e.goals, e.context);
-        //console.log(e.stateId);
+    _(coqDocument.getEditStagesProcessed()).each((stage) => {
+      if (stage.edit.containsPosition(cursorPosition)) {
+        updateCoqtopTabs(stage.goals, stage.context);
       }
     });
   });
+
   //editor.selection.on("changeSelection", (e) => { console.log(e); });
   coqDocument = new CoqDocument(editor);
 
@@ -130,7 +130,7 @@ $(document).ready(() => {
 
   Rx.Observable
     .merge(toolbarStreams.goToCaret, shortcutsStreams.goToCaret)
-    .subscribe(() => onGoToCaret(coqDocument));
+    .subscribe(() => console.log("TODO: go to caret"));
 
   let nextStream = Rx.Observable
     .merge(toolbarStreams.next, shortcutsStreams.next);
@@ -139,7 +139,7 @@ $(document).ready(() => {
 
   Rx.Observable
     .merge(toolbarStreams.previous, shortcutsStreams.previous)
-    .subscribe(() => onPrevious(coqDocument));
+    .subscribe(() => console.log("TODO: previous"));
 
   Rx.Observable
     .merge(toolbarStreams.load, shortcutsStreams.load)
@@ -154,16 +154,21 @@ $(document).ready(() => {
     addsToProcessStream,
   ]);
 
-  let editsBeingProcessed: EditBeingProcessed[] = [];
+  let allEdits: Edit[] = [];
 
   coqtopOutputStreams.goodResponse
     // keep only responses for adds produced by PeaCoq
     .filter((r) => r.input.cmd === "add'")
     .filter((r) => r.input.hasOwnProperty("edit"))
     .subscribe((r) => {
-      let stateId = r[0];
-      let edit = new EditBeingProcessed(r.input["edit"], r.contents[0]);
-      editsBeingProcessed.push(edit);
+      let stateId = r.contents[0];
+      let edit: Edit = r.input["edit"];
+      let stage = edit.stage;
+      if (stage instanceof EditStageToProcess) {
+        edit.stage = new EditStageBeingProcessed(stage, stateId);
+      } else {
+        throw "Expected edit in EditStageToProcess stage";
+      }
     });
 
   // Logging feedbacks that I haven't figured out what to do with yet
@@ -177,12 +182,14 @@ $(document).ready(() => {
   coqtopOutputStreams.feedback
     .filter((f) => f.editOrState === "state")
     .filter((f) => f.feedbackContent instanceof Processed)
+    .distinctUntilChanged()
     .subscribe((f) => {
       let stateId = f.editOrStateId;
-      let editReady = _(editsBeingProcessed).find((e) => e.stateId === stateId);
-      if (editReady) {
-        _(editsBeingProcessed).remove(editReady);
-        let edit = new ProcessedEdit(editReady);
+      let editStageReady = _(coqDocument.getEditStagesBeingProcessed()).find((stage) => {
+        return stage.stateId === stateId;
+      });
+      if (editStageReady) {
+        editStageReady.edit.stage = new EditStageProcessed(editStageReady);
       }
     });
 
@@ -193,10 +200,10 @@ $(document).ready(() => {
       let e = <ErrorMsg><any>f.feedbackContent;
       assert(f.editOrState === "state", "Expected ErrorMsg to carry a state, not an edit");
       let failedStateId = f.editOrStateId;
-      let failedEdit = _(editsBeingProcessed).find((e) => e.stateId === failedStateId);
-      if (failedEdit) {
-        failedEdit.onRemove();
-        _(editsBeingProcessed).remove(failedEdit);
+      let failedEditStage = _(coqDocument.getEditStagesBeingProcessed()).find((s) => s.stateId === failedStateId);
+      if (failedEditStage) {
+        let failedEdit = failedEditStage.edit;
+        coqDocument.removeEdit(failedEdit);
         errors.setValue(e.message, true);
         let errorStart = movePositionRight(coqDocument, failedEdit.getStartPosition(), e.start);
         let errorStop = movePositionRight(coqDocument, failedEdit.getStartPosition(), e.stop);
@@ -218,13 +225,13 @@ $(document).ready(() => {
 
 let lastStatus: Status;
 
-function editorOnEditAt(sid: number) {
-  let edit = _(coqDocument.editsProcessed).find((e) => e.stateId === sid);
-  if (edit) {
-    killEditsAfterPosition(coqDocument, edit.getStopPosition());
-    updateCoqtopTabs(edit.goals, edit.context);
-  }
-}
+// function editorOnEditAt(sid: number) {
+//   let edit = _(coqDocument.editsProcessed).find((e) => e.stateId === sid);
+//   if (edit) {
+//     killEditsAfterPosition(coqDocument, edit.getStopPosition());
+//     updateCoqtopTabs(edit.goals, edit.context);
+//   }
+// }
 
 function proofTreeOnStatus(s) {
   lastStatus = s;

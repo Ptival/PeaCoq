@@ -25,26 +25,46 @@ let nbsp = "\u00A0";
 
 class CoqDocument {
   beginAnchor: AceAjax.Anchor;
-  editBeingProcessed: Maybe<EditBeingProcessed>;
   editor: AceAjax.Editor;
-  editsProcessed: ProcessedEdit[];
-  editsToProcess: EditToProcess[];
+  private edits: Edit[];
   endAnchor: AceAjax.Anchor;
   session: AceAjax.IEditSession;
 
   constructor(editor: AceAjax.Editor) {
     this.editor = editor;
-    this.editsProcessed = [];
-    this.editBeingProcessed = nothing();
-    this.editsToProcess = [];
+    this.edits = [];
     // WARNING: This line must stay over calls to mkAnchor
     this.session = editor.getSession();
-    this.session.on("change", (change) => {
-      console.log("TODO: remove this");
-      killEditsAfterPosition(this, minPos(change.start, change.end));
-    });
+    // this.session.on("change", (change) => {
+    //   console.log("TODO: remove this");
+    //   killEditsAfterPosition(this, minPos(change.start, change.end));
+    // });
     this.beginAnchor = mkAnchor(this, 0, 0, "begin-marker", true);
     this.endAnchor = mkAnchor(this, 0, 0, "end-marker", false);
+  }
+
+  getAllEdits(): Edit[] { return this.edits; }
+
+  private getEditStagesInstanceOf(stage): any[] {
+    return _(this.edits)
+      .map((e) => e.stage)
+      .filter((s) => {
+        console.log(s, stage, s instanceof stage);
+        return s instanceof stage;
+      })
+      .value();
+  }
+
+  getEditStagesBeingProcessed(): EditStageBeingProcessed[] {
+    return this.getEditStagesInstanceOf(EditStageBeingProcessed);
+  }
+
+  getEditStagesToProcess(): EditStageToProcess[] {
+    return this.getEditStagesInstanceOf(EditStageToProcess);
+  }
+
+  getEditStagesProcessed(): EditStageProcessed[] {
+    return this.getEditStagesInstanceOf(EditStageProcessed);
   }
 
   // getStopPositions(): AceAjax.Position[] {
@@ -52,39 +72,30 @@ class CoqDocument {
   // }
 
   getLastEditStop(): AceAjax.Position {
-    let self = this;
-    // work our way backwards
-    if (this.editsToProcess.length > 0) {
-      return _(this.editsToProcess).last().getStopPosition();
+    if (this.edits.length > 0) {
+      return _(this.edits).last().getStopPosition();
+    } else {
+      return this.beginAnchor.getPosition();
     }
-    return this.editBeingProcessed.caseOf({
-      just: (e) => e.getStopPosition(),
-      nothing: () => {
-        if (self.editsProcessed.length === 0) {
-          return self.beginAnchor.getPosition();
-        }
-        return _(self.editsProcessed).last().getStopPosition();
-      }
-    })
   }
 
-  onProcessEditsFailure(vf: ValueFail): Promise<any> {
-    if (!(vf instanceof ValueFail)) {
-      throw vf;
-    }
-    this.editBeingProcessed.fmap((e) => e.onRemove());
-    this.editBeingProcessed = nothing();
-    _(this.editsToProcess).each((e) => e.onRemove());
-    this.editsToProcess = [];
-    reportFailure(vf.message);
-    console.log(vf.stateId);
-    if (vf.stateId !== 0) {
-      // TODO: also need to cancel edits > vf.stateId
-      return peaCoqEditAt(vf.stateId);
-    } else {
-      return Promise.reject(vf);
-    }
-  }
+  // onProcessEditsFailure(vf: ValueFail): Promise<any> {
+  //   if (!(vf instanceof ValueFail)) {
+  //     throw vf;
+  //   }
+  //   this.editBeingProcessed.fmap((e) => e.onRemove());
+  //   this.editBeingProcessed = nothing();
+  //   _(this.editsToProcess).each((e) => e.onRemove());
+  //   this.editsToProcess = [];
+  //   reportFailure(vf.message);
+  //   console.log(vf.stateId);
+  //   if (vf.stateId !== 0) {
+  //     // TODO: also need to cancel edits > vf.stateId
+  //     return peaCoqEditAt(vf.stateId);
+  //   } else {
+  //     return Promise.reject(vf);
+  //   }
+  // }
 
   // processEdits(): Promise<any> {
   //   let self = this;
@@ -119,7 +130,7 @@ class CoqDocument {
   //   );
   // }
 
-  pushEdit(e: ProcessedEdit) { this.editsProcessed.push(e); }
+  pushEdit(e: Edit) { this.edits.push(e); }
 
   recenterEditor() {
     let pos = this.editor.getCursorPosition();
@@ -127,27 +138,34 @@ class CoqDocument {
   }
 
   resetEditor(text: string) {
-    this.editsProcessed = [];
-    this.editBeingProcessed = nothing();
-    this.editsToProcess = [];
     this.session.setValue(text);
     this.editor.focus();
     this.editor.scrollToLine(0, true, true, () => { });
   }
 
-  removeEdits(
-    predicate: (e: ProcessedEdit) => boolean,
-    beforeRemoval?: (e: ProcessedEdit) => void
-  ) {
-    _.remove(this.editsProcessed, function(e) {
-      let toBeRemoved = predicate(e);
-      if (toBeRemoved) {
-        if (beforeRemoval) { beforeRemoval(e); }
-        e.onRemove();
-      }
-      return toBeRemoved;
-    });
+  removeAllEdits(): void {
+    _(this.edits).each((e) => e.remove());
+    this.edits = [];
   }
+
+  removeEdit(e: Edit): void {
+    e.remove();
+    _(this.edits).remove(e);
+  }
+
+  // removeEdits(
+  //   predicate: (e: ProcessedEdit) => boolean,
+  //   beforeRemoval?: (e: ProcessedEdit) => void
+  // ) {
+  //   _.remove(this.editsProcessed, function(e) {
+  //     let toBeRemoved = predicate(e);
+  //     if (toBeRemoved) {
+  //       if (beforeRemoval) { beforeRemoval(e); }
+  //       e.onRemove();
+  //     }
+  //     return toBeRemoved;
+  //   });
+  // }
 
 }
 
@@ -231,13 +249,16 @@ function reportFailure(f: string) { //, switchTab: boolean) {
   //yif (switchTab) { failures.click(); }
 }
 
-function getPreviousEditContext(e: ProcessedEdit): Maybe<PeaCoqContext> {
-  return e.previousEdit.fmap((e) => e.context);
+function getPreviousEditContext(e: Edit): Maybe<PeaCoqContext> {
+  return e.previousEdit.bind((e) => {
+    let stage = e.stage;
+    return stage instanceof EditStageProcessed ? just(stage.context) : nothing();
+  });
 }
 
 function onNextReactive(
   doc: CoqDocument, next: Rx.Observable<{}>
-): Rx.Observable<EditToProcess> {
+): Rx.Observable<Edit> {
   return next
     .map(() => {
       let lastEditStopPos = doc.getLastEditStop();
@@ -254,10 +275,10 @@ function onNextReactive(
       let nextIndex = CoqStringUtils.next(unprocessedText);
       let newStopPos = movePositionRight(doc, lastEditStopPos, nextIndex);
       let query = unprocessedText.substring(0, nextIndex);
-      let e1 = new EditToProcess(coqDocument, lastEditStopPos, newStopPos, query);
+      let e = new Edit(coqDocument, lastEditStopPos, newStopPos, query);
       // TODO: this should be downstream
-      doc.editsToProcess.push(e1);
-      return e1;
+      doc.pushEdit(e);
+      return e;
     })
     .share()
     ;
@@ -292,110 +313,110 @@ type EditHandler = (q: string, sid: number, ls: Status, s: Status, g: Goals, c: 
 let editHandlers: EditHandler[] = [];
 
 // TODO: there is a better way to rewind with the new STM machinery!
-function rewindToPosition(
-  doc: CoqDocument,
-  targetPos: AceAjax.Position
-): Promise<any> {
-  let lastEditStopPos = doc.getLastEditStop();
-  if (isAfter(Strictly.Yes, targetPos, lastEditStopPos)
-    || coqDocument.editsToProcess.length > 0
-    || isJust(coqDocument.editBeingProcessed)
-  ) {
-    return Promise.resolve();
-  } else {
-    let cursorPosition = coqDocument.editor.selection.getCursor();
-    let editToRewindTo = _(coqDocument.editsProcessed).find(
-      (e: ProcessedEdit) => e.containsPosition(cursorPosition)
-    );
-    return peaCoqEditAt(editToRewindTo.stateId);
-  }
-}
+// function rewindToPosition(
+//   doc: CoqDocument,
+//   targetPos: AceAjax.Position
+// ): Promise<any> {
+//   let lastEditStopPos = doc.getLastEditStop();
+//   if (isAfter(Strictly.Yes, targetPos, lastEditStopPos)
+//     || coqDocument.editsToProcess.length > 0
+//     || isJust(coqDocument.editBeingProcessed)
+//   ) {
+//     return Promise.resolve();
+//   } else {
+//     let cursorPosition = coqDocument.editor.selection.getCursor();
+//     let editToRewindTo = _(coqDocument.editsProcessed).find(
+//       (e: ProcessedEdit) => e.containsPosition(cursorPosition)
+//     );
+//     return peaCoqEditAt(editToRewindTo.stateId);
+//   }
+// }
 
-function forwardToPosition(
-  doc: CoqDocument,
-  targetPos: AceAjax.Position
-): Promise<void> {
-  let lastEditStopPos = doc.getLastEditStop();
-  if (isAfter(Strictly.Yes, lastEditStopPos, targetPos)) { return Promise.resolve(); }
-
-  // don't move forward if there is only spaces/comments
-  let range = AceAjax.Range.fromPoints(lastEditStopPos, targetPos);
-  let textRange = doc.session.getDocument().getTextRange(range);
-  if (CoqStringUtils.coqTrim(textRange) === "") { return Promise.resolve(); }
-
-  //console.log(lastEditStopPos, targetPos, coqTrim(textRange), textRange);
-
-  //return onNext(doc).then(() => forwardToPosition(doc, targetPos));
-
-  //onNext(doc);
-  return forwardToPosition(doc, targetPos);
-}
+// function forwardToPosition(
+//   doc: CoqDocument,
+//   targetPos: AceAjax.Position
+// ): Promise<void> {
+//   let lastEditStopPos = doc.getLastEditStop();
+//   if (isAfter(Strictly.Yes, lastEditStopPos, targetPos)) { return Promise.resolve(); }
+//
+//   // don't move forward if there is only spaces/comments
+//   let range = AceAjax.Range.fromPoints(lastEditStopPos, targetPos);
+//   let textRange = doc.session.getDocument().getTextRange(range);
+//   if (CoqStringUtils.coqTrim(textRange) === "") { return Promise.resolve(); }
+//
+//   //console.log(lastEditStopPos, targetPos, coqTrim(textRange), textRange);
+//
+//   //return onNext(doc).then(() => forwardToPosition(doc, targetPos));
+//
+//   //onNext(doc);
+//   return forwardToPosition(doc, targetPos);
+// }
 
 /*
 TODO: This should add all the necessary edits to be proven immediately
 TODO: Currently, this loops forever if a command fails
 TODO: Ideally, the cursor would not jump on completion of these edits
 */
-function onGoToCaret(doc: CoqDocument): Promise<void> {
-  // first, check if this is going forward or backward from the end
-  // of the last edit
-  let cursorPos = doc.editor.getCursorPosition();
-  let lastEditStopPos = doc.getLastEditStop();
-  if (isAfter(Strictly.Yes, cursorPos, lastEditStopPos)) {
-    return forwardToPosition(doc, cursorPos);
-  } else if (isAfter(Strictly.Yes, lastEditStopPos, cursorPos)) {
-    return rewindToPosition(doc, cursorPos);
-  } else {
-    // no need to move
-    return;
-  }
-}
+// function onGoToCaret(doc: CoqDocument): Promise<void> {
+//   // first, check if this is going forward or backward from the end
+//   // of the last edit
+//   let cursorPos = doc.editor.getCursorPosition();
+//   let lastEditStopPos = doc.getLastEditStop();
+//   if (isAfter(Strictly.Yes, cursorPos, lastEditStopPos)) {
+//     return forwardToPosition(doc, cursorPos);
+//   } else if (isAfter(Strictly.Yes, lastEditStopPos, cursorPos)) {
+//     return rewindToPosition(doc, cursorPos);
+//   } else {
+//     // no need to move
+//     return;
+//   }
+// }
 
-function onPrevious(doc: CoqDocument): Promise<void> {
-  //clearCoqtopTabs();
-  if (isJust(doc.editBeingProcessed) || doc.editsToProcess.length > 0) {
-    return Promise.resolve();
-  }
-  let lastEdit = _.last(doc.editsProcessed);
-  if (!lastEdit) { return Promise.resolve(); }
-  return (
-    lastEdit.previousEdit
-      .caseOf({
-        nothing: () => resetCoqtop(),
-        just: (pe) => {
-          lastStatus = pe.status;
-          return peaCoqEditAt(pe.stateId);
-        },
-      })
-      .then(() => {
-        lastEdit.remove();
-        doc.session.selection.clearSelection();
-        doc.editor.moveCursorToPosition(lastEdit.getStartPosition());
-        doc.editor.scrollToLine(lastEdit.getStartPosition().row, true, true, () => { });
-        doc.editor.focus();
-        // let prevEdit = _.last(doc.edits);
-        // if (prevEdit !== undefined) {
-        //   updateGoals(prevEdit);
-        //   updatePretty(prevEdit);
-        // }
-      })
-      .catch((vf: ValueFail) => {
-        reportFailure(vf.message);
-        // Hopefully, the goals have not changed?
-        /*
-        let s = peaCoqStatus(false);
-        let g = s.then(peaCoqGoal);
-        return (
-          Promise.all<any>([s, g])
-            .then(
-            ([s, g]: [Status, Goals]) => { return updateForeground(s, g); }
-            )
-          );
-        */
-      })
-  );
-
-}
+// function onPrevious(doc: CoqDocument): Promise<void> {
+//   //clearCoqtopTabs();
+//   if (isJust(doc.editBeingProcessed) || doc.editsToProcess.length > 0) {
+//     return Promise.resolve();
+//   }
+//   let lastEdit = _.last(doc.editsProcessed);
+//   if (!lastEdit) { return Promise.resolve(); }
+//   return (
+//     lastEdit.previousEdit
+//       .caseOf({
+//         nothing: () => resetCoqtop(),
+//         just: (pe) => {
+//           lastStatus = pe.status;
+//           return peaCoqEditAt(pe.stateId);
+//         },
+//       })
+//       .then(() => {
+//         lastEdit.remove();
+//         doc.session.selection.clearSelection();
+//         doc.editor.moveCursorToPosition(lastEdit.getStartPosition());
+//         doc.editor.scrollToLine(lastEdit.getStartPosition().row, true, true, () => { });
+//         doc.editor.focus();
+//         // let prevEdit = _.last(doc.edits);
+//         // if (prevEdit !== undefined) {
+//         //   updateGoals(prevEdit);
+//         //   updatePretty(prevEdit);
+//         // }
+//       })
+//       .catch((vf: ValueFail) => {
+//         reportFailure(vf.message);
+//         // Hopefully, the goals have not changed?
+//         /*
+//         let s = peaCoqStatus(false);
+//         let g = s.then(peaCoqGoal);
+//         return (
+//           Promise.all<any>([s, g])
+//             .then(
+//             ([s, g]: [Status, Goals]) => { return updateForeground(s, g); }
+//             )
+//           );
+//         */
+//       })
+//   );
+//
+// }
 
 type AddResult = {
   response: any;
@@ -545,33 +566,33 @@ function isAfter(flag: Strictly, pos1: AceAjax.Position, pos2: AceAjax.Position)
   };
 }
 
-function killEditsAfterPosition(doc: CoqDocument, pos: AceAjax.Position) {
-  // we will need to rewind to the state before the oldest edit we remove
-  let editToRewindTo: Maybe<ProcessedEdit> = nothing();
-  // we remove all the edits that are after the position that was edited
-  doc.removeEdits(
-    (edit: ProcessedEdit) => isAfter(Strictly.Yes, edit.getStopPosition(), pos),
-    (edit: ProcessedEdit) => {
-      edit.previousEdit.caseOf({
-        nothing: () => { },
-        just: (pe) => {
-          editToRewindTo.caseOf({
-            nothing: () => { editToRewindTo = just(pe); },
-            just: (e) => {
-              if (pe.stateId < e.stateId) { editToRewindTo = just(pe); }
-            },
-          });
-        },
-      })
-    }
-  );
-
-  editToRewindTo.caseOf({
-    nothing: () => { },
-    just: (e) => { peaCoqEditAt(e.stateId); }
-  });
-
-}
+// function killEditsAfterPosition(doc: CoqDocument, pos: AceAjax.Position) {
+//   // we will need to rewind to the state before the oldest edit we remove
+//   let editToRewindTo: Maybe<ProcessedEdit> = nothing();
+//   // we remove all the edits that are after the position that was edited
+//   doc.removeEdits(
+//     (edit: ProcessedEdit) => isAfter(Strictly.Yes, edit.getStopPosition(), pos),
+//     (edit: ProcessedEdit) => {
+//       edit.previousEdit.caseOf({
+//         nothing: () => { },
+//         just: (pe) => {
+//           editToRewindTo.caseOf({
+//             nothing: () => { editToRewindTo = just(pe); },
+//             just: (e) => {
+//               if (pe.stateId < e.stateId) { editToRewindTo = just(pe); }
+//             },
+//           });
+//         },
+//       })
+//     }
+//   );
+//
+//   editToRewindTo.caseOf({
+//     nothing: () => { },
+//     just: (e) => { peaCoqEditAt(e.stateId); }
+//   });
+//
+// }
 
 function movePositionRight(
   doc: CoqDocument,
@@ -641,7 +662,7 @@ There are two ways to go:
 */
 
 function processEditsReactive(
-  edit: Rx.Observable<EditToProcess>
+  edit: Rx.Observable<Edit>
 ): Rx.Observable<CoqtopInput> {
   return edit
     .map((e) => ({ cmd: "add'", args: e.query, edit: e }))

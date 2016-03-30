@@ -80,7 +80,7 @@ function setupLoadFile(): Rx.Observable<string> {
 
   // TODO: This belongs somewhere else (document-related)
   loadedFilesStream.subscribe((text) => {
-    coqDocument.removeEdits(() => true);
+    coqDocument.removeAllEdits();
     coqDocument.resetEditor(text);
   });
 
