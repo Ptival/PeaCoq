@@ -3,12 +3,17 @@ module Test where
 import Control.Monad.RWS.Strict
 import Prelude                  hiding (init)
 
-import Coq
+import Coq.StateId
+import Coq.Value
+import CoqIO
 import Handlers
 import XMLProtocol
 
+home :: String
+home = "/home/ptival"
+
 coqtop :: String
-coqtop = "/home/ptival/.nix-profile/bin/coqtop -ideslave -main-channel stdfds -I /home/vrobert/PeaCoq/plugin -Q /home/vrobert/PeaCoq/plugin PeaCoq"
+coqtop = home ++ "/.nix-profile/bin/coqtop -ideslave -main-channel stdfds -I " ++ home ++ "/PeaCoq/plugin -Q " ++ home ++ "/PeaCoq/plugin PeaCoq"
 
 main :: IO ()
 main = do
@@ -18,13 +23,17 @@ main = do
     io :: Handles -> CoqtopIO ()
     io (_, _, _he, _ph) = do
       init Nothing
-      --add' "Require Import PeaCoq.PeaCoq."
-      --add' "Require Import List."
-      --add' "Import ListNotations."
-      --add' "Theorem t : [0] = [1]."
-      add' "Definition admit {T : Type} : T."
-      add' "Admitted."
+      add' "Require Import PeaCoq.PeaCoq."
+      editAt (StateId 1)
+      add' "Require Import ZArith."
       status False
+      -- add' "Require Import PeaCoq.PeaCoq."
+      -- add' "Require Import List."
+      -- add' "Import ListNotations."
+      -- add' "Theorem t : [0] = [1]."
+      -- add' "Definition admit {T : Type} : T."
+      -- add' "Admitted."
+      -- status False
       return (ValueGood ())
 
 {-
