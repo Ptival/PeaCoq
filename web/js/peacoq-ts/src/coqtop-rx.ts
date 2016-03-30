@@ -91,7 +91,7 @@ function setupCoqtopCommunication(
     .subscribe((input) => { console.log("coqtop ⟸ ", input); });
   coqtopResponseStream
     .filter((r) => r.input.cmd !== "status")
-    .subscribe((r) => { console.log("coqtop ⟹ ", r.input, r.contents); });
+    .subscribe((r) => { console.log("coqtop ⟹ ", r.contents, r.input); });
 
   let coqtopGoodResponseStream =
     coqtopResponseStream.filter((r) => r.tag === "ValueGood")
