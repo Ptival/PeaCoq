@@ -415,6 +415,7 @@ function mkFeedbackContent(f) {
   this.tag = f.tag;
   switch (this.tag) {
     case "AddedAxiom":
+      return new AddedAxiom();
     case "Custom":
       console.log("TODO: FeedbackContent for " + this.tag, f);
       break;
@@ -444,6 +445,8 @@ function mkFeedbackContent(f) {
 }
 
 class FeedbackContent { }
+
+class AddedAxiom extends FeedbackContent { }
 
 class ErrorMsg extends FeedbackContent {
   message: string;

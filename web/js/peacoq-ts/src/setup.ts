@@ -175,6 +175,7 @@ $(document).ready(() => {
   subscribeAndLog(
     coqtopOutputStreams.feedback
       .filter((f) => !(f.feedbackContent instanceof FileDependency || f.feedbackContent instanceof FileLoaded))
+      .filter((f) => !(f.feedbackContent instanceof AddedAxiom))
       .filter((f) => !(f.feedbackContent instanceof Processed && f.editOrState === "state"))
       .filter((f) => !(f.feedbackContent instanceof ProcessingIn && f.editOrState === "state"))
       .filter((f) => !(f.feedbackContent instanceof ErrorMsg))
