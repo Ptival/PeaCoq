@@ -43,7 +43,7 @@ function setupCoqtopCommunication(
   let coqtopInputStream: Rx.Observable<CoqtopInput> =
     Rx.Observable
       .merge(
-      //coqtopStatusStream,
+      coqtopStatusStream,
       ...inputs
       )
       .startWith({ cmd: "editat", args: 1 })
