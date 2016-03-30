@@ -1,5 +1,5 @@
 let fontSize = 16; // pixels
-let resizeBufferingTime = 200; // milliseconds
+let resizeBufferingTime = 250; // milliseconds
 
 let coqDocument: CoqDocument = undefined;
 let layout: W2UI.W2Layout;
@@ -174,6 +174,7 @@ $(document).ready(() => {
   // Logging feedbacks that I haven't figured out what to do with yet
   subscribeAndLog(
     coqtopOutputStreams.feedback
+      .filter((f) => !(f.feedbackContent instanceof FileDependency || f.feedbackContent instanceof FileLoaded))
       .filter((f) => !(f.feedbackContent instanceof Processed && f.editOrState === "state"))
       .filter((f) => !(f.feedbackContent instanceof ProcessingIn && f.editOrState === "state"))
       .filter((f) => !(f.feedbackContent instanceof ErrorMsg))
@@ -212,7 +213,7 @@ $(document).ready(() => {
         console.log(errorRange);
         let markerId = coqDocument.session.addMarker(errorRange, errorUnderlineClass, "text", true);
       }
-    })
+    });
 
   // peaCoqAddHandlers.push(proofTreeOnAdd);
   // peaCoqGetContextHandlers.push(proofTreeOnGetContext);
@@ -238,11 +239,12 @@ function proofTreeOnStatus(s) {
 }
 
 function updateCoqtopTabs(goals: Goals, context: PeaCoqContext) {
-  clearCoqtopTabs(false);
-  if (context.length > 0) {
-    pretty.div.append(context[0].getHTML());
-    foreground.setValue(goals.fgGoals[0].toString(), false);
-  }
+  console.log("TODO: updateCoqtopTabs");
+  // clearCoqtopTabs(false);
+  // if (context.length > 0) {
+  //   pretty.div.append(context[0].getHTML());
+  //   foreground.setValue(goals.fgGoals[0].toString(), false);
+  // }
 }
 
 function proofTreeOnEdit(

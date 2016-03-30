@@ -49,7 +49,6 @@ class CoqDocument {
     return _(this.edits)
       .map((e) => e.stage)
       .filter((s) => {
-        console.log(s, stage, s instanceof stage);
         return s instanceof stage;
       })
       .value();

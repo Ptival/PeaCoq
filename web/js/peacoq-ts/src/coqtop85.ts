@@ -421,7 +421,9 @@ function mkFeedbackContent(f) {
     case "ErrorMsg":
       return new ErrorMsg(f.contents);
     case "FileDependency":
+      return new FileDependency(f.contents);
     case "FileLoaded":
+      return new FileLoaded(f.contents);
     case "GlobDef":
     case "GlobRef":
     case "Goals":
@@ -453,6 +455,28 @@ class ErrorMsg extends FeedbackContent {
     this.start = start;
     this.stop = stop;
     this.message = replaceNBSPWithSpaces(message);
+  }
+}
+
+class FileDependency extends FeedbackContent {
+  dependsOnFile: string;
+  file: string;
+  constructor(c) {
+    super();
+    let [file, dependsOnFile] = c;
+    this.dependsOnFile = dependsOnFile;
+    this.file = file;
+  }
+}
+
+class FileLoaded extends FeedbackContent {
+  path: string;
+  qualifiedModuleName: string;
+  constructor(c) {
+    super();
+    let [qualifiedModuleName, path] = c;
+    this.path = path;
+    this.qualifiedModuleName = qualifiedModuleName;
   }
 }
 

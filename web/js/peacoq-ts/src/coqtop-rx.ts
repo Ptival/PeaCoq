@@ -1,4 +1,4 @@
-let statusPeriod = 200; // milliseconds
+let statusPeriod = 250; // milliseconds
 
 interface CoqtopInput {
   cmd: string;
@@ -43,37 +43,46 @@ function setupCoqtopCommunication(
   let coqtopInputStream: Rx.Observable<CoqtopInput> =
     Rx.Observable
       .merge(
-      coqtopStatusStream,
+      //coqtopStatusStream,
       ...inputs
       )
       .startWith({ cmd: "editat", args: 1 })
     // .concat(Rx.Observable.return({ cmd: "quit", args: [] }))
     ;
 
-  let coqtopOutputStream: Rx.ConnectableObservable<CoqtopOutput> =
+  /*
+  Note: the scan has two effects
+  1. it ensures AJAX requests reach the server in order of emission
+  2. the current backend does not sequence requests, which causes issues
+     when sending multiple add requests even in the absence of network
+     reordering. the issue is that the server fills in stateIds, and if
+     it receives two adds and processes the second immediately, it will
+     add to the old stateId rather than the once produced by the first add.
+  */
+  let coqtopOutputStream: Rx.Observable<CoqtopOutput> =
     coqtopInputStream
-      .flatMap((input) => {
-        return Rx.Observable
-          .fromPromise($.ajax({
+      .scan<Promise<any>>((acc: Promise<any>, input: CoqtopInput) => {
+        return acc
+          .then(() => $.ajax({
             type: 'POST',
             url: input.cmd,
             data: { data: JSON.stringify(input.args) },
             async: true,
-            error: () => { console.log("Server did not respond!"); },
-            // success: (response) => { console.log("SUCCESS", input); },
+            error: () => console.log("Server did not respond!"),
+            //success: () => console.log("Success"),
           }))
-          .map((r) => ({
-            response: $.extend(r[0], { input: input }),
-            stateId: r[1][0],
-            editId: r[1][1],
-            messages: r[2][0],
-            feedback: r[2][1],
-          }))
+          .then((r) => ({
+              response: $.extend(r[0], { input: input }),
+              stateId: r[1][0],
+              editId: r[1][1],
+              messages: r[2][0],
+              feedback: r[2][1],
+            }))
           ;
-      })
-      .publish()
+      }, Promise.resolve())
+      .flatMap((x) => x)
+      .share()
     ;
-  coqtopOutputStream.connect();
 
   let coqtopResponseStream = coqtopOutputStream.map((r) => r.response);
 
@@ -105,14 +114,18 @@ function setupCoqtopCommunication(
   let coqtopStateIdStream = coqtopOutputStream.map((r) => r.stateId);
 
   let coqtopMessagesStream: Rx.Observable<Message> =
-    coqtopOutputStream.flatMap(
+    coqtopOutputStream
+      .flatMap(
       (r) => _(r.messages).map((m) => new Message(m)).value()
-    );
+      )
+      .share();
 
   let coqtopFeedbackStream: Rx.Observable<Feedback> =
-    coqtopOutputStream.flatMap(
+    coqtopOutputStream
+      .flatMap(
       (r) => _(r.feedback).map((f) => new Feedback(f)).value()
-    );
+      )
+      .share();
 
   return {
     failResponse: coqtopFailResponseStream,
