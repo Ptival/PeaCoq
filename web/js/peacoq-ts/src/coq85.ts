@@ -78,6 +78,11 @@ class CoqDocument {
     }
   }
 
+  moveCursorToPositionAndCenter(pos: AceAjax.Position): void {
+    this.editor.moveCursorToPosition(pos);
+    this.editor.scrollToLine(pos.row, true, true, () => { });
+  }
+
   // onProcessEditsFailure(vf: ValueFail): Promise<any> {
   //   if (!(vf instanceof ValueFail)) {
   //     throw vf;
@@ -275,10 +280,9 @@ function onNextReactive(
       let newStopPos = movePositionRight(doc, lastEditStopPos, nextIndex);
       let query = unprocessedText.substring(0, nextIndex);
       let e = new Edit(coqDocument, lastEditStopPos, newStopPos, query);
-      // TODO: this should be downstream
-      doc.pushEdit(e);
       return e;
     })
+    .do((e) => { doc.pushEdit(e); doc.moveCursorToPositionAndCenter(e.getStopPosition()); })
     .share()
     ;
 }

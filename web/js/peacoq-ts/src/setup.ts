@@ -135,6 +135,8 @@ $(document).ready(() => {
   let nextStream = Rx.Observable
     .merge(toolbarStreams.next, shortcutsStreams.next);
   let editsToProcessStream = onNextReactive(coqDocument, nextStream);
+  //editsToProcessStream.subscribe((e) => coqDocument.pushEdit(e));
+  //editsToProcessStream.subscribe((e) => coqDocument.moveCursorToPositionAndCenter(e.getStopPosition()));
   let addsToProcessStream = processEditsReactive(editsToProcessStream);
 
   Rx.Observable
@@ -187,11 +189,13 @@ $(document).ready(() => {
     .distinctUntilChanged()
     .subscribe((f) => {
       let stateId = f.editOrStateId;
-      let editStageReady = _(coqDocument.getEditStagesBeingProcessed()).find((stage) => {
-        return stage.stateId === stateId;
-      });
+      let editStageReady = _(coqDocument.getEditStagesBeingProcessed())
+        .find((stage) => stage.stateId === stateId);
       if (editStageReady) {
         editStageReady.edit.stage = new EditStageProcessed(editStageReady);
+        if (coqDocument.getEditStagesToProcess().length === 0) {
+          coqDocument.moveCursorToPositionAndCenter(editStageReady.getStopPosition());
+        }
       }
     });
 
