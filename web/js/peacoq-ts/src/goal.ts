@@ -1,3 +1,4 @@
+import ConstrExpr from "./coq-constr-expr";
 import * as Coqtop85 from "./coqtop85";
 import * as Coq85 from "./coq85";
 

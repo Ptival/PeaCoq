@@ -1,3 +1,5 @@
+import ConstrExpr from "./coq-constr-expr";
+import { htmlPrintPpCmds, htmlPrintPpCmdsDiff, prConstrExpr } from "./coq-pretty-printer";
 import { Feedback, Goals, Message, PeaCoqContext, PeaCoqHyp, Status, Warning } from "./coqtop85";
 import * as CoqtopInput from "./coqtop-input";
 import Edit from "./edit";

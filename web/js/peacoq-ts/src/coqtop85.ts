@@ -1,3 +1,4 @@
+import ConstrExpr from "./coq-constr-expr";
 import * as CoqDocument from "./coq85";
 import EditorTab from "./editor-tab";
 import * as FeedbackContent from "./feedback-content";

@@ -1,3 +1,6 @@
+import { PpCmdBox, PpCmdPrint, PpCmdToken } from "./ppcmd-token";
+import { PpCmd, PpCmds, str } from "./coq-pretty-printer";
+import { StrDef } from "./str-token";
 
 function findPpCmdSuchThat(
   l: PpCmds,
@@ -302,7 +305,7 @@ function ppCmdMatchGen(pat: Pattern, p: PpCmd | any, o: Object): Maybe<Object> {
         Object.keys(pat.fields),
         (acc, field) => {
           if (field in p) {
-            return ppCmdMatchGen(pat.fields[field], p[field], acc);
+            return ppCmdMatchGen((<Constructor>pat).fields[field], p[field], acc);
           } else {
             return nothing();
           }

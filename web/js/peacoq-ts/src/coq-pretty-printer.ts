@@ -21,7 +21,7 @@ import {
   UnpMetaVar, UnpTerminal
 } from "./unparsing";
 
-type PpCmd = PpCmd.PpCmdToken<StrToken.StrToken>;
+export type PpCmd = PpCmd.PpCmdToken<StrToken.StrToken>;
 export type PpCmds = PpCmd[];
 
 export type PrecAssoc = [number, ParenRelation];
@@ -1100,7 +1100,7 @@ function fix(f) {
   }
 };
 
-function prConstrExpr(a: ConstrExpr.ConstrExpr): PpCmds {
+export function prConstrExpr(a: ConstrExpr.ConstrExpr): PpCmds {
   return fix(prGen)(mt, lTop, a);
 }
 
@@ -1243,7 +1243,7 @@ function htmlPrintPpCmd(p: PpCmd): string {
   throw MatchFailure("htmlPrintPpCmd", p);
 }
 
-function htmlPrintPpCmds(l: PpCmds): string {
+export function htmlPrintPpCmds(l: PpCmds): string {
   _(patterns).each(function(pattern) {
     l = pattern(l);
   });
@@ -1325,7 +1325,7 @@ function ppCmdsSameShape(l: PpCmds, old: PpCmds): boolean {
   return false;
 }
 
-function htmlPrintPpCmdsDiff(l: PpCmds, old: PpCmds): string {
+export function htmlPrintPpCmdsDiff(l: PpCmds, old: PpCmds): string {
   _(patterns).each(function(pattern) {
     l = pattern(l);
     old = pattern(old);
