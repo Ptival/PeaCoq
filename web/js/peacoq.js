@@ -62,6 +62,7 @@ requirejs([
       'peacoq-js/highlight-coq',
       'peacoq-js/mode-coq',
       'peacoq-ts/coq-string-utils',
+      'peacoq-ts/coqtop-input',
       'peacoq-ts/coqtop-rx',
       'peacoq-ts/coqtop85',
       'peacoq-ts/coq85',

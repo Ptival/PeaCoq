@@ -25,22 +25,26 @@ let nbsp = "\u00A0";
 
 class CoqDocument {
   beginAnchor: AceAjax.Anchor;
+  changeStream: Rx.Observable<AceAjax.EditorChangeEvent>;
   editor: AceAjax.Editor;
   private edits: Edit[];
   endAnchor: AceAjax.Anchor;
   session: AceAjax.IEditSession;
 
   constructor(editor: AceAjax.Editor) {
+    let self = this;
     this.editor = editor;
     this.edits = [];
     // WARNING: This line must stay over calls to mkAnchor
     this.session = editor.getSession();
-    // this.session.on("change", (change) => {
-    //   console.log("TODO: remove this");
-    //   killEditsAfterPosition(this, minPos(change.start, change.end));
-    // });
     this.beginAnchor = mkAnchor(this, 0, 0, "begin-marker", true);
     this.endAnchor = mkAnchor(this, 0, 0, "end-marker", false);
+    this.changeStream =
+      Rx.Observable
+        .create<AceAjax.EditorChangeEvent>((observer) => {
+          self.session.on("change", (e) => observer.onNext(e));
+        })
+        .share();
   }
 
   getAllEdits(): Edit[] { return this.edits; }
@@ -134,6 +138,19 @@ class CoqDocument {
   //   );
   // }
 
+  markError(range: AceAjax.Range): void {
+    let markerId = coqDocument.session.addMarker(range, errorUnderlineClass, "text", false);
+    this.moveCursorToPositionAndCenter(range.start);
+    let markerChangedStream = this.changeStream
+      .do((e) => console.log(range, AceAjax.Range.fromPoints(e.start, e.end)))
+      .filter((e) => range.containsRange(AceAjax.Range.fromPoints(e.start, e.end)))
+      .take(1);
+    markerChangedStream.subscribe(() => {
+      console.log("STILL SUBSCRIBED!");
+      coqDocument.session.removeMarker(markerId);
+    });
+  }
+
   pushEdit(e: Edit) { this.edits.push(e); }
 
   recenterEditor() {
@@ -155,6 +172,15 @@ class CoqDocument {
   removeEdit(e: Edit): void {
     e.remove();
     _(this.edits).remove(e);
+  }
+
+  removeEditsAfter(e: Edit): void {
+    let self = this;
+    let editIndex = _(this.edits).findIndex(e);
+    let editsToKeep = _(this.edits).slice(0, editIndex).value();
+    let editsToRemove = _(this.edits).slice(editIndex, this.edits.length).value();
+    this.edits = editsToKeep;
+    _(editsToRemove).each((e) => self.removeEdit(e));
   }
 
   // removeEdits(
@@ -668,6 +694,6 @@ function processEditsReactive(
   edit: Rx.Observable<Edit>
 ): Rx.Observable<CoqtopInput> {
   return edit
-    .map((e) => ({ cmd: "add'", args: e.query, edit: e }))
+    .map((e) => new CoqtopInput.AddPrime(e.query, just(e)))
     .share();
 }

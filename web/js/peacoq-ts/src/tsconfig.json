@@ -22,6 +22,7 @@
     "coq85.ts",
     "coqtop85.ts",
     "coqtop-rx.ts",
+    "coqtop-input.ts",
     "definitely-typed-monkey-patching.d.ts",
     "editor-tab.ts",
     "edits.ts",

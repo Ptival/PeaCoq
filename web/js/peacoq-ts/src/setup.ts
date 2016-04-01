@@ -34,15 +34,8 @@ $(document).ready(() => {
   //editor.selection.on("changeSelection", (e) => { console.log(e); });
   coqDocument = new CoqDocument(editor);
 
-  let editorChange: Rx.Observable<AceAjax.EditorChangeEvent> =
-    Rx.Observable
-      .create<AceAjax.EditorChangeEvent>((observer) => {
-        coqDocument.session.on("change", (e) => observer.onNext(e));
-      })
-      .share();
-
   let editAtBecauseEditorChange: Rx.Observable<CoqtopInput> =
-    editorChange.flatMap((change) => {
+    coqDocument.changeStream.flatMap((change) => {
       console.log("should remove edits after", minPos(change.start, change.end));
       return [];
     });
@@ -152,7 +145,7 @@ $(document).ready(() => {
 
   let coqtopOutputStreams = setupCoqtopCommunication([
     // reset Coqtop when a file is loaded
-    loadedFilesStream.map(() => ({ cmd: "editat", args: 1 })),
+    loadedFilesStream.map(() => new CoqtopInput.EditAt(1)),
     addsToProcessStream,
   ]);
 
@@ -160,17 +153,23 @@ $(document).ready(() => {
 
   coqtopOutputStreams.goodResponse
     // keep only responses for adds produced by PeaCoq
-    .filter((r) => r.input.cmd === "add'")
-    .filter((r) => r.input.hasOwnProperty("edit"))
+    .filter((r) => {
+      let i = r.input;
+      return i instanceof CoqtopInput.AddPrime && i.hasEdit();
+    })
     .subscribe((r) => {
       let stateId = r.contents[0];
-      let edit: Edit = r.input["edit"];
-      let stage = edit.stage;
-      if (stage instanceof EditStageToProcess) {
-        edit.stage = new EditStageBeingProcessed(stage, stateId);
-      } else {
-        throw "Expected edit in EditStageToProcess stage";
-      }
+      (<CoqtopInput.AddPrime>r.input).edit.caseOf({
+        nothing: () => { throw "nothing" },
+        just: (edit) => {
+          let stage = edit.stage;
+          if (stage instanceof EditStageToProcess) {
+            edit.stage = new EditStageBeingProcessed(stage, stateId);
+          } else {
+            throw "Expected edit in EditStageToProcess stage";
+          }
+        },
+      });
     });
 
   // Logging feedbacks that I haven't figured out what to do with yet
@@ -209,14 +208,12 @@ $(document).ready(() => {
       let failedEditStage = _(coqDocument.getEditStagesBeingProcessed()).find((s) => s.stateId === failedStateId);
       if (failedEditStage) {
         let failedEdit = failedEditStage.edit;
-        coqDocument.removeEdit(failedEdit);
+        coqDocument.removeEditsAfter(failedEdit);
         errors.setValue(e.message, true);
         let errorStart = movePositionRight(coqDocument, failedEdit.getStartPosition(), e.start);
         let errorStop = movePositionRight(coqDocument, failedEdit.getStartPosition(), e.stop);
         let errorRange = new AceAjax.Range(errorStart.row, errorStart.column, errorStop.row, errorStop.column);
-        console.log(errorStart, errorStop);
-        console.log(errorRange);
-        let markerId = coqDocument.session.addMarker(errorRange, errorUnderlineClass, "text", true);
+        coqDocument.markError(errorRange);
       }
     });
 

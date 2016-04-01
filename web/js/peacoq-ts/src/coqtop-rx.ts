@@ -20,7 +20,7 @@ interface CoqtopOutput {
 }
 
 interface CoqtopOutputStreams {
-  failResponse: Rx.Observable<CoqtopResponse>;
+  failResponse: Rx.Observable<ValueFail>;
   feedback: Rx.Observable<Feedback>;
   goodResponse: Rx.Observable<CoqtopResponse>;
   messages: Rx.Observable<Message>;
@@ -38,15 +38,16 @@ function setupCoqtopCommunication(
   let coqtopStatusStream: Rx.Observable<CoqtopInput> =
     Rx.Observable
       .interval(statusPeriod)
-      .map(() => ({ cmd: "status", args: false }));
+      .map(() => new CoqtopInput.Status(false));
 
   let coqtopInputStream: Rx.Observable<CoqtopInput> =
     Rx.Observable
       .merge(
       coqtopStatusStream,
+      inputSubject,
       ...inputs
       )
-      .startWith({ cmd: "editat", args: 1 })
+      .startWith(new CoqtopInput.EditAt(1))
     // .concat(Rx.Observable.return({ cmd: "quit", args: [] }))
     ;
 
@@ -65,20 +66,20 @@ function setupCoqtopCommunication(
         return acc
           .then(() => $.ajax({
             type: 'POST',
-            url: input.cmd,
-            data: { data: JSON.stringify(input.args) },
+            url: input.getCmd(),
+            data: { data: JSON.stringify(input.getArgs()) },
             async: true,
             error: () => console.log("Server did not respond!"),
             //success: () => console.log("Success"),
           }))
-          .then((r) => ({
-              response: $.extend(r[0], { input: input }),
-              stateId: r[1][0],
-              editId: r[1][1],
-              messages: r[2][0],
-              feedback: r[2][1],
-            }))
-          ;
+          .then<CoqtopOutput>((r) => ({
+            response: $.extend(r[0], { input: input }),
+            stateId: r[1][0],
+            editId: r[1][1],
+            messages: r[2][0],
+            feedback: r[2][1],
+          })
+          );
       }, Promise.resolve())
       .flatMap((x) => x)
       .share()
@@ -87,23 +88,29 @@ function setupCoqtopCommunication(
   let coqtopResponseStream = coqtopOutputStream.map((r) => r.response);
 
   coqtopInputStream
-    .filter((i) => i.cmd !== "status")
+    .filter((i) => !(i instanceof CoqtopInput.Status))
     .subscribe((input) => { console.log("coqtop ⟸ ", input); });
   coqtopResponseStream
-    .filter((r) => r.input.cmd !== "status")
+    .filter((r) => !(r.input instanceof CoqtopInput.Status))
     .subscribe((r) => { console.log("coqtop ⟹ ", r.contents, r.input); });
 
   let coqtopGoodResponseStream =
     coqtopResponseStream.filter((r) => r.tag === "ValueGood")
     ;
 
-  let coqtopFailResponseStream =
-    coqtopResponseStream.filter((r) => r.tag === "ValueFail")
+  let coqtopFailResponseStream: Rx.Observable<ValueFail> =
+    coqtopResponseStream
+      .filter((r) => r.tag === "ValueFail")
+      .map((r) => new ValueFail(r.contents))
     ;
+
+  coqtopFailResponseStream.subscribe((vf) => {
+    inputSubject.onNext(new CoqtopInput.EditAt(vf.stateId));
+  })
 
   let coqtopAddResponseStream: Rx.Observable<AddReturn> =
     coqtopGoodResponseStream
-      .filter((r) => r.input.cmd === "add'")
+      .filter((r) => r.input instanceof CoqtopInput.AddPrime)
       .map((r) => ({
         stateId: r.contents[0],
         eitherNullStateId: r.contents[1][0],
