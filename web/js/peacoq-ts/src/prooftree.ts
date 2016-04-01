@@ -1,3 +1,12 @@
+import GoalNode from "./goalnode";
+import FakeNode from "./fakenode";
+import { byLinkId, byNodeId, centerLeft, centerRight, centerLeft0, centerRight0, nodeX, nodeY, ProofTreeLink, swapXY, TacticGroup, WorklistItem } from "./prooftree-utils";
+import ProofTreeNode, { commonAncestor } from "./prooftreenode";
+import TacticGroupNode from "./tacticgroupnode";
+import Strictly from "./strictly";
+
+export default ProofTree;
+
 /* Globals to be configured */
 let animationDuration = 2000;
 // let diffBlue = "#8888EE";
@@ -11,9 +20,9 @@ let verticalSpacingBetweenNodes = 10;
 /* Globals not to be touched */
 
 /* 0 is the active tree, rest is stack of background ones*/
-let proofTrees: ProofTree[] = [];
+export let proofTrees: ProofTree[] = [];
 
-class ProofTree {
+export class ProofTree {
   anchor: d3.Selection<HTMLElement>;
   /* whatever the client wants to store as meta-data */
   clientState: Object;
@@ -1001,22 +1010,3 @@ function mkDiagonal(cL, cR) {
 
 let diagonal0 = mkDiagonal(centerLeft0, centerRight0);
 let diagonal = mkDiagonal(centerLeft, centerRight);
-
-function commonAncestor(n1: ProofTreeNode, n2: ProofTreeNode): ProofTreeNode {
-  return n1.getParent().caseOf({
-    nothing: () => n1,
-    just: (n1p) => n2.getParent().caseOf({
-      nothing: () => n2,
-      just: (n2p) => {
-        if (n1.id === n2.id) { return n1; }
-        if (n1.depth < n2.depth) {
-          return commonAncestor(n1, n2p);
-        } else if (n1.depth > n2.depth) {
-          return this.commonAncestor(n1p, n2);
-        } else {
-          return this.commonAncestor(n1p, n2p);
-        }
-      }
-    })
-  });
-}

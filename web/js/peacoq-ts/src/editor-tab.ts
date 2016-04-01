@@ -1,4 +1,10 @@
-class EditorTab extends Tab {
+import * as Coq85 from "./coq85";
+import { allEditorTabs } from "./setup";
+import Tab from "./tab";
+
+export default EditorTab;
+
+export class EditorTab extends Tab {
   private editor: AceAjax.Editor;
 
   constructor(id: string, caption: string, layout: string, panel: string) {
@@ -8,7 +14,7 @@ class EditorTab extends Tab {
 
     (<W2UI.W2Layout>w2ui[layout]).content(panel, self.div[0]);
     this.editor = ace.edit(id + "-content");
-    setupEditor(this.editor);
+    Coq85.setupEditor(this.editor);
 
     this.onClickHandlers.push(function() {
       self.editor.resize();

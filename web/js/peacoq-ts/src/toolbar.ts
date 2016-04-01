@@ -1,3 +1,6 @@
+import { coqDocument } from "./setup";
+import { switchToBright, switchToDark } from "./theme";
+
 let filePickerId = "filepicker";
 
 interface ToolbarStreams {
@@ -10,7 +13,7 @@ interface ToolbarStreams {
   save: Rx.Observable<{}>;
 }
 
-function setupToolbar(): ToolbarStreams {
+export function setupToolbar(): ToolbarStreams {
 
   let toolbar = $("#toolbar").w2toolbar({ name: "w2toolbar" });
   let loadClickStream = addButton(toolbar, { caption: "Load", icon: "floppy-open" });
@@ -29,8 +32,8 @@ function setupToolbar(): ToolbarStreams {
   let fontIncreaseClickStream = addButton(toolbar, { id: "font-increase", icon: "plus" });
   toolbar.add([
     { type: "spacer", id: "toolbar-spacer" },
-    { type: "radio", id: "toolbar-bright", group: "1", caption: "Bright", checked: true, onClick: Theme.switchToBright },
-    { type: "radio", id: "toolbar-dark", group: "1", caption: "Dark", onClick: Theme.switchToDark },
+    { type: "radio", id: "toolbar-bright", group: "1", caption: "Bright", checked: true, onClick: switchToBright },
+    { type: "radio", id: "toolbar-dark", group: "1", caption: "Dark", onClick: switchToDark },
   ]);
 
   return {
@@ -45,7 +48,7 @@ function setupToolbar(): ToolbarStreams {
 
 }
 
-function setupLoadFile(): Rx.Observable<string> {
+export function setupLoadFile(): Rx.Observable<string> {
 
   let input = $("<input>", {
     "id": filePickerId,
@@ -88,7 +91,7 @@ function setupLoadFile(): Rx.Observable<string> {
 
 }
 
-function setupSaveFile() {
+export function setupSaveFile() {
   $("<a>", {
     "download": "output.v",
     "id": "save-local-link",
@@ -122,11 +125,11 @@ function addButton(
   }).share();
 }
 
-function pickFile(): void {
+export function pickFile(): void {
   $("#" + filePickerId).click();
 }
 
-function saveFile(): void {
+export function saveFile(): void {
   let editor = coqDocument.editor;
   let text = editor.getValue();
   let blob = new Blob([text], { type: 'text/plain;charset=UTF-8' });

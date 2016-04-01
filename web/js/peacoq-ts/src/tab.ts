@@ -1,4 +1,6 @@
-class Tab {
+export default Tab;
+
+export class Tab {
   caption: string;
   div: JQuery;
   id: string;

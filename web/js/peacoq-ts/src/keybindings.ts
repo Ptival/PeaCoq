@@ -1,3 +1,4 @@
+import { coqDocument } from "./setup";
 
 /*
 I can't seem to make Ace properly bubble key events, or when they bubble,
@@ -54,7 +55,7 @@ function createBindingForKey(key: string): Rx.Observable<{}> {
     ;
 }
 
-function setupKeybindings(): ShortcutsStreams {
+export function setupKeybindings(): ShortcutsStreams {
   return {
     fontDecrease: createBindingForKey("-"),
     fontIncrease: createBindingForKey("="),

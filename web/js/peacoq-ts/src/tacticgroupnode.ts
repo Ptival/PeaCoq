@@ -1,6 +1,14 @@
+import GoalNode from "./goalnode";
+import ProofTree from "./prooftree";
+import ProofTreeNode from "./prooftreenode";
+import Strictly from "./strictly";
+import Tactic from "./tactic";
+
+export default TacticGroupNode;
+
 let userTacticsGroupName = "PeaCoq user tactics";
 
-class TacticGroupNode extends ProofTreeNode {
+export class TacticGroupNode extends ProofTreeNode {
   isProcessed: boolean;
   name: string;
   // do not use parent, D3 will overwrite

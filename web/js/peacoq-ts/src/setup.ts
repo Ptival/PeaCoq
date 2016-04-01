@@ -1,11 +1,49 @@
+import * as Coq85 from "./coq85";
+import * as Coqtop85 from "./coqtop85";
+import * as Coqtop from "./coqtop-rx";
+import * as CoqtopInput from "./coqtop-input";
+import { Feedback, Goals, Message, PeaCoqContext, PeaCoqHyp, Warning } from "./coqtop85";
+import * as EditStage from "./edit-stage";
+import EditorTab from "./editor-tab";
+import * as FeedbackContent from "./feedback-content";
+import GoalNode from "./goalnode";
+import { setupKeybindings } from "./keybindings";
+import { ProofTree, proofTrees } from "./prooftree";
+import { getActiveProofTree } from "./prooftree-utils";
+import Tab from "./tab";
+import Tactic from "./tactic";
+import TacticGroupNode from "./tacticgroupnode";
+import { setupTheme, theme } from "./theme";
+// TODO: toolbar.ts should setup{Load,Save}File upon setupToolbar
+// TODO: unless it can't because of keybindings?
+import { pickFile, saveFile, setupLoadFile, setupToolbar, setupSaveFile } from "./toolbar";
+
 let fontSize = 16; // pixels
 let resizeBufferingTime = 250; // milliseconds
 
-let coqDocument: CoqDocument = undefined;
 let layout: W2UI.W2Layout;
 let rightLayout: W2UI.W2Layout;
 let contextTabs: W2UI.W2Tabs;
 let coqtopTabs: W2UI.W2Tabs;
+
+export let coqDocument: Coq85.CoqDocument = undefined;
+
+export let pretty: Tab;
+export let foreground: EditorTab;
+export let background: EditorTab;
+export let shelved: EditorTab;
+export let givenUp: EditorTab;
+
+export let notices: EditorTab
+export let warnings: EditorTab;
+export let errors: EditorTab;
+export let infos: EditorTab;
+export let debug: EditorTab;
+export let failures: EditorTab;
+export let feedback: EditorTab;
+export let jobs: EditorTab;
+
+export let allEditorTabs: EditorTab[] = []
 
 $(document).ready(() => {
 
@@ -32,15 +70,15 @@ $(document).ready(() => {
   });
 
   //editor.selection.on("changeSelection", (e) => { console.log(e); });
-  coqDocument = new CoqDocument(editor);
+  coqDocument = new Coq85.CoqDocument(editor);
 
-  let editAtBecauseEditorChange: Rx.Observable<CoqtopInput> =
+  let editAtBecauseEditorChange: Rx.Observable<CoqtopInput.CoqtopInput> =
     coqDocument.changeStream.flatMap((change) => {
-      console.log("should remove edits after", minPos(change.start, change.end));
+      console.log("should remove edits after", Coq85.minPos(change.start, change.end));
       return [];
     });
 
-  setupEditor(editor);
+  Coq85.setupEditor(editor);
   editor.focus();
 
   $().w2layout({
@@ -103,8 +141,8 @@ $(document).ready(() => {
   let toolbarStreams = setupToolbar();
   let shortcutsStreams = setupKeybindings();
 
-  setupSyntaxHovering();
-  Theme.setupTheme();
+  Coq85.setupSyntaxHovering();
+  setupTheme();
 
   let loadedFilesStream = setupLoadFile();
   setupSaveFile();
@@ -127,10 +165,10 @@ $(document).ready(() => {
 
   let nextStream = Rx.Observable
     .merge(toolbarStreams.next, shortcutsStreams.next);
-  let editsToProcessStream = onNextReactive(coqDocument, nextStream);
+  let editsToProcessStream = Coq85.onNextReactive(coqDocument, nextStream);
   //editsToProcessStream.subscribe((e) => coqDocument.pushEdit(e));
   //editsToProcessStream.subscribe((e) => coqDocument.moveCursorToPositionAndCenter(e.getStopPosition()));
-  let addsToProcessStream = processEditsReactive(editsToProcessStream);
+  let addsToProcessStream = Coq85.processEditsReactive(editsToProcessStream);
 
   Rx.Observable
     .merge(toolbarStreams.previous, shortcutsStreams.previous)
@@ -143,13 +181,11 @@ $(document).ready(() => {
     .merge(toolbarStreams.save, shortcutsStreams.save)
     .subscribe(saveFile);
 
-  let coqtopOutputStreams = setupCoqtopCommunication([
+  let coqtopOutputStreams = Coqtop.setupCoqtopCommunication([
     // reset Coqtop when a file is loaded
     loadedFilesStream.map(() => new CoqtopInput.EditAt(1)),
     addsToProcessStream,
   ]);
-
-  let allEdits: Edit[] = [];
 
   coqtopOutputStreams.goodResponse
     // keep only responses for adds produced by PeaCoq
@@ -163,8 +199,8 @@ $(document).ready(() => {
         nothing: () => { throw "nothing" },
         just: (edit) => {
           let stage = edit.stage;
-          if (stage instanceof EditStageToProcess) {
-            edit.stage = new EditStageBeingProcessed(stage, stateId);
+          if (stage instanceof EditStage.ToProcess) {
+            edit.stage = new EditStage.BeingProcessed(stage, stateId);
           } else {
             throw "Expected edit in EditStageToProcess stage";
           }
@@ -175,23 +211,23 @@ $(document).ready(() => {
   // Logging feedbacks that I haven't figured out what to do with yet
   subscribeAndLog(
     coqtopOutputStreams.feedback
-      .filter((f) => !(f.feedbackContent instanceof FileDependency || f.feedbackContent instanceof FileLoaded))
-      .filter((f) => !(f.feedbackContent instanceof AddedAxiom))
-      .filter((f) => !(f.feedbackContent instanceof Processed && f.editOrState === "state"))
-      .filter((f) => !(f.feedbackContent instanceof ProcessingIn && f.editOrState === "state"))
-      .filter((f) => !(f.feedbackContent instanceof ErrorMsg))
+      .filter((f) => !(f.feedbackContent instanceof FeedbackContent.FileDependency || f.feedbackContent instanceof FeedbackContent.FileLoaded))
+      .filter((f) => !(f.feedbackContent instanceof FeedbackContent.AddedAxiom))
+      .filter((f) => !(f.feedbackContent instanceof FeedbackContent.Processed && f.editOrState === "state"))
+      .filter((f) => !(f.feedbackContent instanceof FeedbackContent.ProcessingIn && f.editOrState === "state"))
+      .filter((f) => !(f.feedbackContent instanceof FeedbackContent.ErrorMsg))
   );
 
   coqtopOutputStreams.feedback
     .filter((f) => f.editOrState === "state")
-    .filter((f) => f.feedbackContent instanceof Processed)
+    .filter((f) => f.feedbackContent instanceof FeedbackContent.Processed)
     .distinctUntilChanged()
     .subscribe((f) => {
       let stateId = f.editOrStateId;
       let editStageReady = _(coqDocument.getEditStagesBeingProcessed())
         .find((stage) => stage.stateId === stateId);
       if (editStageReady) {
-        editStageReady.edit.stage = new EditStageProcessed(editStageReady);
+        editStageReady.edit.stage = new EditStage.Processed(editStageReady);
         if (coqDocument.getEditStagesToProcess().length === 0) {
           coqDocument.moveCursorToPositionAndCenter(editStageReady.getStopPosition());
         }
@@ -199,10 +235,10 @@ $(document).ready(() => {
     });
 
   coqtopOutputStreams.feedback
-    .filter((f) => f.feedbackContent instanceof ErrorMsg)
+    .filter((f) => f.feedbackContent instanceof FeedbackContent.ErrorMsg)
     .distinctUntilChanged()
     .subscribe((f) => {
-      let e = <ErrorMsg><any>f.feedbackContent;
+      let e = <FeedbackContent.ErrorMsg><any>f.feedbackContent;
       assert(f.editOrState === "state", "Expected ErrorMsg to carry a state, not an edit");
       let failedStateId = f.editOrStateId;
       let failedEditStage = _(coqDocument.getEditStagesBeingProcessed()).find((s) => s.stateId === failedStateId);
@@ -210,8 +246,8 @@ $(document).ready(() => {
         let failedEdit = failedEditStage.edit;
         coqDocument.removeEditsAfter(failedEdit);
         errors.setValue(e.message, true);
-        let errorStart = movePositionRight(coqDocument, failedEdit.getStartPosition(), e.start);
-        let errorStop = movePositionRight(coqDocument, failedEdit.getStartPosition(), e.stop);
+        let errorStart = coqDocument.movePositionRight(failedEdit.getStartPosition(), e.start);
+        let errorStop = coqDocument.movePositionRight(failedEdit.getStartPosition(), e.stop);
         let errorRange = new AceAjax.Range(errorStart.row, errorStart.column, errorStop.row, errorStop.column);
         coqDocument.markError(errorRange);
       }
@@ -226,7 +262,7 @@ $(document).ready(() => {
   // editHandlers.push(proofTreeOnEdit);
 });
 
-let lastStatus: Status;
+let lastStatus: Coqtop85.Status;
 
 // function editorOnEditAt(sid: number) {
 //   let edit = _(coqDocument.editsProcessed).find((e) => e.stateId === sid);
@@ -252,8 +288,8 @@ function updateCoqtopTabs(goals: Goals, context: PeaCoqContext) {
 function proofTreeOnEdit(
   query: string,
   stateId: number,
-  lastStatus: Status,
-  status: Status,
+  lastStatus: Coqtop85.Status,
+  status: Coqtop85.Status,
   goals: Goals,
   context: PeaCoqContext
 ): void {
@@ -391,14 +427,14 @@ function proofTreeOnEditAt(sid: number): void {
     activeProofTree.curNode = target;
     activeProofTree.update();
   } else {
-    proofTrees = [];
+    proofTrees.length = 0;
     hideProofTreePanel();
     $("#prooftree").empty();
   }
 
 }
 
-function onResize(): void {
+export function onResize(): void {
   coqDocument.editor.resize();
   getActiveProofTree().fmap((t) => {
     let parent = $("#prooftree").parent();
@@ -421,7 +457,7 @@ function showProofTreePanel(): Promise<{}> {
   });
 }
 
-function updateFontSize(d: CoqDocument): void {
+function updateFontSize(d: Coq85.CoqDocument): void {
   d.editor.setOption("fontSize", fontSize);
   _(allEditorTabs).each((e: EditorTab) => {
     e.setOption("fontSize", fontSize);

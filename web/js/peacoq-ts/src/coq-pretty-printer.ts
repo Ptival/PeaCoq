@@ -1,182 +1,8 @@
-class StrToken { }
-
-class StrDef extends StrToken {
-  string: string;
-  constructor(s: string) {
-    super();
-    this.string = s;
-  }
-}
-
-class StrLen extends StrToken {
-  string: string;
-  length: number;
-  constructor(s: string, l: number) {
-    super();
-    this.string = s;
-    this.length = l;
-  }
-}
-
-class PpCmdToken<T> { }
-
-class PpCmdPrint<T> extends PpCmdToken<T> {
-  token: T;
-  constructor(t: T) {
-    super();
-    this.token = t;
-  }
-}
-
-class PpCmdBox<T> extends PpCmdToken<T> {
-  blockType: BlockType;
-  contents: PpCmdToken<T>[];
-  constructor(b: BlockType, x: PpCmdToken<T>[]) {
-    super();
-    this.blockType = b;
-    this.contents = x;
-  }
-}
-
-class PpCmdPrintBreak<T> extends PpCmdToken<T> {
-  nspaces: number;
-  offset: number;
-  constructor(x: number, y: number) {
-    super();
-    this.nspaces = x;
-    this.offset = y;
-  }
-}
-
-class PpCmdSetTab<T> extends PpCmdToken<T> { }
-
-class PpCmdPrintTbreak<T> extends PpCmdToken<T> {
-  constructor(x: number, y: number) {
-    super();
-  }
-}
-
-class PpCmdWhiteSpace<T> extends PpCmdToken<T> {
-  constructor(x: number) {
-    super();
-  }
-}
-
-class PpCmdForceNewline<T> extends PpCmdToken<T> { }
-
-class PpCmdPrintIfBroken<T> extends PpCmdToken<T> { }
-
-class PpCmdOpenBox<T> extends PpCmdToken<T> {
-  blockType: BlockType;
-  constructor(b: BlockType) {
-    super();
-    this.blockType = b;
-  }
-}
-
-class PpCmdCloseBox<T> extends PpCmdToken<T> { }
-
-class PpCmdCloseTBox<T> extends PpCmdToken<T> { }
-
-class PpCmdComment<T> extends PpCmdToken<T> {
-  constructor(x: number) {
-    super();
-  }
-}
+import { ConstrExpr, LocalBinder } from "./coq-constr-expr";
+import { ParenRelation, PpHoVBox } from "./coq-definitions";
+import { mt, PpCmds, str} from "./ppcmds";
 
 type Tag = string;
-
-function tagEvar(p: PpCmds): PpCmds { return tag("evar", p); }
-function tagKeyword(p: PpCmds): PpCmds { return tag("keyword", p); }
-function tagNotation(r: PpCmds): PpCmds { return tag("notation", r); }
-function tagPath(p: PpCmds): PpCmds { return tag("path", p); }
-function tagRef(r: PpCmds): PpCmds { return tag("reference", r); }
-function tagType(r: PpCmds): PpCmds { return tag("univ", r); }
-function tagVariable(p: PpCmds): PpCmds { return tag("variable", p); }
-
-class PpCmdOpenTag<T> extends PpCmdToken<T> {
-  tag: string;
-  constructor(t: Tag) {
-    super();
-    this.tag = t;
-  }
-}
-
-class PpCmdCloseTag<T> extends PpCmdToken<T> { }
-
-type PpCmd = PpCmdToken<StrToken>;
-type PpCmds = PpCmd[];
-
-let lAtom = 0;
-let lProd = 200;
-let lLambda = 200;
-let lIf = 200;
-let lLetIn = 200;
-let lLetPattern = 200;
-let lFix = 200;
-let lCast = 100;
-let lArg = 9;
-let lApp = 10;
-let lPosInt = 0;
-let lNegInt = 35;
-let lTop: PrecAssoc = [200, new E()];
-let lProj = 1;
-let lDelim = 1;
-let lSimpleConstr: PrecAssoc = [8, new E()];
-let lSimplePatt: PrecAssoc = [1, new E()];
-
-function precLess(child: number, parent: PrecAssoc) {
-  let [parentPrec, parentAssoc] = parent;
-  if (parentPrec < 0 && child === lProd) {
-    return true;
-  }
-  parentPrec = Math.abs(parentPrec);
-  if (parentAssoc instanceof E) { return child <= parentPrec; }
-  if (parentAssoc instanceof L) { return child < parentPrec; }
-  if (parentAssoc instanceof Prec) { return child <= parentAssoc.precedence; }
-  if (parentAssoc instanceof Any) { return true; }
-}
-
-function extractProdBinders(a: ConstrExpr): [Array<LocalBinder>, ConstrExpr] {
-  if (a instanceof CProdN) {
-    let [loc, bl, c] = [a.location, a.binderList, a.returnExpr];
-    if (bl.length === 0) {
-      return extractProdBinders(a.returnExpr);
-    } else {
-      let [nal, bk, t] = bl[0];
-      let [blrec, cRest] = extractProdBinders(new CProdN(loc, _.tail(bl), c));
-      let l: LocalBinder[] = [new LocalRawAssum(nal, bk, t)];
-      return [l.concat(blrec), cRest];
-    }
-  }
-  return [[], a];
-}
-
-function cut(): PpCmds { return [new PpCmdPrintBreak(0, 0)]; }
-function mt(): PpCmds { return []; }
-function spc(): PpCmds { return [new PpCmdPrintBreak(1, 0)]; }
-function str(s: string): PpCmds { return [new PpCmdPrint(new StrDef(s))]; }
-function surround(p: PpCmds): PpCmds {
-  return hov(1, [].concat(str("("), p, str(")")));
-}
-
-function openTag(t: Tag): PpCmds { return [new PpCmdOpenTag(t)]; }
-function closeTag(t: Tag): PpCmds { return [new PpCmdCloseTag()]; }
-function tag(t: Tag, s: PpCmds): PpCmds {
-  return [].concat(openTag(t), s, closeTag(t));
-}
-
-function isMt(p: PpCmds): boolean {
-  return (p.length === 0);
-}
-
-/*
-peaCoqBox should not disrupt the pretty-printing flow, but add a
-<span> so that sub-expression highlighting is more accurate
-*/
-function peaCoqBox(l: PpCmds): PpCmds {
-  return [new PpCmdBox(new PpHoVBox(0), l)];
-}
 
 function beginOfBinder(b: LocalBinder): number {
   if (b instanceof LocalRawDef) {
@@ -195,7 +21,7 @@ function beginOfBinders(bl) {
 
 function prComAt(n: number): PpCmds { return mt(); }
 
-function prId(id) { return str(id); }
+function prId(id: string): PpCmds { return str(id); }
 
 function prLIdent([loc, id]) {
   // TODO: Loc.is_ghost
@@ -1408,3 +1234,8 @@ function htmlPrintPpCmdsDiff(l: PpCmds, old: PpCmds): string {
     ""
   );
 }
+
+export function tab(): PpCmds { return [new PpCmdSetTab()]; }
+export function fnl(): PpCmds { return [new PpCmdForceNewline()]; }
+export function brk(a, b): PpCmds { return [new PpCmdPrintBreak(a, b)]; }
+export function tbrk(a, b): PpCmds { return [new PpCmdPrintTbreak(a, b)]; }

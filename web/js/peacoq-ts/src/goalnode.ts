@@ -1,8 +1,18 @@
-class GoalNode extends ProofTreeNode {
+import * as Coqtop85 from "./coqtop85";
+import PeaCoqGoal from "./goal";
+import ProofTree from "./prooftree";
+import ProofTreeNode from "./prooftreenode";
+import Strictly from "./strictly";
+import Tactic from "./tactic";
+import TacticGroupNode from "./tacticgroupnode";
+
+export default GoalNode;
+
+export class GoalNode extends ProofTreeNode {
   // DO NOT USE "children" AS D3 WILL OVERWRITE
   closedBraces: number;
   goal: PeaCoqGoal;
-  goals: Goals;
+  goals: Coqtop85.Goals;
   html: JQuery;
   openBraces: number;
   // DO NOT USE "parent" AS D3 WILL OVERWRITE
@@ -14,7 +24,7 @@ class GoalNode extends ProofTreeNode {
   constructor(
     proofTree: ProofTree,
     parent: Maybe<TacticGroupNode>,
-    goals: Goals,
+    goals: Coqtop85.Goals,
     goal: PeaCoqGoal
   ) {
     super(proofTree, parent);
@@ -146,15 +156,16 @@ class GoalNode extends ProofTreeNode {
     if (this.openBraces === this.closedBraces) {
       this.parentGroup.caseOf({
         nothing: () => {
-          if (autoLayout) {
-            //proofTreeQueryWish('Qed.');
-          }
+          // if (autoLayout) {
+          //   //proofTreeQueryWish('Qed.');
+          // }
         },
         just: (p) => p.onChildSolvedAndUnfocused(sid),
       });
-    } else if (autoLayout) {
-      //proofTreeQueryWish('}');
     }
+    //  else if (autoLayout) {
+    //   //proofTreeQueryWish('}');
+    // }
   }
 
   nodeWidth() {

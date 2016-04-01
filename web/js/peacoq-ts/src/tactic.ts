@@ -1,4 +1,9 @@
-class Tactic {
+import GoalNode from "./goalnode";
+import TacticGroupNode from "./tacticgroupnode";
+
+export default Tactic;
+
+export class Tactic {
   //addReturn: AddReturn;
   goalIndex: number;
   goals: GoalNode[];

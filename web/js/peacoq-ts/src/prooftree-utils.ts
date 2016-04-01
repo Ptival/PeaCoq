@@ -1,8 +1,13 @@
+import GoalNode from "./goalnode";
+import ProofTree, { proofTrees } from "./prooftree";
+import ProofTreeNode from "./prooftreenode";
+import Tactic from "./tactic";
+
 /*
   Stuff that is somewhat general but mostly useful for the proof tree.
  */
 
-function getActiveProofTree(): Maybe<ProofTree> {
+export function getActiveProofTree(): Maybe<ProofTree> {
   return (
     proofTrees.length > 0
       ? just(proofTrees[0])
@@ -17,14 +22,14 @@ type Hypothesis = {
   hType: string;
 }
 
-type ProofTreeLink = d3.svg.diagonal.Link<ProofTreeNode>;
+export type ProofTreeLink = d3.svg.diagonal.Link<ProofTreeNode>;
 
-type TacticGroup = {
+export type TacticGroup = {
   name: string;
   tactics: string[];
 }
 
-type WorklistItem = () => Promise<TacticGroup[]>;
+export type WorklistItem = () => Promise<TacticGroup[]>;
 
 /*
  * Returns a rect of the absolute position of [elmt] within the canvas. It needs
@@ -79,30 +84,27 @@ function makeGoalNodePre() {
     ;
 }
 
-function makeContextDivider() {
-  return $("<hr>", { class: "context-divider" });
-}
-
 type XY = { x: number; y: number; }
 
-function swapXY(r: XY): XY {
+export function swapXY(r: XY): XY {
   let [x, y] = [r.x, r.y];
   r.x = y;
   r.y = x;
   return r;
 }
 
-function byNodeId(d: ProofTreeNode): string { return d.id; }
-function byLinkId(d: ProofTreeLink): string { return d.source.id + "," + d.target.id; }
+export function byNodeId(d: ProofTreeNode): string { return d.id; }
+export function byLinkId(d: ProofTreeLink): string { return d.source.id + "," + d.target.id; }
 
 // transposition accessors
-function nodeX(d: ProofTreeNode): number {
+export function nodeX(d: ProofTreeNode): number {
   if (d === undefined) {
     throw "nodeX";
   }
   return d.y;
 }
-function nodeY(d: ProofTreeNode): number {
+
+export function nodeY(d: ProofTreeNode): number {
   if (d === undefined) {
     throw "nodeY";
   }
@@ -139,28 +141,28 @@ let centerLeftOffset = +10;
 
 let centerRightOffset = -10;
 
-function centerLeft0(d: ProofTreeNode): XY {
+export function centerLeft0(d: ProofTreeNode): XY {
   return {
     "x": d.getOriginalScaledX() + centerLeftOffset,
     "y": d.getOriginalScaledY() + d.getHeight() / 2,
   };
 }
 
-function centerRight0(d: ProofTreeNode): XY {
+export function centerRight0(d: ProofTreeNode): XY {
   return {
     "x": d.getOriginalScaledX() + d.getWidth() + centerRightOffset,
     "y": d.getOriginalScaledY() + d.getHeight() / 2,
   };
 }
 
-function centerLeft(d: ProofTreeNode): XY {
+export function centerLeft(d: ProofTreeNode): XY {
   return {
     "x": d.getScaledX() + centerLeftOffset,
     "y": d.getScaledY() + d.getHeight() / 2,
   };
 }
 
-function centerRight(d: ProofTreeNode): XY {
+export function centerRight(d: ProofTreeNode): XY {
   return {
     "x": d.getScaledX() + d.getWidth() + centerRightOffset,
     "y": d.getScaledY() + d.getHeight() / 2,
@@ -234,3 +236,39 @@ lines return an object of lists. Disabled for now.
 //
 //   return { "removed": removed, "added": added };
 // }
+
+/*
+  creates an empty rectangle in the same column as [node], at vertical position
+  [currentY]
+*/
+function emptyRect(node: ProofTreeNode, currentY: number): Rectangle {
+  let delta = 1; // how big to make the empty rectangle
+  return $.extend(
+    {
+      "left": node.getScaledX(),
+      "right": node.getScaledX() + node.getWidth(),
+      "width": node.getWidth()
+    },
+    {
+      "top": currentY - delta,
+      "bottom": currentY + delta,
+      "height": 2 * delta,
+    }
+  );
+}
+
+function emptyRect0(node: ProofTreeNode, currentY: number): Rectangle {
+  let delta = 1; // how big to make the empty rectangle
+  return $.extend(
+    {
+      "left": node.getOriginalScaledX(),
+      "right": node.getOriginalScaledY() + node.getWidth(),
+      "width": node.getWidth()
+    },
+    {
+      "top": currentY - delta,
+      "bottom": currentY + delta,
+      "height": 2 * delta,
+    }
+  );
+}

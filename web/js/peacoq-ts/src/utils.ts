@@ -1,3 +1,5 @@
+let nbsp = "\u00A0";
+
 function replaceNBSPWithSpaces(s: string): string {
   return s.replace(/\u00A0/g, " ");
 }
@@ -173,42 +175,6 @@ function computeDiffList(oldHypsOriginal, newHypsOriginal) {
   });
 
   return diffList;
-}
-
-/*
-  creates an empty rectangle in the same column as [node], at vertical position
-  [currentY]
-*/
-function emptyRect(node: ProofTreeNode, currentY: number): Rectangle {
-  let delta = 1; // how big to make the empty rectangle
-  return $.extend(
-    {
-      "left": node.getScaledX(),
-      "right": node.getScaledX() + node.getWidth(),
-      "width": node.getWidth()
-    },
-    {
-      "top": currentY - delta,
-      "bottom": currentY + delta,
-      "height": 2 * delta,
-    }
-  );
-}
-
-function emptyRect0(node: ProofTreeNode, currentY: number): Rectangle {
-  let delta = 1; // how big to make the empty rectangle
-  return $.extend(
-    {
-      "left": node.getOriginalScaledX(),
-      "right": node.getOriginalScaledY() + node.getWidth(),
-      "width": node.getWidth()
-    },
-    {
-      "top": currentY - delta,
-      "bottom": currentY + delta,
-      "height": 2 * delta,
-    }
-  );
 }
 
 function repeat(n: number, s: string): string {

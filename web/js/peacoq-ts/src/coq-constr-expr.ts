@@ -1,6 +1,14 @@
-type Notation = string;
+import BinderKind from "./binder-kind";
+import CasesPatternExpr from "./cases-pattern-expr";
+import { CoqLocation, InstanceExpr, Located } from "./coq-definitions";
+import Explicitation from "./explicitation";
+import LocalBinder from "./local-binder";
+import NameBase from "./name-base";
+import Reference from "./reference";
 
-class ConstrExpr {}
+export default ConstrExpr;
+
+export abstract class ConstrExpr {}
 
 type BinderExpr =[
   Array<Located<NameBase>>,
@@ -15,26 +23,6 @@ type ConstrNotationSubstitution =[
 ];
 
 type ProjFlag = Maybe<number>;
-
-class Explicitation {}
-
-class ExplByPos extends Explicitation {
-  number: number;
-  name: Maybe<string>;
-  constructor(n: number, id: Maybe<string>) {
-    super();
-    this.number = n;
-    this.name = id;
-  }
-}
-
-class ExplByName extends Explicitation {
-  name: string;
-  constructor(id: string) {
-    super();
-    this.name = id;
-  }
-}
 
 type AppFun =[ProjFlag, ConstrExpr];
 type AppArg =[ConstrExpr, Maybe<Located<Explicitation>>];
@@ -212,3 +200,20 @@ class CSort extends ConstrExpr {
     this.globSort = gs;
   }
 }
+
+function extractProdBinders(a: ConstrExpr): [Array<LocalBinder>, ConstrExpr] {
+  if (a instanceof CProdN) {
+    let [loc, bl, c] = [a.location, a.binderList, a.returnExpr];
+    if (bl.length === 0) {
+      return extractProdBinders(a.returnExpr);
+    } else {
+      let [nal, bk, t] = bl[0];
+      let [blrec, cRest] = extractProdBinders(new CProdN(loc, _.tail(bl), c));
+      let l: LocalBinder[] = [new LocalRawAssum(nal, bk, t)];
+      return [l.concat(blrec), cRest];
+    }
+  }
+  return [[], a];
+}
+
+type Notation = string;

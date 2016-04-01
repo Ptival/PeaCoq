@@ -1,12 +1,10 @@
-let statusPeriod = 250; // milliseconds
+import * as CoqtopInput from "./coqtop-input";
+import { AddReturn, Feedback, Message, ValueFail } from "./coqtop85"
 
-interface CoqtopInput {
-  cmd: string;
-  args: Object;
-}
+let statusPeriod = 2500; // milliseconds
 
 interface CoqtopResponse {
-  input: CoqtopInput;
+  input: CoqtopInput.CoqtopInput;
   tag: string;
   contents: Object;
 }
@@ -28,19 +26,21 @@ interface CoqtopOutputStreams {
   stateId: Rx.Observable<number>;
 }
 
-function setupCoqtopCommunication(
-  inputs: Rx.Observable<CoqtopInput>[]
+export function setupCoqtopCommunication(
+  inputs: Rx.Observable<CoqtopInput.CoqtopInput>[]
 ): CoqtopOutputStreams {
 
-  let coqtopEditAtStream: Rx.Observable<CoqtopInput> =
-    Rx.Observable.empty<CoqtopInput>();
+  let coqtopEditAtStream: Rx.Observable<CoqtopInput.CoqtopInput> =
+    Rx.Observable.empty<CoqtopInput.CoqtopInput>();
 
-  let coqtopStatusStream: Rx.Observable<CoqtopInput> =
+  let coqtopStatusStream: Rx.Observable<CoqtopInput.CoqtopInput> =
     Rx.Observable
       .interval(statusPeriod)
       .map(() => new CoqtopInput.Status(false));
 
-  let coqtopInputStream: Rx.Observable<CoqtopInput> =
+  let inputSubject: Rx.Subject<CoqtopInput.CoqtopInput> = new Rx.Subject<CoqtopInput.CoqtopInput>();
+
+  let coqtopInputStream: Rx.Observable<CoqtopInput.CoqtopInput> =
     Rx.Observable
       .merge(
       coqtopStatusStream,
@@ -50,6 +50,7 @@ function setupCoqtopCommunication(
       .startWith(new CoqtopInput.EditAt(1))
     // .concat(Rx.Observable.return({ cmd: "quit", args: [] }))
     ;
+
 
   /*
   Note: the scan has two effects
@@ -62,7 +63,7 @@ function setupCoqtopCommunication(
   */
   let coqtopOutputStream: Rx.Observable<CoqtopOutput> =
     coqtopInputStream
-      .scan<Promise<any>>((acc: Promise<any>, input: CoqtopInput) => {
+      .scan<Promise<any>>((acc: Promise<any>, input: CoqtopInput.CoqtopInput) => {
         return acc
           .then(() => $.ajax({
             type: 'POST',

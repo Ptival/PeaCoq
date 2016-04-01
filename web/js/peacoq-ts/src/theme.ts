@@ -1,5 +1,8 @@
+// TODO: I don't like this, theme should broadcast and setup should resize
+import { allEditorTabs, coqDocument, onResize } from "./setup";
+
 let cssPath = "js/lib/w2ui/";
-let errorUnderlineClass = "theme_error_underline";
+export let errorUnderlineClass = "theme_error_underline";
 
 interface Theme {
   aceTheme: string;
@@ -76,85 +79,81 @@ namespace DarkTheme {
   export let tacticFill = "#9F9006";
 }
 
-namespace Theme {
+export let theme: Theme = DarkTheme;
 
-  export let theme: Theme = DarkTheme;
+export function switchToBright(): void {
+  theme = BrightTheme;
+  setupTheme();
+}
 
-  export function switchToBright(): void {
-    theme = BrightTheme;
-    setupTheme();
-  }
+export function switchToDark(): void {
+  theme = DarkTheme;
+  setupTheme();
+}
 
-  export function switchToDark(): void {
-    theme = DarkTheme;
-    setupTheme();
-  }
+export function setupTheme() {
+  $.get(theme.css, (response) => {
+    $('#theme').text(response);
+    onResize();
+  });
+  $("#w2uicss").load(onResize).attr("href", theme.css);
+  jss.set(".w2ui-layout>div .w2ui-resizer", {
+    "background-color": "transparent"
+  })
+  jss.set("body", { "color": theme.foreground });
+  jss.set(".w2ui-layout > div .w2ui-panel .w2ui-panel-tabs", {
+    "background-color": theme.background
+  });
+  jss.set(".w2ui-layout>div .w2ui-panel .w2ui-panel-content", {
+    "background-color": theme.background,
+    "color": theme.foreground,
+  });
+  jss.set("#pretty-content", { "background-color": theme.background });
+  jss.set("#prooftree", { "background-color": theme.svgBackground });
+  jss.set(".processed", { "background-color": theme.processed });
+  jss.set(".processing", { "background-color": theme.processing });
+  jss.set(".toprocess", { "background-color": theme.toprocess });
+  jss.set(".goal", { "fill": theme.background });
+  jss.set(".tactic", { "fill": theme.tacticFill });
+  jss.set(".ace_coqcomment", { "color": theme.syntaxComment });
+  jss.set(".ace_gallina", { "color": theme.syntaxGallina });
+  jss.set(".ace_tactic", { "color": theme.syntaxTactic });
+  jss.set(".ace_terminator", { "color": theme.syntaxTerminator });
+  jss.set(".ace_vernacular", { "color": theme.syntaxVernacular });
+  jss.set(".tag-keyword", { "color": theme.syntaxKeyword });
+  jss.set(".tag-notation", { "color": theme.syntaxNotation });
+  jss.set(".tag-variable", { "color": theme.syntaxVariable });
+  jss.set(".context-divider", {
+    "border": "0",
+    "border-top": theme.contextDivider,
+    "margin": "0",
+  });
 
-  export function setupTheme() {
-    $.get(theme.css, (response) => {
-      $('#theme').text(response);
-      onResize();
-    });
-    $("#w2uicss").load(onResize).attr("href", theme.css);
-    jss.set(".w2ui-layout>div .w2ui-resizer", {
-      "background-color": "transparent"
-    })
-    jss.set("body", { "color": theme.foreground });
-    jss.set(".w2ui-layout > div .w2ui-panel .w2ui-panel-tabs", {
-      "background-color": theme.background
-    });
-    jss.set(".w2ui-layout>div .w2ui-panel .w2ui-panel-content", {
-      "background-color": theme.background,
-      "color": theme.foreground,
-    });
-    jss.set("#pretty-content", { "background-color": theme.background });
-    jss.set("#prooftree", { "background-color": theme.svgBackground });
-    jss.set(".processed", { "background-color": theme.processed });
-    jss.set(".processing", { "background-color": theme.processing });
-    jss.set(".toprocess", { "background-color": theme.toprocess });
-    jss.set(".goal", { "fill": theme.background });
-    jss.set(".tactic", { "fill": theme.tacticFill });
-    jss.set(".ace_coqcomment", { "color": theme.syntaxComment });
-    jss.set(".ace_gallina", { "color": theme.syntaxGallina });
-    jss.set(".ace_tactic", { "color": theme.syntaxTactic });
-    jss.set(".ace_terminator", { "color": theme.syntaxTerminator });
-    jss.set(".ace_vernacular", { "color": theme.syntaxVernacular });
-    jss.set(".tag-keyword", { "color": theme.syntaxKeyword });
-    jss.set(".tag-notation", { "color": theme.syntaxNotation });
-    jss.set(".tag-variable", { "color": theme.syntaxVariable });
-    jss.set(".context-divider", {
-      "border": "0",
-      "border-top": theme.contextDivider,
-      "margin": "0",
-    });
+  jss.set(".goal", {
+    "stroke": theme.goalStroke,
+    "stroke-width": "2px",
+  });
 
-    jss.set(".goal", {
-      "stroke": theme.goalStroke,
-      "stroke-width": "2px",
-    });
+  jss.set(".currentnode", {
+    "stroke": "#03C03C",
+    "stroke-width": "4px",
+  });
 
-    jss.set(".currentnode", {
-      "stroke": "#03C03C",
-      "stroke-width": "4px",
-    });
+  jss.set(".link", { "stroke": theme.linkStroke });
 
-    jss.set(".link", { "stroke": theme.linkStroke });
+  jss.set(".w2ui-layout>div .w2ui-resizer", { "background-color": theme.separatorColor });
 
-    jss.set(".w2ui-layout>div .w2ui-resizer", { "background-color": theme.separatorColor });
+  jss.set("svg body", {
+    "background-color": "transparent",
+    "font-family": "monospace",
+    "padding": "2px",
+  })
 
-    jss.set("svg body", {
-      "background-color": "transparent",
-      "font-family": "monospace",
-      "padding": "2px",
-    })
+  jss.set("." + errorUnderlineClass, {
+    position: "absolute",
+    "border-bottom": theme.errorUnderlineStyle,
+  });
 
-    jss.set("." + errorUnderlineClass, {
-      position: "absolute",
-      "border-bottom": theme.errorUnderlineStyle,
-    });
-
-    coqDocument.editor.setTheme(theme.aceTheme);
-    _(allEditorTabs).each((et) => { et.setTheme(theme.aceTheme); })
-  }
-
+  coqDocument.editor.setTheme(theme.aceTheme);
+  _(allEditorTabs).each((et) => { et.setTheme(theme.aceTheme); })
 }

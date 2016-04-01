@@ -1,5 +1,10 @@
+import GoalNode from "./goalnode";
+import ProofTree from "./prooftree";
+import { nodeX, nodeY } from "./prooftree-utils";
 
-abstract class ProofTreeNode {
+export default ProofTreeNode;
+
+export abstract class ProofTreeNode {
   private body: HTMLElement;
   depth: number;
   id: string;
@@ -112,4 +117,23 @@ abstract class ProofTreeNode {
     this.body = e;
   }
 
+}
+
+export function commonAncestor(n1: ProofTreeNode, n2: ProofTreeNode): ProofTreeNode {
+  return n1.getParent().caseOf({
+    nothing: () => n1,
+    just: (n1p) => n2.getParent().caseOf({
+      nothing: () => n2,
+      just: (n2p) => {
+        if (n1.id === n2.id) { return n1; }
+        if (n1.depth < n2.depth) {
+          return commonAncestor(n1, n2p);
+        } else if (n1.depth > n2.depth) {
+          return commonAncestor(n1p, n2);
+        } else {
+          return commonAncestor(n1p, n2p);
+        }
+      }
+    })
+  });
 }

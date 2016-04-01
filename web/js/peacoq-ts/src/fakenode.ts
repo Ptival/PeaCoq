@@ -1,4 +1,10 @@
-class FakeNode extends ProofTreeNode {
+import GoalNode from "./goalnode";
+import ProofTree from "./prooftree";
+import ProofTreeNode from "./prooftreenode";
+
+export default FakeNode
+
+export class FakeNode extends ProofTreeNode {
   constructor(p: ProofTree, parent: ProofTreeNode) {
     super(p, just(parent));
   }

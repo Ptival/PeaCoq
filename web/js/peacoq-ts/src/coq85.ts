@@ -1,3 +1,14 @@
+import { Feedback, Goals, Message, PeaCoqContext, PeaCoqHyp, Status, Warning } from "./coqtop85";
+import * as CoqtopInput from "./coqtop-input";
+import Edit from "./edit";
+import * as EditStage from "./edit-stage";
+import EditorTab from "./editor-tab";
+import { coqDocument, pretty, foreground, background, shelved, givenUp, notices, warnings, errors, infos, feedback, failures } from "./setup";
+import Strictly from "./strictly";
+import { errorUnderlineClass, theme } from "./theme";
+
+export default CoqDocument;
+
 // let AceAnchor = ace.require("ace/anchor").Anchor;
 // let AceRange = ace.require("ace/range").Range;
 // let AceRangeList = ace.require("ace/range_list").RangeList;
@@ -5,25 +16,7 @@
 
 let autoLayout = false;
 
-let pretty: Tab;
-let foreground: EditorTab;
-let background: EditorTab;
-let shelved: EditorTab;
-let givenUp: EditorTab;
-let notices: EditorTab
-let warnings: EditorTab;
-let errors: EditorTab;
-let infos: EditorTab;
-let debug: EditorTab;
-let failures: EditorTab;
-let feedback: EditorTab;
-let jobs: EditorTab;
-
-let allEditorTabs: EditorTab[] = [];
-
-let nbsp = "\u00A0";
-
-class CoqDocument {
+export class CoqDocument {
   beginAnchor: AceAjax.Anchor;
   changeStream: Rx.Observable<AceAjax.EditorChangeEvent>;
   editor: AceAjax.Editor;
@@ -58,16 +51,16 @@ class CoqDocument {
       .value();
   }
 
-  getEditStagesBeingProcessed(): EditStageBeingProcessed[] {
-    return this.getEditStagesInstanceOf(EditStageBeingProcessed);
+  getEditStagesBeingProcessed(): EditStage.BeingProcessed[] {
+    return this.getEditStagesInstanceOf(EditStage.BeingProcessed);
   }
 
-  getEditStagesToProcess(): EditStageToProcess[] {
-    return this.getEditStagesInstanceOf(EditStageToProcess);
+  getEditStagesToProcess(): EditStage.ToProcess[] {
+    return this.getEditStagesInstanceOf(EditStage.ToProcess);
   }
 
-  getEditStagesProcessed(): EditStageProcessed[] {
-    return this.getEditStagesInstanceOf(EditStageProcessed);
+  getEditStagesProcessed(): EditStage.Processed[] {
+    return this.getEditStagesInstanceOf(EditStage.Processed);
   }
 
   // getStopPositions(): AceAjax.Position[] {
@@ -85,6 +78,26 @@ class CoqDocument {
   moveCursorToPositionAndCenter(pos: AceAjax.Position): void {
     this.editor.moveCursorToPosition(pos);
     this.editor.scrollToLine(pos.row, true, true, () => { });
+  }
+
+  movePositionRight(pos: AceAjax.Position, n: number): AceAjax.Position {
+    if (n === 0) { return pos; }
+    let row = pos.row;
+    let column = pos.column;
+    let line = this.session.getLine(row);
+    if (column < line.length) {
+      return this.movePositionRight({
+        "row": row,
+        "column": column + 1
+      }, n - 1);
+    } else if (row < this.session.getLength()) {
+      return this.movePositionRight({
+        "row": row + 1,
+        "column": 0
+      }, n - 1);
+    } else {
+      return pos;
+    }
   }
 
   // onProcessEditsFailure(vf: ValueFail): Promise<any> {
@@ -238,7 +251,7 @@ function resetCoqtop(): Promise<any> {
   //   .then(() => peaCoqStatus(false));
 }
 
-function setupSyntaxHovering() {
+export function setupSyntaxHovering() {
 
   $(document)
     .on('mouseenter mouseover', '.syntax', function(e) {
@@ -266,14 +279,6 @@ function clearCoqtopTabs(clearFailures: boolean): void {
   pretty.div.html("");
 }
 
-let freshEditId = (function() {
-  let editCounter = 2; // TODO: pick the correct number
-  return function() {
-    return editCounter++;
-  }
-})();
-
-
 function reportFailure(f: string) { //, switchTab: boolean) {
   failures.setValue(f, true);
   //yif (switchTab) { failures.click(); }
@@ -282,11 +287,11 @@ function reportFailure(f: string) { //, switchTab: boolean) {
 function getPreviousEditContext(e: Edit): Maybe<PeaCoqContext> {
   return e.previousEdit.bind((e) => {
     let stage = e.stage;
-    return stage instanceof EditStageProcessed ? just(stage.context) : nothing();
+    return stage instanceof EditStage.Processed ? just(stage.context) : nothing();
   });
 }
 
-function onNextReactive(
+export function onNextReactive(
   doc: CoqDocument, next: Rx.Observable<{}>
 ): Rx.Observable<Edit> {
   return next
@@ -303,7 +308,7 @@ function onNextReactive(
         return;
       }
       let nextIndex = CoqStringUtils.next(unprocessedText);
-      let newStopPos = movePositionRight(doc, lastEditStopPos, nextIndex);
+      let newStopPos = doc.movePositionRight(lastEditStopPos, nextIndex);
       let query = unprocessedText.substring(0, nextIndex);
       let e = new Edit(coqDocument, lastEditStopPos, newStopPos, query);
       return e;
@@ -453,13 +458,13 @@ type AddResult = {
   goals: Goals;
 };
 
-function htmlPrintConstrExpr(c: ConstrExpr): string {
+export function htmlPrintConstrExpr(c: ConstrExpr): string {
   let ppCmds = prConstrExpr(c);
   //console.log(ppCmds);
   return htmlPrintPpCmds(ppCmds);
 }
 
-function htmlPrintConstrExprDiff(c: ConstrExpr, old: ConstrExpr): string {
+export function htmlPrintConstrExprDiff(c: ConstrExpr, old: ConstrExpr): string {
   let ppCmds = prConstrExpr(c);
   let oldPpCmds = prConstrExpr(old);
   console.log(ppCmds);
@@ -467,7 +472,7 @@ function htmlPrintConstrExprDiff(c: ConstrExpr, old: ConstrExpr): string {
   return htmlPrintPpCmdsDiff(ppCmds, oldPpCmds);
 }
 
-function htmlPrintHyp(h: PeaCoqHyp): string {
+export function htmlPrintHyp(h: PeaCoqHyp): string {
   let result = '<span><span class="tag-variable">' + h.name + "</span></span>";
   let maybeTerm = h.maybeTerm;
   result += maybeTerm.caseOf({
@@ -482,13 +487,13 @@ function htmlPrintHyp(h: PeaCoqHyp): string {
   return result;
 }
 
-function htmlPrintHyps(hyps: PeaCoqHyp[]): string {
+export function htmlPrintHyps(hyps: PeaCoqHyp[]): string {
   return _.reduce(hyps, (acc, elt) => {
     return acc + '<div class="hyp">' + htmlPrintHyp(elt) + "</div>";
   }, "");
 }
 
-function sameBodyAndType(hyp1: HTMLElement, hyp2: HTMLElement): boolean {
+export function sameBodyAndType(hyp1: HTMLElement, hyp2: HTMLElement): boolean {
   let children1 = $(hyp1).children().slice(1);
   let children2 = $(hyp2).children().slice(1);
   if (children1.length !== children2.length) { return false; }
@@ -572,12 +577,10 @@ function mkAnchor(
   return a;
 }
 
-enum Strictly { Yes, No };
-
 /**
  * Checks if first argument is strictly before second argument
 **/
-function isBefore(flag: Strictly, pos1: AceAjax.Position, pos2: AceAjax.Position): boolean {
+export function isBefore(flag: Strictly, pos1: AceAjax.Position, pos2: AceAjax.Position): boolean {
   if (pos1.row < pos2.row) { return true; }
   if (pos1.row > pos2.row) { return false; }
   switch (flag) {
@@ -586,7 +589,7 @@ function isBefore(flag: Strictly, pos1: AceAjax.Position, pos2: AceAjax.Position
   };
 }
 
-function isAfter(flag: Strictly, pos1: AceAjax.Position, pos2: AceAjax.Position): boolean {
+export function isAfter(flag: Strictly, pos1: AceAjax.Position, pos2: AceAjax.Position): boolean {
   if (pos1.row > pos2.row) { return true; }
   if (pos1.row < pos2.row) { return false; }
   switch (flag) {
@@ -623,33 +626,7 @@ function isAfter(flag: Strictly, pos1: AceAjax.Position, pos2: AceAjax.Position)
 //
 // }
 
-function movePositionRight(
-  doc: CoqDocument,
-  pos: AceAjax.Position,
-  n: number
-): AceAjax.Position {
-  if (n === 0) {
-    return pos;
-  }
-  let row = pos.row;
-  let column = pos.column;
-  let line = doc.session.getLine(row);
-  if (column < line.length) {
-    return movePositionRight(doc, {
-      "row": row,
-      "column": column + 1
-    }, n - 1);
-  } else if (row < doc.session.getLength()) {
-    return movePositionRight(doc, {
-      "row": row + 1,
-      "column": 0
-    }, n - 1);
-  } else {
-    return pos;
-  }
-}
-
-function minPos(pos1: AceAjax.Position, pos2: AceAjax.Position): AceAjax.Position {
+export function minPos(pos1: AceAjax.Position, pos2: AceAjax.Position): AceAjax.Position {
   if (pos1.row < pos2.row) {
     return pos1;
   }
@@ -668,8 +645,8 @@ function capitalize(s: string): string {
 
 let CoqMode = ace.require("peacoq-js/mode-coq").Mode;
 
-function setupEditor(e: AceAjax.Editor) {
-  e.setTheme(Theme.theme.aceTheme);
+export function setupEditor(e: AceAjax.Editor) {
+  e.setTheme(theme.aceTheme);
   //let OCamlMode = ace.require("ace/mode/ocaml").Mode;
 
   //ace.require("ace/keyboard/textarea");
@@ -690,9 +667,9 @@ There are two ways to go:
   response, unchanged, this might need a type case
 */
 
-function processEditsReactive(
+export function processEditsReactive(
   edit: Rx.Observable<Edit>
-): Rx.Observable<CoqtopInput> {
+): Rx.Observable<CoqtopInput.CoqtopInput> {
   return edit
     .map((e) => new CoqtopInput.AddPrime(e.query, just(e)))
     .share();
