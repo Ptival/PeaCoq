@@ -1,3 +1,4 @@
+import PrimToken from "./prim-token";
 import Reference from "./reference";
 
 export default CasesPatternExpr;
@@ -6,7 +7,7 @@ export abstract class CasesPatternExpr { }
 
 // TODO CPatAlias
 
-class CPatCstr extends CasesPatternExpr {
+export class CPatCstr extends CasesPatternExpr {
   location: Location;
   reference: Reference;
   cases1: CasesPatternExpr[];
@@ -22,7 +23,7 @@ class CPatCstr extends CasesPatternExpr {
   }
 }
 
-class CPatAtom extends CasesPatternExpr {
+export class CPatAtom extends CasesPatternExpr {
   location: Location;
   reference: Maybe<Reference>;
   constructor(l: Location, r: Maybe<Reference>) {
@@ -36,7 +37,7 @@ class CPatAtom extends CasesPatternExpr {
 // TODO CPatOr
 // TODO CPatNotation
 
-class CPatPrim extends CasesPatternExpr {
+export class CPatPrim extends CasesPatternExpr {
   location: Location;
   token: PrimToken;
   constructor(l: Location, t: PrimToken) {
@@ -48,7 +49,7 @@ class CPatPrim extends CasesPatternExpr {
 
 // TODO CPatRecord
 
-class CPatDelimiters extends CasesPatternExpr {
+export class CPatDelimiters extends CasesPatternExpr {
   location: Location;
   string: string;
   cases: CasesPatternExpr;

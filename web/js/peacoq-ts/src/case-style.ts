@@ -2,12 +2,12 @@ export default CaseStyle;
 
 export abstract class CaseStyle { }
 
-class LetStyle extends CaseStyle { }
+export class LetStyle extends CaseStyle { }
 
-class IfStyle extends CaseStyle { }
+export class IfStyle extends CaseStyle { }
 
-class LetPatternStyle extends CaseStyle { }
+export class LetPatternStyle extends CaseStyle { }
 
-class MatchStyle extends CaseStyle { }
+export class MatchStyle extends CaseStyle { }
 
-class RegularStyle extends CaseStyle { }
+export class RegularStyle extends CaseStyle { }

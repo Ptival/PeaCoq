@@ -4,9 +4,9 @@ export default Reference;
 
 export abstract class Reference { }
 
-type QualId =[Array<string>, string];
+export type QualId =[Array<string>, string];
 
-class Qualid extends Reference {
+export class Qualid extends Reference {
   lQualid: Located<QualId>;
   constructor(q: Located<QualId>) {
     super();
@@ -14,7 +14,7 @@ class Qualid extends Reference {
   }
 }
 
-class Ident extends Reference {
+export class Ident extends Reference {
   id: Located<string>;
   constructor(id: Located<string>) {
     super();

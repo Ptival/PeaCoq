@@ -2,7 +2,7 @@ export default StrToken;
 
 export abstract class StrToken { }
 
-class StrDef extends StrToken {
+export class StrDef extends StrToken {
   string: string;
   constructor(s: string) {
     super();
@@ -10,7 +10,7 @@ class StrDef extends StrToken {
   }
 }
 
-class StrLen extends StrToken {
+export class StrLen extends StrToken {
   string: string;
   length: number;
   constructor(s: string, l: number) {

@@ -4,7 +4,7 @@ export default BinderKind;
 
 export abstract class BinderKind { }
 
-class Default extends BinderKind {
+export class Default extends BinderKind {
   kind: BindingKind;
   constructor(bk: BindingKind) {
     super();

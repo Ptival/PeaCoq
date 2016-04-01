@@ -2,7 +2,7 @@ export default PrimToken;
 
 export abstract class PrimToken { }
 
-class Numeral extends PrimToken {
+export class Numeral extends PrimToken {
   numeral: number;
   constructor(n: number) {
     super();
@@ -10,7 +10,7 @@ class Numeral extends PrimToken {
   }
 }
 
-class PrimTokenString extends PrimToken {
+export class PrimTokenString extends PrimToken {
   string: string;
   constructor(s: string) {
     super();

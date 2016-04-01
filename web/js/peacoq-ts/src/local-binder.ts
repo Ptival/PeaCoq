@@ -7,7 +7,7 @@ export default LocalBinder;
 
 export abstract class LocalBinder { }
 
-class LocalRawDef extends LocalBinder {
+export class LocalRawDef extends LocalBinder {
   binderName: Located<NameBase>;
   binderType: ConstrExpr;
   constructor(n: Located<NameBase>, t: ConstrExpr) {
@@ -17,7 +17,7 @@ class LocalRawDef extends LocalBinder {
   }
 }
 
-class LocalRawAssum extends LocalBinder {
+export class LocalRawAssum extends LocalBinder {
   names: Array<Located<NameBase>>;
   binderKind: BinderKind;
   term: ConstrExpr;
@@ -27,4 +27,19 @@ class LocalRawAssum extends LocalBinder {
     this.binderKind = bk;
     this.term = t;
   }
+}
+
+function beginOfBinder(b: LocalBinder): number {
+  if (b instanceof LocalRawDef) {
+    return b.binderName[0][0];
+  }
+  if (b instanceof LocalRawAssum) {
+    return b.names[0][0][0];
+  }
+  throw MatchFailure("beginOfBinder", b);
+}
+
+export function beginOfBinders(bl) {
+  if (bl.length === 0) { return 0; }
+  else { return beginOfBinder(bl[0]); }
 }
