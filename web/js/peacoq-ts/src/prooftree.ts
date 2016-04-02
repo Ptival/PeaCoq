@@ -1,11 +1,9 @@
-import GoalNode from "./goalnode";
-import FakeNode from "./fakenode";
+import { GoalNode } from "./goalnode";
+import { FakeNode } from "./fakenode";
 import { byLinkId, byNodeId, centerLeft, centerRight, centerLeft0, centerRight0, nodeX, nodeY, ProofTreeLink, swapXY, TacticGroup, WorklistItem } from "./prooftree-utils";
-import ProofTreeNode, { commonAncestor } from "./prooftreenode";
-import TacticGroupNode from "./tacticgroupnode";
-import Strictly from "./strictly";
-
-export default ProofTree;
+import { commonAncestor, ProofTreeNode } from "./prooftreenode";
+import { TacticGroupNode } from "./tacticgroupnode";
+import { Strictly } from "./strictly";
 
 /* Globals to be configured */
 let animationDuration = 2000;

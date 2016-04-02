@@ -1,8 +1,6 @@
-import GoalNode from "./goalnode";
-import ProofTree from "./prooftree";
-import ProofTreeNode from "./prooftreenode";
-
-export default FakeNode
+import { GoalNode } from "./goalnode";
+import { ProofTree } from "./prooftree";
+import { ProofTreeNode } from "./prooftreenode";
 
 export class FakeNode extends ProofTreeNode {
   constructor(p: ProofTree, parent: ProofTreeNode) {

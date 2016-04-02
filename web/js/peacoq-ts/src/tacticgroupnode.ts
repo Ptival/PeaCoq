@@ -1,10 +1,8 @@
-import GoalNode from "./goalnode";
-import ProofTree from "./prooftree";
-import ProofTreeNode from "./prooftreenode";
-import Strictly from "./strictly";
-import Tactic from "./tactic";
-
-export default TacticGroupNode;
+import { GoalNode } from "./goalnode";
+import { ProofTree } from "./prooftree";
+import { ProofTreeNode } from "./prooftreenode";
+import { Strictly } from "./strictly";
+import { Tactic } from "./tactic";
 
 let userTacticsGroupName = "PeaCoq user tactics";
 

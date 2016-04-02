@@ -1,7 +1,5 @@
-import GoalNode from "./goalnode";
-import TacticGroupNode from "./tacticgroupnode";
-
-export default Tactic;
+import { GoalNode } from "./goalnode";
+import { TacticGroupNode } from "./tacticgroupnode";
 
 export class Tactic {
   //addReturn: AddReturn;

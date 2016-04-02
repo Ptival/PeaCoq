@@ -1,5 +1,13 @@
 let nbsp = "\u00A0";
 
+function unbsp(s: string): string {
+  return s.replace(/ /g, ' ');
+}
+
+function trimSpacesAround(s: string): string {
+  return s.replace(/^\s+|\s+$/g, '');
+}
+
 function replaceNBSPWithSpaces(s: string): string {
   return s.replace(/\u00A0/g, " ");
 }

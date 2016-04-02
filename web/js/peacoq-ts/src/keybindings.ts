@@ -1,4 +1,4 @@
-import { coqDocument } from "./setup";
+import { coqDocument } from "./coq85";
 
 /*
 I can't seem to make Ace properly bubble key events, or when they bubble,

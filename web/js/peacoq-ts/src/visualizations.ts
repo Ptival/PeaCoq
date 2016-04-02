@@ -1,58 +1,10 @@
 import { PpCmdBox, PpCmdPrint, PpCmdToken } from "./ppcmd-token";
 import { PpCmd, PpCmds, str } from "./coq-pretty-printer";
+import * as Pattern from "./pattern";
 import { StrDef } from "./str-token";
+import { findPpCmdSuchThat, matchPattern, ppCmdIsString, ppCmdIsStringSuchThat, replacePpCmd, replaceToken } from "./visualizations-utils";
 
-function findPpCmdSuchThat(
-  l: PpCmds,
-  predicate: (_1: PpCmd) => boolean
-): number {
-  return _.findIndex(l, predicate);
-}
-
-function ppCmdIsStringSuchThat(
-  predicate: (_1: string) => boolean
-): (_1: PpCmd) => boolean {
-  return (token: PpCmd) => {
-    return (
-      token instanceof PpCmdPrint
-      && token.token instanceof StrDef
-      && predicate(token.token.string)
-    );
-  }
-}
-
-function ppCmdIsString(s: string): (_1: PpCmd) => boolean {
-  return ppCmdIsStringSuchThat((s1) => s === s1.trim());
-}
-
-function replacePpCmd(
-  match: (_1: PpCmd) => boolean,
-  replace: (_1: PpCmd) => PpCmds,
-  l: PpCmds
-): PpCmds {
-  let pos = findPpCmdSuchThat(l, match);
-  if (pos < 0) { return l; }
-  return [].concat(
-    l.slice(0, pos),
-    replace(l[pos]),
-    l.slice(pos + 1)
-  );
-}
-
-/*
-In practice the tokens come with their spacing incorporated, which is
-sometimes \u00A0<token> or sometimes <token>\u00A0, so we perform the
-replacement with a regexp to preserve the \u00A0.
-*/
-function replaceToken(s1: string, s2: string, l: PpCmds): PpCmds {
-  return replacePpCmd(
-    ppCmdIsString(s1),
-    (t: PpCmdPrint<StrDef>) => {
-      return str(t.token.string.replace(s1, s2));
-    },
-    l
-  );
-}
+let any = new Pattern.Anything();
 
 function patternScopeDelimiters(l: PpCmds): PpCmds {
   return replacePpCmd(
@@ -102,26 +54,6 @@ function patternZ(l: PpCmds): PpCmds {
   return replaceToken("Z", "\u2124", l);
 }
 
-let patterns: Array<(_1: PpCmds) => PpCmds> = [
-  patternPow,
-  patternForall,
-  patternExists,
-  patternArrow,
-  patternMult,
-  patternScopeDelimiters,
-  patternAnd,
-  patternOr,
-  patternEquiv,
-  patternDivides,
-  patternAbs,
-  patternZSquare,
-  patternZOfNat,
-  patternSumLambda,
-  patternSum, // keep this one after patternSumLambda as it is less general
-  patternNat,
-  patternZ,
-];
-
 function patternAbs(l: PpCmds): PpCmds {
   return matchPattern(
     l,
@@ -162,17 +94,6 @@ function patternPow(l: PpCmds): PpCmds {
     );
   }
   return l;
-}
-
-function matchPattern(
-  l: PpCmds,
-  pat: Pattern[],
-  h: (_1: any) => PpCmds
-): PpCmds {
-  return ppCmdsMatch(pat, l).caseOf({
-    nothing: () => l,
-    just: (m) => h(m),
-  });
 }
 
 // for "divides": \u2223
@@ -217,120 +138,14 @@ function patternZSquare(l: PpCmds): PpCmds {
 
 let anything: any = undefined;
 
-class Pattern { }
-
-class Anything extends Pattern { }
-
-class ArrayPattern extends Pattern {
-  array: Pattern[];
-  constructor(a: Pattern[]) { super(); this.array = a; }
+function box(contents: Pattern.Pattern[]): Pattern.Pattern {
+  return new Pattern.Constructor(PpCmdBox, { contents: new Pattern.ArrayPattern(contents) });
 }
 
-class BinderPattern extends Pattern {
-  binder: string;
-  constructor(name: string) { super(); this.binder = name; }
-}
-
-class Constructor extends Pattern {
-  name: Function;
-  fields: Object;
-  constructor(name: Function, fields: Object) {
-    super();
-    this.name = name;
-    this.fields = fields;
-  }
-}
-
-class StringPattern extends Pattern {
-  string: string;
-  constructor(s: string) { super(); this.string = s; }
-}
-
-function box(contents: Pattern[]): Pattern {
-  return new Constructor(PpCmdBox, { contents: new ArrayPattern(contents) });
-}
-
-function tok(s: string): Pattern {
-  return new Constructor(PpCmdPrint, {
-    token: new Constructor(StrDef, { string: new StringPattern(s) })
+function tok(s: string): Pattern.Pattern {
+  return new Pattern.Constructor(PpCmdPrint, {
+    token: new Pattern.Constructor(StrDef, { string: new Pattern.StringPattern(s) })
   });
-}
-
-let any: Pattern = new Anything();
-
-function ppCmdsMatchGen(p: Pattern[], l: PpCmds, o: Object): Maybe<Object> {
-  if (p.length !== l.length) { return nothing(); }
-  let zip = _.zip(p, l);
-  for (let index in zip) {
-    let [pat, cmd] = zip[index];
-    let shortCircuit = ppCmdMatchGen(pat, cmd, o).caseOf({
-        nothing: () => true,
-        just: (newo) => { o = newo; return false; }
-    });
-    if (shortCircuit) { return nothing(); }
-  }
-  return just(o);
-}
-
-function reduceMaybe<IN, ACC>(
-  a: Array<IN>,
-  f: (_1: ACC, _2: IN) => Maybe<ACC>,
-  acc: ACC
-): Maybe<ACC> {
-  return _.reduce(
-    a,
-    (acc: Maybe<ACC>, elt: IN) => {
-      return acc.caseOf({
-        nothing: () => acc,
-        just: (acc) => f (acc, elt),
-      });
-    },
-    just(acc)
-  );
-}
-
-function ppCmdMatchGen(pat: Pattern, p: PpCmd | any, o: Object): Maybe<Object> {
-  if (pat instanceof Anything) {
-    return just(o);
-  } else if (pat instanceof ArrayPattern) {
-    if (!(p instanceof Array)) { throw MatchFailure("ppCmdMatchGen > ArrayPattern", p); }
-    return ppCmdsMatchGen(pat.array, p, o);
-  } else if (pat instanceof BinderPattern) {
-    let binder = pat.binder;
-    o[binder] = p;
-    return just(o);
-  } else if (pat instanceof Constructor) {
-    if (p instanceof pat.name) {
-      return reduceMaybe(
-        Object.keys(pat.fields),
-        (acc, field) => {
-          if (field in p) {
-            return ppCmdMatchGen((<Constructor>pat).fields[field], p[field], acc);
-          } else {
-            return nothing();
-          }
-        },
-        o
-      );
-    } else {
-      return nothing();
-    }
-  } else if (pat instanceof StringPattern) {
-    if (!(typeof p === "string")) {
-      throw MatchFailure("ppCmdMatchGen > StringPattern", p);
-    }
-    if (pat.string === p) {
-      return just(o);
-    } else {
-      return nothing();
-    }
-  } else {
-    throw MatchFailure("patternMatch > rec", pat);
-  }
-}
-
-function ppCmdsMatch(p: Pattern[], l: PpCmds): Maybe<Object> {
-  return ppCmdsMatchGen(p, l, {});
 }
 
 function patternZOfNat(l: PpCmds): PpCmds {
@@ -380,21 +195,21 @@ function patternSumLambda(l: PpCmds): PpCmds {
             any,
             any,
             box([
-              box([new BinderPattern("binder")]), // Binder binder
+              box([new Pattern.BinderPattern("binder")]), // Binder binder
               any, //tok("\u00A0:"),
               any,
-              box([new BinderPattern("type")]) // Binder type
+              box([new Pattern.BinderPattern("type")]) // Binder type
             ])
           ]),
           any,
           any,
           any,
-          new BinderPattern("body") // Binder body
+          new Pattern.BinderPattern("body") // Binder body
         ])]),
         tok(")")
       ]),
       any,
-      new BinderPattern("upperBound")
+      new Pattern.BinderPattern("upperBound")
     ],
     (match) => {
       return [].concat(
@@ -426,9 +241,9 @@ function patternSum(l: PpCmds): PpCmds {
     [
       box([box([any, tok("sum"), any])]),
       any,
-      new BinderPattern("summand"),
+      new Pattern.BinderPattern("summand"),
       any,
-      new BinderPattern("upperBound")
+      new Pattern.BinderPattern("upperBound")
     ],
     (match) => {
       return [].concat(
@@ -450,3 +265,23 @@ function patternSum(l: PpCmds): PpCmds {
     }
   );
 }
+
+export let patterns: Array<(_1: PpCmds) => PpCmds> = [
+  patternPow,
+  patternForall,
+  patternExists,
+  patternArrow,
+  patternMult,
+  patternScopeDelimiters,
+  patternAnd,
+  patternOr,
+  patternEquiv,
+  patternDivides,
+  patternAbs,
+  patternZSquare,
+  patternZOfNat,
+  patternSumLambda,
+  patternSum, // keep this one after patternSumLambda as it is less general
+  patternNat,
+  patternZ,
+];

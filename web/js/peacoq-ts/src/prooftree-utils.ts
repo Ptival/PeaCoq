@@ -1,7 +1,7 @@
-import GoalNode from "./goalnode";
-import ProofTree, { proofTrees } from "./prooftree";
-import ProofTreeNode from "./prooftreenode";
-import Tactic from "./tactic";
+import { GoalNode } from "./goalnode";
+import { ProofTree, proofTrees } from "./prooftree";
+import { ProofTreeNode } from "./prooftreenode";
+import { Tactic } from "./tactic";
 
 /*
   Stuff that is somewhat general but mostly useful for the proof tree.

@@ -1,8 +1,19 @@
-import * as Coq85 from "./coq85";
-import { allEditorTabs } from "./setup";
-import Tab from "./tab";
+import { setupEditor } from "./editor";
+import { Tab } from "./tab";
 
-export default EditorTab;
+export let foreground: EditorTab;
+export let background: EditorTab;
+export let shelved: EditorTab;
+export let givenUp: EditorTab;
+export let notices: EditorTab
+export let warnings: EditorTab;
+export let errors: EditorTab;
+export let infos: EditorTab;
+export let debug: EditorTab;
+export let failures: EditorTab;
+export let feedback: EditorTab;
+export let jobs: EditorTab;
+export let allEditorTabs: EditorTab[] = [];
 
 export class EditorTab extends Tab {
   private editor: AceAjax.Editor;
@@ -14,7 +25,7 @@ export class EditorTab extends Tab {
 
     (<W2UI.W2Layout>w2ui[layout]).content(panel, self.div[0]);
     this.editor = ace.edit(id + "-content");
-    Coq85.setupEditor(this.editor);
+    setupEditor(this.editor);
 
     this.onClickHandlers.push(function() {
       self.editor.resize();

@@ -1,12 +1,10 @@
-import CoqDocument from "./coq85";
+import { CoqDocument } from "./coq85";
 import * as Coq85 from "./coq85";
-import EditMarker from "./edit-marker";
+import { EditMarker } from "./edit-marker";
 import * as EditStage from "./edit-stage";
-import Strictly from "./strictly";
+import { Strictly } from "./strictly";
 
-export default Edit;
-
-class Edit {
+export class Edit {
   document: CoqDocument;
   previousEdit: Maybe<Edit>;
   query: string;

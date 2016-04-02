@@ -1,4 +1,4 @@
-export default Tab;
+export let pretty: Tab;
 
 export class Tab {
   caption: string;

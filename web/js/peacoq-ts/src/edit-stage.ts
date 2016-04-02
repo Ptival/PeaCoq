@@ -1,8 +1,8 @@
-import * as Coqtop85 from "./coqtop85";
-import Edit from "./edit";
-import EditMarker from "./edit-marker";
-
-export default EditStage;
+import { PeaCoqContext } from "./coqtop85";
+import { Edit } from "./edit";
+import { EditMarker } from "./edit-marker";
+import { Goals } from "./goals";
+import { Status } from "./status";
 
 export abstract class EditStage {
   edit: Edit;
@@ -44,11 +44,11 @@ let freshEditId = (function() {
 })();
 
 export class Processed extends EditStage {
-  context: Coqtop85.PeaCoqContext;
+  context: PeaCoqContext;
   editId: number;
-  goals: Coqtop85.Goals;
+  goals: Goals;
   stateId: number;
-  status: Coqtop85.Status;
+  status: Status;
 
   constructor(e: BeingProcessed) {//, s: Status, gs: Goals, c: PeaCoqContext) {
     super(e.edit, e.nextStageMarker());

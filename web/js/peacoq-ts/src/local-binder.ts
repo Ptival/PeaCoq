@@ -1,5 +1,5 @@
 import BinderKind from "./binder-kind";
-import ConstrExpr from "./coq-constr-expr";
+declare class ConstrExpr {};
 import { Located } from "./coq-definitions";
 import NameBase from "./name-base";
 

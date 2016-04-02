@@ -1,6 +1,4 @@
-import CoqDocument from "./coq85";
-
-export default EditMarker;
+import { CoqDocument } from "./coq85";
 
 export class EditMarker {
   document: CoqDocument;

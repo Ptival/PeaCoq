@@ -1,18 +1,17 @@
 import * as Coqtop85 from "./coqtop85";
-import PeaCoqGoal from "./goal";
-import ProofTree from "./prooftree";
-import ProofTreeNode from "./prooftreenode";
-import Strictly from "./strictly";
-import Tactic from "./tactic";
-import TacticGroupNode from "./tacticgroupnode";
-
-export default GoalNode;
+import { PeaCoqGoal } from "./peacoq-goal";
+import { Goals } from "./goals";
+import { ProofTree } from "./prooftree";
+import { ProofTreeNode } from "./prooftreenode";
+import { Strictly } from "./strictly";
+import { Tactic } from "./tactic";
+import { TacticGroupNode } from "./tacticgroupnode";
 
 export class GoalNode extends ProofTreeNode {
   // DO NOT USE "children" AS D3 WILL OVERWRITE
   closedBraces: number;
   goal: PeaCoqGoal;
-  goals: Coqtop85.Goals;
+  goals: Goals;
   html: JQuery;
   openBraces: number;
   // DO NOT USE "parent" AS D3 WILL OVERWRITE
@@ -24,7 +23,7 @@ export class GoalNode extends ProofTreeNode {
   constructor(
     proofTree: ProofTree,
     parent: Maybe<TacticGroupNode>,
-    goals: Coqtop85.Goals,
+    goals: Goals,
     goal: PeaCoqGoal
   ) {
     super(proofTree, parent);

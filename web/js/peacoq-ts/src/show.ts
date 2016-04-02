@@ -157,7 +157,7 @@
 // }
 //
 // function vernac(s) { return '<span class="vernac">' + s + '</span>'; }
-function syntax(s) { return '<span class="syntax">' + s + '</span>'; }
+
 // function ident(s) { return '<span class="identifier">' + s + '</span>'; }
 // function term(s) { return '<span class="term">' + s + '</span>'; }
 //

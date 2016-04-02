@@ -10,7 +10,8 @@ requirejs.config({
     'jquery.hotkeys': { deps: ['jquery'] },
     'MathJax-master/MathJax': { deps: ['jquery'] },
     'w2ui/w2ui': { deps: ['jquery'] },
-  }
+  },
+  waitSeconds: 0,
 });
 
 // Start the main app logic.
@@ -41,6 +42,6 @@ requirejs([
       'peacoq-js/highlight-coq',
       'peacoq-js/mode-coq',
     ], function() {
-      require(["peacoq-ts/setup"]);
+      require(["peacoq-ts/prooftreenode"]);
     });
   });

@@ -1,15 +1,22 @@
 import ConstrExpr from "./coq-constr-expr";
-import { htmlPrintPpCmds, htmlPrintPpCmdsDiff, prConstrExpr } from "./coq-pretty-printer";
-import { Feedback, Goals, Message, PeaCoqContext, PeaCoqHyp, Status, Warning } from "./coqtop85";
+import { prConstrExpr } from "./coq-pretty-printer";
+import { PeaCoqContext, PeaCoqHyp } from "./coqtop85";
 import * as CoqtopInput from "./coqtop-input";
-import Edit from "./edit";
+import { Edit } from "./edit";
 import * as EditStage from "./edit-stage";
-import EditorTab from "./editor-tab";
-import { coqDocument, pretty, foreground, background, shelved, givenUp, notices, warnings, errors, infos, feedback, failures } from "./setup";
-import Strictly from "./strictly";
+import { EditorTab } from "./editor-tab";
+import { foreground, background, shelved, givenUp, notices, warnings, errors, infos, feedback, failures } from "./editor-tab";
+import { Feedback } from "./feedback";
+import { Goals } from "./goals";
+import { Message } from "./message";
+import { Warning } from "./message-level";
+import { Status } from "./status";
+import { Strictly } from "./strictly";
+import { pretty } from "./tab";
 import { errorUnderlineClass, theme } from "./theme";
+import { htmlPrintPpCmds, htmlPrintPpCmdsDiff } from "./visualization-printers";
 
-export default CoqDocument;
+export let coqDocument: CoqDocument;
 
 // let AceAnchor = ace.require("ace/anchor").Anchor;
 // let AceRange = ace.require("ace/range").Range;
@@ -345,8 +352,8 @@ throws the error again)
 //   return doc.processEdits();
 // }
 
-type EditHandler = (q: string, sid: number, ls: Status, s: Status, g: Goals, c: PeaCoqContext) => void;
-let editHandlers: EditHandler[] = [];
+// type EditHandler = (q: string, sid: number, ls: Status, s: Status, g: Goals, c: PeaCoqContext) => void;
+// let editHandlers: EditHandler[] = [];
 
 // TODO: there is a better way to rewind with the new STM machinery!
 // function rewindToPosition(
@@ -645,21 +652,6 @@ function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-let CoqMode = ace.require("peacoq-js/mode-coq").Mode;
-
-export function setupEditor(e: AceAjax.Editor) {
-  e.setTheme(theme.aceTheme);
-  //let OCamlMode = ace.require("ace/mode/ocaml").Mode;
-
-  //ace.require("ace/keyboard/textarea");
-  e.session.setMode(new CoqMode());
-  //e.getSession().setMode("coq");
-  e.setOption("tabSize", 2);
-  e.setHighlightActiveLine(false);
-  e.session.setUseSoftTabs(true);
-  e.$blockScrolling = Infinity; // pestering warning
-
-}
 /*
 I guess I need to know which outputs correspond to which inputs.
 There are two ways to go:

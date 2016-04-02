@@ -1,5 +1,8 @@
 import * as CoqtopInput from "./coqtop-input";
-import { AddReturn, Feedback, Message, ValueFail } from "./coqtop85"
+import { AddReturn } from "./coqtop85"
+import { Feedback } from "./feedback";
+import { Message } from "./message";
+import { ValueFail } from "./value-fail";
 
 let statusPeriod = 2500; // milliseconds
 

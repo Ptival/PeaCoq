@@ -1,6 +1,38 @@
 export default FeedbackContent;
 
-export abstract class FeedbackContent { }
+export abstract class FeedbackContent {
+  static create(f: { tag: string; contents: Object }) {
+    switch (f.tag) {
+      case "AddedAxiom":
+        return new AddedAxiom();
+      case "Custom":
+        console.log("TODO: FeedbackContent for " + f.tag, f);
+        break;
+      case "ErrorMsg":
+        return new ErrorMsg(f.contents);
+      case "FileDependency":
+        return new FileDependency(f.contents);
+      case "FileLoaded":
+        return new FileLoaded(f.contents);
+      case "GlobDef":
+      case "GlobRef":
+      case "Goals":
+      case "Message":
+        console.log("TODO: FeedbackContent for " + f.tag, f);
+        break;
+      case "Processed":
+        return new Processed();
+      case "ProcessingIn":
+        return new ProcessingIn(f.contents);
+      case "WorkerStatus":
+        console.log("TODO: FeedbackContent for " + f.tag, f);
+        break;
+      // other tags don't need fields
+      default:
+        throw ("Unknown FeedbackContent tag: " + f.tag);
+    }
+  }
+}
 
 export class AddedAxiom extends FeedbackContent { }
 
@@ -51,38 +83,5 @@ export class ProcessingIn extends FeedbackContent {
   }
   toString() {
     return "ProcessingIn(" + this.s + ")";
-  }
-}
-
-export function create(f) {
-  this.tag = f.tag;
-  switch (this.tag) {
-    case "AddedAxiom":
-      return new AddedAxiom();
-    case "Custom":
-      console.log("TODO: FeedbackContent for " + this.tag, f);
-      break;
-    case "ErrorMsg":
-      return new ErrorMsg(f.contents);
-    case "FileDependency":
-      return new FileDependency(f.contents);
-    case "FileLoaded":
-      return new FileLoaded(f.contents);
-    case "GlobDef":
-    case "GlobRef":
-    case "Goals":
-    case "Message":
-      console.log("TODO: FeedbackContent for " + this.tag, f);
-      break;
-    case "Processed":
-      return new Processed();
-    case "ProcessingIn":
-      return new ProcessingIn(f.contents);
-    case "WorkerStatus":
-      console.log("TODO: FeedbackContent for " + this.tag, f);
-      break;
-    // other tags don't need fields
-    default:
-      throw ("Unknown FeedbackContent tag: " + this.tag);
   }
 }

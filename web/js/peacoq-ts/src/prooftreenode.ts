@@ -1,8 +1,6 @@
-import GoalNode from "./goalnode";
-import ProofTree from "./prooftree";
+declare class GoalNode { };
+import { ProofTree } from "./prooftree";
 import { nodeX, nodeY } from "./prooftree-utils";
-
-export default ProofTreeNode;
 
 export abstract class ProofTreeNode {
   private body: HTMLElement;

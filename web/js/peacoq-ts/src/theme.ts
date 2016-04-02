@@ -1,5 +1,7 @@
 // TODO: I don't like this, theme should broadcast and setup should resize
-import { allEditorTabs, coqDocument, onResize } from "./setup";
+import { coqDocument } from "./coq85";
+import { allEditorTabs } from "./editor-tab";
+import { onResize } from "./setup";
 
 let cssPath = "js/lib/w2ui/";
 export let errorUnderlineClass = "theme_error_underline";

@@ -1,4 +1,4 @@
-import { coqDocument } from "./setup";
+import { coqDocument } from "./coq85";
 import { switchToBright, switchToDark } from "./theme";
 
 let filePickerId = "filepicker";
