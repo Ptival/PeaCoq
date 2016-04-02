@@ -1,22 +1,20 @@
 import ConstrExpr from "./coq-constr-expr";
 import { prConstrExpr } from "./coq-pretty-printer";
-import { PeaCoqContext, PeaCoqHyp } from "./coqtop85";
+import { PeaCoqHyp } from "./coqtop85";
 import * as CoqtopInput from "./coqtop-input";
 import { Edit } from "./edit";
 import * as EditStage from "./edit-stage";
+import { setupEditor } from "./editor";
 import { EditorTab } from "./editor-tab";
-import { foreground, background, shelved, givenUp, notices, warnings, errors, infos, feedback, failures } from "./editor-tab";
 import { Feedback } from "./feedback";
+import * as Global from "./global-variables";
 import { Goals } from "./goals";
 import { Message } from "./message";
 import { Warning } from "./message-level";
 import { Status } from "./status";
 import { Strictly } from "./strictly";
-import { pretty } from "./tab";
 import { errorUnderlineClass, theme } from "./theme";
 import { htmlPrintPpCmds, htmlPrintPpCmdsDiff } from "./visualization-printers";
-
-export let coqDocument: CoqDocument;
 
 // let AceAnchor = ace.require("ace/anchor").Anchor;
 // let AceRange = ace.require("ace/range").Range;
@@ -161,7 +159,7 @@ export class CoqDocument {
   // }
 
   markError(range: AceAjax.Range): void {
-    let markerId = coqDocument.session.addMarker(range, errorUnderlineClass, "text", false);
+    let markerId = Global.coqDocument.session.addMarker(range, errorUnderlineClass, "text", false);
     this.moveCursorToPositionAndCenter(range.start);
     let markerChangedStream = this.changeStream
       .do((e) => console.log(range, AceAjax.Range.fromPoints(e.start, e.end)))
@@ -169,7 +167,7 @@ export class CoqDocument {
       .take(1);
     markerChangedStream.subscribe(() => {
       console.log("STILL SUBSCRIBED!");
-      coqDocument.session.removeMarker(markerId);
+      Global.coqDocument.session.removeMarker(markerId);
     });
   }
 
@@ -224,9 +222,9 @@ export class CoqDocument {
 let maxLength = 2000;
 
 function onFeedback(f: Feedback) {
-  let current = feedback.getValue().substring(0, maxLength);
+  let current = Global.feedback.getValue().substring(0, maxLength);
   let now = new Date();
-  feedback.setValue(
+  Global.feedback.setValue(
     "[" + now.toString().substring(16, 24) + "] " + f.toString() +
     "\n" + current,
     false
@@ -279,17 +277,17 @@ let unlockedAnchor;
 let unlockedMarker;
 
 function clearCoqtopTabs(clearFailures: boolean): void {
-  let tabsToClear = [foreground, background, shelved, givenUp, notices, warnings, errors, infos];
-  if (clearFailures) { tabsToClear.push(failures); }
+  let tabsToClear = [Global.foreground, Global.background, Global.shelved, Global.givenUp, Global.notices, Global.warnings, Global.errors, Global.infos];
+  if (clearFailures) { tabsToClear.push(Global.failures); }
   _(tabsToClear)
     .each((et: EditorTab) => {
       et.clearValue();
     });
-  pretty.div.html("");
+  Global.pretty.div.html("");
 }
 
 function reportFailure(f: string) { //, switchTab: boolean) {
-  failures.setValue(f, true);
+  Global.failures.setValue(f, true);
   //yif (switchTab) { failures.click(); }
 }
 
@@ -301,7 +299,7 @@ function getPreviousEditContext(e: Edit): Maybe<PeaCoqContext> {
 }
 
 export function onNextReactive(
-  doc: CoqDocument, next: Rx.Observable<{}>
+  doc: ICoqDocument, next: Rx.Observable<{}>
 ): Rx.Observable<Edit> {
   return next
     .map(() => {
@@ -319,7 +317,7 @@ export function onNextReactive(
       let nextIndex = CoqStringUtils.next(unprocessedText);
       let newStopPos = doc.movePositionRight(lastEditStopPos, nextIndex);
       let query = unprocessedText.substring(0, nextIndex);
-      let e = new Edit(coqDocument, lastEditStopPos, newStopPos, query);
+      let e = new Edit(Global.coqDocument, lastEditStopPos, newStopPos, query);
       return e;
     })
     .do((e) => { doc.pushEdit(e); doc.moveCursorToPositionAndCenter(e.getStopPosition()); })

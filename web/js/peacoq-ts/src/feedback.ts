@@ -1,4 +1,4 @@
-import FeedbackContent from "./feedback-content";
+import { FeedbackContent } from "./feedback-content";
 
 export class Feedback {
   // TODO: give this a less lame type

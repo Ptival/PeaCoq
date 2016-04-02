@@ -1,13 +1,13 @@
 import { CoqDocument } from "./coq85";
 
 export class EditMarker {
-  document: CoqDocument;
+  document: ICoqDocument;
   markerId: number;
   markerRange: AceAjax.Range;
   startPos: AceAjax.Position;
   stopPos: AceAjax.Position;
 
-  constructor(doc: CoqDocument, start: AceAjax.Position, stop: AceAjax.Position) {
+  constructor(doc: ICoqDocument, start: AceAjax.Position, stop: AceAjax.Position) {
     this.document = doc;
     this.startPos = start;
     this.stopPos = stop;

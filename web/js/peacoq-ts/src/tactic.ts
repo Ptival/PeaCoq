@@ -1,14 +1,11 @@
-import { GoalNode } from "./goalnode";
-import { TacticGroupNode } from "./tacticgroupnode";
-
 export class Tactic {
   //addReturn: AddReturn;
   goalIndex: number;
-  goals: GoalNode[];
-  parentGroup: TacticGroupNode;
+  goals: IGoalNode[];
+  parentGroup: ITacticGroupNode;
   tactic: string;
 
-  constructor(tactic: string, parentGroup: TacticGroupNode, goals: GoalNode[]) {
+  constructor(tactic: string, parentGroup: ITacticGroupNode, goals: IGoalNode[]) {
     //this.addReturn = waiting.addReturn;
     this.goalIndex = 0;
     this.goals = goals;

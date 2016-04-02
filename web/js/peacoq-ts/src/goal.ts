@@ -1,4 +1,4 @@
-export class Goal {
+export class Goal implements IGoal {
   goalId: number;
   goalHyp: string[];
   goalCcl: string;

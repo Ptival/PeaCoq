@@ -1,33 +1,34 @@
 requirejs.config({
-  baseUrl: 'js/lib',
+  baseUrl: "js/lib",
   paths: {
-    ace: './ace',
-    "peacoq-js": '../peacoq-js',
-    "peacoq-ts": '../peacoq-ts',
+    ace: "./ace",
+    "peacoq-js": "../peacoq-js",
+    "peacoq-ts": "../peacoq-ts",
   },
   shim: {
-    'bootstrap': { deps: ['jquery'] },
-    'jquery.hotkeys': { deps: ['jquery'] },
-    'MathJax-master/MathJax': { deps: ['jquery'] },
-    'w2ui/w2ui': { deps: ['jquery'] },
+    "bootstrap": { deps: ["jquery"] },
+    "jquery.hotkeys": { deps: ["jquery"] },
+    "MathJax-master/MathJax": { deps: ["jquery"] },
+    "peacoq-ts": { deps: ["peacoq-ts/utils"] },
+    "w2ui/w2ui": { deps: ["jquery"] },
   },
   waitSeconds: 0,
 });
 
 // Start the main app logic.
 requirejs([
-    'ace/ace',
-    'd3',
-    'jquery',
-    //'jquery-ui/jquery-ui',
-    'jquery.hotkeys',
-    'bootstrap',
-    'jss',
-    'lodash',
-    'MathJax-master/MathJax',
-    'rx.all',
-    'tsmonad',
-    'w2ui/w2ui',
+    "ace/ace",
+    "d3",
+    "jquery",
+    //"jquery-ui/jquery-ui",
+    "jquery.hotkeys",
+    "bootstrap",
+    "jss",
+    "lodash",
+    "MathJax-master/MathJax",
+    "rx.all",
+    "tsmonad",
+    "w2ui/w2ui",
   ],
   function(ace, d3, $) {
     window.ace = ace;
@@ -38,10 +39,12 @@ requirejs([
     ];
     window.AceAjax = $.extend({}, ...aceRequires);
     requirejs([
-      'ace/mode/ocaml',
-      'peacoq-js/highlight-coq',
-      'peacoq-js/mode-coq',
+      "ace/mode/ocaml",
+      "peacoq-js/highlight-coq",
+      "peacoq-js/mode-coq",
+      "peacoq-ts/coq-string-utils",
+      "peacoq-ts/setup",
+      "peacoq-ts/utils",
     ], function() {
-      require(["peacoq-ts/prooftreenode"]);
     });
   });

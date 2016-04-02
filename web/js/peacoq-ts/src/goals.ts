@@ -1,11 +1,6 @@
 import { Goal } from "./goal";
 
-type GoalBeforeAfter = {
-  before: Goal[];
-  after: Goal[];
-};
-
-export class Goals {
+export class Goals implements IGoals {
   fgGoals: Goal[];
   bgGoals: GoalBeforeAfter[];
   shelvedGoals: Goal[];

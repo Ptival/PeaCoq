@@ -1,16 +1,13 @@
-import { GoalNode } from "./goalnode";
-import { ProofTree, proofTrees } from "./prooftree";
-import { ProofTreeNode } from "./prooftreenode";
-import { Tactic } from "./tactic";
+import * as Global from "./global-variables";
 
 /*
   Stuff that is somewhat general but mostly useful for the proof tree.
  */
 
-export function getActiveProofTree(): Maybe<ProofTree> {
+export function getActiveProofTree(): Maybe<IProofTree> {
   return (
-    proofTrees.length > 0
-      ? just(proofTrees[0])
+    Global.proofTrees.length > 0
+      ? just(Global.proofTrees[0])
       : nothing()
   );
 }
@@ -21,15 +18,6 @@ type Hypothesis = {
   hValue: string;
   hType: string;
 }
-
-export type ProofTreeLink = d3.svg.diagonal.Link<ProofTreeNode>;
-
-export type TacticGroup = {
-  name: string;
-  tactics: string[];
-}
-
-export type WorklistItem = () => Promise<TacticGroup[]>;
 
 /*
  * Returns a rect of the absolute position of [elmt] within the canvas. It needs
@@ -84,8 +72,6 @@ function makeGoalNodePre() {
     ;
 }
 
-type XY = { x: number; y: number; }
-
 export function swapXY(r: XY): XY {
   let [x, y] = [r.x, r.y];
   r.x = y;
@@ -93,25 +79,25 @@ export function swapXY(r: XY): XY {
   return r;
 }
 
-export function byNodeId(d: ProofTreeNode): string { return d.id; }
+export function byNodeId(d: IProofTreeNode): string { return d.id; }
 export function byLinkId(d: ProofTreeLink): string { return d.source.id + "," + d.target.id; }
 
 // transposition accessors
-export function nodeX(d: ProofTreeNode): number {
+export function nodeX(d: IProofTreeNode): number {
   if (d === undefined) {
     throw "nodeX";
   }
   return d.y;
 }
 
-export function nodeY(d: ProofTreeNode): number {
+export function nodeY(d: IProofTreeNode): number {
   if (d === undefined) {
     throw "nodeY";
   }
   return d.x;
 }
 
-function goalNodeUnicityRepr(node: GoalNode): string {
+function goalNodeUnicityRepr(node: IGoalNode): string {
   throw ("TOREDO");
   /*
   retur  JSON.stringify({
@@ -129,7 +115,7 @@ function goalNodeUnicityRepr(node: GoalNode): string {
   */
 }
 
-function tacticUnicityRepr(node: Tactic): string {
+function tacticUnicityRepr(node: ITactic): string {
   return JSON.stringify(
     _(node.goals)
       .map(goalNodeUnicityRepr)
@@ -141,28 +127,28 @@ let centerLeftOffset = +10;
 
 let centerRightOffset = -10;
 
-export function centerLeft0(d: ProofTreeNode): XY {
+export function centerLeft0(d: IProofTreeNode): XY {
   return {
     "x": d.getOriginalScaledX() + centerLeftOffset,
     "y": d.getOriginalScaledY() + d.getHeight() / 2,
   };
 }
 
-export function centerRight0(d: ProofTreeNode): XY {
+export function centerRight0(d: IProofTreeNode): XY {
   return {
     "x": d.getOriginalScaledX() + d.getWidth() + centerRightOffset,
     "y": d.getOriginalScaledY() + d.getHeight() / 2,
   };
 }
 
-export function centerLeft(d: ProofTreeNode): XY {
+export function centerLeft(d: IProofTreeNode): XY {
   return {
     "x": d.getScaledX() + centerLeftOffset,
     "y": d.getScaledY() + d.getHeight() / 2,
   };
 }
 
-export function centerRight(d: ProofTreeNode): XY {
+export function centerRight(d: IProofTreeNode): XY {
   return {
     "x": d.getScaledX() + d.getWidth() + centerRightOffset,
     "y": d.getScaledY() + d.getHeight() / 2,
@@ -241,7 +227,7 @@ lines return an object of lists. Disabled for now.
   creates an empty rectangle in the same column as [node], at vertical position
   [currentY]
 */
-function emptyRect(node: ProofTreeNode, currentY: number): Rectangle {
+function emptyRect(node: IProofTreeNode, currentY: number): Rectangle {
   let delta = 1; // how big to make the empty rectangle
   return $.extend(
     {
@@ -257,7 +243,7 @@ function emptyRect(node: ProofTreeNode, currentY: number): Rectangle {
   );
 }
 
-function emptyRect0(node: ProofTreeNode, currentY: number): Rectangle {
+function emptyRect0(node: IProofTreeNode, currentY: number): Rectangle {
   let delta = 1; // how big to make the empty rectangle
   return $.extend(
     {
@@ -271,4 +257,23 @@ function emptyRect0(node: ProofTreeNode, currentY: number): Rectangle {
       "height": 2 * delta,
     }
   );
+}
+
+export function commonAncestor(n1: IProofTreeNode, n2: IProofTreeNode): IProofTreeNode {
+  return n1.getParent().caseOf({
+    nothing: () => n1,
+    just: (n1p) => n2.getParent().caseOf({
+      nothing: () => n2,
+      just: (n2p) => {
+        if (n1.id === n2.id) { return n1; }
+        if (n1.depth < n2.depth) {
+          return commonAncestor(n1, n2p);
+        } else if (n1.depth > n2.depth) {
+          return commonAncestor(n1p, n2);
+        } else {
+          return commonAncestor(n1p, n2p);
+        }
+      }
+    })
+  });
 }

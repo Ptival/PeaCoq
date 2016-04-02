@@ -1,9 +1,7 @@
-import { GoalNode } from "./goalnode";
 import { FakeNode } from "./fakenode";
-import { byLinkId, byNodeId, centerLeft, centerRight, centerLeft0, centerRight0, nodeX, nodeY, ProofTreeLink, swapXY, TacticGroup, WorklistItem } from "./prooftree-utils";
-import { commonAncestor, ProofTreeNode } from "./prooftreenode";
+import { GoalNode } from "./goalnode";
+import * as ProofTreeUtils from "./prooftree-utils";
 import { TacticGroupNode } from "./tacticgroupnode";
-import { Strictly } from "./strictly";
 
 /* Globals to be configured */
 let animationDuration = 2000;
@@ -20,11 +18,11 @@ let verticalSpacingBetweenNodes = 10;
 /* 0 is the active tree, rest is stack of background ones*/
 export let proofTrees: ProofTree[] = [];
 
-export class ProofTree {
+export class ProofTree implements IProofTree {
   anchor: d3.Selection<HTMLElement>;
   /* whatever the client wants to store as meta-data */
   clientState: Object;
-  private _curNode: GoalNode;
+  private _curNode: IGoalNode;
   descendantsOffset: number;
   //diagonal: d3.svg.Diagonal<ProofTreeLink, ProofTreeNode>;
   height: number;
@@ -32,14 +30,14 @@ export class ProofTree {
   paused: boolean;
   /* true until the user uses their mouse */
   usingKeyboard: boolean;
-  rootNode: GoalNode;
+  rootNode: IGoalNode;
   //stateId: number;
   svgId: string;
   tactics: () => TacticGroup[];
   tacticsWorklist: WorklistItem[];
   tacticWaiting: Maybe<string>;
   //tacticWaitingForContext: Maybe<TacticWaiting>;
-  tree: d3.layout.Tree<ProofTreeNode>;
+  tree: d3.layout.Tree<IProofTreeNode>;
   viewportX: number;
   viewportY: number;
   private width: number;
@@ -79,8 +77,8 @@ export class ProofTree {
     this.usingKeyboard = true; // true until the user moves their mouse
     this.tacticWaiting = nothing();
 
-    this.tree = d3.layout.tree<ProofTreeNode>()
-      .children((node: ProofTreeNode, index: number) => {
+    this.tree = d3.layout.tree<IProofTreeNode>()
+      .children((node: IProofTreeNode, index: number) => {
         // fake nodes are used to trick the layout engine into spacing
         // childrenless nodes appropriately
         if (node instanceof FakeNode) { return []; }
@@ -170,7 +168,7 @@ export class ProofTree {
     let curNode = this.curNode;
 
     let centeredDescendant =
-      this.curNode.getFocusedChild().caseOf<Maybe<ProofTreeNode>>({
+      this.curNode.getFocusedChild().caseOf<Maybe<IProofTreeNode>>({
         nothing: () => nothing(),
         just: (fc) => fc.getFocusedChild().caseOf({
           nothing: () => just(fc),
@@ -186,13 +184,13 @@ export class ProofTree {
           // obvious...
           let hrDelta = curNode.html[0].offsetTop - d.html[0].offsetTop;
           this.descendantsOffset = (
-            this.yFactor * (nodeY(curNode) - nodeY(d))
+            this.yFactor * (ProofTreeUtils.nodeY(curNode) - ProofTreeUtils.nodeY(d))
             - (curNode.getHeight() - d.getHeight()) / 2
             + hrDelta
           );
         } else {
           this.descendantsOffset =
-            this.yFactor * (nodeY(curNode) - nodeY(d))
+            this.yFactor * (ProofTreeUtils.nodeY(curNode) - ProofTreeUtils.nodeY(d))
             ;
         }
       }
@@ -204,7 +202,7 @@ export class ProofTree {
     let curGoal = this.curNode;
     let visibleChildren = _(curGoal.getViewChildren());
     let visibleGrandChildren = _(curGoal.getViewGrandChildren());
-    let emptyNodeArray: ProofTreeNode[] = [];
+    let emptyNodeArray: IProofTreeNode[] = [];
     let visibleNodes = _(emptyNodeArray);
     curGoal.getParent().fmap((p) => {
       visibleNodes = visibleNodes.concat([p]);
@@ -218,7 +216,7 @@ export class ProofTree {
     if (rootViewChildren.length === 0) {
       this.xFactor = this.width;
     } else {
-      let xDistance = nodeX(rootViewChildren[0]) - nodeX(this.rootNode);
+      let xDistance = ProofTreeUtils.nodeX(rootViewChildren[0]) - ProofTreeUtils.nodeX(this.rootNode);
       /* width = 4 * xDistance * xFactor */
       this.xFactor = this.width / (4 * xDistance);
     }
@@ -254,7 +252,7 @@ export class ProofTree {
     let yFactors = siblings
       .map(function(e) {
         let a = e[0], b = e[1];
-        let yDistance = nodeY(b) - nodeY(a);
+        let yDistance = ProofTreeUtils.nodeY(b) - ProofTreeUtils.nodeY(a);
         let wantedSpacing = ((a.getHeight() + b.getHeight()) / 2) + verticalSpacingBetweenNodes;
         return wantedSpacing / yDistance;
       })
@@ -263,13 +261,13 @@ export class ProofTree {
     this.yFactor = _.isEmpty(yFactors) ? this.height : _.max(yFactors);
   }
 
-  get curNode(): GoalNode { return this._curNode; }
-  set curNode(n: GoalNode) {
+  get curNode(): IGoalNode { return this._curNode; }
+  set curNode(n: IGoalNode) {
     // console.log("Switching current node to", n);
     this._curNode = n;
   }
 
-  findOrCreateGroup(goalNode: GoalNode, groupName: string): TacticGroupNode {
+  findOrCreateGroup(goalNode: IGoalNode, groupName: string): ITacticGroupNode {
     let found = _(goalNode.tacticGroups)
       .find(function(tacticGroup) {
         return tacticGroup.name === groupName;
@@ -282,9 +280,9 @@ export class ProofTree {
     return groupNode;
   }
 
-  getAllNodes(): ProofTreeNode[] { return this.rootNode.getAllDescendants(); }
+  getAllNodes(): IProofTreeNode[] { return this.rootNode.getAllDescendants(); }
 
-  getCurrentGoal(): GoalNode {
+  getCurrentGoal(): IGoalNode {
     assert(this.curNode instanceof GoalNode, "getCurrentGoal: curNode instanceof GoalNode");
     return this.curNode;
   }
@@ -319,24 +317,24 @@ export class ProofTree {
     }
   */
 
-  isCurGoal(n: ProofTreeNode): boolean {
+  isCurGoal(n: IProofTreeNode): boolean {
     return n.id === this.curNode.id;
   }
 
-  isCurGoalChild(n: ProofTreeNode): boolean {
+  isCurGoalChild(n: IProofTreeNode): boolean {
     let self = this;
     return n.hasParentSuchThat((p) => self.isCurGoal(p));
   }
 
-  isCurGoalGrandChild(n: ProofTreeNode): boolean {
+  isCurGoalGrandChild(n: IProofTreeNode): boolean {
     let self = this;
     return n.hasParentSuchThat((p) => self.isCurGoalChild(p));
   }
 
-  isCurNode(n: ProofTreeNode): boolean { return n.id === this.curNode.id; }
+  isCurNode(n: IProofTreeNode): boolean { return n.id === this.curNode.id; }
 
-  isCurNodeAncestor(strictly: Strictly, n: ProofTreeNode): boolean {
-    let common = commonAncestor(n, this.curNode);
+  isCurNodeAncestor(strictly: Strictly, n: IProofTreeNode): boolean {
+    let common = ProofTreeUtils.commonAncestor(n, this.curNode);
     let commonAncestorIsNode = common.id === n.id;
     switch (strictly) {
       case Strictly.Yes: return commonAncestorIsNode && !this.isCurNode(n);
@@ -344,13 +342,13 @@ export class ProofTree {
     };
   }
 
-  isCurNodeChild(n: ProofTreeNode): boolean {
+  isCurNodeChild(n: IProofTreeNode): boolean {
     let self = this;
     return n.hasParentSuchThat((p) => self.isCurNode(p));
   }
 
-  isCurNodeDescendant(strictly: Strictly, n: ProofTreeNode): boolean {
-    let common = commonAncestor(n, this.curNode);
+  isCurNodeDescendant(strictly: Strictly, n: IProofTreeNode): boolean {
+    let common = ProofTreeUtils.commonAncestor(n, this.curNode);
     let commonAncestorIsCurNode = common.id === this.curNode.id;
     switch (strictly) {
       case Strictly.Yes: return commonAncestorIsCurNode && !this.isCurNode(n);
@@ -358,12 +356,12 @@ export class ProofTree {
     };
   }
 
-  isCurNodeGrandChild(n: ProofTreeNode): boolean {
+  isCurNodeGrandChild(n: IProofTreeNode): boolean {
     let self = this;
     return n.hasParentSuchThat((p) => self.isCurNodeChild(p));
   }
 
-  isCurNodeParent(n: ProofTreeNode): boolean {
+  isCurNodeParent(n: IProofTreeNode): boolean {
     let self = this;
     return this.curNode.hasParentSuchThat((p) => p.id === n.id);
   }
@@ -372,86 +370,86 @@ export class ProofTree {
   //   return !this.isCurNode(n) && hasParent(n) && this.isCurNodeParent(n.getParent());
   // }
 
-  isRootNode(n: ProofTreeNode): boolean {
+  isRootNode(n: IProofTreeNode): boolean {
     return n.id === this.rootNode.id;
   }
 
   keydownHandler() {
-
-    let ev: any = d3.event;
-
-    // don't interact while typing
-    if (ev.target.type === "textarea") { return; }
-
-    var curNode = this.curNode;
-
-    var children = curNode.getViewChildren();
-
-    this.usingKeyboard = true;
-
-    //console.log(d3.event.keyCode);
-
-    switch (ev.keyCode) {
-
-      case 37: // Left
-        //case 65: // a
-        ev.preventDefault();
-        if (curNode.hasParent()) {
-          //asyncLog("LEFT " + nodeString(curNode.parent));
-          fromJust(curNode.getParent()).click();
-        } else {
-          // when at the root node, undo the last action (usually Proof.)
-          //onCtrlUp(false);
-        }
-        break;
-
-      case 39: // Right
-        //case 68: // d
-        ev.preventDefault();
-        curNode.getFocusedChild().fmap((dest) => {
-          //asyncLog("RIGHT " + nodeString(dest));
-          dest.click()
-        });
-        break;
-
-      case 38: // Up
-        //case 87: // w
-        ev.preventDefault();
-        if (ev.shiftKey) {
-          //this.shiftPrevGoal(curNode.getFocusedChild());
-        } else {
-          this.shiftPrevByTacticGroup(curNode);
-        }
-        break;
-
-      case 40: // Down
-        //case 83: // s
-        ev.preventDefault();
-        if (ev.shiftKey) {
-          //this.shiftNextGoal(curNode.getFocusedChild());
-        } else {
-          this.shiftNextByTacticGroup(curNode);
-        }
-        break;
-
-      case 219: // [
-        var focusedChild = curNode.getFocusedChild();
-        focusedChild.fmap((c) => (<TacticGroupNode>c).shiftPrevInGroup());
-        break;
-
-      case 221: // ]
-        var focusedChild = curNode.getFocusedChild();
-        focusedChild.fmap((c) => (<TacticGroupNode>c).shiftNextInGroup());
-        break;
-
-      default:
-        //console.log("Unhandled event", d3.event.keyCode);
-        return;
-    }
-
-    // EDIT: now that we integrate the proof tree, it's best to let stuff bubble up
-    // if we haven't returned, we don't want the normal key behavior
-    //d3.event.preventDefault();
+    //
+    // let ev: any = d3.event;
+    //
+    // // don't interact while typing
+    // if (ev.target.type === "textarea") { return; }
+    //
+    // var curNode = this.curNode;
+    //
+    // var children = curNode.getViewChildren();
+    //
+    // this.usingKeyboard = true;
+    //
+    // //console.log(d3.event.keyCode);
+    //
+    // switch (ev.keyCode) {
+    //
+    //   case 37: // Left
+    //     //case 65: // a
+    //     ev.preventDefault();
+    //     if (curNode.hasParent()) {
+    //       //asyncLog("LEFT " + nodeString(curNode.parent));
+    //       fromJust(curNode.getParent()).click();
+    //     } else {
+    //       // when at the root node, undo the last action (usually Proof.)
+    //       //onCtrlUp(false);
+    //     }
+    //     break;
+    //
+    //   case 39: // Right
+    //     //case 68: // d
+    //     ev.preventDefault();
+    //     curNode.getFocusedChild().fmap((dest) => {
+    //       //asyncLog("RIGHT " + nodeString(dest));
+    //       dest.click()
+    //     });
+    //     break;
+    //
+    //   case 38: // Up
+    //     //case 87: // w
+    //     ev.preventDefault();
+    //     if (ev.shiftKey) {
+    //       //this.shiftPrevGoal(curNode.getFocusedChild());
+    //     } else {
+    //       this.shiftPrevByTacticGroup(curNode);
+    //     }
+    //     break;
+    //
+    //   case 40: // Down
+    //     //case 83: // s
+    //     ev.preventDefault();
+    //     if (ev.shiftKey) {
+    //       //this.shiftNextGoal(curNode.getFocusedChild());
+    //     } else {
+    //       this.shiftNextByTacticGroup(curNode);
+    //     }
+    //     break;
+    //
+    //   case 219: // [
+    //     var focusedChild = curNode.getFocusedChild();
+    //     focusedChild.fmap((c) => (<TacticGroupNode>c).shiftPrevInGroup());
+    //     break;
+    //
+    //   case 221: // ]
+    //     var focusedChild = curNode.getFocusedChild();
+    //     focusedChild.fmap((c) => (<TacticGroupNode>c).shiftNextInGroup());
+    //     break;
+    //
+    //   default:
+    //     //console.log("Unhandled event", d3.event.keyCode);
+    //     return;
+    // }
+    //
+    // // EDIT: now that we integrate the proof tree, it's best to let stuff bubble up
+    // // if we haven't returned, we don't want the normal key behavior
+    // //d3.event.preventDefault();
 
   }
 
@@ -557,7 +555,7 @@ export class ProofTree {
       ;
   }
 
-  onRectEnter(s: d3.selection.Enter<ProofTreeNode>): void {
+  onRectEnter(s: d3.selection.Enter<IProofTreeNode>): void {
     s
       .append("rect")
       .classed("goal", (d) => d instanceof GoalNode)
@@ -570,7 +568,7 @@ export class ProofTree {
       ;
   }
 
-  onRectExit(s: d3.Selection<ProofTreeNode>): void {
+  onRectExit(s: d3.Selection<IProofTreeNode>): void {
     s
       .transition()
       // .attr("x", function(d) {
@@ -590,7 +588,7 @@ export class ProofTree {
       ;
   }
 
-  onRectUpdatePostMerge(s: d3.Selection<ProofTreeNode>): void {
+  onRectUpdatePostMerge(s: d3.Selection<IProofTreeNode>): void {
     let self = this;
     s
       .classed("currentnode", function(d) { return self.isCurNode(d); })
@@ -603,7 +601,7 @@ export class ProofTree {
       ;
   }
 
-  onTextEnter(s: d3.Selection<ProofTreeNode>): void {
+  onTextEnter(s: d3.Selection<IProofTreeNode>): void {
     let self = this;
     s
       .attr("x", function(d) { return d.getOriginalScaledX(); })
@@ -613,7 +611,7 @@ export class ProofTree {
       ;
   }
 
-  onTextExit(s: d3.Selection<ProofTreeNode>): void {
+  onTextExit(s: d3.Selection<IProofTreeNode>): void {
     s
       .transition()
       // .attr("x", function(d) {
@@ -633,7 +631,7 @@ export class ProofTree {
       ;
   }
 
-  onTextUpdatePostMerge(s: d3.Selection<ProofTreeNode>): void {
+  onTextUpdatePostMerge(s: d3.Selection<IProofTreeNode>): void {
     s
       .each(function(d) {
         if (d instanceof TacticGroupNode) { d.updateNode(); }
@@ -894,8 +892,8 @@ export class ProofTree {
     d3.transition().duration(animationDuration).each(() => {
 
       let textEnter = textSelection.enter().append("foreignObject");
-      let rectSelection = self.rectLayer.selectAll("rect").data(nodes, byNodeId);
-      let linkSelection = self.linkLayer.selectAll("path").data(links, byLinkId);
+      let rectSelection = self.rectLayer.selectAll("rect").data(nodes, ProofTreeUtils.byNodeId);
+      let linkSelection = self.linkLayer.selectAll("path").data(links, ProofTreeUtils.byLinkId);
 
       /*
       Here, we must rely on the DOM to compute the height of nodes, so
@@ -963,11 +961,11 @@ export class ProofTree {
 
   }
 
-  xOffset(d: ProofTreeNode): number {
-    return - d.nodeWidth() / 2; // position the center
+  xOffset(d: IProofTreeNode): number {
+    return - d.getWidth() / 2; // position the center
   }
 
-  yOffset(d: ProofTreeNode): number {
+  yOffset(d: IProofTreeNode): number {
     let offset = - d.getHeight() / 2; // for the center
     let focusedChild = this.curNode.getFocusedChild();
 
@@ -976,7 +974,7 @@ export class ProofTree {
     if (this.isCurGoalChild(d)) {
       //assert(focusedChild !== undefined, "yOffset: focusedChild === undefined");
       return offset + (
-        nodeY(fromJust(d.getParent())) - nodeY(fromJust(focusedChild))
+        ProofTreeUtils.nodeY(fromJust(d.getParent())) - ProofTreeUtils.nodeY(fromJust(focusedChild))
       ) * this.yFactor;
     }
 
@@ -997,14 +995,14 @@ function mkDiagonal(cL, cR) {
     d3.svg
       .diagonal()
       .source((d: ProofTreeLink, i: number) => {
-        return swapXY(cR(d.source));
+        return ProofTreeUtils.swapXY(cR(d.source));
       })
       .target((d: ProofTreeLink, i: number) => {
-        return swapXY(cL(d.target));
+        return ProofTreeUtils.swapXY(cL(d.target));
       })
       .projection(function(d) { return [d.y, d.x]; })
   );
 }
 
-let diagonal0 = mkDiagonal(centerLeft0, centerRight0);
-let diagonal = mkDiagonal(centerLeft, centerRight);
+let diagonal0 = mkDiagonal(ProofTreeUtils.centerLeft0, ProofTreeUtils.centerRight0);
+let diagonal = mkDiagonal(ProofTreeUtils.centerLeft, ProofTreeUtils.centerRight);

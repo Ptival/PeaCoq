@@ -1,15 +1,17 @@
 import * as Coq85 from "./coq85";
 import * as Coqtop85 from "./coqtop85";
-// import * as Coqtop from "./coqtop-rx";
-// import * as CoqtopInput from "./coqtop-input";
-import { PeaCoqContext, PeaCoqHyp } from "./coqtop85";
-// import * as EditStage from "./edit-stage";
-import { allEditorTabs, EditorTab } from "./editor-tab";
+import * as Coqtop from "./coqtop-rx";
+import * as CoqtopInput from "./coqtop-input";
+import { PeaCoqHyp } from "./coqtop85";
+import * as EditStage from "./edit-stage";
+import { setupEditor } from "./editor";
+import { EditorTab } from "./editor-tab";
 import { Feedback } from "./feedback";
-// import * as FeedbackContent from "./feedback-content";
+import * as FeedbackContent from "./feedback-content";
+import * as Global from "./global-variables";
 import { GoalNode } from "./goalnode";
 import { Goals } from "./goals";
-// import { setupKeybindings } from "./keybindings";
+import { setupKeybindings } from "./keybindings";
 import { Message } from "./message";
 import { Warning } from "./message-level";
 import { ProofTree, proofTrees } from "./prooftree";
@@ -18,10 +20,10 @@ import { Status } from "./status";
 import { Tab } from "./tab";
 import { Tactic } from "./tactic";
 import { TacticGroupNode } from "./tacticgroupnode";
-// import { setupTheme, theme } from "./theme";
+import { setupTheme, theme } from "./theme";
 // // TODO: toolbar.ts should setup{Load,Save}File upon setupToolbar
 // // TODO: unless it can't because of keybindings?
-// import { pickFile, saveFile, setupLoadFile, setupToolbar, setupSaveFile } from "./toolbar";
+import { pickFile, saveFile, setupLoadFile, setupToolbar, setupSaveFile } from "./toolbar";
 
 let fontSize = 16; // pixels
 let resizeBufferingTime = 250; // milliseconds
@@ -35,225 +37,226 @@ $(document).ready(() => {
 
   let style = "";// "border: 1px solid #dfdfdf;";
 
-  // $("#interface").w2layout({
-  //   name: "layout",
-  //   panels: [
-  //     { type: "top", size: 34, resizable: false, style: style, content: $("<div>", { id: "toolbar" }) },
-  //     { type: "left", size: "50%", overflow: "hidden", resizable: true, style: style, content: $("<div>", { id: "editor", style: "height: 100%" }) },
-  //     { type: "main", size: "50%", style: style, overflow: "hidden", content: $("<div>", { id: "right" }) },
-  //     { type: "bottom", hidden: true, size: "30%", overflow: "hidden", resizable: true, style: style, content: $("<div>", { id: "prooftree" }) },
-  //   ]
-  // });
-  //
-  // let editor = ace.edit("editor");
-  // editor.selection.on("changeCursor", (e) => {
-  //   let cursorPosition = editor.selection.getCursor();
-  //   _(coqDocument.getEditStagesProcessed()).each((stage) => {
-  //     if (stage.edit.containsPosition(cursorPosition)) {
-  //       updateCoqtopTabs(stage.goals, stage.context);
-  //     }
-  //   });
-  // });
-  //
-  // //editor.selection.on("changeSelection", (e) => { console.log(e); });
-  // coqDocument = new Coq85.CoqDocument(editor);
-  //
-  // let editAtBecauseEditorChange: Rx.Observable<CoqtopInput.CoqtopInput> =
-  //   coqDocument.changeStream.flatMap((change) => {
-  //     console.log("should remove edits after", Coq85.minPos(change.start, change.end));
-  //     return [];
-  //   });
-  //
-  // Coq85.setupEditor(editor);
-  // editor.focus();
-  //
-  // $().w2layout({
-  //   name: "right-layout",
-  //   panels: [
-  //     { type: "main", size: "50%", resizable: true, style: style, tabs: { tabs: [], } },
-  //     { type: "bottom", size: "50%", resizable: true, style: style, tabs: { tabs: [], } },
-  //   ],
-  // });
-  //
-  // layout = w2ui["layout"];
-  // rightLayout = w2ui["right-layout"];
-  // contextTabs = w2ui["right-layout_main_tabs"];
-  // contextTabs.onClick = function(event) {
-  //   $("#myTabsContent").html(event.target);
-  // };
-  // coqtopTabs = w2ui["right-layout_bottom_tabs"];
-  //
-  // rightLayout.on({ type: "render", execute: "after" }, () => {
-  //
-  //   // top panes
-  //   pretty = new Tab("pretty", "Pretty", "right-layout", "main");
-  //   pretty.div.css("padding-left", "4px");
-  //   foreground = new EditorTab("foreground", "Foreground", "right-layout", "main");
-  //   background = new EditorTab("background", "Background", "right-layout", "main");
-  //   shelved = new EditorTab("shelved", "Shelved", "right-layout", "main");
-  //   givenUp = new EditorTab("givenup", "Given up", "right-layout", "main");
-  //   contextTabs.click("pretty");
-  //
-  //   // bottom panes
-  //   notices = new EditorTab("notices", "Notices", "right-layout", "bottom");
-  //   warnings = new EditorTab("warnings", "Warnings", "right-layout", "bottom");
-  //   errors = new EditorTab("errors", "Errors", "right-layout", "bottom");
-  //   infos = new EditorTab("infos", "Infos", "right-layout", "bottom");
-  //   debug = new EditorTab("debug", "Debug", "right-layout", "bottom");
-  //   failures = new EditorTab("failures", "Failures", "right-layout", "bottom");
-  //   jobs = new EditorTab("jobs", "Jobs", "right-layout", "bottom");
-  //   feedback = new EditorTab("feedback", "Feedback", "right-layout", "bottom");
-  //   coqtopTabs.click("notices");
-  //
-  //   // TODO: stream this
-  //   updateFontSize(coqDocument);
-  // })
-  //
-  // layout.content("main", rightLayout);
-  //
-  // let windowResizeStream: Rx.Observable<{}> = Rx.Observable.fromEvent($(window), "resize");
-  // let layoutResizeStream = setupW2LayoutResizeStream(layout);
-  // let rightLayoutResizeStream = setupW2LayoutResizeStream(rightLayout);
-  // Rx.Observable.merge(windowResizeStream, layoutResizeStream, rightLayoutResizeStream)
-  //   // only fire once every <resizeBufferingTime> milliseconds
-  //   .bufferWithTime(resizeBufferingTime).filter((a) => !_.isEmpty(a))
-  //   .subscribe(onResize)
-  //   ;
-  //
-  // // TODO: figure out if this was needed
-  // //layout.on({ type: "hide", execute: "after" }, () => { coqDocument.recenterEditor(); });
-  // //layout.on({ type: "show", execute: "after" }, () => { coqDocument.recenterEditor(); });
-  //
-  // let toolbarStreams = setupToolbar();
-  // let shortcutsStreams = setupKeybindings();
-  //
-  // Coq85.setupSyntaxHovering();
-  // setupTheme();
-  //
-  // let loadedFilesStream = setupLoadFile();
-  // setupSaveFile();
-  //
-  // let fontDecreasedStream =
-  //   Rx.Observable
-  //     .merge(toolbarStreams.fontDecrease, shortcutsStreams.fontDecrease)
-  //     .do(() => { fontSize--; });
-  // let fontIncreasedStream =
-  //   Rx.Observable
-  //     .merge(toolbarStreams.fontIncrease, shortcutsStreams.fontIncrease)
-  //     .do(() => { fontSize++; });
-  // Rx.Observable
-  //   .merge(fontIncreasedStream, fontDecreasedStream)
-  //   .subscribe(() => { updateFontSize(coqDocument); });
-  //
-  // Rx.Observable
-  //   .merge(toolbarStreams.goToCaret, shortcutsStreams.goToCaret)
-  //   .subscribe(() => console.log("TODO: go to caret"));
-  //
-  // let nextStream = Rx.Observable
-  //   .merge(toolbarStreams.next, shortcutsStreams.next);
-  // let editsToProcessStream = Coq85.onNextReactive(coqDocument, nextStream);
-  // //editsToProcessStream.subscribe((e) => coqDocument.pushEdit(e));
-  // //editsToProcessStream.subscribe((e) => coqDocument.moveCursorToPositionAndCenter(e.getStopPosition()));
-  // let addsToProcessStream = Coq85.processEditsReactive(editsToProcessStream);
-  //
-  // Rx.Observable
-  //   .merge(toolbarStreams.previous, shortcutsStreams.previous)
-  //   .subscribe(() => console.log("TODO: previous"));
-  //
-  // Rx.Observable
-  //   .merge(toolbarStreams.load, shortcutsStreams.load)
-  //   .subscribe(pickFile);
-  // Rx.Observable
-  //   .merge(toolbarStreams.save, shortcutsStreams.save)
-  //   .subscribe(saveFile);
-  //
-  // let coqtopOutputStreams = Coqtop.setupCoqtopCommunication([
-  //   // reset Coqtop when a file is loaded
-  //   loadedFilesStream.map(() => new CoqtopInput.EditAt(1)),
-  //   addsToProcessStream,
-  // ]);
-  //
-  // coqtopOutputStreams.goodResponse
-  //   // keep only responses for adds produced by PeaCoq
-  //   .filter((r) => {
-  //     let i = r.input;
-  //     return i instanceof CoqtopInput.AddPrime && i.hasEdit();
-  //   })
-  //   .subscribe((r) => {
-  //     let stateId = r.contents[0];
-  //     (<CoqtopInput.AddPrime>r.input).edit.caseOf({
-  //       nothing: () => { throw "nothing" },
-  //       just: (edit) => {
-  //         let stage = edit.stage;
-  //         if (stage instanceof EditStage.ToProcess) {
-  //           edit.stage = new EditStage.BeingProcessed(stage, stateId);
-  //         } else {
-  //           throw "Expected edit in EditStageToProcess stage";
-  //         }
-  //       },
-  //     });
-  //   });
-  //
-  // // Logging feedbacks that I haven't figured out what to do with yet
-  // subscribeAndLog(
-  //   coqtopOutputStreams.feedback
-  //     .filter((f) => !(f.feedbackContent instanceof FeedbackContent.FileDependency || f.feedbackContent instanceof FeedbackContent.FileLoaded))
-  //     .filter((f) => !(f.feedbackContent instanceof FeedbackContent.AddedAxiom))
-  //     .filter((f) => !(f.feedbackContent instanceof FeedbackContent.Processed && f.editOrState === "state"))
-  //     .filter((f) => !(f.feedbackContent instanceof FeedbackContent.ProcessingIn && f.editOrState === "state"))
-  //     .filter((f) => !(f.feedbackContent instanceof FeedbackContent.ErrorMsg))
-  // );
-  //
-  // coqtopOutputStreams.feedback
-  //   .filter((f) => f.editOrState === "state")
-  //   .filter((f) => f.feedbackContent instanceof FeedbackContent.Processed)
-  //   .distinctUntilChanged()
-  //   .subscribe((f) => {
-  //     let stateId = f.editOrStateId;
-  //     let editStageReady = _(coqDocument.getEditStagesBeingProcessed())
-  //       .find((stage) => stage.stateId === stateId);
-  //     if (editStageReady) {
-  //       editStageReady.edit.stage = new EditStage.Processed(editStageReady);
-  //       if (coqDocument.getEditStagesToProcess().length === 0) {
-  //         coqDocument.moveCursorToPositionAndCenter(editStageReady.getStopPosition());
-  //       }
-  //     }
-  //   });
-  //
-  // coqtopOutputStreams.feedback
-  //   .filter((f) => f.feedbackContent instanceof FeedbackContent.ErrorMsg)
-  //   .distinctUntilChanged()
-  //   .subscribe((f) => {
-  //     let e = <FeedbackContent.ErrorMsg><any>f.feedbackContent;
-  //     assert(f.editOrState === "state", "Expected ErrorMsg to carry a state, not an edit");
-  //     let failedStateId = f.editOrStateId;
-  //     let failedEditStage = _(coqDocument.getEditStagesBeingProcessed()).find((s) => s.stateId === failedStateId);
-  //     if (failedEditStage) {
-  //       let failedEdit = failedEditStage.edit;
-  //       coqDocument.removeEditsAfter(failedEdit);
-  //       errors.setValue(e.message, true);
-  //       let errorStart = coqDocument.movePositionRight(failedEdit.getStartPosition(), e.start);
-  //       let errorStop = coqDocument.movePositionRight(failedEdit.getStartPosition(), e.stop);
-  //       let errorRange = new AceAjax.Range(errorStart.row, errorStart.column, errorStop.row, errorStop.column);
-  //       coqDocument.markError(errorRange);
-  //     }
-  //   });
+  $("#interface").w2layout({
+    name: "layout",
+    panels: [
+      { type: "top", size: 34, resizable: false, style: style, content: $("<div>", { id: "toolbar" }) },
+      { type: "left", size: "50%", overflow: "hidden", resizable: true, style: style, content: $("<div>", { id: "editor", style: "height: 100%" }) },
+      { type: "main", size: "50%", style: style, overflow: "hidden", content: $("<div>", { id: "right" }) },
+      { type: "bottom", hidden: true, size: "30%", overflow: "hidden", resizable: true, style: style, content: $("<div>", { id: "prooftree" }) },
+    ]
+  });
 
-  // peaCoqAddHandlers.push(proofTreeOnAdd);
-  // peaCoqGetContextHandlers.push(proofTreeOnGetContext);
-  // peaCoqEditAtHandlers.push(proofTreeOnEditAt);
-  // peaCoqEditAtHandlers.push(editorOnEditAt);
-  // peaCoqGoalHandlers.push(proofTreeOnGoal);
-  // peaCoqStatusHandlers.push(proofTreeOnStatus);
-  // editHandlers.push(proofTreeOnEdit);
+  let editor = ace.edit("editor");
+  editor.selection.on("changeCursor", (e) => {
+    let cursorPosition = editor.selection.getCursor();
+    _(Global.coqDocument.getEditStagesProcessed()).each((stage) => {
+      if (stage.edit.containsPosition(cursorPosition)) {
+        updateCoqtopTabs(stage.goals, stage.context);
+      }
+    });
+  });
+
+  //editor.selection.on("changeSelection", (e) => { console.log(e); });
+  Global.setCoqDocument(new Coq85.CoqDocument(editor));
+
+  let editAtBecauseEditorChange: Rx.Observable<CoqtopInput.CoqtopInput> =
+    Global.coqDocument.changeStream.flatMap((change) => {
+      console.log("should remove edits after", Coq85.minPos(change.start, change.end));
+      return [];
+    });
+
+  setupEditor(editor);
+  editor.focus();
+
+  $().w2layout({
+    name: "right-layout",
+    panels: [
+      { type: "main", size: "50%", resizable: true, style: style, tabs: { tabs: [], } },
+      { type: "bottom", size: "50%", resizable: true, style: style, tabs: { tabs: [], } },
+    ],
+  });
+
+  layout = w2ui["layout"];
+  rightLayout = w2ui["right-layout"];
+  contextTabs = w2ui["right-layout_main_tabs"];
+  contextTabs.onClick = function(event) {
+    $("#myTabsContent").html(event.target);
+  };
+  coqtopTabs = w2ui["right-layout_bottom_tabs"];
+
+  rightLayout.on({ type: "render", execute: "after" }, () => {
+
+    let o = <any>{};
+
+    // top panes
+    o.pretty = new Tab("pretty", "Pretty", "right-layout", "main");
+    o.pretty.div.css("padding-left", "4px");
+    o.foreground = new EditorTab("foreground", "Foreground", "right-layout", "main");
+    o.background = new EditorTab("background", "Background", "right-layout", "main");
+    o.shelved = new EditorTab("shelved", "Shelved", "right-layout", "main");
+    o.givenUp = new EditorTab("givenup", "Given up", "right-layout", "main");
+    contextTabs.click("pretty");
+
+    // bottom panes
+    o.notices = new EditorTab("notices", "Notices", "right-layout", "bottom");
+    o.warnings = new EditorTab("warnings", "Warnings", "right-layout", "bottom");
+    o.errors = new EditorTab("errors", "Errors", "right-layout", "bottom");
+    o.infos = new EditorTab("infos", "Infos", "right-layout", "bottom");
+    o.debug = new EditorTab("debug", "Debug", "right-layout", "bottom");
+    o.failures = new EditorTab("failures", "Failures", "right-layout", "bottom");
+    o.jobs = new EditorTab("jobs", "Jobs", "right-layout", "bottom");
+    o.feedback = new EditorTab("feedback", "Feedback", "right-layout", "bottom");
+    coqtopTabs.click("notices");
+
+    Global.setTabs(
+      o.pretty, o.foreground, o.background, o.shelved, o.givenUp,
+      o.notices, o.warnings, o.errors, o.infos, o.debug, o.failures,
+      o.jobs, o.feedback
+    );
+
+    // TODO: stream this
+    updateFontSize(Global.coqDocument);
+  })
+
+  layout.content("main", rightLayout);
+
+  let windowResizeStream: Rx.Observable<{}> = Rx.Observable.fromEvent($(window), "resize");
+  let layoutResizeStream = setupW2LayoutResizeStream(layout);
+  let rightLayoutResizeStream = setupW2LayoutResizeStream(rightLayout);
+  Rx.Observable.merge(windowResizeStream, layoutResizeStream, rightLayoutResizeStream)
+    // only fire once every <resizeBufferingTime> milliseconds
+    .bufferWithTime(resizeBufferingTime).filter((a) => !_.isEmpty(a))
+    .subscribe(onResize)
+    ;
+
+  // TODO: figure out if this was needed
+  //layout.on({ type: "hide", execute: "after" }, () => { Global.coqDocument.recenterEditor(); });
+  //layout.on({ type: "show", execute: "after" }, () => { Global.coqDocument.recenterEditor(); });
+
+  let toolbarStreams = setupToolbar();
+  let shortcutsStreams = setupKeybindings();
+
+  Coq85.setupSyntaxHovering();
+  setupTheme();
+
+  let loadedFilesStream = setupLoadFile();
+  setupSaveFile();
+
+  let fontDecreasedStream =
+    Rx.Observable
+      .merge(toolbarStreams.fontDecrease, shortcutsStreams.fontDecrease)
+      .do(() => { fontSize--; });
+  let fontIncreasedStream =
+    Rx.Observable
+      .merge(toolbarStreams.fontIncrease, shortcutsStreams.fontIncrease)
+      .do(() => { fontSize++; });
+  Rx.Observable
+    .merge(fontIncreasedStream, fontDecreasedStream)
+    .subscribe(() => { updateFontSize(Global.coqDocument); });
+
+  Rx.Observable
+    .merge(toolbarStreams.goToCaret, shortcutsStreams.goToCaret)
+    .subscribe(() => console.log("TODO: go to caret"));
+
+  let nextStream = Rx.Observable
+    .merge(toolbarStreams.next, shortcutsStreams.next);
+  let editsToProcessStream = Coq85.onNextReactive(Global.coqDocument, nextStream);
+  //editsToProcessStream.subscribe((e) => Global.coqDocument.pushEdit(e));
+  //editsToProcessStream.subscribe((e) => Global.coqDocument.moveCursorToPositionAndCenter(e.getStopPosition()));
+  let addsToProcessStream = Coq85.processEditsReactive(editsToProcessStream);
+
+  Rx.Observable
+    .merge(toolbarStreams.previous, shortcutsStreams.previous)
+    .subscribe(() => console.log("TODO: previous"));
+
+  Rx.Observable
+    .merge(toolbarStreams.load, shortcutsStreams.load)
+    .subscribe(pickFile);
+  Rx.Observable
+    .merge(toolbarStreams.save, shortcutsStreams.save)
+    .subscribe(saveFile);
+
+  let coqtopOutputStreams = Coqtop.setupCoqtopCommunication([
+    // reset Coqtop when a file is loaded
+    loadedFilesStream.map(() => new CoqtopInput.EditAt(1)),
+    addsToProcessStream,
+  ]);
+
+  coqtopOutputStreams.goodResponse
+    // keep only responses for adds produced by PeaCoq
+    .filter((r) => {
+      let i = r.input;
+      return i instanceof CoqtopInput.AddPrime && i.hasEdit();
+    })
+    .subscribe((r) => {
+      let stateId = r.contents[0];
+      (<CoqtopInput.AddPrime>r.input).edit.caseOf({
+        nothing: () => { throw "nothing" },
+        just: (edit) => {
+          let stage = edit.stage;
+          if (stage instanceof EditStage.ToProcess) {
+            edit.stage = new EditStage.BeingProcessed(stage, stateId);
+          } else {
+            throw "Expected edit in EditStageToProcess stage";
+          }
+        },
+      });
+    });
+
+  // Logging feedbacks that I haven't figured out what to do with yet
+  subscribeAndLog(
+    coqtopOutputStreams.feedback
+      .filter((f) => !(f.feedbackContent instanceof FeedbackContent.FileDependency || f.feedbackContent instanceof FeedbackContent.FileLoaded))
+      .filter((f) => !(f.feedbackContent instanceof FeedbackContent.AddedAxiom))
+      .filter((f) => !(f.feedbackContent instanceof FeedbackContent.Processed && f.editOrState === "state"))
+      .filter((f) => !(f.feedbackContent instanceof FeedbackContent.ProcessingIn && f.editOrState === "state"))
+      .filter((f) => !(f.feedbackContent instanceof FeedbackContent.ErrorMsg))
+  );
+
+  coqtopOutputStreams.feedback
+    .filter((f) => f.editOrState === "state")
+    .filter((f) => f.feedbackContent instanceof FeedbackContent.Processed)
+    .distinctUntilChanged()
+    .subscribe((f) => {
+      let stateId = f.editOrStateId;
+      let editStageReady = _(Global.coqDocument.getEditStagesBeingProcessed())
+        .find((stage) => stage.stateId === stateId);
+      if (editStageReady) {
+        editStageReady.edit.stage = new EditStage.Processed(editStageReady);
+        if (Global.coqDocument.getEditStagesToProcess().length === 0) {
+          Global.coqDocument.moveCursorToPositionAndCenter(editStageReady.getStopPosition());
+        }
+      }
+    });
+
+  coqtopOutputStreams.feedback
+    .filter((f) => f.feedbackContent instanceof FeedbackContent.ErrorMsg)
+    .distinctUntilChanged()
+    .subscribe((f) => {
+      let e = <FeedbackContent.ErrorMsg><any>f.feedbackContent;
+      assert(f.editOrState === "state", "Expected ErrorMsg to carry a state, not an edit");
+      let failedStateId = f.editOrStateId;
+      let failedEditStage = _(Global.coqDocument.getEditStagesBeingProcessed()).find((s) => s.stateId === failedStateId);
+      if (failedEditStage) {
+        let failedEdit = failedEditStage.edit;
+        Global.coqDocument.removeEditsAfter(failedEdit);
+        Global.errors.setValue(e.message, true);
+        let errorStart = Global.coqDocument.movePositionRight(failedEdit.getStartPosition(), e.start);
+        let errorStop = Global.coqDocument.movePositionRight(failedEdit.getStartPosition(), e.stop);
+        let errorRange = new AceAjax.Range(errorStart.row, errorStart.column, errorStop.row, errorStop.column);
+        Global.coqDocument.markError(errorRange);
+      }
+    });
+
 });
 
 let lastStatus: Status;
 
 // function editorOnEditAt(sid: number) {
-//   let edit = _(coqDocument.editsProcessed).find((e) => e.stateId === sid);
+//   let edit = _(Global.coqDocument.editsProcessed).find((e) => e.stateId === sid);
 //   if (edit) {
-//     killEditsAfterPosition(coqDocument, edit.getStopPosition());
+//     killEditsAfterPosition(Global.coqDocument, edit.getStopPosition());
 //     updateCoqtopTabs(edit.goals, edit.context);
 //   }
 // }
@@ -262,7 +265,7 @@ function proofTreeOnStatus(s) {
   lastStatus = s;
 }
 
-function updateCoqtopTabs(goals: Goals, context: PeaCoqContext) {
+function updateCoqtopTabs(goals: IGoals, context: PeaCoqContext) {
   console.log("TODO: updateCoqtopTabs");
   // clearCoqtopTabs(false);
   // if (context.length > 0) {
@@ -276,7 +279,7 @@ function proofTreeOnEdit(
   stateId: number,
   lastStatus: Status,
   status: Status,
-  goals: Goals,
+  goals: IGoals,
   context: PeaCoqContext
 ): void {
 
@@ -331,7 +334,7 @@ function proofTreeOnEdit(
 
   let tactic: Tactic = _.find(curNode.getTactics(), (t) => t.tactic === trimmed);
 
-  let tacticGroup: TacticGroupNode = (
+  let tacticGroup: ITacticGroupNode = (
     tactic
       ? tactic.parentGroup
       : new TacticGroupNode(activeProofTree, curNode, "")
@@ -421,7 +424,7 @@ function proofTreeOnEditAt(sid: number): void {
 }
 
 export function onResize(): void {
-  Coq85.coqDocument.editor.resize();
+  Global.coqDocument.editor.resize();
   getActiveProofTree().fmap((t) => {
     let parent = $("#prooftree").parent();
     t.resize(parent.width(), parent.height());
@@ -443,9 +446,9 @@ function showProofTreePanel(): Promise<{}> {
   });
 }
 
-function updateFontSize(d: Coq85.CoqDocument): void {
+function updateFontSize(d: ICoqDocument): void {
   d.editor.setOption("fontSize", fontSize);
-  _(allEditorTabs).each((e: EditorTab) => {
+  _(Global.allEditorTabs).each((e: EditorTab) => {
     e.setOption("fontSize", fontSize);
   });
   jss.set("#pretty-content", { "font-size": fontSize + "px" });

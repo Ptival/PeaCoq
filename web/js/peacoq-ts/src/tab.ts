@@ -1,5 +1,3 @@
-export let pretty: Tab;
-
 export class Tab {
   caption: string;
   div: JQuery;

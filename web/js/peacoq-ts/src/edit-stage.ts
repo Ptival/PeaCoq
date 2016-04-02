@@ -1,13 +1,12 @@
-import { PeaCoqContext } from "./coqtop85";
 import { Edit } from "./edit";
 import { EditMarker } from "./edit-marker";
 import { Goals } from "./goals";
 import { Status } from "./status";
 
-export abstract class EditStage {
-  edit: Edit;
-  protected marker: EditMarker;
-  constructor(e: Edit, m: EditMarker) {
+export abstract class EditStage implements IEditStage {
+  edit: IEdit;
+  protected marker: IEditMarker;
+  constructor(e: IEdit, m: IEditMarker) {
     this.edit = e;
     this.marker = m;
   }
@@ -16,21 +15,21 @@ export abstract class EditStage {
   remove(): void { this.marker.remove(); }
 }
 
-export class ToProcess extends EditStage {
-  constructor(e: Edit, m: EditMarker) { super(e, m); }
-  nextStageMarker(): EditMarker {
+export class ToProcess extends EditStage implements IToProcess {
+  constructor(e: IEdit, m: IEditMarker) { super(e, m); }
+  nextStageMarker(): IEditMarker {
     this.marker.markBeingProcessed();
     return this.marker;
   }
 }
 
-export class BeingProcessed extends EditStage {
+export class BeingProcessed extends EditStage implements IBeingProcessed {
   stateId: number;
-  constructor(e: ToProcess, sid: number) {
+  constructor(e: IToProcess, sid: number) {
     super(e.edit, e.nextStageMarker());
     this.stateId = sid;
   }
-  nextStageMarker(): EditMarker {
+  nextStageMarker(): IEditMarker {
     this.marker.markProcessed();
     return this.marker;
   }
@@ -43,14 +42,14 @@ let freshEditId = (function() {
   }
 })();
 
-export class Processed extends EditStage {
+export class Processed extends EditStage implements IProcessed {
   context: PeaCoqContext;
   editId: number;
   goals: Goals;
   stateId: number;
   status: Status;
 
-  constructor(e: BeingProcessed) {//, s: Status, gs: Goals, c: PeaCoqContext) {
+  constructor(e: IBeingProcessed) {//, s: Status, gs: Goals, c: PeaCoqContext) {
     super(e.edit, e.nextStageMarker());
     // this.context = c;
     // this.goals = gs;

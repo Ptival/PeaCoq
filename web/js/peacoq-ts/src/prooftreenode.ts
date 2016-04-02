@@ -1,19 +1,17 @@
-declare class GoalNode { };
-import { ProofTree } from "./prooftree";
-import { nodeX, nodeY } from "./prooftree-utils";
+import * as ProofTreeUtils from "./prooftree-utils";
 
-export abstract class ProofTreeNode {
+export abstract class ProofTreeNode implements IProofTreeNode {
   private body: HTMLElement;
   depth: number;
   id: string;
   label: string;
-  proofTree: ProofTree;
+  proofTree: IProofTree;
   x: number;
   x0: number;
   y: number;
   y0: number;
 
-  constructor(proofTree: ProofTree, parent: TsMonad.Maybe<ProofTreeNode>) {
+  constructor(proofTree: IProofTree, parent: Maybe<IProofTreeNode>) {
     this.body = undefined;
     this.depth = parent.caseOf({
       nothing: () => 0,
@@ -25,10 +23,10 @@ export abstract class ProofTreeNode {
 
   abstract click(): void;
 
-  abstract getAllDescendants(): ProofTreeNode[];
-  abstract getAllGoalDescendants(): GoalNode[];
+  abstract getAllDescendants(): IProofTreeNode[];
+  abstract getAllGoalDescendants(): IGoalNode[];
   abstract getFocusedChild(): Maybe<ProofTreeNode>;
-  abstract getGoalAncestor(): Maybe<GoalNode>;
+  abstract getGoalAncestor(): Maybe<IGoalNode>;
   abstract getHeight(): number;
 
   getHTMLElement(): HTMLElement {
@@ -64,21 +62,21 @@ export abstract class ProofTreeNode {
     // });
   }
 
-  abstract getParent(): Maybe<ProofTreeNode>;
+  abstract getParent(): Maybe<IProofTreeNode>;
 
   getScaledX(): number {
     let tree = this.proofTree;
-    return nodeX(this) * tree.xFactor + tree.xOffset(this);
+    return ProofTreeUtils.nodeX(this) * tree.xFactor + tree.xOffset(this);
   }
 
   getScaledY(): number {
     let tree = this.proofTree;
-    return nodeY(this) * tree.yFactor + tree.yOffset(this);
+    return ProofTreeUtils.nodeY(this) * tree.yFactor + tree.yOffset(this);
   }
 
-  abstract getViewChildren(): ProofTreeNode[];
+  abstract getViewChildren(): IProofTreeNode[];
 
-  getViewGrandChildren(): ProofTreeNode[] {
+  getViewGrandChildren(): IProofTreeNode[] {
     return (
       _(this.getViewChildren())
         .map(function(e) { return e.getViewChildren(); })
@@ -95,7 +93,7 @@ export abstract class ProofTreeNode {
 
   hasParent(): boolean { return this.hasParentSuchThat(() => true); }
 
-  hasParentSuchThat(pred: (_1: ProofTreeNode) => boolean): boolean {
+  hasParentSuchThat(pred: (_1: IProofTreeNode) => boolean): boolean {
     return this.getParent().caseOf({
       nothing: () => false,
       just: (p) => pred(p),
@@ -104,34 +102,14 @@ export abstract class ProofTreeNode {
 
   isCurNodeAncestor() {
     let curNode = this.proofTree.curNode;
-    let common = commonAncestor(curNode, this);
+    let common = ProofTreeUtils.commonAncestor(curNode, this);
     return this.id === common.id;
   }
 
   abstract isSolved(): boolean;
-  abstract nodeWidth(): number;
 
   setHTMLElement(e: HTMLElement): void {
     this.body = e;
   }
 
-}
-
-export function commonAncestor(n1: ProofTreeNode, n2: ProofTreeNode): ProofTreeNode {
-  return n1.getParent().caseOf({
-    nothing: () => n1,
-    just: (n1p) => n2.getParent().caseOf({
-      nothing: () => n2,
-      just: (n2p) => {
-        if (n1.id === n2.id) { return n1; }
-        if (n1.depth < n2.depth) {
-          return commonAncestor(n1, n2p);
-        } else if (n1.depth > n2.depth) {
-          return commonAncestor(n1p, n2);
-        } else {
-          return commonAncestor(n1p, n2p);
-        }
-      }
-    })
-  });
 }

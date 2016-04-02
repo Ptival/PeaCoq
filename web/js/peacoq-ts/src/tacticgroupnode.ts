@@ -1,23 +1,19 @@
-import { GoalNode } from "./goalnode";
-import { ProofTree } from "./prooftree";
 import { ProofTreeNode } from "./prooftreenode";
-import { Strictly } from "./strictly";
-import { Tactic } from "./tactic";
 
 let userTacticsGroupName = "PeaCoq user tactics";
 
-export class TacticGroupNode extends ProofTreeNode {
+export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
   isProcessed: boolean;
   name: string;
   // do not use parent, D3 will overwrite
-  private parentGoal: GoalNode;
+  private parentGoal: IGoalNode;
   span: JQuery;
   tacticIndex: number;
-  tactics: Tactic[];
+  tactics: ITactic[];
 
   constructor(
-    proofTree: ProofTree,
-    parent: GoalNode,
+    proofTree: IProofTree,
+    parent: IGoalNode,
     name: string
   ) {
     super(proofTree, just(parent));
@@ -32,25 +28,25 @@ export class TacticGroupNode extends ProofTreeNode {
     alert("TODO: click");
   }
 
-  getAllDescendants(): ProofTreeNode[] {
-    let children: GoalNode[] = _(this.tactics).map((t) => t.goals).flatten<GoalNode>().value();
-    let descendants: ProofTreeNode[] = _(children).map((c) => c.getAllDescendants()).flatten<ProofTreeNode>().value();
+  getAllDescendants(): IProofTreeNode[] {
+    let children: IGoalNode[] = _(this.tactics).map((t) => t.goals).flatten<IGoalNode>().value();
+    let descendants: IProofTreeNode[] = _(children).map((c) => c.getAllDescendants()).flatten<IProofTreeNode>().value();
     return [].concat(children, descendants);
   }
 
-  getAllGoalDescendants(): GoalNode[] {
-    let children: GoalNode[] = _(this.tactics).map((t) => t.goals).flatten<GoalNode>().value();
-    let descendants: GoalNode[] = _(children).map((c) => c.getAllGoalDescendants()).flatten<GoalNode>().value();
+  getAllGoalDescendants(): IGoalNode[] {
+    let children: IGoalNode[] = _(this.tactics).map((t) => t.goals).flatten<IGoalNode>().value();
+    let descendants: IGoalNode[] = _(children).map((c) => c.getAllGoalDescendants()).flatten<IGoalNode>().value();
     return [].concat(children, descendants);
   }
 
-  getFocusedChild(): Maybe<ProofTreeNode> {
-    let viewChildren: ProofTreeNode[] = this.getViewChildren();
+  getFocusedChild(): Maybe<IProofTreeNode> {
+    let viewChildren: IProofTreeNode[] = this.getViewChildren();
     if (viewChildren.length === 0) { return nothing(); }
     return just(viewChildren[this.tactics[this.tacticIndex].goalIndex]);
   }
 
-  getFocusedTactic(): Maybe<Tactic> {
+  getFocusedTactic(): Maybe<ITactic> {
     return (
       this.tactics.length === 0
         ? nothing()
@@ -58,22 +54,22 @@ export class TacticGroupNode extends ProofTreeNode {
     );
   }
 
-  getGoalAncestor(): Maybe<GoalNode> { return just(this.parentGoal); }
+  getGoalAncestor(): Maybe<IGoalNode> { return just(this.parentGoal); }
 
   getHeight(): number {
     let rect = this.getHTMLElement().getBoundingClientRect();
     return Math.ceil(rect.height);
   }
 
-  getParent(): Maybe<GoalNode> { return just(this.parentGoal); }
+  getParent(): Maybe<IGoalNode> { return just(this.parentGoal); }
 
-  getParentGoal(): GoalNode { return this.parentGoal; }
+  getParentGoal(): IGoalNode { return this.parentGoal; }
 
-  getTactics(): Tactic[] {
+  getTactics(): ITactic[] {
     return this.tactics;
   }
 
-  getViewChildren(): GoalNode[] {
+  getViewChildren(): IGoalNode[] {
     if (this.isSolved()
       && !this.proofTree.isCurNodeAncestor(Strictly.Yes, this)) {
       return [];
@@ -93,8 +89,6 @@ export class TacticGroupNode extends ProofTreeNode {
       just: (t) => this.isProcessed && t.isSolved(),
     });
   }
-
-  nodeWidth(): number { return this.proofTree.getTacticWidth(); }
 
   onChildSolvedAndUnfocused(sid: number): void {
     let focusedTactic = fromJust(this.getFocusedTactic());

@@ -1,4 +1,4 @@
-import { coqDocument } from "./coq85";
+import * as Global from "./global-variables";
 
 /*
 I can't seem to make Ace properly bubble key events, or when they bubble,
@@ -45,7 +45,7 @@ function createBindingForKey(key: string): Rx.Observable<{}> {
       $(document).bind("keydown", jQueryPrefix + key, () => observer.onNext({}));
       // TODO: should probably add shortcuts to all Ace editors
       // since they don't bubble up :(
-      coqDocument.editor.commands.addCommand({
+      Global.coqDocument.editor.commands.addCommand({
         name: key,
         bindKey: { win: aceWindowsPrefix + key, mac: aceMacPrefix + key },
         exec: () => observer.onNext({}),

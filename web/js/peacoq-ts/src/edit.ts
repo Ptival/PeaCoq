@@ -5,12 +5,12 @@ import * as EditStage from "./edit-stage";
 import { Strictly } from "./strictly";
 
 export class Edit {
-  document: CoqDocument;
+  document: ICoqDocument;
   previousEdit: Maybe<Edit>;
   query: string;
   stage: EditStage.EditStage;
 
-  constructor(doc: CoqDocument, start: AceAjax.Position, stop: AceAjax.Position, query: string) {
+  constructor(doc: ICoqDocument, start: AceAjax.Position, stop: AceAjax.Position, query: string) {
     this.document = doc;
     this.query = query;
     let previous = _(doc.getAllEdits()).last();
@@ -19,6 +19,7 @@ export class Edit {
   }
 
   containsPosition(p: AceAjax.Position): boolean {
+    // TODO: I think ace handles this
     return (
       Coq85.isBefore(Strictly.No, this.getStartPosition(), p)
       && Coq85.isBefore(Strictly.No, p, this.getStopPosition())

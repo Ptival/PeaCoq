@@ -69,8 +69,6 @@ export type PeaCoqHyp = {
   type: ConstrExpr;
 };
 
-export type PeaCoqContext = PeaCoqGoal[];
-
 // type GetContextHandler = (r: PeaCoqContext) => void;
 // let peaCoqGetContextHandlers: GetContextHandler[] = [];
 

@@ -1,20 +1,6 @@
 import { setupEditor } from "./editor";
 import { Tab } from "./tab";
 
-export let foreground: EditorTab;
-export let background: EditorTab;
-export let shelved: EditorTab;
-export let givenUp: EditorTab;
-export let notices: EditorTab
-export let warnings: EditorTab;
-export let errors: EditorTab;
-export let infos: EditorTab;
-export let debug: EditorTab;
-export let failures: EditorTab;
-export let feedback: EditorTab;
-export let jobs: EditorTab;
-export let allEditorTabs: EditorTab[] = [];
-
 export class EditorTab extends Tab {
   private editor: AceAjax.Editor;
 
@@ -34,8 +20,6 @@ export class EditorTab extends Tab {
     this.onResizeHandlers.push(function() {
       self.editor.resize();
     });
-
-    allEditorTabs.push(this);
   }
 
   clearValue(): void {

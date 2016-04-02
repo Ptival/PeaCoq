@@ -1,9 +1,10 @@
 import * as EditorTab from "./editor-tab";
+import * as Global from "./global-variables";
 
 export default MessageLevel;
 
 export abstract class MessageLevel {
-  abstract getAssociatedTab(): EditorTab.EditorTab;
+  abstract getAssociatedTab(): IEditorTab;
   abstract toString(): string;
 }
 
@@ -13,31 +14,31 @@ export class Debug extends MessageLevel {
     super();
     this.debug = s;
   }
-  getAssociatedTab() { return EditorTab.debug; }
+  getAssociatedTab() { return Global.debug; }
   toString() { return "Debug(" + this.debug + ")"; }
 }
 
 export class MyError extends MessageLevel {
   constructor() { super(); }
-  getAssociatedTab() { return EditorTab.errors; }
+  getAssociatedTab() { return Global.errors; }
   toString() { return "Error"; }
 }
 
 export class Info extends MessageLevel {
   constructor() { super(); }
-  getAssociatedTab() { return EditorTab.infos; }
+  getAssociatedTab() { return Global.infos; }
   toString() { return "Info"; }
 }
 
 export class Notice extends MessageLevel {
   constructor() { super(); }
-  getAssociatedTab() { return EditorTab.notices; }
+  getAssociatedTab() { return Global.notices; }
   toString() { return "Notice"; }
 }
 
 export class Warning extends MessageLevel {
   constructor() { super(); }
-  getAssociatedTab() { return EditorTab.warnings; }
+  getAssociatedTab() { return Global.warnings; }
   toString() { return "Warning"; }
 }
 

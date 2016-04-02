@@ -1,6 +1,5 @@
+import * as Global from "./global-variables";
 // TODO: I don't like this, theme should broadcast and setup should resize
-import { coqDocument } from "./coq85";
-import { allEditorTabs } from "./editor-tab";
 import { onResize } from "./setup";
 
 let cssPath = "js/lib/w2ui/";
@@ -156,6 +155,6 @@ export function setupTheme() {
     "border-bottom": theme.errorUnderlineStyle,
   });
 
-  coqDocument.editor.setTheme(theme.aceTheme);
-  _(allEditorTabs).each((et) => { et.setTheme(theme.aceTheme); })
+  Global.coqDocument.editor.setTheme(theme.aceTheme);
+  _(Global.allEditorTabs).each((et) => { et.setTheme(theme.aceTheme); })
 }

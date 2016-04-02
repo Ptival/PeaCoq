@@ -1,4 +1,4 @@
-import { coqDocument } from "./coq85";
+import * as Global from "./global-variables";
 import { switchToBright, switchToDark } from "./theme";
 
 let filePickerId = "filepicker";
@@ -83,8 +83,8 @@ export function setupLoadFile(): Rx.Observable<string> {
 
   // TODO: This belongs somewhere else (document-related)
   loadedFilesStream.subscribe((text) => {
-    coqDocument.removeAllEdits();
-    coqDocument.resetEditor(text);
+    Global.coqDocument.removeAllEdits();
+    Global.coqDocument.resetEditor(text);
   });
 
   return loadedFilesStream;
@@ -130,7 +130,7 @@ export function pickFile(): void {
 }
 
 export function saveFile(): void {
-  let editor = coqDocument.editor;
+  let editor = Global.coqDocument.editor;
   let text = editor.getValue();
   let blob = new Blob([text], { type: 'text/plain;charset=UTF-8' });
   let url = window.URL.createObjectURL(blob);

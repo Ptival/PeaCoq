@@ -1,5 +1,3 @@
-export default FeedbackContent;
-
 export abstract class FeedbackContent {
   static create(f: { tag: string; contents: Object }) {
     switch (f.tag) {
