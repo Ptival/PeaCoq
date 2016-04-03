@@ -80,8 +80,14 @@ $(document).ready(() => {
   };
   coqtopTabs = w2ui["right-layout_bottom_tabs"];
 
+  let rightLayoutRenderedStream = Rx.Observable
+    .create((observer) => {
+      rightLayout.on({ type: "render", execute: "after" }, () => observer.onNext({}));
+    })
+    .share();
+
   let tabsAreReadyPromise = new Promise((onFulfilled) => {
-    rightLayout.on({ type: "render", execute: "after" }, () => {
+    rightLayoutRenderedStream.take(1).subscribe(() => {
 
       let tabs: ITabs = <any>{};
 
@@ -92,6 +98,7 @@ $(document).ready(() => {
       tabs.background = new EditorTab("background", "Background", "right-layout", "main");
       tabs.shelved = new EditorTab("shelved", "Shelved", "right-layout", "main");
       tabs.givenUp = new EditorTab("givenup", "Given up", "right-layout", "main");
+
       contextTabs.click("pretty");
 
       // bottom panes
@@ -101,8 +108,9 @@ $(document).ready(() => {
       tabs.infos = new EditorTab("infos", "Infos", "right-layout", "bottom");
       tabs.debug = new EditorTab("debug", "Debug", "right-layout", "bottom");
       tabs.failures = new EditorTab("failures", "Failures", "right-layout", "bottom");
+      // tabs.feedback = new EditorTab("feedback", "Feedback", "right-layout", "bottom");
       tabs.jobs = new EditorTab("jobs", "Jobs", "right-layout", "bottom");
-      tabs.feedback = new EditorTab("feedback", "Feedback", "right-layout", "bottom");
+
       coqtopTabs.click("notices");
 
       Global.setTabs(tabs);
@@ -112,7 +120,8 @@ $(document).ready(() => {
 
       onFulfilled();
     });
-  })
+
+  });
 
   layout.content("main", rightLayout);
 
@@ -135,8 +144,11 @@ $(document).ready(() => {
   Coq85.setupSyntaxHovering();
   let themeChangeStream: Rx.Observable<{}> =
     Rx.Observable.fromPromise(tabsAreReadyPromise)
-    .flatMap(() => setupTheme());
+      .flatMap(() => setupTheme());
   themeChangeStream.subscribe(() => onResize());
+  themeChangeStream.subscribe(() => {
+    rightLayout.refresh();
+  });
 
   let loadedFilesStream = setupLoadFile();
   setupSaveFile();
@@ -423,6 +435,7 @@ function proofTreeOnEditAt(sid: number): void {
 
 export function onResize(): void {
   Global.coqDocument.editor.resize();
+  _(Global.getAllEditorTabs()).each((e) => e.resize());
   getActiveProofTree().fmap((t) => {
     let parent = $("#prooftree").parent();
     t.resize(parent.width(), parent.height());

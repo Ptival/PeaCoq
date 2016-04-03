@@ -1,4 +1,5 @@
 import * as Global from "../global-variables";
+import { onResize } from "../setup";
 import { switchToBright, switchToDark } from "../theme";
 
 let filePickerId = "filepicker";
@@ -31,6 +32,7 @@ export function setupToolbar(): ToolbarStreams {
   ]);
   let fontIncreaseClickStream = addButton(toolbar, { id: "font-increase", icon: "plus" });
   toolbar.add([
+    { type: "button", id: "toolbar-resize", caption: "Resize", onClick: () => onResize() },
     { type: "spacer", id: "toolbar-spacer" },
     { type: "radio", id: "toolbar-bright", group: "1", caption: "Bright", checked: true, onClick: switchToBright },
     { type: "radio", id: "toolbar-dark", group: "1", caption: "Dark", onClick: switchToDark },

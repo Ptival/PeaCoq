@@ -16,7 +16,7 @@ export function getAllEditorTabs(): IEditorTab[] {
     tabs.infos,
     tabs.debug,
     tabs.failures,
-    tabs.feedback,
+    // tabs.feedback,
     tabs.jobs,
   ]
 }

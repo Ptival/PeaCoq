@@ -12,14 +12,6 @@ export class EditorTab extends Tab {
     (<W2UI.W2Layout>w2ui[layout]).content(panel, self.div[0]);
     this.editor = ace.edit(id + "-content");
     setupEditor(this.editor);
-
-    this.onClickHandlers.push(function() {
-      self.editor.resize();
-    });
-
-    this.onResizeHandlers.push(function() {
-      self.editor.resize();
-    });
   }
 
   clearValue(): void {
@@ -32,6 +24,10 @@ export class EditorTab extends Tab {
   recenter(): void {
     let pos = this.editor.getCursorPosition();
     this.editor.scrollToLine(pos.row, true, true, () => { });
+  }
+
+  resize(): void {
+    this.editor.resize();
   }
 
   setOption(name: string, value: any): void {

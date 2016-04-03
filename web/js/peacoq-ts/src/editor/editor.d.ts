@@ -10,7 +10,7 @@ interface ITabs {
   infos: IEditorTab;
   debug: IEditorTab;
   failures: IEditorTab;
-  feedback: IEditorTab;
+  // feedback: IEditorTab;
   jobs: IEditorTab;
 }
 
@@ -83,6 +83,7 @@ interface ITab {
 interface IEditorTab extends ITab {
   clearValue(): void;
   getValue(): string;
+  resize(): void;
   setTheme(s: string): void;
   setValue(s: string, switchToTab: boolean);
 }
