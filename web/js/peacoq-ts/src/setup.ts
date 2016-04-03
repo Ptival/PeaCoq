@@ -80,38 +80,38 @@ $(document).ready(() => {
   };
   coqtopTabs = w2ui["right-layout_bottom_tabs"];
 
-  rightLayout.on({ type: "render", execute: "after" }, () => {
+  let tabsAreReadyPromise = new Promise((onFulfilled) => {
+    rightLayout.on({ type: "render", execute: "after" }, () => {
 
-    let o = <any>{};
+      let tabs: ITabs = <any>{};
 
-    // top panes
-    o.pretty = new Tab("pretty", "Pretty", "right-layout", "main");
-    o.pretty.div.css("padding-left", "4px");
-    o.foreground = new EditorTab("foreground", "Foreground", "right-layout", "main");
-    o.background = new EditorTab("background", "Background", "right-layout", "main");
-    o.shelved = new EditorTab("shelved", "Shelved", "right-layout", "main");
-    o.givenUp = new EditorTab("givenup", "Given up", "right-layout", "main");
-    contextTabs.click("pretty");
+      // top panes
+      tabs.pretty = new Tab("pretty", "Pretty", "right-layout", "main");
+      tabs.pretty.div.css("padding-left", "4px");
+      tabs.foreground = new EditorTab("foreground", "Foreground", "right-layout", "main");
+      tabs.background = new EditorTab("background", "Background", "right-layout", "main");
+      tabs.shelved = new EditorTab("shelved", "Shelved", "right-layout", "main");
+      tabs.givenUp = new EditorTab("givenup", "Given up", "right-layout", "main");
+      contextTabs.click("pretty");
 
-    // bottom panes
-    o.notices = new EditorTab("notices", "Notices", "right-layout", "bottom");
-    o.warnings = new EditorTab("warnings", "Warnings", "right-layout", "bottom");
-    o.errors = new EditorTab("errors", "Errors", "right-layout", "bottom");
-    o.infos = new EditorTab("infos", "Infos", "right-layout", "bottom");
-    o.debug = new EditorTab("debug", "Debug", "right-layout", "bottom");
-    o.failures = new EditorTab("failures", "Failures", "right-layout", "bottom");
-    o.jobs = new EditorTab("jobs", "Jobs", "right-layout", "bottom");
-    o.feedback = new EditorTab("feedback", "Feedback", "right-layout", "bottom");
-    coqtopTabs.click("notices");
+      // bottom panes
+      tabs.notices = new EditorTab("notices", "Notices", "right-layout", "bottom");
+      tabs.warnings = new EditorTab("warnings", "Warnings", "right-layout", "bottom");
+      tabs.errors = new EditorTab("errors", "Errors", "right-layout", "bottom");
+      tabs.infos = new EditorTab("infos", "Infos", "right-layout", "bottom");
+      tabs.debug = new EditorTab("debug", "Debug", "right-layout", "bottom");
+      tabs.failures = new EditorTab("failures", "Failures", "right-layout", "bottom");
+      tabs.jobs = new EditorTab("jobs", "Jobs", "right-layout", "bottom");
+      tabs.feedback = new EditorTab("feedback", "Feedback", "right-layout", "bottom");
+      coqtopTabs.click("notices");
 
-    Global.setTabs(
-      o.pretty, o.foreground, o.background, o.shelved, o.givenUp,
-      o.notices, o.warnings, o.errors, o.infos, o.debug, o.failures,
-      o.jobs, o.feedback
-    );
+      Global.setTabs(tabs);
 
-    // TODO: stream this
-    updateFontSize(Global.coqDocument);
+      // TODO: stream this
+      updateFontSize(Global.coqDocument);
+
+      onFulfilled();
+    });
   })
 
   layout.content("main", rightLayout);
@@ -133,7 +133,9 @@ $(document).ready(() => {
   let shortcutsStreams = setupKeybindings();
 
   Coq85.setupSyntaxHovering();
-  let themeChangeStream = setupTheme();
+  let themeChangeStream: Rx.Observable<{}> =
+    Rx.Observable.fromPromise(tabsAreReadyPromise)
+    .flatMap(() => setupTheme());
   themeChangeStream.subscribe(() => onResize());
 
   let loadedFilesStream = setupLoadFile();
@@ -237,7 +239,7 @@ $(document).ready(() => {
       if (failedEditStage) {
         let failedEdit = failedEditStage.edit;
         Global.coqDocument.removeEditsAfter(failedEdit);
-        Global.errors.setValue(e.message, true);
+        Global.tabs.errors.setValue(e.message, true);
         let errorStart = Global.coqDocument.movePositionRight(failedEdit.getStartPosition(), e.start);
         let errorStop = Global.coqDocument.movePositionRight(failedEdit.getStartPosition(), e.stop);
         let errorRange = new AceAjax.Range(errorStart.row, errorStart.column, errorStop.row, errorStop.column);
@@ -444,7 +446,7 @@ function showProofTreePanel(): Promise<{}> {
 
 function updateFontSize(d: ICoqDocument): void {
   d.editor.setOption("fontSize", fontSize);
-  _(Global.allEditorTabs).each((e: EditorTab) => {
+  _(Global.getAllEditorTabs()).each((e: EditorTab) => {
     e.setOption("fontSize", fontSize);
   });
   jss.set("#pretty-content", { "font-size": fontSize + "px" });

@@ -158,7 +158,7 @@ export function setupTheme(): Rx.Observable<{}> {
   });
 
   Global.coqDocument.editor.setTheme(theme.aceTheme);
-  _(Global.allEditorTabs).each((et) => { et.setTheme(theme.aceTheme); });
+  _(Global.getAllEditorTabs()).each((et) => { et.setTheme(theme.aceTheme); });
 
   return themeChangeStream;
 }

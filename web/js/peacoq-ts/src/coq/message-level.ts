@@ -13,31 +13,31 @@ export class Debug extends MessageLevel {
     super();
     this.debug = s;
   }
-  getAssociatedTab() { return Global.debug; }
+  getAssociatedTab() { return Global.tabs.debug; }
   toString() { return "Debug(" + this.debug + ")"; }
 }
 
 export class MyError extends MessageLevel {
   constructor() { super(); }
-  getAssociatedTab() { return Global.errors; }
+  getAssociatedTab() { return Global.tabs.errors; }
   toString() { return "Error"; }
 }
 
 export class Info extends MessageLevel {
   constructor() { super(); }
-  getAssociatedTab() { return Global.infos; }
+  getAssociatedTab() { return Global.tabs.infos; }
   toString() { return "Info"; }
 }
 
 export class Notice extends MessageLevel {
   constructor() { super(); }
-  getAssociatedTab() { return Global.notices; }
+  getAssociatedTab() { return Global.tabs.notices; }
   toString() { return "Notice"; }
 }
 
 export class Warning extends MessageLevel {
   constructor() { super(); }
-  getAssociatedTab() { return Global.warnings; }
+  getAssociatedTab() { return Global.tabs.warnings; }
   toString() { return "Warning"; }
 }
 

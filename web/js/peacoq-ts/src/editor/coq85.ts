@@ -71,17 +71,26 @@ let unlockedAnchor;
 let unlockedMarker;
 
 function clearCoqtopTabs(clearFailures: boolean): void {
-  let tabsToClear = [Global.foreground, Global.background, Global.shelved, Global.givenUp, Global.notices, Global.warnings, Global.errors, Global.infos];
-  if (clearFailures) { tabsToClear.push(Global.failures); }
+  let tabsToClear = [
+    Global.tabs.foreground,
+    Global.tabs.background,
+    Global.tabs.shelved,
+    Global.tabs.givenUp,
+    Global.tabs.notices,
+    Global.tabs.warnings,
+    Global.tabs.errors,
+    Global.tabs.infos
+  ];
+  if (clearFailures) { tabsToClear.push(Global.tabs.failures); }
   _(tabsToClear)
     .each((et: IEditorTab) => {
       et.clearValue();
     });
-  Global.pretty.div.html("");
+  Global.tabs.pretty.div.html("");
 }
 
 function reportFailure(f: string) { //, switchTab: boolean) {
-  Global.failures.setValue(f, true);
+  Global.tabs.failures.setValue(f, true);
   //yif (switchTab) { failures.click(); }
 }
 

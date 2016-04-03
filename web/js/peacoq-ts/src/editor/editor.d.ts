@@ -1,3 +1,19 @@
+interface ITabs {
+  pretty: ITab;
+  foreground: IEditorTab;
+  background: IEditorTab;
+  shelved: IEditorTab;
+  givenUp: IEditorTab;
+  notices: IEditorTab;
+  warnings: IEditorTab;
+  errors: IEditorTab;
+  infos: IEditorTab;
+  debug: IEditorTab;
+  failures: IEditorTab;
+  feedback: IEditorTab;
+  jobs: IEditorTab;
+}
+
 interface ICoqDocument {
   changeStream: Rx.Observable<AceAjax.EditorChangeEvent>;
   editor: AceAjax.Editor;
