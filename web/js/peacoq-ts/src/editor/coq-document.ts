@@ -1,6 +1,6 @@
 import * as EditStage from "./edit-stage";
-import * as Global from "./global-variables";
-import { errorUnderlineClass, theme } from "./theme";
+import * as Global from "./../global-variables";
+import { errorUnderlineClass, theme } from "./../theme";
 
 export class CoqDocument {
   beginAnchor: AceAjax.Anchor;

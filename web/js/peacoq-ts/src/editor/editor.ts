@@ -1,4 +1,4 @@
-import { theme } from "./theme";
+import { theme } from "../theme";
 
 let CoqMode = ace.require("peacoq-js/mode-coq").Mode;
 

@@ -1,25 +1,24 @@
-import * as BinderKind from "./binder-kind";
-import { BindingKind, Explicit, Implicit } from "./binding-kind";
-import { PpHBox, PpVBox, PpHVBox, PpHoVBox, PpTBox } from "./block-type";
-import { CasesPatternExpr, CPatAtom, CPatCstr, CPatDelimiters, CPatPrim } from "./cases-pattern-expr";
-import * as CaseStyle from "./case-style";
-import * as ConstrExpr from "./coq-constr-expr";
-import { CoqLocation, GlobSort, InstanceExpr, Located } from "./coq-definitions";
-import * as Explicitation from "./explicitation";
-import { GProp, GSet, GType } from "./glob-sort-gen";
-import * as LocalBinder from "./local-binder";
-import * as NameBase from "./name-base";
-import { Any, E, L, ParenRelation, Prec } from "./paren-relation";
-import * as PpBox from "./ppbox";
-import * as PpCmd from "./ppcmd-token";
-import { PpBrk, PpCut, PpFnl, PpTab, PpTbrk } from "./ppcut";
-import * as PrimToken from "./prim-token";
-import * as Reference from "./reference";
-import * as StrToken from "./str-token";
+import * as BinderKind from "./coq/binder-kind";
+import { BindingKind, Explicit, Implicit } from "./coq/binding-kind";
+import { PpHBox, PpVBox, PpHVBox, PpHoVBox, PpTBox } from "./coq/block-type";
+import { CasesPatternExpr, CPatAtom, CPatCstr, CPatDelimiters, CPatPrim } from "./coq/cases-pattern-expr";
+import * as CaseStyle from "./coq/case-style";
+import * as ConstrExpr from "./coq/coq-constr-expr";
+import * as Explicitation from "./coq/explicitation";
+import { GProp, GSet, GType } from "./coq/glob-sort-gen";
+import * as LocalBinder from "./coq/local-binder";
+import * as NameBase from "./coq/name-base";
+import { Any, E, L, ParenRelation, Prec } from "./coq/paren-relation";
+import * as PpBox from "./coq/ppbox";
+import * as PpCmd from "./coq/ppcmd-token";
+import { PpBrk, PpCut, PpFnl, PpTab, PpTbrk } from "./coq/ppcut";
+import * as PrimToken from "./coq/prim-token";
+import * as Reference from "./coq/reference";
+import * as StrToken from "./coq/str-token";
 import {
   Unparsing, UnpBinderListMetaVar, UnpBox, UnpCut, UnpListMetaVar,
   UnpMetaVar, UnpTerminal
-} from "./unparsing";
+} from "./coq/unparsing";
 
 export type PpCmd = PpCmd.PpCmdToken<StrToken.StrToken>;
 export type PpCmds = PpCmd[];

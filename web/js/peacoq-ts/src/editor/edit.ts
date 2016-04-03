@@ -1,6 +1,6 @@
 import { EditMarker } from "./edit-marker";
 import { ToProcess } from "./edit-stage";
-import { Strictly } from "./strictly";
+import { Strictly } from "../strictly";
 
 export class Edit {
   document: ICoqDocument;

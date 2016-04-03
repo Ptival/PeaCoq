@@ -1,8 +1,8 @@
 import { FakeNode } from "./fakenode";
 import { GoalNode } from "./goalnode";
-import * as ProofTreeUtils from "./prooftree-utils";
+import * as ProofTreeUtils from "./utils";
 import { TacticGroupNode } from "./tacticgroupnode";
-import { Strictly } from "./strictly";
+import { Strictly } from "./../strictly";
 
 /* Globals to be configured */
 let animationDuration = 2000;

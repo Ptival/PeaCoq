@@ -1,7 +1,7 @@
-import { PpCmdBox, PpCmdPrint, PpCmdToken } from "./ppcmd-token";
+import { PpCmdBox, PpCmdPrint, PpCmdToken } from "./coq/ppcmd-token";
 import { PpCmd, PpCmds, str } from "./coq-pretty-printer";
 import * as Pattern from "./pattern";
-import { StrDef } from "./str-token";
+import { StrDef } from "./coq/str-token";
 import { findPpCmdSuchThat, matchPattern, ppCmdIsString, ppCmdIsStringSuchThat, replacePpCmd, replaceToken } from "./visualizations-utils";
 
 let any = new Pattern.Anything();

@@ -1,5 +1,5 @@
-import * as Global from "./global-variables";
-import { switchToBright, switchToDark } from "./theme";
+import * as Global from "../global-variables";
+import { switchToBright, switchToDark } from "../theme";
 
 let filePickerId = "filepicker";
 

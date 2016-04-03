@@ -1,5 +1,3 @@
-import { Located } from "./coq-definitions";
-
 export default Reference;
 
 export abstract class Reference { }

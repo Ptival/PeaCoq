@@ -1,4 +1,4 @@
-import * as Coq85 from "./coq85";
+import * as Coq85 from "./editor/coq85";
 import { htmlPrintConstrExpr, htmlPrintHyps } from "./html-printers";
 
 export default PeaCoqGoal;

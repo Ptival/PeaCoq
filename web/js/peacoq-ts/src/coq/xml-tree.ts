@@ -1,5 +1,4 @@
-import { Located } from "./coq-definitions";
-import { CoqXMLTag, mkCoqXMLTag } from "./coq-xml-tag";
+import { CoqXMLTag, mkCoqXMLTag } from "./xml-tag";
 
 export default CoqXMLTree;
 

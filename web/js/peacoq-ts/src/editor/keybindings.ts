@@ -1,4 +1,4 @@
-import * as Global from "./global-variables";
+import * as Global from "../global-variables";
 
 /*
 I can't seem to make Ace properly bubble key events, or when they bubble,

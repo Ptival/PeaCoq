@@ -1,5 +1,5 @@
 import { ProofTreeNode } from "./prooftreenode";
-import { Strictly } from "./strictly";
+import { Strictly } from "./../strictly";
 
 export class GoalNode extends ProofTreeNode implements IGoalNode {
   // DO NOT USE "children" AS D3 WILL OVERWRITE

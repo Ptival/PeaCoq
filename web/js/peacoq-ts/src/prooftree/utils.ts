@@ -1,4 +1,4 @@
-import * as Global from "./global-variables";
+import * as Global from "./../global-variables";
 
 /*
   Stuff that is somewhat general but mostly useful for the proof tree.

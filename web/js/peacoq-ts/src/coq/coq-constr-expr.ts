@@ -1,7 +1,6 @@
 import BinderKind from "./binder-kind";
 import CasesPatternExpr from "./cases-pattern-expr";
 import CaseStyle from "./case-style";
-import { CoqLocation, GlobLevel, GlobSort, InstanceExpr, Located } from "./coq-definitions";
 import Explicitation from "./explicitation";
 import * as LocalBinder from "./local-binder";
 import * as NameBase from "./name-base";

@@ -1,4 +1,4 @@
-import * as ProofTreeUtils from "./prooftree-utils";
+import * as ProofTreeUtils from "./utils";
 
 export abstract class ProofTreeNode implements IProofTreeNode {
   private body: HTMLElement;

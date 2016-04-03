@@ -1,7 +1,8 @@
-import * as CoqtopInput from "./coqtop-input";
-import * as Global from "./global-variables";
+import * as CoqtopInput from "./../coqtop-input";
+import * as Global from "./../global-variables";
 import { Edit } from "./edit";
-import { Warning } from "./message-level";
+// TODO: the thing causing this import should go elsewhere
+import { Warning } from "../coq/message-level";
 
 // import { Strictly } from "./strictly";
 

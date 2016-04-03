@@ -1,6 +1,6 @@
 export default GlobSortGen;
 
-export abstract class GlobSortGen<T> { }
+export abstract class GlobSortGen<T> implements IGlobSortGen<T> { }
 
 export class GProp<T> extends GlobSortGen<T> { }
 

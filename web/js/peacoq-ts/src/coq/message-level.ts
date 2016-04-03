@@ -1,5 +1,4 @@
-import * as EditorTab from "./editor-tab";
-import * as Global from "./global-variables";
+import * as Global from "./../global-variables";
 
 export default MessageLevel;
 

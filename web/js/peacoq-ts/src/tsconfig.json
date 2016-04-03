@@ -15,6 +15,10 @@
   },
   "filesGlob": [
     "*.ts",
+    "coq/*.ts",
+    "editor/*.ts",
+    "peacoq/*.ts",
+    "prooftree/*.ts",
     "DefinitelyTyped/ace/ace.d.ts",
     "DefinitelyTyped/d3/d3.d.ts",
     "DefinitelyTyped/es6-shim/es6-shim.d.ts",

@@ -1,5 +1,5 @@
 import { ProofTreeNode } from "./prooftreenode";
-import { Strictly } from "./strictly";
+import { Strictly } from "./../strictly";
 
 let userTacticsGroupName = "PeaCoq user tactics";
 
