@@ -1,22 +1,16 @@
 import * as Coq85 from "./coq85";
-import * as Coqtop85 from "./coqtop85";
 import * as Coqtop from "./coqtop-rx";
 import * as CoqtopInput from "./coqtop-input";
-import { PeaCoqHyp } from "./coqtop85";
 import * as EditStage from "./edit-stage";
 import { setupEditor } from "./editor";
 import { EditorTab } from "./editor-tab";
-import { Feedback } from "./feedback";
 import * as FeedbackContent from "./feedback-content";
 import * as Global from "./global-variables";
+// TODO: not sure if this file should be creating those nodes...
 import { GoalNode } from "./goalnode";
-import { Goals } from "./goals";
 import { setupKeybindings } from "./keybindings";
-import { Message } from "./message";
-import { Warning } from "./message-level";
 import { ProofTree, proofTrees } from "./prooftree";
 import { getActiveProofTree } from "./prooftree-utils";
-import { Status } from "./status";
 import { Tab } from "./tab";
 import { Tactic } from "./tactic";
 import { TacticGroupNode } from "./tacticgroupnode";
@@ -138,7 +132,8 @@ $(document).ready(() => {
   let shortcutsStreams = setupKeybindings();
 
   Coq85.setupSyntaxHovering();
-  setupTheme();
+  let themeChangeStream = setupTheme();
+  themeChangeStream.subscribe(() => onResize());
 
   let loadedFilesStream = setupLoadFile();
   setupSaveFile();
@@ -251,7 +246,7 @@ $(document).ready(() => {
 
 });
 
-let lastStatus: Status;
+// let lastStatus: IStatus;
 
 // function editorOnEditAt(sid: number) {
 //   let edit = _(Global.coqDocument.editsProcessed).find((e) => e.stateId === sid);
@@ -261,9 +256,9 @@ let lastStatus: Status;
 //   }
 // }
 
-function proofTreeOnStatus(s) {
-  lastStatus = s;
-}
+// function proofTreeOnStatus(s) {
+//   lastStatus = s;
+// }
 
 function updateCoqtopTabs(goals: IGoals, context: PeaCoqContext) {
   console.log("TODO: updateCoqtopTabs");
@@ -277,8 +272,8 @@ function updateCoqtopTabs(goals: IGoals, context: PeaCoqContext) {
 function proofTreeOnEdit(
   query: string,
   stateId: number,
-  lastStatus: Status,
-  status: Status,
+  lastStatus: IStatus,
+  status: IStatus,
   goals: IGoals,
   context: PeaCoqContext
 ): void {
@@ -355,7 +350,7 @@ function proofTreeOnEdit(
       : 0;
   let relevantGoals = context.slice(0, nbRelevantGoals);
 
-  let goalNodes: GoalNode[] =
+  let goalNodes: IGoalNode[] =
     _(relevantGoals).map(function(goal) {
       return new GoalNode(
         activeProofTree,
@@ -376,7 +371,7 @@ function proofTreeOnEdit(
   tacticGroup.isProcessed = true;
 
   if (goalNodes.length > 0) {
-    let curGoal: GoalNode = goalNodes[0];
+    let curGoal: IGoalNode = goalNodes[0];
     curGoal.stateIds.push(stateId);
     activeProofTree.curNode = curGoal;
     activeProofTree.update();

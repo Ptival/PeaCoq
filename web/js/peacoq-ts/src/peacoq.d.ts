@@ -19,10 +19,13 @@ interface ICoqDocument {
 }
 
 interface IEdit {
+  previousEdit: Maybe<IEdit>;
+  query: string;
   stage: IEditStage;
   containsPosition(p: AceAjax.Position): boolean;
   getStartPosition(): AceAjax.Position;
   getStopPosition(): AceAjax.Position;
+  remove(): void;
 }
 
 interface IEditStage {
@@ -57,7 +60,10 @@ interface IProcessed extends IEditStage {
 }
 
 interface IStatus {
-
+  // statusPath: string[];
+  statusProofName: string;
+  statusAllProofs: string;
+  // statusProofNum: number;
 }
 
 interface ITab {
@@ -65,6 +71,7 @@ interface ITab {
 }
 
 interface IEditorTab extends ITab {
+  clearValue(): void;
   getValue(): string;
   setTheme(s: string): void;
   setValue(s: string, switchToTab: boolean);

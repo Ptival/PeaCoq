@@ -5,7 +5,7 @@ declare type TacticGroup = {
   tactics: string[];
 }
 
-declare enum Strictly { Yes, No }
+interface IStrictly { }
 
 interface IProofTree {
   curNode: IGoalNode;
@@ -15,7 +15,7 @@ interface IProofTree {
   getGoalWidth(): number;
   getTacticWidth(): number;
   isCurNode(n: IProofTreeNode): boolean;
-  isCurNodeAncestor(strictly: Strictly, n: IProofTreeNode): boolean;
+  isCurNodeAncestor(strictly: IStrictly, n: IProofTreeNode): boolean;
   resize(w: number, h: number);
   update(): Promise<{}>;
   xOffset(n: IProofTreeNode): number;

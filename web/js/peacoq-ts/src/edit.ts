@@ -1,4 +1,3 @@
-import { CoqDocument } from "./coq85";
 import * as Coq85 from "./coq85";
 import { EditMarker } from "./edit-marker";
 import * as EditStage from "./edit-stage";

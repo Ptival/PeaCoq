@@ -1,1 +1,1 @@
-export enum Strictly { Yes, No }
+export enum Strictly { Yes, No };

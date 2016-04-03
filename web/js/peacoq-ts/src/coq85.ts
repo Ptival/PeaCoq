@@ -2,10 +2,8 @@ import ConstrExpr from "./coq-constr-expr";
 import { prConstrExpr } from "./coq-pretty-printer";
 import { PeaCoqHyp } from "./coqtop85";
 import * as CoqtopInput from "./coqtop-input";
-import { Edit } from "./edit";
 import * as EditStage from "./edit-stage";
-import { setupEditor } from "./editor";
-import { EditorTab } from "./editor-tab";
+import { Edit } from "./edit";
 import { Feedback } from "./feedback";
 import * as Global from "./global-variables";
 import { Goals } from "./goals";
@@ -27,7 +25,7 @@ export class CoqDocument {
   beginAnchor: AceAjax.Anchor;
   changeStream: Rx.Observable<AceAjax.EditorChangeEvent>;
   editor: AceAjax.Editor;
-  private edits: Edit[];
+  private edits: IEdit[];
   endAnchor: AceAjax.Anchor;
   session: AceAjax.IEditSession;
 
@@ -47,7 +45,7 @@ export class CoqDocument {
         .share();
   }
 
-  getAllEdits(): Edit[] { return this.edits; }
+  getAllEdits(): IEdit[] { return this.edits; }
 
   private getEditStagesInstanceOf(stage): any[] {
     return _(this.edits)
@@ -171,7 +169,7 @@ export class CoqDocument {
     });
   }
 
-  pushEdit(e: Edit) { this.edits.push(e); }
+  pushEdit(e: IEdit) { this.edits.push(e); }
 
   recenterEditor() {
     let pos = this.editor.getCursorPosition();
@@ -189,12 +187,12 @@ export class CoqDocument {
     this.edits = [];
   }
 
-  removeEdit(e: Edit): void {
+  removeEdit(e: IEdit): void {
     e.remove();
     _(this.edits).remove(e);
   }
 
-  removeEditsAfter(e: Edit): void {
+  removeEditsAfter(e: IEdit): void {
     let self = this;
     let editIndex = _(this.edits).findIndex(e);
     let editsToKeep = _(this.edits).slice(0, editIndex).value();
@@ -280,7 +278,7 @@ function clearCoqtopTabs(clearFailures: boolean): void {
   let tabsToClear = [Global.foreground, Global.background, Global.shelved, Global.givenUp, Global.notices, Global.warnings, Global.errors, Global.infos];
   if (clearFailures) { tabsToClear.push(Global.failures); }
   _(tabsToClear)
-    .each((et: EditorTab) => {
+    .each((et: IEditorTab) => {
       et.clearValue();
     });
   Global.pretty.div.html("");
@@ -291,7 +289,7 @@ function reportFailure(f: string) { //, switchTab: boolean) {
   //yif (switchTab) { failures.click(); }
 }
 
-function getPreviousEditContext(e: Edit): Maybe<PeaCoqContext> {
+function getPreviousEditContext(e: IEdit): Maybe<PeaCoqContext> {
   return e.previousEdit.bind((e) => {
     let stage = e.stage;
     return stage instanceof EditStage.Processed ? just(stage.context) : nothing();
@@ -300,7 +298,7 @@ function getPreviousEditContext(e: Edit): Maybe<PeaCoqContext> {
 
 export function onNextReactive(
   doc: ICoqDocument, next: Rx.Observable<{}>
-): Rx.Observable<Edit> {
+): Rx.Observable<IEdit> {
   return next
     .map(() => {
       let lastEditStopPos = doc.getLastEditStop();
@@ -660,7 +658,7 @@ There are two ways to go:
 */
 
 export function processEditsReactive(
-  edit: Rx.Observable<Edit>
+  edit: Rx.Observable<IEdit>
 ): Rx.Observable<CoqtopInput.CoqtopInput> {
   return edit
     .map((e) => new CoqtopInput.AddPrime(e.query, just(e)))

@@ -1,6 +1,4 @@
 import * as Global from "./global-variables";
-// TODO: I don't like this, theme should broadcast and setup should resize
-import { onResize } from "./setup";
 
 let cssPath = "js/lib/w2ui/";
 export let errorUnderlineClass = "theme_error_underline";
@@ -92,12 +90,16 @@ export function switchToDark(): void {
   setupTheme();
 }
 
-export function setupTheme() {
-  $.get(theme.css, (response) => {
-    $('#theme').text(response);
-    onResize();
-  });
-  $("#w2uicss").load(onResize).attr("href", theme.css);
+export function setupTheme(): Rx.Observable<{}> {
+  let themeChangeStream = Rx.Observable.create((observer) => {
+    $.get(theme.css, (response) => {
+      $('#theme').text(response);
+      observer.onNext({});
+    });
+    $("#w2uicss")
+      .load(() => observer.onNext({}))
+      .attr("href", theme.css);
+  })
   jss.set(".w2ui-layout>div .w2ui-resizer", {
     "background-color": "transparent"
   })
@@ -156,5 +158,7 @@ export function setupTheme() {
   });
 
   Global.coqDocument.editor.setTheme(theme.aceTheme);
-  _(Global.allEditorTabs).each((et) => { et.setTheme(theme.aceTheme); })
+  _(Global.allEditorTabs).each((et) => { et.setTheme(theme.aceTheme); });
+
+  return themeChangeStream;
 }

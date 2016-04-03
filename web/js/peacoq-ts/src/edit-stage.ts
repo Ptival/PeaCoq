@@ -1,8 +1,3 @@
-import { Edit } from "./edit";
-import { EditMarker } from "./edit-marker";
-import { Goals } from "./goals";
-import { Status } from "./status";
-
 export abstract class EditStage implements IEditStage {
   edit: IEdit;
   protected marker: IEditMarker;
@@ -45,9 +40,9 @@ let freshEditId = (function() {
 export class Processed extends EditStage implements IProcessed {
   context: PeaCoqContext;
   editId: number;
-  goals: Goals;
+  goals: IGoals;
   stateId: number;
-  status: Status;
+  status: IStatus;
 
   constructor(e: IBeingProcessed) {//, s: Status, gs: Goals, c: PeaCoqContext) {
     super(e.edit, e.nextStageMarker());
