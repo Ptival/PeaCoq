@@ -1,3 +1,9 @@
+type PeaCoqHyp = {
+  name: string;
+  maybeTerm: Maybe<IConstrExpr>;
+  type: IConstrExpr;
+};
+
 interface ICoqDocument {
   changeStream: Rx.Observable<AceAjax.EditorChangeEvent>;
   editor: AceAjax.Editor;
@@ -32,6 +38,7 @@ interface IEditStage {
   edit: IEdit;
   getStartPosition(): AceAjax.Position;
   getStopPosition(): AceAjax.Position;
+  remove(): void;
 }
 
 interface IToProcess extends IEditStage {

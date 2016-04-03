@@ -1,6 +1,5 @@
-import ConstrExpr from "./coq-constr-expr";
-import * as Coqtop85 from "./coqtop85";
 import * as Coq85 from "./coq85";
+import { htmlPrintConstrExpr, htmlPrintHyps } from "./html-printers";
 
 export default PeaCoqGoal;
 
@@ -12,8 +11,8 @@ export default PeaCoqGoal;
 
 export class PeaCoqGoal {
   private html: JQuery;
-  private hyps: Coqtop85.PeaCoqHyp[];
-  private concl: ConstrExpr;
+  private hyps: PeaCoqHyp[];
+  private concl: IConstrExpr;
 
   constructor(hyps, concl) {
     this.html = undefined; // rendered on-demand and cached
@@ -25,12 +24,12 @@ export class PeaCoqGoal {
     if (this.html === undefined) {
       this.html = $("<div>");
       // TODO: htmlPrintHypsDiff
-      let hypsDiv = $("<div>").html(Coq85.htmlPrintHyps(this.hyps));
+      let hypsDiv = $("<div>").html(htmlPrintHyps(this.hyps));
       this.html.append(hypsDiv);
       this.html.append(makeContextDivider());
       // TODO: htmlPrintConstrExprDiff
       this.html.append(
-        $("<div>").html(Coq85.htmlPrintConstrExpr(this.concl))
+        $("<div>").html(htmlPrintConstrExpr(this.concl))
       );
 
       /*

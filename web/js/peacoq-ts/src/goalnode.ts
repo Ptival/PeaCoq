@@ -1,4 +1,3 @@
-import * as Coqtop85 from "./coqtop85";
 import { ProofTreeNode } from "./prooftreenode";
 import { Strictly } from "./strictly";
 

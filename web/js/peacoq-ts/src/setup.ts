@@ -1,4 +1,5 @@
 import * as Coq85 from "./coq85";
+import { CoqDocument } from "./coq-document";
 import * as Coqtop from "./coqtop-rx";
 import * as CoqtopInput from "./coqtop-input";
 import * as EditStage from "./edit-stage";
@@ -52,7 +53,7 @@ $(document).ready(() => {
   });
 
   //editor.selection.on("changeSelection", (e) => { console.log(e); });
-  Global.setCoqDocument(new Coq85.CoqDocument(editor));
+  Global.setCoqDocument(new CoqDocument(editor));
 
   let editAtBecauseEditorChange: Rx.Observable<CoqtopInput.CoqtopInput> =
     Global.coqDocument.changeStream.flatMap((change) => {

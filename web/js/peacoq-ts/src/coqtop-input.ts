@@ -1,7 +1,3 @@
-import { Edit } from "./edit";
-
-export default CoqtopInput;
-
 export abstract class CoqtopInput {
   abstract getArgs(): Object;
   abstract getCmd(): string;
@@ -9,8 +5,8 @@ export abstract class CoqtopInput {
 
 export class AddPrime extends CoqtopInput {
   add: string;
-  edit: Maybe<Edit>;
-  constructor(a: string, e: Maybe<Edit>) {
+  edit: Maybe<IEdit>;
+  constructor(a: string, e: Maybe<IEdit>) {
     super();
     this.add = a;
     this.edit = e;

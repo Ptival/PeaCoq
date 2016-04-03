@@ -1,5 +1,4 @@
 import * as CoqtopInput from "./coqtop-input";
-import { AddReturn } from "./coqtop85"
 import { Feedback } from "./feedback";
 import { Message } from "./message";
 import { ValueFail } from "./value-fail";
@@ -21,10 +20,10 @@ interface CoqtopOutput {
 }
 
 interface CoqtopOutputStreams {
-  failResponse: Rx.Observable<ValueFail>;
-  feedback: Rx.Observable<Feedback>;
+  failResponse: Rx.Observable<IValueFail>;
+  feedback: Rx.Observable<IFeedback>;
   goodResponse: Rx.Observable<CoqtopResponse>;
-  messages: Rx.Observable<Message>;
+  messages: Rx.Observable<IMessage>;
   response: Rx.Observable<CoqtopResponse>;
   stateId: Rx.Observable<number>;
 }
@@ -102,7 +101,7 @@ export function setupCoqtopCommunication(
     coqtopResponseStream.filter((r) => r.tag === "ValueGood")
     ;
 
-  let coqtopFailResponseStream: Rx.Observable<ValueFail> =
+  let coqtopFailResponseStream: Rx.Observable<IValueFail> =
     coqtopResponseStream
       .filter((r) => r.tag === "ValueFail")
       .map((r) => new ValueFail(r.contents))
@@ -124,14 +123,14 @@ export function setupCoqtopCommunication(
 
   let coqtopStateIdStream = coqtopOutputStream.map((r) => r.stateId);
 
-  let coqtopMessagesStream: Rx.Observable<Message> =
+  let coqtopMessagesStream: Rx.Observable<IMessage> =
     coqtopOutputStream
       .flatMap(
       (r) => _(r.messages).map((m) => new Message(m)).value()
       )
       .share();
 
-  let coqtopFeedbackStream: Rx.Observable<Feedback> =
+  let coqtopFeedbackStream: Rx.Observable<IFeedback> =
     coqtopOutputStream
       .flatMap(
       (r) => _(r.feedback).map((f) => new Feedback(f)).value()

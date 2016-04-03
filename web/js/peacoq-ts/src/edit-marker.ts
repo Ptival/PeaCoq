@@ -1,5 +1,3 @@
-import { CoqDocument } from "./coq85";
-
 export class EditMarker {
   document: ICoqDocument;
   markerId: number;

@@ -1,235 +1,30 @@
-import ConstrExpr from "./coq-constr-expr";
-import { prConstrExpr } from "./coq-pretty-printer";
-import { PeaCoqHyp } from "./coqtop85";
 import * as CoqtopInput from "./coqtop-input";
-import * as EditStage from "./edit-stage";
-import { Edit } from "./edit";
-import { Feedback } from "./feedback";
 import * as Global from "./global-variables";
-import { Goals } from "./goals";
-import { Message } from "./message";
+import { Edit } from "./edit";
 import { Warning } from "./message-level";
-import { Status } from "./status";
-import { Strictly } from "./strictly";
-import { errorUnderlineClass, theme } from "./theme";
-import { htmlPrintPpCmds, htmlPrintPpCmdsDiff } from "./visualization-printers";
+
+// import { Strictly } from "./strictly";
 
 // let AceAnchor = ace.require("ace/anchor").Anchor;
 // let AceRange = ace.require("ace/range").Range;
 // let AceRangeList = ace.require("ace/range_list").RangeList;
 // let AceSelection = ace.require("ace/selection").Selection;
 
-let autoLayout = false;
+// let autoLayout = false;
 
-export class CoqDocument {
-  beginAnchor: AceAjax.Anchor;
-  changeStream: Rx.Observable<AceAjax.EditorChangeEvent>;
-  editor: AceAjax.Editor;
-  private edits: IEdit[];
-  endAnchor: AceAjax.Anchor;
-  session: AceAjax.IEditSession;
+// let maxLength = 2000;
+//
+// function onFeedback(f: IFeedback) {
+//   let current = Global.feedback.getValue().substring(0, maxLength);
+//   let now = new Date();
+//   Global.feedback.setValue(
+//     "[" + now.toString().substring(16, 24) + "] " + f.toString() +
+//     "\n" + current,
+//     false
+//   );
+// }
 
-  constructor(editor: AceAjax.Editor) {
-    let self = this;
-    this.editor = editor;
-    this.edits = [];
-    // WARNING: This line must stay over calls to mkAnchor
-    this.session = editor.getSession();
-    this.beginAnchor = mkAnchor(this, 0, 0, "begin-marker", true);
-    this.endAnchor = mkAnchor(this, 0, 0, "end-marker", false);
-    this.changeStream =
-      Rx.Observable
-        .create<AceAjax.EditorChangeEvent>((observer) => {
-          self.session.on("change", (e) => observer.onNext(e));
-        })
-        .share();
-  }
-
-  getAllEdits(): IEdit[] { return this.edits; }
-
-  private getEditStagesInstanceOf(stage): any[] {
-    return _(this.edits)
-      .map((e) => e.stage)
-      .filter((s) => {
-        return s instanceof stage;
-      })
-      .value();
-  }
-
-  getEditStagesBeingProcessed(): EditStage.BeingProcessed[] {
-    return this.getEditStagesInstanceOf(EditStage.BeingProcessed);
-  }
-
-  getEditStagesToProcess(): EditStage.ToProcess[] {
-    return this.getEditStagesInstanceOf(EditStage.ToProcess);
-  }
-
-  getEditStagesProcessed(): EditStage.Processed[] {
-    return this.getEditStagesInstanceOf(EditStage.Processed);
-  }
-
-  // getStopPositions(): AceAjax.Position[] {
-  //   return _(this.editsProcessed).map(function(e) { return e.getStopPosition(); }).value();
-  // }
-
-  getLastEditStop(): AceAjax.Position {
-    if (this.edits.length > 0) {
-      return _(this.edits).last().getStopPosition();
-    } else {
-      return this.beginAnchor.getPosition();
-    }
-  }
-
-  moveCursorToPositionAndCenter(pos: AceAjax.Position): void {
-    this.editor.moveCursorToPosition(pos);
-    this.editor.scrollToLine(pos.row, true, true, () => { });
-  }
-
-  movePositionRight(pos: AceAjax.Position, n: number): AceAjax.Position {
-    if (n === 0) { return pos; }
-    let row = pos.row;
-    let column = pos.column;
-    let line = this.session.getLine(row);
-    if (column < line.length) {
-      return this.movePositionRight({
-        "row": row,
-        "column": column + 1
-      }, n - 1);
-    } else if (row < this.session.getLength()) {
-      return this.movePositionRight({
-        "row": row + 1,
-        "column": 0
-      }, n - 1);
-    } else {
-      return pos;
-    }
-  }
-
-  // onProcessEditsFailure(vf: ValueFail): Promise<any> {
-  //   if (!(vf instanceof ValueFail)) {
-  //     throw vf;
-  //   }
-  //   this.editBeingProcessed.fmap((e) => e.onRemove());
-  //   this.editBeingProcessed = nothing();
-  //   _(this.editsToProcess).each((e) => e.onRemove());
-  //   this.editsToProcess = [];
-  //   reportFailure(vf.message);
-  //   console.log(vf.stateId);
-  //   if (vf.stateId !== 0) {
-  //     // TODO: also need to cancel edits > vf.stateId
-  //     return peaCoqEditAt(vf.stateId);
-  //   } else {
-  //     return Promise.reject(vf);
-  //   }
-  // }
-
-  // processEdits(): Promise<any> {
-  //   let self = this;
-  //   if (this.editsToProcess.length === 0 || isJust(this.editBeingProcessed)) {
-  //     return Promise.resolve();
-  //   }
-  //   let ebp = new EditBeingProcessed(this.editsToProcess.shift());
-  //   this.editBeingProcessed = just(ebp);
-  //   return (
-  //     peaCoqAddPrime(ebp.query)
-  //       .then((response) => {
-  //         let stopPos = ebp.getStopPosition();
-  //         self.session.selection.clearSelection();
-  //         self.editor.moveCursorToPosition(stopPos);
-  //         self.editor.scrollToLine(stopPos.row, true, true, () => { });
-  //         self.editor.focus();
-  //         let sid: number = response.stateId;
-  //         let ls = lastStatus;
-  //         let s = peaCoqStatus(false);
-  //         let g = s.then(peaCoqGoal);
-  //         let c = g.then(peaCoqGetContext);
-  //         return Promise.all<any>([s, g, c]).then(
-  //           ([s, g, c]: [Status, Goals, PeaCoqContext]) => {
-  //             let e = new ProcessedEdit(ebp, sid, s, g, c);
-  //             self.editsProcessed.push(e);
-  //             _(editHandlers).each((h) => h(ebp.query, sid, ls, s, g, c));
-  //             this.editBeingProcessed = nothing();
-  //             return self.processEdits();
-  //           });
-  //       })
-  //       .catch(self.onProcessEditsFailure.bind(self))
-  //   );
-  // }
-
-  markError(range: AceAjax.Range): void {
-    let markerId = Global.coqDocument.session.addMarker(range, errorUnderlineClass, "text", false);
-    this.moveCursorToPositionAndCenter(range.start);
-    let markerChangedStream = this.changeStream
-      .do((e) => console.log(range, AceAjax.Range.fromPoints(e.start, e.end)))
-      .filter((e) => range.containsRange(AceAjax.Range.fromPoints(e.start, e.end)))
-      .take(1);
-    markerChangedStream.subscribe(() => {
-      console.log("STILL SUBSCRIBED!");
-      Global.coqDocument.session.removeMarker(markerId);
-    });
-  }
-
-  pushEdit(e: IEdit) { this.edits.push(e); }
-
-  recenterEditor() {
-    let pos = this.editor.getCursorPosition();
-    this.editor.scrollToLine(pos.row, true, true, () => { });
-  }
-
-  resetEditor(text: string) {
-    this.session.setValue(text);
-    this.editor.focus();
-    this.editor.scrollToLine(0, true, true, () => { });
-  }
-
-  removeAllEdits(): void {
-    _(this.edits).each((e) => e.remove());
-    this.edits = [];
-  }
-
-  removeEdit(e: IEdit): void {
-    e.remove();
-    _(this.edits).remove(e);
-  }
-
-  removeEditsAfter(e: IEdit): void {
-    let self = this;
-    let editIndex = _(this.edits).findIndex(e);
-    let editsToKeep = _(this.edits).slice(0, editIndex).value();
-    let editsToRemove = _(this.edits).slice(editIndex, this.edits.length).value();
-    this.edits = editsToKeep;
-    _(editsToRemove).each((e) => self.removeEdit(e));
-  }
-
-  // removeEdits(
-  //   predicate: (e: ProcessedEdit) => boolean,
-  //   beforeRemoval?: (e: ProcessedEdit) => void
-  // ) {
-  //   _.remove(this.editsProcessed, function(e) {
-  //     let toBeRemoved = predicate(e);
-  //     if (toBeRemoved) {
-  //       if (beforeRemoval) { beforeRemoval(e); }
-  //       e.onRemove();
-  //     }
-  //     return toBeRemoved;
-  //   });
-  // }
-
-}
-
-let maxLength = 2000;
-
-function onFeedback(f: Feedback) {
-  let current = Global.feedback.getValue().substring(0, maxLength);
-  let now = new Date();
-  Global.feedback.setValue(
-    "[" + now.toString().substring(16, 24) + "] " + f.toString() +
-    "\n" + current,
-    false
-  );
-}
-
-function isQueryWarning(m: Message) {
+function isQueryWarning(m: IMessage) {
   return (
     m.level.constructor === Warning && m.content.indexOf(
       "Query commands should not be inserted in scripts"
@@ -237,7 +32,7 @@ function isQueryWarning(m: Message) {
   );
 }
 
-function onMessage(m: Message) {
+function onMessage(m: IMessage) {
   m.display();
 }
 
@@ -289,12 +84,12 @@ function reportFailure(f: string) { //, switchTab: boolean) {
   //yif (switchTab) { failures.click(); }
 }
 
-function getPreviousEditContext(e: IEdit): Maybe<PeaCoqContext> {
-  return e.previousEdit.bind((e) => {
-    let stage = e.stage;
-    return stage instanceof EditStage.Processed ? just(stage.context) : nothing();
-  });
-}
+// function getPreviousEditContext(e: IEdit): Maybe<PeaCoqContext> {
+//   return e.previousEdit.bind((e) => {
+//     let stage = e.stage;
+//     return stage instanceof EditStage.Processed ? just(stage.context) : nothing();
+//   });
+// }
 
 export function onNextReactive(
   doc: ICoqDocument, next: Rx.Observable<{}>
@@ -457,46 +252,11 @@ TODO: Ideally, the cursor would not jump on completion of these edits
 //
 // }
 
-type AddResult = {
-  response: any;
-  status: Status;
-  goals: Goals;
-};
-
-export function htmlPrintConstrExpr(c: ConstrExpr): string {
-  let ppCmds = prConstrExpr(c);
-  //console.log(ppCmds);
-  return htmlPrintPpCmds(ppCmds);
-}
-
-export function htmlPrintConstrExprDiff(c: ConstrExpr, old: ConstrExpr): string {
-  let ppCmds = prConstrExpr(c);
-  let oldPpCmds = prConstrExpr(old);
-  console.log(ppCmds);
-  //return htmlPrintPpCmds(ppCmds);
-  return htmlPrintPpCmdsDiff(ppCmds, oldPpCmds);
-}
-
-export function htmlPrintHyp(h: PeaCoqHyp): string {
-  let result = '<span><span class="tag-variable">' + h.name + "</span></span>";
-  let maybeTerm = h.maybeTerm;
-  result += maybeTerm.caseOf({
-    nothing: () => "",
-    just: (t) => "<span>\u00A0:=\u00A0</span><span>" + htmlPrintConstrExpr(t) + "</span>",
-  });
-  result += (
-    "<span>:\u00A0</span><span>"
-    + htmlPrintConstrExpr(h.type)
-    + "</span>"
-  );
-  return result;
-}
-
-export function htmlPrintHyps(hyps: PeaCoqHyp[]): string {
-  return _.reduce(hyps, (acc, elt) => {
-    return acc + '<div class="hyp">' + htmlPrintHyp(elt) + "</div>";
-  }, "");
-}
+// type AddResult = {
+//   response: any;
+//   status: IStatus;
+//   goals: IGoals;
+// };
 
 export function sameBodyAndType(hyp1: HTMLElement, hyp2: HTMLElement): boolean {
   let children1 = $(hyp1).children().slice(1);
@@ -510,97 +270,12 @@ export function sameBodyAndType(hyp1: HTMLElement, hyp2: HTMLElement): boolean {
   return true;
 }
 
-function countBackgroundGoals(goals: Goals): number {
+function countBackgroundGoals(goals: IGoals): number {
   return _.reduce(
     goals.bgGoals,
     (acc, elt) => acc + elt.before.length + elt.after.length,
     0
   );
-}
-
-// TODO: one of Anchor and mkAnchor should disappear
-class Anchor {
-  anchor: AceAjax.Anchor;
-  marker: any;
-  constructor(
-    doc: CoqDocument,
-    row: number,
-    column: number,
-    klass: string,
-    insertRight: boolean
-  ) {
-    this.anchor = new AceAjax.Anchor(doc.session.getDocument(), row, column);
-    if (insertRight) { this.anchor.$insertRight = true; }
-    this.marker = {};
-    this.marker.update = function(html, markerLayer, session, config) {
-      console.log("MARKER UPDATE");
-      let screenPos = session.documentToScreenPosition(this.anchor);
-      let height = config.lineHeight;
-      let width = config.characterWidth;
-      let top = markerLayer.$getTop(screenPos.row, config);
-      let left = markerLayer.$padding + screenPos.column * width;
-      html.push(
-        "<div class='", klass, "' style='",
-        "height:", height, "px;",
-        "top:", top, "px;",
-        "left:", left, "px; width:", width, "px'></div>"
-      );
-    };
-    this.marker = doc.session.addDynamicMarker(this.marker, true);
-    this.anchor.on("change", function() {
-      doc.session._signal("changeFrontMarker");
-    });
-  }
-}
-
-function mkAnchor(
-  doc: CoqDocument,
-  row: number, column: number,
-  klass: string, insertRight: boolean
-): AceAjax.Anchor {
-  let a = new AceAjax.Anchor(doc.session.getDocument(), row, column);
-  if (insertRight) { a.$insertRight = true; }
-  let marker = doc.session.addDynamicMarker(
-    {
-      update: function(html, markerLayer, session, config) {
-        let screenPos = session.documentToScreenPosition(a);
-        let height = config.lineHeight;
-        let width = config.characterWidth;
-        let top = markerLayer.$getTop(screenPos.row, config);
-        let left = markerLayer.$padding + screenPos.column * width;
-        html.push(
-          "<div class='", klass, "' style='",
-          "height:", height, "px;",
-          "top:", top, "px;",
-          "left:", left, "px; width:", width, "px'></div>"
-        );
-      }
-    },
-    true
-  );
-  a.on("change", () => doc.session._signal("changeFrontMarker"));
-  return a;
-}
-
-/**
- * Checks if first argument is strictly before second argument
-**/
-export function isBefore(flag: Strictly, pos1: AceAjax.Position, pos2: AceAjax.Position): boolean {
-  if (pos1.row < pos2.row) { return true; }
-  if (pos1.row > pos2.row) { return false; }
-  switch (flag) {
-    case Strictly.Yes: return pos1.column < pos2.column;
-    case Strictly.No: return pos1.column <= pos2.column;
-  };
-}
-
-export function isAfter(flag: Strictly, pos1: AceAjax.Position, pos2: AceAjax.Position): boolean {
-  if (pos1.row > pos2.row) { return true; }
-  if (pos1.row < pos2.row) { return false; }
-  switch (flag) {
-    case Strictly.Yes: return pos1.column > pos2.column;
-    case Strictly.No: return pos1.column >= pos2.column;
-  };
 }
 
 // function killEditsAfterPosition(doc: CoqDocument, pos: AceAjax.Position) {

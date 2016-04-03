@@ -1,5 +1,5 @@
-import { ConstrExpr } from "./coq-constr-expr";
-import { PeaCoqGoal } from "./peacoq-goal";
+// import { ConstrExpr } from "./coq-constr-expr";
+// import { PeaCoqGoal } from "./peacoq-goal";
 
 /*
   This queue guarantees that requests are pushed one after the other,
@@ -23,11 +23,7 @@ import { PeaCoqGoal } from "./peacoq-goal";
 // TODO: This should be made robust to multiple calls (sequencing should be
 // enforced)
 
-export type AddReturn = {
-  stateId: number;
-  eitherNullStateId: number;
-  output: string;
-}
+
 // type AddHandler = (s: string, r: AddReturn) => void;
 // let peaCoqAddHandlers: AddHandler[] = [];
 
@@ -62,12 +58,6 @@ export type AddReturn = {
 //     })
 //   ;
 // }
-
-export type PeaCoqHyp = {
-  name: string;
-  maybeTerm: Maybe<ConstrExpr>;
-  type: ConstrExpr;
-};
 
 // type GetContextHandler = (r: PeaCoqContext) => void;
 // let peaCoqGetContextHandlers: GetContextHandler[] = [];

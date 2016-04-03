@@ -1,10 +1,10 @@
 import { FeedbackContent } from "./feedback-content";
 
-export class Feedback {
+export class Feedback implements IFeedback {
   // TODO: give this a less lame type
   editOrState: string;
   editOrStateId: number;
-  feedbackContent: FeedbackContent;
+  feedbackContent: IFeedbackContent;
   routeId: number;
   constructor(f) {
     switch (f[0].tag) {
