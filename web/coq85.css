@@ -1,0 +1,77 @@
+html, html>body, #interface {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+#interface, #main, #main-right, #context, #context-tabs, #coqtop, #coqtop-tabs {
+  display: flex;
+  /* Flex container */
+}
+#interface, #main-right, #context, #coqtop {
+  flex-direction: column;
+  /* Column layout */
+}
+a, button {
+  border-radius: 0 !important;
+  padding: 2px 4px !important;
+}
+.tab-pane {
+  display: flex;
+  width: 100%;
+}
+.tab-pane > .ace_editor {
+  display: flex;
+  flex-grow: 1;
+}
+.coq-command {
+  background: #00AA00;
+  position: absolute;
+  z-index: 5;
+}
+/*.begin-marker {
+  position: absolute;
+  border-left: 2px solid green;
+}*/
+.marker {
+  position: absolute;
+  /*border-left: 2px solid blue;*/
+}
+/*.end-marker {
+  position: absolute;
+  border-left: 2px solid red;
+}*/
+.processing, .processed, .toprocess {
+  border-radius: 0 !important;
+  position: absolute;
+  z-index: 5;
+}
+
+/* Visualization */
+
+#pretty-content {
+  display: inline-block;
+  font-family: monospace;
+  font-size: 12px;
+  width: 100%;
+}
+.syntax {
+  display: inline-block;
+  /*vertical-align: middle;*/
+}
+.hyp {
+  display: flex;
+  align-items: center;
+}
+.peacoq-diff {
+  background-color: #FFE0B2;
+}
+.peacoq-highlight {
+  background-color: lightblue;
+}
+.horizontal-separator {
+  height: 4px;
+  background-color: black;
+}
+svg body {
+  font-size: 12px;
+}

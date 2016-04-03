@@ -1,0 +1,6 @@
+-I .
+-Q . PeaCoq
+PeaCoq.v
+peacoq_plugin.ml4
+peacoq_utils.ml
+

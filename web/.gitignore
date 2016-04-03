@@ -8,6 +8,10 @@ bootstrap/
 build/
 codemirror
 codemirror-5.*/
+coq85.js
+coqtop.js
+coqtop85.js
+term.js
 /d3.js
 d3/
 fonts

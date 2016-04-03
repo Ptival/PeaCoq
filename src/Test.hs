@@ -1,29 +1,61 @@
-{-# Language OverloadedStrings #-}
+module Test where
 
---import Control.Applicative
-import Control.Monad.IO.Class
-import Test.HUnit
-import Test.WebDriver
---import Test.WebDriver.Capabilities
---import Test.WebDriver.Commands
+import Control.Monad.Loops
+import Control.Monad.RWS.Strict
+import Prelude                  hiding (init)
 import System.IO
 
-wdconfig :: WDConfig
-wdconfig = defaultConfig
+import Coq.StateId
+import Coq.Value
+import CoqIO
+import Handlers
+import XMLProtocol
 
-runTests :: IO (Counts, Int)
-runTests = runTestText (putTextToHandle stderr False) allTests
+home :: String
+home = "/home/ptival"
 
-allTests :: Test
-allTests = TestList
-  [ TestLabel "testEditor" testEditor
-  ]
+coqtop :: String
+coqtop = home ++ "/.nix-profile/bin/coqtop -ideslave -main-channel stdfds -I " ++ home ++ "/PeaCoq/plugin -Q " ++ home ++ "/PeaCoq/plugin PeaCoq"
 
-testEditor :: Test
-testEditor = TestCase . assert $
-  runSession wdconfig $ do
-    openPage "http://localhost:4242"
-    element <- findElem $ ById "editor"
-    text <- getText element
-    liftIO . putStrLn $ "Text: " ++ show text
-    return $ text == "(* Your code here *)"
+main :: IO ()
+main = do
+  hs <- startCoqtop coqtop
+  void $ runRWST (io hs) hs initialCoqState
+  where
+    io :: Handles -> CoqtopIO ()
+    io (_, _, _he, _ph) = do
+      init Nothing
+      --add' "Require Import PeaCoq.PeaCoq."
+      --editAt (StateId 1)
+      hQuery "Add" "Require Import ZArith."
+      --status False
+      hQuery "Add" "Open Scope Z."
+      (_, ho, he, _) <- ask
+      liftIO $ whileM_ (hReady he) (hGetLine he)
+      liftIO . whileM_ (hReady ho) $ do
+        l <- hGetLine ho
+        putStrLn l
+--      hResponse :: CoqtopIO AddOutput
+      --status False
+      --editAt (StateId 1)
+      --add' "Require Import ZArith."
+      -- add' "Require Import PeaCoq.PeaCoq."
+      -- add' "Require Import List."
+      -- add' "Import ListNotations."
+      -- add' "Theorem t : [0] = [1]."
+      -- add' "Definition admit {T : Type} : T."
+      -- add' "Admitted."
+      -- status False
+      return (ValueGood ())
+
+{-
+      sid <- getStateId
+      eid <- newEditID
+      r <- hCallRawResponse "Add" (("Import ListNotations.", eid), (sid, False))
+      liftIO $ do
+        putStrLn $ "Raw response: " ++ r
+        --putStrLn $ show (r :: Value AddOutput)
+        exit <- waitForProcess ph
+        putStrLn $ show exit
+      return (ValueGood ())
+-}

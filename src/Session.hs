@@ -1,15 +1,19 @@
 module Session where
 
+import Data.IntMap (adjust)
+
 import PeaCoq
 
 isAlive :: SessionState -> Bool
-isAlive (SessionState _ alive _ _) = alive
+isAlive (SessionState alive _ _) = alive
 
 markStale :: SessionState -> SessionState
-markStale (SessionState n _ h ph) = SessionState n False h ph
+markStale (SessionState _ hs st) = SessionState False hs st
 
 touchSession :: SessionState -> SessionState
-touchSession (SessionState n _ h ph) = SessionState n True h ph
+touchSession (SessionState _ hs st) = SessionState True hs st
 
-setSession :: Int -> SessionState -> SessionState
-setSession ident (SessionState _ t h ph) = SessionState ident t h ph
+adjustSession :: (SessionState -> SessionState) -> Int -> GlobalState ->
+                (GlobalState, ())
+adjustSession f mapKey gs =
+  (gs { gActiveSessions = adjust f mapKey (gActiveSessions gs) }, ())

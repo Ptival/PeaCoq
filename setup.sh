@@ -46,4 +46,10 @@ $GET https://raw.githubusercontent.com/sampumon/SVG.toDataURL/master/svg_todatau
 
 cd ..
 
-./mkconfig.sh
+CONFIGPATH="${HOME}"
+PEACOQCONFIG=".PeaCoqConfig.hs"
+FILE="${CONFIGPATH}/${PEACOQCONFIG}"
+
+if [ ! -f $FILE ]; then
+    echo "PeaCoqConfig { configUserId  = Nothing, configLogPath = \"/tmp\", configCoqtop = \"coqtop -ideslave\" }" > "${FILE}"
+fi

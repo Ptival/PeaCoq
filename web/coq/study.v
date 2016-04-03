@@ -99,7 +99,9 @@ Qed.
 (* In-class exercise! *)
 Theorem concat_associativity : forall l1 l2 l3 : natlist,
   concat (concat l1 l2) l3 = concat l1 (concat l2 l3).
-Proof. intros. induction l1. simpl. reflexivity. simpl. rewrite -> IHl1. reflexivity.
+Proof.
+  intros. induction l1. rewrite -> concat_nil_left. simpl. reflexivity.
+  simpl. rewrite -> IHl1. reflexivity.
   (* FILL IN HERE *)
 Qed.
 
@@ -134,19 +136,23 @@ Fixpoint rev (l: natlist) : natlist :=
 
 Theorem rev_snoc : forall x l,
   rev (snoc l x) = cons x (rev l).
-Proof. intros. induction l. simpl. reflexivity. simpl. rewrite -> IHl. simpl. reflexivity.
+Proof.
+  intros. induction l. simpl. reflexivity.
+  simpl. rewrite -> IHl. simpl. reflexivity.
   (* FILL IN HERE *)
 Qed.
 
 Theorem rev_involutive : forall l : natlist,
   rev (rev l) = l.
-Proof. intros. induction l. simpl. reflexivity. simpl. rewrite -> rev_snoc. rewrite -> IHl. reflexivity.
+Proof. intros. induction l. simpl. reflexivity.
+simpl. rewrite -> rev_snoc. rewrite -> IHl. reflexivity.
   (* FILL IN HERE *)
 Qed.
 
 Theorem concat_cons_snoc : forall l1 x l2,
   concat l1 (cons x l2) = concat (snoc l1 x) l2.
-Proof. intros. induction l1. simpl. reflexivity. simpl. rewrite -> IHl1. reflexivity.
+Proof. intros. induction l1. simpl. reflexivity.
+simpl. rewrite -> IHl1. reflexivity.
   (* FILL IN HERE *)
 Qed.
 
@@ -230,19 +236,15 @@ End LogicExercises2.
 
 Theorem snoc_concat_end : forall (l: natlist) (n: nat),
   snoc l n = concat l (cons n nil).
-Proof. intros. induction l. simpl. reflexivity. simpl. rewrite -> IHl. reflexivity.
-  (* FILL IN HERE *)
-Qed.
-
-Theorem snoc_concat : forall (l1 l2 : natlist) (x : nat),
-  snoc (concat l1 l2) x = concat l1 (snoc l2 x).
-Proof. intros. induction l1. simpl. reflexivity. simpl. rewrite -> IHl1. reflexivity.
+Proof. intros. rewrite -> concat_cons_snoc. rewrite -> concat_nil_right. reflexivity.
   (* FILL IN HERE *)
 Qed.
 
 Theorem rev_distributes_over_concat : forall l1 l2 : natlist,
   rev (concat l1 l2) = concat (rev l2) (rev l1).
-Proof. intros. induction l1. simpl. rewrite -> concat_nil_right. reflexivity. simpl. rewrite -> IHl1. apply snoc_concat.
+Proof. intros. induction l1. simpl. rewrite -> concat_nil_right. reflexivity.
+simpl. rewrite -> IHl1. rewrite -> snoc_concat_end.
+rewrite -> concat_associativity. rewrite -> snoc_concat_end. reflexivity.
   (* FILL IN HERE *)
 Qed.
 
@@ -292,18 +294,16 @@ Definition map' f l := fold (fun x fxs => cons (f x) fxs) l nil.
 
 (* We use [Lemma] instead of [Theorem] here to indicate that this theorem may
    help you in proving the next theorem. *)
-Lemma map'_unroll : forall f x xs,
+Axiom map'_unroll : forall f x xs,
   map' f (cons x xs) = cons (f x) (map' f xs).
-Proof. admit.
-  (* FILL IN HERE *)
-Qed.
+
+Axiom map'_nil : forall f, map' f nil = nil.
 
 Theorem map_map' : forall f l, map f l = map' f l.
-Proof. intros. induction l. simpl. admit. rewrite -> map'_unroll. simpl. rewrite -> IHl. reflexivity.
+Proof. intros. induction l. simpl. rewrite -> map'_nil. reflexivity. rewrite -> map'_unroll. simpl. rewrite -> IHl. reflexivity.
   (* FILL IN HERE *)
 Qed.
 
-(* Just execute the next line, no need to understand it. *)
 Ltac cases H := match type of H with _ \/ _ => destruct H end.
 
 (*
@@ -334,8 +334,8 @@ Qed.
 (*
   New tactic: simpl in *
 
-  Sometimes, you can simplify your hypotheses as well, the same way [simpl]
-  simplifies your goal only.
+  Sometimes, you might want to simplify things in your hypotheses, the same way things
+  can be simplified in your conclusion.
 *)
 
 Theorem In_concat_left : forall x l1 l2,
