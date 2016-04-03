@@ -1,9 +1,3 @@
-type PeaCoqHyp = {
-  name: string;
-  maybeTerm: Maybe<IConstrExpr>;
-  type: IConstrExpr;
-};
-
 interface ICoqDocument {
   changeStream: Rx.Observable<AceAjax.EditorChangeEvent>;
   editor: AceAjax.Editor;
@@ -66,13 +60,6 @@ interface IProcessed extends IEditStage {
   status: IStatus;
 }
 
-interface IStatus {
-  // statusPath: string[];
-  statusProofName: string;
-  statusAllProofs: string;
-  // statusProofNum: number;
-}
-
 interface ITab {
   div: JQuery;
 }
@@ -82,26 +69,4 @@ interface IEditorTab extends ITab {
   getValue(): string;
   setTheme(s: string): void;
   setValue(s: string, switchToTab: boolean);
-}
-
-interface IGoal {
-
-}
-
-type GoalBeforeAfter = {
-  before: IGoal[];
-  after: IGoal[];
-};
-
-interface IGoals {
-  fgGoals: IGoal[];
-  bgGoals: GoalBeforeAfter[];
-  shelvedGoals: IGoal[];
-  givenUpGoals: IGoal[];
-}
-
-type PeaCoqContext = IPeaCoqGoal[];
-
-interface IPeaCoqGoal {
-  getHTML(): string;
 }

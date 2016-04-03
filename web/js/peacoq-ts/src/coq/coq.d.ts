@@ -1,30 +1,41 @@
 type CoqLocation = [number, number];
-
-interface IGlobSortGen<T> {
-
-}
-
-type LevelInfo = Maybe<string>;
 type GlobLevel = IGlobSortGen<LevelInfo>;
-
-type SortInfo = string[];
 type GlobSort = IGlobSortGen<SortInfo>;
-
 type InstanceExpr = Array<GlobLevel>;
-
+type LevelInfo = Maybe<string>;
 type Located<T> = [CoqLocation, T];
+type SortInfo = string[];
 
-interface IConstrExpr {
-
+interface AddReturn {
+  stateId: number;
+  eitherNullStateId: number;
+  output: string;
 }
 
-interface IFeedbackContent {
-}
+interface IConstrExpr { }
 
 interface IFeedback {
   editOrState: string;
   editOrStateId: number;
   feedbackContent: IFeedbackContent;
+}
+
+interface IFeedbackContent { }
+
+interface IGlobSortGen<T> { }
+
+interface IGoal { }
+
+interface GoalBeforeAfter {
+  before: IGoal[];
+  after: IGoal[];
+}
+
+interface IGoals {
+  fgGoals: IGoal[];
+  bgGoals: GoalBeforeAfter[];
+  shelvedGoals: IGoal[];
+  givenUpGoals: IGoal[];
 }
 
 interface IMessage {
@@ -33,16 +44,15 @@ interface IMessage {
   display(): void;
 }
 
-interface IMessageLevel {
+interface IMessageLevel { }
 
+interface IStatus {
+  // statusPath: string[];
+  statusProofName: string;
+  statusAllProofs: string;
+  // statusProofNum: number;
 }
 
 interface IValueFail {
   stateId: number;
-}
-
-type AddReturn = {
-  stateId: number;
-  eitherNullStateId: number;
-  output: string;
 }
