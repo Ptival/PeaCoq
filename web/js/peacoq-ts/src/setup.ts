@@ -134,7 +134,8 @@ $(document).ready(() => {
     .subscribe(onResize)
     ;
 
-  // TODO: figure out if this was needed
+  // TODO: this is probably needed so that the main editor stays centered
+  // when the prooftree panel showsup or hides
   //layout.on({ type: "hide", execute: "after" }, () => { Global.coqDocument.recenterEditor(); });
   //layout.on({ type: "show", execute: "after" }, () => { Global.coqDocument.recenterEditor(); });
 
@@ -156,11 +157,13 @@ $(document).ready(() => {
   let fontDecreasedStream =
     Rx.Observable
       .merge(toolbarStreams.fontDecrease, shortcutsStreams.fontDecrease)
-      .do(() => { fontSize--; });
+      .do(() => { fontSize--; })
+      .share();
   let fontIncreasedStream =
     Rx.Observable
       .merge(toolbarStreams.fontIncrease, shortcutsStreams.fontIncrease)
-      .do(() => { fontSize++; });
+      .do(() => { fontSize++; })
+      .share();
   Rx.Observable
     .merge(fontIncreasedStream, fontDecreasedStream)
     .subscribe(() => { updateFontSize(Global.coqDocument); });
