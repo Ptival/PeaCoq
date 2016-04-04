@@ -1,5 +1,7 @@
-export class Tab {
+export class Tab implements ITab {
   caption: string;
+  private _captionShouldBeBold: boolean;
+  private captionSuffix: string;
   div: JQuery;
   id: string;
   onClickHandlers: Function[];
@@ -9,6 +11,7 @@ export class Tab {
 
   constructor(id: string, caption: string, layout: string, panel: string) {
     this.caption = caption;
+    this.captionSuffix = "";
     this.id = id;
     this.panel = panel;
     let w2uiId = layout + "_" + panel + "_tabs";
@@ -36,9 +39,8 @@ export class Tab {
   }
 
   captionShouldBeBold(bold: boolean): void {
-    this.tab.set(this.id, {
-      caption: bold ? "<b>" + this.caption + "</b>" : this.caption
-    });
+    this._captionShouldBeBold = bold;
+    this.refresh();
   }
 
   click(): void {
@@ -52,6 +54,19 @@ export class Tab {
 
   onResize() {
     _(this.onResizeHandlers).each((h) => { h(); });
+  }
+
+  refresh(): void {
+    let captionText = this.caption + " " + this.captionSuffix;
+    this.tab.set(this.id, {
+      caption: this._captionShouldBeBold ? "<b>" + captionText + "</b>" : captionText
+    });
+    this.tab.refresh();
+  }
+
+  setCaptionSuffix(s: string): void {
+    this.captionSuffix = s;
+    this.refresh();
   }
 
 }

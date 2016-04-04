@@ -141,58 +141,23 @@ $(document).ready(() => {
 
   let toolbarStreams = setupToolbar();
   let shortcutsStreams = setupKeybindings();
+  let userActionStreams = setupUserActions(toolbarStreams, shortcutsStreams);
 
   Coq85.setupSyntaxHovering();
   let themeChangeStream: Rx.Observable<{}> =
     Rx.Observable.fromPromise(tabsAreReadyPromise)
       .flatMap(() => setupTheme());
   themeChangeStream.subscribe(() => onResize());
-  themeChangeStream.subscribe(() => {
-    rightLayout.refresh();
-  });
+  themeChangeStream.subscribe(() => { rightLayout.refresh(); });
 
-  let loadedFilesStream = setupLoadFile();
-  setupSaveFile();
-
-  let fontDecreasedStream =
-    Rx.Observable
-      .merge(toolbarStreams.fontDecrease, shortcutsStreams.fontDecrease)
-      .do(() => { fontSize--; })
-      .share();
-  let fontIncreasedStream =
-    Rx.Observable
-      .merge(toolbarStreams.fontIncrease, shortcutsStreams.fontIncrease)
-      .do(() => { fontSize++; })
-      .share();
-  Rx.Observable
-    .merge(fontIncreasedStream, fontDecreasedStream)
-    .subscribe(() => { updateFontSize(Global.coqDocument); });
-
-  Rx.Observable
-    .merge(toolbarStreams.goToCaret, shortcutsStreams.goToCaret)
-    .subscribe(() => console.log("TODO: go to caret"));
-
-  let nextStream = Rx.Observable
-    .merge(toolbarStreams.next, shortcutsStreams.next);
-  let editsToProcessStream = Coq85.onNextReactive(Global.coqDocument, nextStream);
+  let editsToProcessStream = Coq85.onNextReactive(Global.coqDocument, userActionStreams.next);
   //editsToProcessStream.subscribe((e) => Global.coqDocument.pushEdit(e));
   //editsToProcessStream.subscribe((e) => Global.coqDocument.moveCursorToPositionAndCenter(e.getStopPosition()));
   let addsToProcessStream = Coq85.processEditsReactive(editsToProcessStream);
 
-  Rx.Observable
-    .merge(toolbarStreams.previous, shortcutsStreams.previous)
-    .subscribe(() => console.log("TODO: previous"));
-
-  Rx.Observable
-    .merge(toolbarStreams.load, shortcutsStreams.load)
-    .subscribe(pickFile);
-  Rx.Observable
-    .merge(toolbarStreams.save, shortcutsStreams.save)
-    .subscribe(saveFile);
-
   let coqtopOutputStreams = Coqtop.setupCoqtopCommunication([
     // reset Coqtop when a file is loaded
-    loadedFilesStream.map(() => new CoqtopInput.EditAt(1)),
+    userActionStreams.loadedFile.map(() => new CoqtopInput.EditAt(1)),
     addsToProcessStream,
   ]);
 
@@ -216,6 +181,26 @@ $(document).ready(() => {
         },
       });
     });
+
+  coqtopOutputStreams.goal.subscribe((g) => {
+    Global.tabs.foreground.setValue(
+      _(g.fgGoals).map((g) => g.toString()).value().join("\n\n\n"), true
+    );
+    Global.tabs.foreground.setCaptionSuffix("(" + g.fgGoals.length + ")");
+    let bgGoals = _(g.bgGoals).map((ba) => [].concat(ba.before, ba.after)).flatten().value();
+    Global.tabs.background.setValue(
+      _(bgGoals).map((g) => g.toString()).value().join("\n\n\n"), false
+    );
+    Global.tabs.background.setCaptionSuffix("(" + bgGoals.length + ")");
+    Global.tabs.shelved.setValue(
+      _(g.shelvedGoals).map((g) => g.toString()).value().join("\n\n\n"), false
+    );
+    Global.tabs.shelved.setCaptionSuffix("(" + g.shelvedGoals.length + ")");
+    Global.tabs.givenUp.setValue(
+      _(g.givenUpGoals).map((g) => g.toString()).value().join("\n\n\n"), false
+    );
+    Global.tabs.givenUp.setCaptionSuffix("(" + g.givenUpGoals.length + ")");
+  })
 
   // Logging feedbacks that I haven't figured out what to do with yet
   subscribeAndLog(
@@ -477,4 +462,48 @@ function setupW2LayoutResizeStream(layout: W2UI.W2Layout): Rx.Observable<{}> {
     })
     .share()
     ;
+}
+
+interface UserActionStreams {
+  loadedFile: Rx.Observable<{}>,
+  next: Rx.Observable<{}>,
+}
+
+function setupUserActions(
+  toolbarStreams: ToolbarStreams,
+  shortcutsStreams: ShortcutsStreams
+) {
+  let fontDecreasedStream =
+    Rx.Observable
+      .merge(toolbarStreams.fontDecrease, shortcutsStreams.fontDecrease)
+      .do(() => { fontSize--; })
+      .share();
+  let fontIncreasedStream =
+    Rx.Observable
+      .merge(toolbarStreams.fontIncrease, shortcutsStreams.fontIncrease)
+      .do(() => { fontSize++; })
+      .share();
+  Rx.Observable
+    .merge(fontIncreasedStream, fontDecreasedStream)
+    .subscribe(() => { updateFontSize(Global.coqDocument); });
+  Rx.Observable
+    .merge(toolbarStreams.goToCaret, shortcutsStreams.goToCaret)
+    .subscribe(() => console.log("TODO: go to caret"));
+  let nextStream = Rx.Observable
+    .merge(toolbarStreams.next, shortcutsStreams.next);
+  Rx.Observable
+    .merge(toolbarStreams.previous, shortcutsStreams.previous)
+    .subscribe(() => console.log("TODO: previous"));
+  Rx.Observable
+    .merge(toolbarStreams.load, shortcutsStreams.load)
+    .subscribe(pickFile);
+  Rx.Observable
+    .merge(toolbarStreams.save, shortcutsStreams.save)
+    .subscribe(saveFile);
+  let loadedFilesStream = setupLoadFile();
+  setupSaveFile();
+  return {
+    loadedFile: loadedFilesStream,
+    next: nextStream,
+  };
 }

@@ -4,16 +4,6 @@ import { switchToBright, switchToDark } from "../theme";
 
 let filePickerId = "filepicker";
 
-interface ToolbarStreams {
-  fontDecrease: Rx.Observable<{}>;
-  fontIncrease: Rx.Observable<{}>;
-  goToCaret: Rx.Observable<{}>;
-  load: Rx.Observable<{}>;
-  next: Rx.Observable<{}>;
-  previous: Rx.Observable<{}>;
-  save: Rx.Observable<{}>;
-}
-
 export function setupToolbar(): ToolbarStreams {
 
   let toolbar = $("#toolbar").w2toolbar({ name: "w2toolbar" });

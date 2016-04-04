@@ -28,6 +28,12 @@ export class EditAt extends CoqtopInput {
   getCmd() { return "editat"; }
 }
 
+export class Goal extends CoqtopInput {
+  constructor() { super(); }
+  getArgs() { return []; }
+  getCmd() { return "goal"; }
+}
+
 export class Status extends CoqtopInput {
   b: boolean;
   constructor(b: boolean) {

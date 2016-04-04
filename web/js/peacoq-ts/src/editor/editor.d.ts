@@ -14,6 +14,28 @@ interface ITabs {
   jobs: IEditorTab;
 }
 
+/* TODO: maybe fuse the parts of the toolbar and shortcuts that overlap? */
+
+interface ToolbarStreams {
+  fontDecrease: Rx.Observable<{}>;
+  fontIncrease: Rx.Observable<{}>;
+  goToCaret: Rx.Observable<{}>;
+  load: Rx.Observable<{}>;
+  next: Rx.Observable<{}>;
+  previous: Rx.Observable<{}>;
+  save: Rx.Observable<{}>;
+}
+
+interface ShortcutsStreams {
+  fontIncrease: Rx.Observable<{}>;
+  fontDecrease: Rx.Observable<{}>;
+  goToCaret: Rx.Observable<{}>;
+  load: Rx.Observable<{}>;
+  next: Rx.Observable<{}>;
+  previous: Rx.Observable<{}>;
+  save: Rx.Observable<{}>;
+}
+
 interface ICoqDocument {
   changeStream: Rx.Observable<AceAjax.EditorChangeEvent>;
   editor: AceAjax.Editor;
@@ -78,6 +100,7 @@ interface IProcessed extends IEditStage {
 
 interface ITab {
   div: JQuery;
+  setCaptionSuffix(s: string): void;
 }
 
 interface IEditorTab extends ITab {

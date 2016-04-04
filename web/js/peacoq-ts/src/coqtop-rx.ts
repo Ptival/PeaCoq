@@ -1,5 +1,6 @@
 import * as CoqtopInput from "./coqtop-input";
 import { Feedback } from "./coq/feedback";
+import { Goals } from "./goals";
 import { Message } from "./coq/message";
 import { ValueFail } from "./coq/value-fail";
 
@@ -8,7 +9,7 @@ let statusPeriod = 2500; // milliseconds
 interface CoqtopResponse {
   input: CoqtopInput.CoqtopInput;
   tag: string;
-  contents: Object;
+  contents: Array<any>;
 }
 
 interface CoqtopOutput {
@@ -22,6 +23,7 @@ interface CoqtopOutput {
 interface CoqtopOutputStreams {
   failResponse: Rx.Observable<IValueFail>;
   feedback: Rx.Observable<IFeedback>;
+  goal: Rx.Observable<Goals>;
   goodResponse: Rx.Observable<CoqtopResponse>;
   messages: Rx.Observable<IMessage>;
   response: Rx.Observable<CoqtopResponse>;
@@ -53,7 +55,6 @@ export function setupCoqtopCommunication(
     // .concat(Rx.Observable.return({ cmd: "quit", args: [] }))
     ;
 
-
   /*
   Note: the scan has two effects
   1. it ensures AJAX requests reach the server in order of emission
@@ -75,14 +76,18 @@ export function setupCoqtopCommunication(
             error: () => console.log("Server did not respond!"),
             //success: () => console.log("Success"),
           }))
-          .then<CoqtopOutput>((r) => ({
-            response: $.extend(r[0], { input: input }),
-            stateId: r[1][0],
-            editId: r[1][1],
-            messages: r[2][0],
-            feedback: r[2][1],
-          })
-          );
+          .then<CoqtopOutput>((r) => {
+            if (input instanceof CoqtopInput.AddPrime) {
+              inputSubject.onNext(new CoqtopInput.Goal());
+            }
+            return {
+              response: $.extend(r[0], { input: input }),
+              stateId: r[1][0],
+              editId: r[1][1],
+              messages: r[2][0],
+              feedback: r[2][1],
+            };
+          });
       }, Promise.resolve())
       .flatMap((x) => x)
       .share()
@@ -125,21 +130,26 @@ export function setupCoqtopCommunication(
 
   let coqtopMessagesStream: Rx.Observable<IMessage> =
     coqtopOutputStream
-      .flatMap(
-      (r) => _(r.messages).map((m) => new Message(m)).value()
-      )
+      .flatMap((r) => _(r.messages).map((m) => new Message(m)).value())
       .share();
 
   let coqtopFeedbackStream: Rx.Observable<IFeedback> =
     coqtopOutputStream
-      .flatMap(
-      (r) => _(r.feedback).map((f) => new Feedback(f)).value()
-      )
+      .flatMap((r) => _(r.feedback).map((f) => new Feedback(f)).value())
       .share();
+
+  let coqtopGoalStream: Rx.Observable<Goals> =
+    coqtopGoodResponseStream
+      .filter((r) => r.input instanceof CoqtopInput.Goal)
+      .filter((r) => r.contents !== null)
+      .map((r) => new Goals(r.contents));
+
+  subscribeAndLog(coqtopGoalStream);
 
   return {
     failResponse: coqtopFailResponseStream,
     feedback: coqtopFeedbackStream,
+    goal: coqtopGoalStream,
     goodResponse: coqtopGoodResponseStream,
     messages: coqtopMessagesStream,
     response: coqtopResponseStream,

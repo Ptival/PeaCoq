@@ -29,16 +29,6 @@ let jQueryPrefix = "alt+ctrl+";
 let aceWindowsPrefix = "Alt-Ctrl-";
 let aceMacPrefix = "Option-Command-";
 
-interface ShortcutsStreams {
-  fontIncrease: Rx.Observable<{}>;
-  fontDecrease: Rx.Observable<{}>;
-  goToCaret: Rx.Observable<{}>;
-  load: Rx.Observable<{}>;
-  next: Rx.Observable<{}>;
-  previous: Rx.Observable<{}>;
-  save: Rx.Observable<{}>;
-}
-
 function createBindingForKey(key: string): Rx.Observable<{}> {
   return Rx.Observable
     .create((observer) => {
