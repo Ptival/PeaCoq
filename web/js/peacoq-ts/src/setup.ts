@@ -25,10 +25,11 @@ import { pickFile, saveFile, setupLoadFile, setupToolbar, setupSaveFile } from "
 let fontSize = 16; // pixels
 let resizeBufferingTime = 250; // milliseconds
 
+// TODO: this should not be global
 let layout: W2UI.W2Layout;
-let rightLayout: W2UI.W2Layout;
-let contextTabs: W2UI.W2Tabs;
-let coqtopTabs: W2UI.W2Tabs;
+// let rightLayout: W2UI.W2Layout;
+// let contextTabs: W2UI.W2Tabs;
+// let coqtopTabs: W2UI.W2Tabs;
 
 $(document).ready(() => {
 
@@ -40,7 +41,7 @@ $(document).ready(() => {
       { type: "top", size: 34, resizable: false, style: style, content: $("<div>", { id: "toolbar" }) },
       { type: "left", size: "50%", overflow: "hidden", resizable: true, style: style, content: $("<div>", { id: "editor", style: "height: 100%" }) },
       { type: "main", size: "50%", style: style, overflow: "hidden", content: $("<div>", { id: "right" }) },
-      { type: "bottom", hidden: true, size: "30%", overflow: "hidden", resizable: true, style: style, content: $("<div>", { id: "prooftree" }) },
+      { type: "bottom", size: "30%", overflow: "hidden", resizable: true, style: style, content: $("<div>", { id: "bottom" }) },
     ]
   });
 
@@ -77,6 +78,7 @@ $(document).ready(() => {
   editor.focus();
 
   let rightLayoutName = "right-layout";
+  let bottomLayoutName = "bottom-layout";
 
   $().w2layout({
     name: rightLayoutName,
@@ -86,13 +88,25 @@ $(document).ready(() => {
     ],
   });
 
+  $().w2layout({
+    name: bottomLayoutName,
+    panels: [
+      { type: "main", size: "100%", resizable: false, style: style, content: $("<div>", { id: "prooftree" }) },
+      { type: "bottom", hidden: false, size: "20px", resizable: false, style: style, content: $("<div>", { id: "progress-bar" }) },
+    ],
+  });
+
   layout = w2ui["layout"];
-  rightLayout = w2ui[rightLayoutName];
-  contextTabs = w2ui[rightLayoutName + "_main_tabs"];
-  contextTabs.onClick = function(event) {
-    $("#myTabsContent").html(event.target);
-  };
-  coqtopTabs = w2ui[rightLayoutName + "_bottom_tabs"];
+  let rightLayout = w2ui[rightLayoutName];
+  let bottomLayout = w2ui[bottomLayoutName];
+  let contextTabs = w2ui[rightLayoutName + "_main_tabs"];
+  contextTabs.onClick = function(event) { $("#myTabsContent").html(event.target); };
+  let coqtopTabs = w2ui[rightLayoutName + "_bottom_tabs"];
+
+  bottomLayout.on({ type: "render", execute: "after" }, () => {
+    $("#progress-bar").text("Progress bar").css("background-color", "green");
+    $("#prooftree").text("ProofTree").css("background-color", "red");
+  });
 
   let rightLayoutRenderedStream = Rx.Observable
     .create((observer) => {
@@ -138,6 +152,7 @@ $(document).ready(() => {
   });
 
   layout.content("main", rightLayout);
+  layout.content("bottom", bottomLayout);
 
   let windowResizeStream: Rx.Observable<{}> = Rx.Observable.fromEvent($(window), "resize");
   let layoutResizeStream = setupW2LayoutResizeStream(layout);
