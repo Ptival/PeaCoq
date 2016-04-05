@@ -65,16 +65,6 @@ $(document).ready(() => {
     displayEdit(edit);
   });
 
-  // editor.selection.on("changeCursor", (e) => {
-  //   let cursorPosition = editor.selection.getCursor();
-  //   _(Global.coqDocument.getEditStagesProcessed()).each((stage) => {
-  //     if (stage.edit.containsPosition(cursorPosition)) {
-  //       updateCoqtopTabs(stage.goals, stage.context);
-  //     }
-  //   });
-  // });
-
-  //editor.selection.on("changeSelection", (e) => { console.log(e); });
   Global.setCoqDocument(new CoqDocument(editor));
 
   let editAtBecauseEditorChange: Rx.Observable<CoqtopInput.CoqtopInput> =
@@ -86,8 +76,10 @@ $(document).ready(() => {
   setupEditor(editor);
   editor.focus();
 
+  let rightLayoutName = "right-layout";
+
   $().w2layout({
-    name: "right-layout",
+    name: rightLayoutName,
     panels: [
       { type: "main", size: "50%", resizable: true, style: style, tabs: { tabs: [], } },
       { type: "bottom", size: "50%", resizable: true, style: style, tabs: { tabs: [], } },
@@ -95,12 +87,12 @@ $(document).ready(() => {
   });
 
   layout = w2ui["layout"];
-  rightLayout = w2ui["right-layout"];
-  contextTabs = w2ui["right-layout_main_tabs"];
+  rightLayout = w2ui[rightLayoutName];
+  contextTabs = w2ui[rightLayoutName + "_main_tabs"];
   contextTabs.onClick = function(event) {
     $("#myTabsContent").html(event.target);
   };
-  coqtopTabs = w2ui["right-layout_bottom_tabs"];
+  coqtopTabs = w2ui[rightLayoutName + "_bottom_tabs"];
 
   let rightLayoutRenderedStream = Rx.Observable
     .create((observer) => {
@@ -114,24 +106,24 @@ $(document).ready(() => {
       let tabs: ITabs = <any>{};
 
       // top panes
-      tabs.pretty = new Tab("pretty", "Pretty", "right-layout", "main");
+      tabs.pretty = new Tab("pretty", "Pretty", rightLayoutName, "main");
       tabs.pretty.div.css("padding-left", "4px");
-      tabs.foreground = new EditorTab("foreground", "Foreground", "right-layout", "main");
-      tabs.background = new EditorTab("background", "Background", "right-layout", "main");
-      tabs.shelved = new EditorTab("shelved", "Shelved", "right-layout", "main");
-      tabs.givenUp = new EditorTab("givenup", "Given up", "right-layout", "main");
+      tabs.foreground = new EditorTab("foreground", "Foreground", rightLayoutName, "main");
+      tabs.background = new EditorTab("background", "Background", rightLayoutName, "main");
+      tabs.shelved = new EditorTab("shelved", "Shelved", rightLayoutName, "main");
+      tabs.givenUp = new EditorTab("givenup", "Given up", rightLayoutName, "main");
 
       contextTabs.click("pretty");
 
       // bottom panes
-      tabs.notices = new EditorTab("notices", "Notices", "right-layout", "bottom");
-      tabs.warnings = new EditorTab("warnings", "Warnings", "right-layout", "bottom");
-      tabs.errors = new EditorTab("errors", "Errors", "right-layout", "bottom");
-      tabs.infos = new EditorTab("infos", "Infos", "right-layout", "bottom");
-      tabs.debug = new EditorTab("debug", "Debug", "right-layout", "bottom");
-      tabs.failures = new EditorTab("failures", "Failures", "right-layout", "bottom");
-      // tabs.feedback = new EditorTab("feedback", "Feedback", "right-layout", "bottom");
-      tabs.jobs = new EditorTab("jobs", "Jobs", "right-layout", "bottom");
+      tabs.notices = new EditorTab("notices", "Notices", rightLayoutName, "bottom");
+      tabs.warnings = new EditorTab("warnings", "Warnings", rightLayoutName, "bottom");
+      tabs.errors = new EditorTab("errors", "Errors", rightLayoutName, "bottom");
+      tabs.infos = new EditorTab("infos", "Infos", rightLayoutName, "bottom");
+      tabs.debug = new EditorTab("debug", "Debug", rightLayoutName, "bottom");
+      tabs.failures = new EditorTab("failures", "Failures", rightLayoutName, "bottom");
+      // tabs.feedback = new EditorTab("feedback", "Feedback", rightLayoutName, "bottom");
+      tabs.jobs = new EditorTab("jobs", "Jobs", rightLayoutName, "bottom");
 
       coqtopTabs.click("notices");
 
