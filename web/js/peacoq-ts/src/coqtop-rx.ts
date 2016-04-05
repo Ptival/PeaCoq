@@ -90,11 +90,11 @@ export function setupCoqtopCommunication(
   coqtopInputStream
     .filter((i) => !(i instanceof CoqtopInput.Status))
     .filter((i) => !(i instanceof CoqtopInput.QueryPrime))
-    .subscribe((input) => { console.log("coqtop ⟸ ", input); });
+    .subscribe((input) => { console.log("⟸", input); });
   coqtopResponseStream
     .filter((r) => !(r.input instanceof CoqtopInput.Status))
     .filter((r) => !(r.input instanceof CoqtopInput.QueryPrime))
-    .subscribe((r) => { console.log("coqtop ⟹ ", r.contents, r.input); });
+    .subscribe((r) => { console.log("   ⟹", r.input, r.contents); });
 
   let coqtopGoodResponseStream =
     coqtopResponseStream.filter((r) => r.tag === "ValueGood")
