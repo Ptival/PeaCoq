@@ -59,6 +59,7 @@ let string_of_named_declaration convert (name, maybeTerm, typ) =
 VERNAC COMMAND EXTEND PeaCoqQuery CLASSIFIED AS QUERY
 | [ "PeaCoqGetContext" ] ->
    [
+     try
      let (evm, env) = Lemmas.get_current_context () in
      let proof = Pfedit.get_pftreestate () in
 
@@ -83,6 +84,7 @@ VERNAC COMMAND EXTEND PeaCoqQuery CLASSIFIED AS QUERY
 
      print (string_of_list string_of_goal goals.fg_goals);
 
+     with e -> print (string_of_list (fun _ -> "") []);
      (*let glob_constr = Constrintern.intern_constr env constr_expr in*)
 
    ]

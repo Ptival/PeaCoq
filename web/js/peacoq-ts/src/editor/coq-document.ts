@@ -2,7 +2,7 @@ import * as EditStage from "./edit-stage";
 import * as Global from "./../global-variables";
 import { errorUnderlineClass, theme } from "./../theme";
 
-export class CoqDocument {
+export class CoqDocument implements ICoqDocument {
   beginAnchor: AceAjax.Anchor;
   changeStream: Rx.Observable<AceAjax.EditorChangeEvent>;
   editor: AceAjax.Editor;
@@ -45,8 +45,12 @@ export class CoqDocument {
     return this.getEditStagesInstanceOf(EditStage.ToProcess);
   }
 
-  getEditStagesProcessed(): IProcessed[] {
-    return this.getEditStagesInstanceOf(EditStage.Processed);
+  // getEditStagesProcessed(): IProcessed[] {
+  //   return this.getEditStagesInstanceOf(EditStage.Processed);
+  // }
+
+  getEditStagesReady(): IReady[] {
+    return this.getEditStagesInstanceOf(EditStage.Ready);
   }
 
   // getStopPositions(): AceAjax.Position[] {
@@ -62,6 +66,8 @@ export class CoqDocument {
   }
 
   moveCursorToPositionAndCenter(pos: AceAjax.Position): void {
+    // this prevents the editor from marking selected the region jumped
+    this.editor.session.selection.clearSelection();
     this.editor.moveCursorToPosition(pos);
     this.editor.scrollToLine(pos.row, true, true, () => { });
   }

@@ -50,10 +50,7 @@ export function setupCoqtopCommunication(
       coqtopStatusStream,
       inputSubject,
       ...inputs
-      )
-      .startWith(new CoqtopInput.EditAt(1))
-    // .concat(Rx.Observable.return({ cmd: "quit", args: [] }))
-    ;
+      );
 
   /*
   Note: the scan has two effects
@@ -76,18 +73,13 @@ export function setupCoqtopCommunication(
             error: () => console.log("Server did not respond!"),
             //success: () => console.log("Success"),
           }))
-          .then<CoqtopOutput>((r) => {
-            if (input instanceof CoqtopInput.AddPrime) {
-              inputSubject.onNext(new CoqtopInput.Goal());
-            }
-            return {
-              response: $.extend(r[0], { input: input }),
-              stateId: r[1][0],
-              editId: r[1][1],
-              messages: r[2][0],
-              feedback: r[2][1],
-            };
-          });
+          .then<CoqtopOutput>((r) => ({
+            response: $.extend(r[0], { input: input }),
+            stateId: r[1][0],
+            editId: r[1][1],
+            messages: r[2][0],
+            feedback: r[2][1],
+          }));
       }, Promise.resolve())
       .flatMap((x) => x)
       .share()
@@ -97,9 +89,11 @@ export function setupCoqtopCommunication(
 
   coqtopInputStream
     .filter((i) => !(i instanceof CoqtopInput.Status))
+    .filter((i) => !(i instanceof CoqtopInput.QueryPrime))
     .subscribe((input) => { console.log("coqtop ⟸ ", input); });
   coqtopResponseStream
     .filter((r) => !(r.input instanceof CoqtopInput.Status))
+    .filter((r) => !(r.input instanceof CoqtopInput.QueryPrime))
     .subscribe((r) => { console.log("coqtop ⟹ ", r.contents, r.input); });
 
   let coqtopGoodResponseStream =
@@ -143,8 +137,6 @@ export function setupCoqtopCommunication(
       .filter((r) => r.input instanceof CoqtopInput.Goal)
       .filter((r) => r.contents !== null)
       .map((r) => new Goals(r.contents));
-
-  subscribeAndLog(coqtopGoalStream);
 
   return {
     failResponse: coqtopFailResponseStream,

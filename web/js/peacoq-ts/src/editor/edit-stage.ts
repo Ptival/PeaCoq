@@ -37,20 +37,39 @@ let freshEditId = (function() {
   }
 })();
 
-export class Processed extends EditStage implements IProcessed {
-  context: PeaCoqContext;
-  editId: number;
+/*
+  So, Coqtop's feedback will tell us when an edit is [Processed], but
+  for the purpose of PeaCoq, we will always then query for [Goal].
+  A problem is we often (but always?) receive the [Goal] response before
+  the [Processed] feedback, which is annoying to keep track of as there
+  might be 4 states:
+  - BeingProcessed and waiting for Goal
+  - BeingProcessed and Goal received
+  - Processed and waiting for Goal
+  - Processed and Goal received
+  To simplify my life for now, I will just ignore the [Processed]
+  feedback, and move the edit stage to [Ready] whenever I receive the
+  [Goal] result, with the implicit assumption that a [Processed] feedback
+  will show up before/after and just be ignored.
+*/
+
+export class Ready extends EditStage implements IReady {
+  // editId: number;
   goals: IGoals;
   stateId: number;
-  status: IStatus;
 
-  constructor(e: IBeingProcessed) {//, s: Status, gs: Goals, c: PeaCoqContext) {
+  constructor(e: IBeingProcessed, gs: IGoals) {
     super(e.edit, e.nextStageMarker());
     // this.context = c;
-    // this.goals = gs;
-    this.editId = freshEditId();
+    this.goals = gs;
+    // this.editId = freshEditId();
     this.stateId = e.stateId;
     // this.status = s;
+  }
+
+  nextStageMarker(): IEditMarker {
+    // no need to change it here for now
+    return this.marker;
   }
 
 }

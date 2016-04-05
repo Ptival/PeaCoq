@@ -43,8 +43,9 @@ interface ICoqDocument {
   session: AceAjax.IEditSession;
   getAllEdits(): IEdit[];
   getEditStagesBeingProcessed(): IBeingProcessed[];
+  // getEditStagesProcessed(): IProcessed[];
   getEditStagesToProcess(): IToProcess[];
-  getEditStagesProcessed(): IProcessed[];
+  getEditStagesReady(): IReady[];
   getLastEditStop(): AceAjax.Position;
   markError(range: AceAjax.Range): void;
   moveCursorToPositionAndCenter(pos: AceAjax.Position): void;
@@ -66,6 +67,14 @@ interface IEdit {
   remove(): void;
 }
 
+interface IEditMarker {
+  startPos: AceAjax.Position;
+  stopPos: AceAjax.Position;
+  markBeingProcessed(): void;
+  markProcessed(): void;
+  remove(): void;
+}
+
 interface IEditStage {
   edit: IEdit;
   getStartPosition(): AceAjax.Position;
@@ -82,20 +91,20 @@ interface IBeingProcessed extends IEditStage {
   nextStageMarker(): IEditMarker;
 }
 
-interface IEditMarker {
-  startPos: AceAjax.Position;
-  stopPos: AceAjax.Position;
-  markBeingProcessed(): void;
-  markProcessed(): void;
-  remove(): void;
-}
+// Disabled, read edit-stage.ts for reason why
 
-interface IProcessed extends IEditStage {
-  context: PeaCoqContext;
-  editId: number;
+// interface IProcessed extends IEditStage {
+//   // editId: number;
+//   stateId: number;
+//   nextStageMarker(): IEditMarker;
+// }
+
+interface IReady extends IEditStage {
+  //context: PeaCoqContext;
+  // editId: number;
   goals: IGoals;
   stateId: number;
-  status: IStatus;
+  //status: IStatus;
 }
 
 interface ITab {

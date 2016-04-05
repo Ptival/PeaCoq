@@ -346,6 +346,19 @@ export function processEditsReactive(
   edit: Rx.Observable<IEdit>
 ): Rx.Observable<CoqtopInput.CoqtopInput> {
   return edit
-    .map((e) => new CoqtopInput.AddPrime(e.query, just(e)))
+    .flatMap((e) => {
+      let data = { edit: e };
+      let add = new CoqtopInput.AddPrime(e.query);
+      add.data = data;
+      let goal = new CoqtopInput.Goal();
+      goal.data = data;
+      let context = new CoqtopInput.QueryPrime("PeaCoqGetContext.");
+      context.data = data;
+      return [
+        add,
+        goal,
+        context,
+      ];
+    })
     .share();
 }

@@ -3,13 +3,15 @@ import { CoqDocument } from "./editor/coq-document";
 import * as Coqtop from "./coqtop-rx";
 import * as CoqtopInput from "./coqtop-input";
 import * as EditStage from "./editor/edit-stage";
-import { setupEditor } from "./editor/editor";
+import { displayGoals, setupEditor } from "./editor/editor";
 import { EditorTab } from "./editor/editor-tab";
 import * as FeedbackContent from "./coq/feedback-content";
 import * as Global from "./global-variables";
 // TODO: not sure if this file should be creating those nodes...
 import { GoalNode } from "./prooftree/goalnode";
+import { Goals } from "./goals";
 import { setupKeybindings } from "./editor/keybindings";
+import { PeaCoqGoal } from "./peacoq-goal";
 import { ProofTree, proofTrees } from "./prooftree/prooftree";
 import { getActiveProofTree } from "./prooftree/utils";
 import { Tab } from "./editor/tab";
@@ -43,14 +45,38 @@ $(document).ready(() => {
   });
 
   let editor = ace.edit("editor");
-  editor.selection.on("changeCursor", (e) => {
-    let cursorPosition = editor.selection.getCursor();
-    _(Global.coqDocument.getEditStagesProcessed()).each((stage) => {
-      if (stage.edit.containsPosition(cursorPosition)) {
-        updateCoqtopTabs(stage.goals, stage.context);
-      }
-    });
+  let editorCursorChangeStream = Rx.Observable
+    .create((observer) => {
+      editor.selection.on("changeCursor", (e) => { observer.onNext(e); });
+    })
+    .share();
+  let editorCursorPositionStream = editorCursorChangeStream
+    .map(() => editor.selection.getCursor());
+  let readyEditStageUnderEditorCursorStream = editorCursorPositionStream
+    .flatMap((pos) => {
+      let edit = _(Global.coqDocument.getEditStagesReady())
+        .find((stage) => stage.edit.containsPosition(pos));
+      // if no edit, we should display the last edit before the cursor
+      if (!edit) { edit = _(Global.coqDocument.getEditStagesReady()).last(); }
+      return edit ? [edit] : [];
+    })
+    .distinctUntilChanged();
+  readyEditStageUnderEditorCursorStream.subscribe((stage) => {
+    // TODO: make it so that edit stages only become processed after
+    // goals is filled to remove this check
+    if (stage.goals !== undefined) {
+      displayGoals(stage.goals);
+    }
   });
+
+  // editor.selection.on("changeCursor", (e) => {
+  //   let cursorPosition = editor.selection.getCursor();
+  //   _(Global.coqDocument.getEditStagesProcessed()).each((stage) => {
+  //     if (stage.edit.containsPosition(cursorPosition)) {
+  //       updateCoqtopTabs(stage.goals, stage.context);
+  //     }
+  //   });
+  // });
 
   //editor.selection.on("changeSelection", (e) => { console.log(e); });
   Global.setCoqDocument(new CoqDocument(editor));
@@ -157,50 +183,57 @@ $(document).ready(() => {
 
   let coqtopOutputStreams = Coqtop.setupCoqtopCommunication([
     // reset Coqtop when a file is loaded
-    userActionStreams.loadedFile.map(() => new CoqtopInput.EditAt(1)),
+    userActionStreams.loadedFile
+      .startWith({})
+      .flatMap(() => [
+        new CoqtopInput.EditAt(1),
+        new CoqtopInput.AddPrime("Require Import PeaCoq.PeaCoq.")
+      ]),
     addsToProcessStream,
   ]);
 
+  // Disabled, see edit-stage.ts for reason why
+
   coqtopOutputStreams.goodResponse
     // keep only responses for adds produced by PeaCoq
-    .filter((r) => {
-      let i = r.input;
-      return i instanceof CoqtopInput.AddPrime && i.hasEdit();
-    })
+    .filter((r) => r.input instanceof CoqtopInput.AddPrime && r.input.data !== undefined)
     .subscribe((r) => {
       let stateId = r.contents[0];
-      (<CoqtopInput.AddPrime>r.input).edit.caseOf({
-        nothing: () => { throw "nothing" },
-        just: (edit) => {
-          let stage = edit.stage;
-          if (stage instanceof EditStage.ToProcess) {
-            edit.stage = new EditStage.BeingProcessed(stage, stateId);
-          } else {
-            throw "Expected edit in EditStageToProcess stage";
-          }
-        },
-      });
+      let edit = r.input.data.edit;
+      let stage = edit.stage;
+      if (stage instanceof EditStage.ToProcess) {
+        edit.stage = new EditStage.BeingProcessed(stage, stateId);
+      }
     });
 
-  coqtopOutputStreams.goal.subscribe((g) => {
-    Global.tabs.foreground.setValue(
-      _(g.fgGoals).map((g) => g.toString()).value().join("\n\n\n"), true
-    );
-    Global.tabs.foreground.setCaptionSuffix("(" + g.fgGoals.length + ")");
-    let bgGoals = _(g.bgGoals).map((ba) => [].concat(ba.before, ba.after)).flatten().value();
-    Global.tabs.background.setValue(
-      _(bgGoals).map((g) => g.toString()).value().join("\n\n\n"), false
-    );
-    Global.tabs.background.setCaptionSuffix("(" + bgGoals.length + ")");
-    Global.tabs.shelved.setValue(
-      _(g.shelvedGoals).map((g) => g.toString()).value().join("\n\n\n"), false
-    );
-    Global.tabs.shelved.setCaptionSuffix("(" + g.shelvedGoals.length + ")");
-    Global.tabs.givenUp.setValue(
-      _(g.givenUpGoals).map((g) => g.toString()).value().join("\n\n\n"), false
-    );
-    Global.tabs.givenUp.setCaptionSuffix("(" + g.givenUpGoals.length + ")");
-  })
+  coqtopOutputStreams.goodResponse
+    .filter((r) => r.input instanceof CoqtopInput.Goal && r.input.data !== undefined)
+    .subscribe((r) => {
+      let goals = new Goals(r.contents);
+      // r.input.data.goals = goals;
+      let edit = r.input.data.edit;
+      let stage = edit.stage;
+      if (stage instanceof EditStage.BeingProcessed) {
+        edit.stage = new EditStage.Ready(stage, goals);
+        if (Global.coqDocument.getEditStagesToProcess().length === 0) {
+          Global.coqDocument.moveCursorToPositionAndCenter(stage.getStopPosition());
+        }
+      }
+    });
+  coqtopOutputStreams.goal.subscribe(displayGoals);
+
+  coqtopOutputStreams.goodResponse
+    .filter((r) => r.input instanceof CoqtopInput.QueryPrime && r.input.data !== undefined)
+    .subscribe((r) => {
+      let edit = r.input.data.edit;
+      let c = eval(<any>r.contents);
+      // right now c will be [] if there is no context, or a one-element list
+      let gs = _(c).map((o) => new PeaCoqGoal(o.hyps, o.concl)).value();
+      if (gs.length === 1) {
+        console.log("oop");
+        edit.stage.context = gs[0];
+      }
+    });
 
   // Logging feedbacks that I haven't figured out what to do with yet
   subscribeAndLog(
@@ -211,22 +244,6 @@ $(document).ready(() => {
       .filter((f) => !(f.feedbackContent instanceof FeedbackContent.ProcessingIn && f.editOrState === "state"))
       .filter((f) => !(f.feedbackContent instanceof FeedbackContent.ErrorMsg))
   );
-
-  coqtopOutputStreams.feedback
-    .filter((f) => f.editOrState === "state")
-    .filter((f) => f.feedbackContent instanceof FeedbackContent.Processed)
-    .distinctUntilChanged()
-    .subscribe((f) => {
-      let stateId = f.editOrStateId;
-      let editStageReady = _(Global.coqDocument.getEditStagesBeingProcessed())
-        .find((stage) => stage.stateId === stateId);
-      if (editStageReady) {
-        editStageReady.edit.stage = new EditStage.Processed(editStageReady);
-        if (Global.coqDocument.getEditStagesToProcess().length === 0) {
-          Global.coqDocument.moveCursorToPositionAndCenter(editStageReady.getStopPosition());
-        }
-      }
-    });
 
   coqtopOutputStreams.feedback
     .filter((f) => f.feedbackContent instanceof FeedbackContent.ErrorMsg)
@@ -472,7 +489,7 @@ interface UserActionStreams {
 function setupUserActions(
   toolbarStreams: ToolbarStreams,
   shortcutsStreams: ShortcutsStreams
-) {
+): UserActionStreams {
   let fontDecreasedStream =
     Rx.Observable
       .merge(toolbarStreams.fontDecrease, shortcutsStreams.fontDecrease)
