@@ -1,8 +1,6 @@
-export default NameBase;
+abstract class NameBase { }
 
-export abstract class NameBase { }
-
-export class Name extends NameBase {
+class Name extends NameBase {
   id: string;
   constructor(id: string) {
     super();
@@ -10,4 +8,4 @@ export class Name extends NameBase {
   }
 }
 
-export class Anonymous extends NameBase { }
+class Anonymous extends NameBase { }

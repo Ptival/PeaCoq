@@ -100,7 +100,7 @@ interface IBeingProcessed extends IEditStage {
 // }
 
 interface IReady extends IEditStage {
-  //context: PeaCoqContext;
+  context: PeaCoqContext;
   // editId: number;
   goals: IGoals;
   stateId: number;
@@ -109,6 +109,7 @@ interface IReady extends IEditStage {
 
 interface ITab {
   div: JQuery;
+  click(): void;
   setCaptionSuffix(s: string): void;
 }
 

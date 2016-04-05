@@ -54,22 +54,17 @@ let freshEditId = (function() {
 */
 
 export class Ready extends EditStage implements IReady {
+  context: PeaCoqContext;
   // editId: number;
   goals: IGoals;
   stateId: number;
 
-  constructor(e: IBeingProcessed, gs: IGoals) {
+  constructor(e: IBeingProcessed, gs: IGoals, c: PeaCoqContext) {
     super(e.edit, e.nextStageMarker());
-    // this.context = c;
+    this.context = c;
     this.goals = gs;
     // this.editId = freshEditId();
     this.stateId = e.stateId;
     // this.status = s;
   }
-
-  nextStageMarker(): IEditMarker {
-    // no need to change it here for now
-    return this.marker;
-  }
-
 }

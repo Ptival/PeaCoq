@@ -1,7 +1,5 @@
-export default BindingKind;
+abstract class BindingKind { }
 
-export abstract class BindingKind { }
+class Explicit extends BindingKind { }
 
-export class Explicit extends BindingKind { }
-
-export class Implicit extends BindingKind { }
+class Implicit extends BindingKind { }

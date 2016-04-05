@@ -1,8 +1,6 @@
-export default Explicitation;
+abstract class Explicitation {}
 
-export abstract class Explicitation {}
-
-export class ExplByPos extends Explicitation {
+class ExplByPos extends Explicitation {
   number: number;
   name: Maybe<string>;
   constructor(n: number, id: Maybe<string>) {
@@ -12,7 +10,7 @@ export class ExplByPos extends Explicitation {
   }
 }
 
-export class ExplByName extends Explicitation {
+class ExplByName extends Explicitation {
   name: string;
   constructor(id: string) {
     super();

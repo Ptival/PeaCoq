@@ -1,10 +1,8 @@
-import BindingKind from "./binding-kind";
+// import BindingKind from "./binding-kind";
 
-export default BinderKind;
+abstract class BinderKind { }
 
-export abstract class BinderKind { }
-
-export class Default extends BinderKind {
+class Default extends BinderKind {
   kind: BindingKind;
   constructor(bk: BindingKind) {
     super();
@@ -12,7 +10,7 @@ export class Default extends BinderKind {
   }
 }
 
-export class Generalized extends BinderKind {
+class Generalized extends BinderKind {
   kind1: BindingKind;
   kind2: BindingKind;
   b: boolean;

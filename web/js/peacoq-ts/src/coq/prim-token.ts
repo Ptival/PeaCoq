@@ -1,8 +1,6 @@
-export default PrimToken;
+abstract class PrimToken { }
 
-export abstract class PrimToken { }
-
-export class Numeral extends PrimToken {
+class Numeral extends PrimToken {
   numeral: number;
   constructor(n: number) {
     super();
@@ -10,7 +8,7 @@ export class Numeral extends PrimToken {
   }
 }
 
-export class PrimTokenString extends PrimToken {
+class PrimTokenString extends PrimToken {
   string: string;
   constructor(s: string) {
     super();

@@ -1,7 +1,7 @@
 type PeaCoqContext = IPeaCoqGoal[];
 
 interface IPeaCoqGoal {
-  getHTML(): string;
+  getHTML(): JQuery;
 }
 
 interface PeaCoqHyp {

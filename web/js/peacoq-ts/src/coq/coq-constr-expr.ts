@@ -1,36 +1,34 @@
-import BinderKind from "./binder-kind";
-import CasesPatternExpr from "./cases-pattern-expr";
-import CaseStyle from "./case-style";
-import Explicitation from "./explicitation";
-import * as LocalBinder from "./local-binder";
-import * as NameBase from "./name-base";
-import PrimToken from "./prim-token";
-import Reference from "./reference";
-import Unparsing from "./unparsing";
+// import BinderKind from "./binder-kind";
+// import CasesPatternExpr from "./cases-pattern-expr";
+// import CaseStyle from "./case-style";
+// import Explicitation from "./explicitation";
+// import * as LocalBinder from "./local-binder";
+// import * as NameBase from "./name-base";
+// import PrimToken from "./prim-token";
+// import Reference from "./reference";
+// import Unparsing from "./unparsing";
 
-export default ConstrExpr;
-
-export abstract class ConstrExpr {}
+abstract class ConstrExpr {}
 
 type BinderExpr =[
-  Array<Located<NameBase.NameBase>>,
+  Array<Located<NameBase>>,
   BinderKind,
   ConstrExpr
 ];
 
-export type ConstrNotationSubstitution =[
+type ConstrNotationSubstitution =[
   Array<ConstrExpr>,
   Array<Array<ConstrExpr>>,
-  Array<Array<LocalBinder.LocalBinder>>
+  Array<Array<LocalBinder>>
 ];
 
 type ProjFlag = Maybe<number>;
 
 type AppFun =[ProjFlag, ConstrExpr];
-export type AppArg =[ConstrExpr, Maybe<Located<Explicitation>>];
-export type AppArgs = AppArg[];
+type AppArg =[ConstrExpr, Maybe<Located<Explicitation>>];
+type AppArgs = AppArg[];
 
-export class CApp extends ConstrExpr {
+class CApp extends ConstrExpr {
   location: CoqLocation;
   function: AppFun;
   arguments: AppArgs;
@@ -44,16 +42,16 @@ export class CApp extends ConstrExpr {
 
 type CaseExpr =[
   ConstrExpr,
-  [Maybe<Located<NameBase.Name>>, Maybe<CasesPatternExpr>]
+  [Maybe<Located<Name>>, Maybe<CasesPatternExpr>]
 ];
 
-export type BranchExpr =[
+type BranchExpr =[
   CoqLocation,
   Array<Located<Array<CasesPatternExpr>>>,
   ConstrExpr
 ];
 
-export class CCases extends ConstrExpr {
+class CCases extends ConstrExpr {
   location: CoqLocation;
   caseStyle: CaseStyle;
   returnType: Maybe<ConstrExpr>;
@@ -69,11 +67,11 @@ export class CCases extends ConstrExpr {
   }
 }
 
-export class CCoFix extends ConstrExpr {
+class CCoFix extends ConstrExpr {
   // TODO
 }
 
-export class CDelimiters extends ConstrExpr {
+class CDelimiters extends ConstrExpr {
   location: CoqLocation;
   string: string;
   expr: ConstrExpr;
@@ -85,11 +83,11 @@ export class CDelimiters extends ConstrExpr {
   }
 }
 
-export class CFix extends ConstrExpr {
+class CFix extends ConstrExpr {
   // TODO
 }
 
-export class CHole extends ConstrExpr {
+class CHole extends ConstrExpr {
   location: CoqLocation;
   // evarKinds
   // introPatternNamingExpr
@@ -100,7 +98,7 @@ export class CHole extends ConstrExpr {
   }
 }
 
-export class CLambdaN extends ConstrExpr {
+class CLambdaN extends ConstrExpr {
   location: CoqLocation;
   binders: Array<BinderExpr>;
   body: ConstrExpr;
@@ -112,9 +110,9 @@ export class CLambdaN extends ConstrExpr {
   }
 }
 
-export class CLetIn extends ConstrExpr {
+class CLetIn extends ConstrExpr {
   location: CoqLocation;
-  name: Located<NameBase.Name>;
+  name: Located<Name>;
   bound: ConstrExpr;
   body: ConstrExpr;
   constructor(loc: CoqLocation, n, ce1, ce2) {
@@ -126,10 +124,10 @@ export class CLetIn extends ConstrExpr {
   }
 }
 
-export class CLetTuple extends ConstrExpr {
+class CLetTuple extends ConstrExpr {
   location: CoqLocation;
-  names: Array<Located<NameBase.Name>>;
-  returnType: [Maybe<Located<NameBase.Name>>, Maybe<ConstrExpr>];
+  names: Array<Located<Name>>;
+  returnType: [Maybe<Located<Name>>, Maybe<ConstrExpr>];
   bound: ConstrExpr;
   body: ConstrExpr;
   constructor(l, nll, p, ce1, ce2) {
@@ -144,7 +142,7 @@ export class CLetTuple extends ConstrExpr {
 
 type Notation = String;
 
-export class CNotation extends ConstrExpr {
+class CNotation extends ConstrExpr {
   location: CoqLocation;
   notation: Notation;
   substitution: ConstrNotationSubstitution;
@@ -163,7 +161,7 @@ export class CNotation extends ConstrExpr {
   }
 }
 
-export class CProdN extends ConstrExpr {
+class CProdN extends ConstrExpr {
   location: CoqLocation;
   binderList: Array<BinderExpr>;
   returnExpr: ConstrExpr;
@@ -175,7 +173,7 @@ export class CProdN extends ConstrExpr {
   }
 }
 
-export class CPrim extends ConstrExpr {
+class CPrim extends ConstrExpr {
   location: CoqLocation;
   token: PrimToken;
   constructor(l: CoqLocation, pt: PrimToken) {
@@ -185,7 +183,7 @@ export class CPrim extends ConstrExpr {
   }
 }
 
-export class CRef extends ConstrExpr {
+class CRef extends ConstrExpr {
   ref: Reference;
   universeInstance: Maybe<InstanceExpr>;
   constructor(r: Reference, i: Maybe<InstanceExpr>) {
@@ -195,7 +193,7 @@ export class CRef extends ConstrExpr {
   }
 }
 
-export class CSort extends ConstrExpr {
+class CSort extends ConstrExpr {
   location: CoqLocation;
   globSort: GlobSort;
   constructor(l: CoqLocation, gs: GlobSort) {
@@ -205,7 +203,7 @@ export class CSort extends ConstrExpr {
   }
 }
 
-export function extractProdBinders(a: ConstrExpr): [Array<LocalBinder.LocalBinder>, ConstrExpr] {
+function extractProdBinders(a: ConstrExpr): [Array<LocalBinder>, ConstrExpr] {
   if (a instanceof CProdN) {
     let [loc, bl, c] = [a.location, a.binderList, a.returnExpr];
     if (bl.length === 0) {
@@ -213,7 +211,7 @@ export function extractProdBinders(a: ConstrExpr): [Array<LocalBinder.LocalBinde
     } else {
       let [nal, bk, t] = bl[0];
       let [blrec, cRest] = extractProdBinders(new CProdN(loc, _.tail(bl), c));
-      let l: LocalBinder.LocalBinder[] = [new LocalBinder.LocalRawAssum(nal, bk, t)];
+      let l: LocalBinder[] = [new LocalRawAssum(nal, bk, t)];
       return [l.concat(blrec), cRest];
     }
   }

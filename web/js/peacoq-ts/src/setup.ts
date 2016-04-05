@@ -3,7 +3,7 @@ import { CoqDocument } from "./editor/coq-document";
 import * as Coqtop from "./coqtop-rx";
 import * as CoqtopInput from "./coqtop-input";
 import * as EditStage from "./editor/edit-stage";
-import { displayGoals, setupEditor } from "./editor/editor";
+import { displayEdit, setupEditor } from "./editor/editor";
 import { EditorTab } from "./editor/editor-tab";
 import * as FeedbackContent from "./coq/feedback-content";
 import * as Global from "./global-variables";
@@ -52,21 +52,17 @@ $(document).ready(() => {
     .share();
   let editorCursorPositionStream = editorCursorChangeStream
     .map(() => editor.selection.getCursor());
-  let readyEditStageUnderEditorCursorStream = editorCursorPositionStream
+  let readyEditUnderEditorCursorStream: Rx.Observable<IEdit> = editorCursorPositionStream
     .flatMap((pos) => {
-      let edit = _(Global.coqDocument.getEditStagesReady())
+      let stage = _(Global.coqDocument.getEditStagesReady())
         .find((stage) => stage.edit.containsPosition(pos));
       // if no edit, we should display the last edit before the cursor
-      if (!edit) { edit = _(Global.coqDocument.getEditStagesReady()).last(); }
-      return edit ? [edit] : [];
+      if (!stage) { stage = _(Global.coqDocument.getEditStagesReady()).last(); }
+      return stage ? [stage.edit] : [];
     })
     .distinctUntilChanged();
-  readyEditStageUnderEditorCursorStream.subscribe((stage) => {
-    // TODO: make it so that edit stages only become processed after
-    // goals is filled to remove this check
-    if (stage.goals !== undefined) {
-      displayGoals(stage.goals);
-    }
+  readyEditUnderEditorCursorStream.subscribe((edit) => {
+    displayEdit(edit);
   });
 
   // editor.selection.on("changeCursor", (e) => {
@@ -209,29 +205,32 @@ $(document).ready(() => {
   coqtopOutputStreams.goodResponse
     .filter((r) => r.input instanceof CoqtopInput.Goal && r.input.data !== undefined)
     .subscribe((r) => {
-      let goals = new Goals(r.contents);
+      r.input.data.goals = new Goals(r.contents);
       // r.input.data.goals = goals;
-      let edit = r.input.data.edit;
-      let stage = edit.stage;
-      if (stage instanceof EditStage.BeingProcessed) {
-        edit.stage = new EditStage.Ready(stage, goals);
-        if (Global.coqDocument.getEditStagesToProcess().length === 0) {
-          Global.coqDocument.moveCursorToPositionAndCenter(stage.getStopPosition());
-        }
-      }
+      // let edit = r.input.data.edit;
+      // let stage = edit.stage;
+      // if (stage instanceof EditStage.BeingProcessed) {
+      //   edit.stage = new EditStage.Ready(stage, goals);
+      //   if (Global.coqDocument.getEditStagesToProcess().length === 0) {
+      //     Global.coqDocument.moveCursorToPositionAndCenter(stage.getStopPosition());
+      //   }
+      // }
     });
-  coqtopOutputStreams.goal.subscribe(displayGoals);
 
   coqtopOutputStreams.goodResponse
     .filter((r) => r.input instanceof CoqtopInput.QueryPrime && r.input.data !== undefined)
     .subscribe((r) => {
       let edit = r.input.data.edit;
+      let stage = edit.stage;
       let c = eval(<any>r.contents);
       // right now c will be [] if there is no context, or a one-element list
-      let gs = _(c).map((o) => new PeaCoqGoal(o.hyps, o.concl)).value();
-      if (gs.length === 1) {
-        console.log("oop");
-        edit.stage.context = gs[0];
+      let context = _(c).map((o) => new PeaCoqGoal(o.hyps, o.concl)).value();
+      if (stage instanceof EditStage.BeingProcessed) {
+        edit.stage = new EditStage.Ready(stage, r.input.data.goals, context);
+        if (Global.coqDocument.getEditStagesToProcess().length === 0) {
+          Global.coqDocument.moveCursorToPositionAndCenter(stage.getStopPosition());
+        }
+        displayEdit(edit);
       }
     });
 

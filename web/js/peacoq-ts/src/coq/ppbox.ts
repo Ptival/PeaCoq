@@ -1,25 +1,23 @@
-export default PpBox;
+abstract class PpBox { }
 
-export abstract class PpBox { }
-
-export class PpHB extends PpBox {
+class PpHB extends PpBox {
   n: number;
   constructor(n: number) { super(); this.n = n; }
 }
 
-export class PpHoVB extends PpBox {
+class PpHoVB extends PpBox {
   n: number;
   constructor(n: number) { super(); this.n = n; }
 }
 
-export class PpHVB extends PpBox {
+class PpHVB extends PpBox {
   n: number;
   constructor(n: number) { super(); this.n = n; }
 }
 
-export class PpVB extends PpBox {
+class PpVB extends PpBox {
   n: number;
   constructor(n: number) { super(); this.n = n; }
 }
 
-export class PpTB extends PpBox { }
+class PpTB extends PpBox { }

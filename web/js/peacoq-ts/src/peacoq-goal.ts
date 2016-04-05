@@ -9,7 +9,7 @@ export default PeaCoqGoal;
 // This might be complicated in collaboration with other features like
 // printing diffs between lines, as merging messes with this...
 
-export class PeaCoqGoal {
+export class PeaCoqGoal implements IPeaCoqGoal {
   private html: JQuery;
   private hyps: PeaCoqHyp[];
   private concl: IConstrExpr;

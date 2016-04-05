@@ -1,12 +1,10 @@
-import ParenRelation from "./paren-relation";
-import PpBox from "./ppbox";
-import PpCut from "./ppcut";
+// import ParenRelation from "./paren-relation";
+// import PpBox from "./ppbox";
+// import PpCut from "./ppcut";
 
-export default Unparsing;
+abstract class Unparsing { }
 
-export abstract class Unparsing { }
-
-export class UnpMetaVar extends Unparsing {
+class UnpMetaVar extends Unparsing {
   index: number;
   parenRelation: ParenRelation;
   constructor(i: number, p: ParenRelation) {
@@ -16,7 +14,7 @@ export class UnpMetaVar extends Unparsing {
   }
 }
 
-export class UnpListMetaVar extends Unparsing {
+class UnpListMetaVar extends Unparsing {
   index: number;
   parenRelation: ParenRelation;
   unparsing: Array<Unparsing>;
@@ -28,7 +26,7 @@ export class UnpListMetaVar extends Unparsing {
   }
 }
 
-export class UnpBinderListMetaVar extends Unparsing {
+class UnpBinderListMetaVar extends Unparsing {
   n: number;
   isOpen: boolean;
   unparsing: Unparsing[];
@@ -40,7 +38,7 @@ export class UnpBinderListMetaVar extends Unparsing {
   }
 }
 
-export class UnpTerminal extends Unparsing {
+class UnpTerminal extends Unparsing {
   terminal: string;
   constructor(s: string) {
     super();
@@ -50,7 +48,7 @@ export class UnpTerminal extends Unparsing {
   }
 }
 
-export class UnpBox extends Unparsing {
+class UnpBox extends Unparsing {
   box: PpBox;
   unparsing: Array<Unparsing>;
   constructor(b: PpBox, unpl: Array<Unparsing>) {
@@ -60,7 +58,7 @@ export class UnpBox extends Unparsing {
   }
 }
 
-export class UnpCut extends Unparsing {
+class UnpCut extends Unparsing {
   cut: PpCut;
   constructor(c: PpCut) {
     super();

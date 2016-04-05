@@ -1,6 +1,6 @@
-export abstract class CoqXMLTag { }
+abstract class CoqXMLTag { }
 
-export function mkCoqXMLTag(t): CoqXMLTag {
+function mkCoqXMLTag(t): CoqXMLTag {
   let c = t.contents;
   switch (t.tag) {
     case "Apply":
@@ -34,11 +34,11 @@ export function mkCoqXMLTag(t): CoqXMLTag {
   };
 }
 
-export class Apply extends CoqXMLTag {
+class Apply extends CoqXMLTag {
   toString() { return "Apply"; }
 }
 
-export class Constant extends CoqXMLTag {
+class Constant extends CoqXMLTag {
   constant: string;
   constructor(s) {
     super();
@@ -47,7 +47,7 @@ export class Constant extends CoqXMLTag {
   toString() { return "Constant(" + this.constant + ")"; }
 }
 
-export class Definition extends CoqXMLTag {
+class Definition extends CoqXMLTag {
   a: string;
   b: string;
   constructor(a, b) {
@@ -60,11 +60,11 @@ export class Definition extends CoqXMLTag {
   }
 }
 
-export class Gallina extends CoqXMLTag {
+class Gallina extends CoqXMLTag {
   toString = function() { return "Gallina"; }
 }
 
-export class Ltac extends CoqXMLTag {
+class Ltac extends CoqXMLTag {
   s: string;
   constructor(s) {
     super();
@@ -73,7 +73,7 @@ export class Ltac extends CoqXMLTag {
   toString() { return "Ltac(" + this.s + ")"; }
 }
 
-export class Operator extends CoqXMLTag {
+class Operator extends CoqXMLTag {
   s: string;
   ms: string;
   constructor(s, ms) {
@@ -84,19 +84,19 @@ export class Operator extends CoqXMLTag {
   toString() { return "Operator(" + this.s + ", " + this.ms + ")"; }
 }
 
-export class Proof extends CoqXMLTag {
+class Proof extends CoqXMLTag {
   toString() { return "Proof"; }
 }
 
-export class QED extends CoqXMLTag {
+class QED extends CoqXMLTag {
   toString() { return "QED"; }
 }
 
-export class Recurse extends CoqXMLTag {
+class Recurse extends CoqXMLTag {
   toString() { return "Recurse"; }
 }
 
-export class SectionSubsetDescr extends CoqXMLTag {
+class SectionSubsetDescr extends CoqXMLTag {
   s: string;
   constructor(s) {
     super();
@@ -105,7 +105,7 @@ export class SectionSubsetDescr extends CoqXMLTag {
   toString() { return "SectionSubsetDescr(" + this.s + ")"; }
 }
 
-export class Theorem extends CoqXMLTag {
+class Theorem extends CoqXMLTag {
   a: string;
   b: string;
   constructor(a, b) {
@@ -116,7 +116,7 @@ export class Theorem extends CoqXMLTag {
   toString() { return "Theorem(" + this.a + ", " + this.b + ")"; }
 }
 
-export class Token extends CoqXMLTag {
+class Token extends CoqXMLTag {
   s: string;
   constructor(s) {
     super();
@@ -125,6 +125,6 @@ export class Token extends CoqXMLTag {
   toString() { return "Token(" + this.s + ")"; }
 }
 
-export class Typed extends CoqXMLTag {
+class Typed extends CoqXMLTag {
   toString() { return "Typed"; }
 }

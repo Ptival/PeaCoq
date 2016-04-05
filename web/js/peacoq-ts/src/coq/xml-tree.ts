@@ -1,8 +1,6 @@
-import { CoqXMLTag, mkCoqXMLTag } from "./xml-tag";
+// import { CoqXMLTag, mkCoqXMLTag } from "./xml-tag";
 
-export default CoqXMLTree;
-
-export class CoqXMLTree {
+class CoqXMLTree {
   rootLabel: Located<CoqXMLTag>;
   subForest: CoqXMLTree[];
   constructor(t) {

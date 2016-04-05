@@ -1,12 +1,10 @@
-export default ParenRelation;
+abstract class ParenRelation { }
 
-export abstract class ParenRelation { }
+class E extends ParenRelation { }
 
-export class E extends ParenRelation { }
+class L extends ParenRelation { }
 
-export class L extends ParenRelation { }
-
-export class Prec extends ParenRelation {
+class Prec extends ParenRelation {
   precedence: number;
   constructor(prec: number) {
     super();
@@ -14,4 +12,4 @@ export class Prec extends ParenRelation {
   }
 }
 
-export class Any extends ParenRelation { }
+class Any extends ParenRelation { }
