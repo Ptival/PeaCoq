@@ -10,7 +10,7 @@ export function displayEdit(edit: IEdit): void {
   let c = stage.context;
     let g = stage.goals;
     Global.tabs.pretty.div.html("");
-    _(c).each((g) => {
+    _(c).take(1).each((g) => {
       Global.tabs.pretty.div.append(g.getHTML());
     });
     Global.tabs.pretty.click();
