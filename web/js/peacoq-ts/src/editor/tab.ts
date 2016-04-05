@@ -57,9 +57,9 @@ export class Tab implements ITab {
   }
 
   refresh(): void {
-    let captionText = this.caption + " " + this.captionSuffix;
+    let captionText = `${this.caption} ${this.captionSuffix}`;
     this.tab.set(this.id, {
-      caption: this._captionShouldBeBold ? "<b>" + captionText + "</b>" : captionText
+      caption: this._captionShouldBeBold ? `<b>${captionText}</b>` : captionText
     });
     this.tab.refresh();
   }

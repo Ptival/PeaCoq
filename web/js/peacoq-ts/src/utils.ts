@@ -47,7 +47,7 @@ function bindAll<T, U>(l: Maybe<T>[], f: (...args: T[]) => U): Maybe<U> {
 
 function assert(condition: boolean, message: string): void {
   if (!condition) {
-    alert("Assertion failed: " + message);
+    alert(`Assertion failed: ${message}`);
     throw message || "Assertion failed";
   }
 }
@@ -66,11 +66,11 @@ function parseSVGTransform(a: string): any {
 
 function MatchFailure(fn: string, o: Object) {
   if (!o) { return "undefined discriminee"; }
-  return ("Match failed in " + fn + ", constructor: " + o.constructor.toString());
+  return (`Match failed in ${fn}, constructor: ${o.constructor.toString()}`);
 }
 
 function MissingOverload(fn: string, o: Object) {
-  return ("Missing overload " + fn + ", constructor: " + o.constructor.toString());
+  return (`Missing overload ${fn}, constructor: ${o.constructor.toString()}`);
 }
 
 function isUpperCase(character) {
@@ -84,7 +84,7 @@ function outputError(error: any): void {
 
 function mkDot(x, y) { return { "x": x, "y": y }; }
 
-function showDot(d) { return d.x + " " + d.y; }
+function showDot(d) { return `${d.x} ${d.y}`; }
 
 /*
 
@@ -113,13 +113,9 @@ function connectRects(r1, r2, rightsLeft) {
   //console.log("M", a, b, c, d, e, f, g, h);
 
   return (
-    "M" + showDot(a)
-    + "L" + showDot(b)
-    + "C" + showDot(cp1) + "," + showDot(cp2) + "," + showDot(c)
-    + "L" + showDot(d) + "," + showDot(e) + "," + showDot(f)
-    + "C" + showDot(cp3) + "," + showDot(cp4) + "," + showDot(g)
-    + "L" + showDot(h)
-    + "Z"
+    `M${showDot(a)}L${showDot(b)}C${showDot(cp1)},${showDot(cp2)},${showDot(c)}`
+    + `L${showDot(d)},${showDot(e)},${showDot(f)}C${showDot(cp3)},${showDot(cp4)}`
+    + `,${showDot(g)}L${showDot(h)}Z`
   );
 }
 

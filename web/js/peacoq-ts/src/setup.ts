@@ -41,7 +41,7 @@ $(document).ready(() => {
       { type: "top", size: 34, resizable: false, style: style, content: $("<div>", { id: "toolbar" }) },
       { type: "left", size: "50%", overflow: "hidden", resizable: true, style: style, content: $("<div>", { id: "editor", style: "height: 100%" }) },
       { type: "main", size: "50%", style: style, overflow: "hidden", content: $("<div>", { id: "right" }) },
-      { type: "bottom", size: "30%", overflow: "hidden", resizable: true, style: style, content: $("<div>", { id: "bottom" }) },
+      { type: "bottom", size: "20px", overflow: "hidden", resizable: true, style: style, content: $("<div>", { id: "bottom" }) },
     ]
   });
 
@@ -91,8 +91,8 @@ $(document).ready(() => {
   $().w2layout({
     name: bottomLayoutName,
     panels: [
-      { type: "main", size: "100%", resizable: false, style: style, content: $("<div>", { id: "prooftree" }) },
-      { type: "bottom", hidden: false, size: "20px", resizable: false, style: style, content: $("<div>", { id: "progress-bar" }) },
+      { type: "top", hidden: true, size: "100%", resizable: false, style: style, content: $("<div>", { id: "prooftree" }) },
+      { type: "main", size: "20px", resizable: false, style: style, content: $("<div>", { id: "progress-bar" }) },
     ],
   });
 

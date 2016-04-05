@@ -16,22 +16,18 @@ export function htmlPrintConstrExprDiff(c: IConstrExpr, old: IConstrExpr): strin
 }
 
 export function htmlPrintHyp(h: PeaCoqHyp): string {
-  let result = '<span><span class="tag-variable">' + h.name + "</span></span>";
+  let result = `<span><span class="tag-variable">${h.name}</span></span>`;
   let maybeTerm = h.maybeTerm;
   result += maybeTerm.caseOf({
     nothing: () => "",
-    just: (t) => "<span>\u00A0:=\u00A0</span><span>" + htmlPrintConstrExpr(t) + "</span>",
+    just: (t) => `<span>\u00A0:=\u00A0</span><span>${htmlPrintConstrExpr(t)}</span>`,
   });
-  result += (
-    "<span>:\u00A0</span><span>"
-    + htmlPrintConstrExpr(h.type)
-    + "</span>"
-  );
+  result += `<span>:\u00A0</span><span>${htmlPrintConstrExpr(h.type)}</span>`;
   return result;
 }
 
 export function htmlPrintHyps(hyps: PeaCoqHyp[]): string {
   return _.reduce(hyps, (acc, elt) => {
-    return acc + '<div class="hyp">' + htmlPrintHyp(elt) + "</div>";
+    return acc + `<div class="hyp">${htmlPrintHyp(elt)}</div>`;
   }, "");
 }

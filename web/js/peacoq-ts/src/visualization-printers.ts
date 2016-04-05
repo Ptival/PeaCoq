@@ -14,10 +14,10 @@ function htmlPrintStrToken(t: StrToken.StrToken): string {
 }
 
 function markDifferent(s: string): string {
-  return '<span class="syntax peacoq-diff">' + s + '</span>';
+  return `<span class="syntax peacoq-diff">${s}</span>`;
 }
 
-function syntax(s) { return '<span class="syntax">' + s + '</span>'; }
+function syntax(s) { return `<span class="syntax">${s}</span>`; }
 
 function htmlPrintPpCmdDiff(p: PpCmdType, old: PpCmdType): string {
   if (p.constructor !== old.constructor) {
@@ -63,7 +63,7 @@ function htmlPrintPpCmdDiff(p: PpCmdType, old: PpCmdType): string {
     return "TODO: PpCmdComment";
   }
   if (p instanceof PpCmd.PpCmdOpenTag) {
-    return "<span class=tag-" + p.tag + ">";
+    return `<span class="tag-${p.tag}">`;
   }
   if (p instanceof PpCmd.PpCmdCloseTag) {
     return "</span>";
