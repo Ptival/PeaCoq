@@ -43,7 +43,6 @@ export class Edit implements IEdit {
   get stage(): IEditStage { return this._stage; }
   set stage(s: IEditStage) {
     this._stage = s;
-    console.log("onNext", s);
     editStageChangeSubject.onNext(this);
   }
 }

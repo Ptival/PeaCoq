@@ -40,7 +40,7 @@ namespace BrightTheme {
   export let linkStroke = "black";
   export let processed = "rgba(144, 238, 144, 1)";
   export let processing = "rgba(255, 179, 71, 1)";
-  export let highlight = "slateblue";
+  export let highlight = "deepskyblue";
   export let separatorColor = "#999999";
   export let svgBackground = "white";
   export let syntaxComment = "rgb(165, 42, 42)";
@@ -66,7 +66,7 @@ namespace DarkTheme {
   export let linkStroke = "white";
   export let processed = "rgba(4, 98, 4, 1)";
   export let processing = "rgba(185, 109, 01, 1)";
-  export let highlight = "darkslateblue";
+  export let highlight = "deepskyblue";
   export let separatorColor = "#999999";
   export let svgBackground = "black";
   export let syntaxComment = "rgb(165, 42, 42)";
