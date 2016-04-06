@@ -1,8 +1,3 @@
 ab-study/
 dist/
 encryption_key
-log/
-logs/
-*.png
-*.svg
-.stack-work/
