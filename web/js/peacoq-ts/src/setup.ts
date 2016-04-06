@@ -26,7 +26,8 @@ let fontSize = 16; // pixels
 let resizeBufferingTime = 250; // milliseconds
 
 // TODO: this should not be global
-let layout: W2UI.W2Layout;
+let layout : W2UI.W2Layout;
+let bottomLayout: W2UI.W2Layout;
 // let rightLayout: W2UI.W2Layout;
 // let contextTabs: W2UI.W2Tabs;
 // let coqtopTabs: W2UI.W2Tabs;
@@ -41,7 +42,7 @@ $(document).ready(() => {
       { type: "top", size: 34, resizable: false, style: style, content: $("<div>", { id: "toolbar" }) },
       { type: "left", size: "50%", overflow: "hidden", resizable: true, style: style, content: $("<div>", { id: "editor", style: "height: 100%" }) },
       { type: "main", size: "50%", style: style, overflow: "hidden", content: $("<div>", { id: "right" }) },
-      { type: "bottom", size: "20px", overflow: "hidden", resizable: true, style: style, content: $("<div>", { id: "bottom" }) },
+      { type: "bottom", size: "20px", overflow: "hidden", resizable: false, style: style, content: $("<div>", { id: "bottom" }) },
     ]
   });
 
@@ -91,14 +92,14 @@ $(document).ready(() => {
   $().w2layout({
     name: bottomLayoutName,
     panels: [
-      { type: "top", hidden: true, size: "100%", resizable: false, style: style, content: $("<div>", { id: "prooftree" }) },
+      { type: "top", hidden: true, resizable: false, style: style, content: $("<div>", { id: "prooftree" }) },
       { type: "main", size: "20px", resizable: false, style: style, content: $("<div>", { id: "progress-bar" }) },
     ],
   });
 
   layout = w2ui["layout"];
   let rightLayout = w2ui[rightLayoutName];
-  let bottomLayout = w2ui[bottomLayoutName];
+  bottomLayout = w2ui[bottomLayoutName];
   let contextTabs = w2ui[rightLayoutName + "_main_tabs"];
   contextTabs.onClick = function(event) { $("#myTabsContent").html(event.target); };
   let coqtopTabs = w2ui[rightLayoutName + "_bottom_tabs"];
@@ -106,7 +107,12 @@ $(document).ready(() => {
   bottomLayout.on({ type: "render", execute: "after" }, () => {
     $("#progress-bar").text("Progress bar").css("background-color", "green");
     $("#prooftree").text("ProofTree").css("background-color", "red");
+    bottomLayout.refresh();
   });
+
+  // Rx.Observable.interval(1000)
+  //   .map(n => n%2 === 0)
+  //   .subscribe(b => b ? showProofTreePanel() : hideProofTreePanel());
 
   let rightLayoutRenderedStream = Rx.Observable
     .create((observer) => {
@@ -177,7 +183,9 @@ $(document).ready(() => {
     Rx.Observable.fromPromise(tabsAreReadyPromise)
       .flatMap(() => setupTheme());
   themeChangeStream.subscribe(() => onResize());
+  // These also help with the initial display...
   themeChangeStream.subscribe(() => { rightLayout.refresh(); });
+  themeChangeStream.subscribe(() => { bottomLayout.refresh(); });
 
   let editsToProcessStream = Coq85.onNextReactive(Global.coqDocument, userActionStreams.next);
   //editsToProcessStream.subscribe((e) => Global.coqDocument.pushEdit(e));
@@ -454,17 +462,19 @@ export function onResize(): void {
 }
 
 function hideProofTreePanel(): void {
-  layout.hide("bottom");
+  layout.set("bottom", { size: "20px" });
+  bottomLayout.hide("top");
 }
 
 function showProofTreePanel(): Promise<{}> {
   return new Promise(function(onFulfilled) {
     let handler = function(event) {
       event.onComplete = onFulfilled;
-      layout.off("show", handler);
+      bottomLayout.off("show", handler);
     };
-    layout.on("show", handler);
-    layout.show("bottom");
+    bottomLayout.on("show", handler);
+    layout.set("bottom", { size: "30%" });
+    bottomLayout.show("top");
   });
 }
 
