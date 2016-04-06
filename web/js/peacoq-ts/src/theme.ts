@@ -14,6 +14,7 @@ interface Theme {
   linkStroke: string;
   processed: string;
   processing: string;
+  highlight: string;
   separatorColor: string;
   svgBackground: string;
   syntaxComment: string;
@@ -39,6 +40,7 @@ namespace BrightTheme {
   export let linkStroke = "black";
   export let processed = "rgba(144, 238, 144, 1)";
   export let processing = "rgba(255, 179, 71, 1)";
+  export let highlight = "slateblue";
   export let separatorColor = "#999999";
   export let svgBackground = "white";
   export let syntaxComment = "rgb(165, 42, 42)";
@@ -64,6 +66,7 @@ namespace DarkTheme {
   export let linkStroke = "white";
   export let processed = "rgba(4, 98, 4, 1)";
   export let processing = "rgba(185, 109, 01, 1)";
+  export let highlight = "darkslateblue";
   export let separatorColor = "#999999";
   export let svgBackground = "black";
   export let syntaxComment = "rgb(165, 42, 42)";
@@ -116,6 +119,7 @@ export function setupTheme(): Rx.Observable<{}> {
   jss.set(".processed", { "background-color": theme.processed });
   jss.set(".processing", { "background-color": theme.processing });
   jss.set(".toprocess", { "background-color": theme.toprocess });
+  jss.set(".highlight", { "background-color": theme.highlight });
   jss.set(".goal", { "fill": theme.background });
   jss.set(".tactic", { "fill": theme.tacticFill });
   jss.set(".ace_coqcomment", { "color": theme.syntaxComment });

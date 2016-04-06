@@ -2,18 +2,31 @@ import { EditMarker } from "./edit-marker";
 import { ToProcess } from "./edit-stage";
 import { Strictly } from "../strictly";
 
-export class Edit {
+const newEditSubject: Rx.Subject<IEdit> = new Rx.Subject<IEdit>();
+export const newEdit$: Rx.Observable<IEdit> = newEditSubject.asObservable();
+const editStageChangeSubject: Rx.Subject<IEdit> = new Rx.Subject<IEdit>();
+export const editStageChange$: Rx.Observable<IEdit> = editStageChangeSubject.asObservable();
+
+const freshEditId = (() => {
+  let id = 0;
+  return () => { return id++; }
+})();
+
+export class Edit implements IEdit {
   document: ICoqDocument;
+  id: number;
   previousEdit: Maybe<Edit>;
   query: string;
-  stage: IEditStage;
+  _stage: IEditStage;
 
   constructor(doc: ICoqDocument, start: AceAjax.Position, stop: AceAjax.Position, query: string) {
     this.document = doc;
+    this.id = freshEditId();
     this.query = query;
     let previous = _(doc.getAllEdits()).last();
     this.previousEdit = previous ? just(previous) : nothing();
     this.stage = new ToProcess(this, new EditMarker(doc, start, stop));
+    newEditSubject.onNext(this);
   }
 
   containsPosition(p: AceAjax.Position): boolean {
@@ -27,6 +40,12 @@ export class Edit {
   getStartPosition(): AceAjax.Position { return this.stage.getStartPosition(); }
   getStopPosition(): AceAjax.Position { return this.stage.getStopPosition(); }
   remove(): void { this.stage.remove(); }
+  get stage(): IEditStage { return this._stage; }
+  set stage(s: IEditStage) {
+    this._stage = s;
+    console.log("onNext", s);
+    editStageChangeSubject.onNext(this);
+  }
 }
 
 /**

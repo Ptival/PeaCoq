@@ -58,6 +58,7 @@ interface ICoqDocument {
 }
 
 interface IEdit {
+  id: number;
   previousEdit: Maybe<IEdit>;
   query: string;
   stage: IEditStage;
@@ -70,16 +71,20 @@ interface IEdit {
 interface IEditMarker {
   startPos: AceAjax.Position;
   stopPos: AceAjax.Position;
+  highlight(): void;
   markBeingProcessed(): void;
   markProcessed(): void;
   remove(): void;
+  unhighlight(): void;
 }
 
 interface IEditStage {
   edit: IEdit;
   getStartPosition(): AceAjax.Position;
   getStopPosition(): AceAjax.Position;
+  highlight(): void;
   remove(): void;
+  unhighlight(): void;
 }
 
 interface IToProcess extends IEditStage {

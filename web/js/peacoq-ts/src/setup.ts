@@ -12,6 +12,7 @@ import { GoalNode } from "./prooftree/goalnode";
 import { Goals } from "./goals";
 import { setupKeybindings } from "./editor/keybindings";
 import { PeaCoqGoal } from "./peacoq-goal";
+import { setupProgressBar } from "./editor/progress-bar";
 import { ProofTree, proofTrees } from "./prooftree/prooftree";
 import { getActiveProofTree } from "./prooftree/utils";
 import { Tab } from "./editor/tab";
@@ -93,7 +94,7 @@ $(document).ready(() => {
     name: bottomLayoutName,
     panels: [
       { type: "top", hidden: true, resizable: false, style: style, content: $("<div>", { id: "prooftree" }) },
-      { type: "main", size: "20px", resizable: false, style: style, content: $("<div>", { id: "progress-bar" }) },
+      { type: "main", size: "20px", overflow: "hidden", resizable: false, style: style, content: $("<div>", { id: "progress-bar", style: "height: 100%" }) },
     ],
   });
 
@@ -105,8 +106,7 @@ $(document).ready(() => {
   let coqtopTabs = w2ui[rightLayoutName + "_bottom_tabs"];
 
   bottomLayout.on({ type: "render", execute: "after" }, () => {
-    $("#progress-bar").text("Progress bar").css("background-color", "green");
-    $("#prooftree").text("ProofTree").css("background-color", "red");
+    setupProgressBar();
     bottomLayout.refresh();
   });
 

@@ -7,11 +7,15 @@ export abstract class EditStage implements IEditStage {
   }
   getStartPosition(): AceAjax.Position { return this.marker.startPos; }
   getStopPosition(): AceAjax.Position { return this.marker.stopPos; }
+  highlight(): void { this.marker.highlight(); }
   remove(): void { this.marker.remove(); }
+  unhighlight(): void { this.marker.unhighlight(); }
 }
 
 export class ToProcess extends EditStage implements IToProcess {
-  constructor(e: IEdit, m: IEditMarker) { super(e, m); }
+  constructor(e: IEdit, m: IEditMarker) {
+    super(e, m);
+  }
   nextStageMarker(): IEditMarker {
     this.marker.markBeingProcessed();
     return this.marker;

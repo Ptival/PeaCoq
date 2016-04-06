@@ -955,8 +955,7 @@ export class ProofTree implements IProofTree {
         .attr(
         "transform",
         "translate(" + self.viewportX + ", " + self.viewportY + ")"
-        )
-        ;
+        );
 
     }).each("end", onFulfilled);
 
