@@ -102,10 +102,11 @@ function reportFailure(f: string) { //, switchTab: boolean) {
 // }
 
 export function onNextReactive(
-  doc: ICoqDocument, next: Rx.Observable<{}>
+  doc: ICoqDocument,
+  next: Rx.Observable<{}>
 ): Rx.Observable<IEdit> {
   return next
-    .map(() => {
+    .flatMap<IEdit>(() => {
       let lastEditStopPos = doc.getLastEditStop();
       let endPos = doc.endAnchor.getPosition();
       let unprocessedRange =
@@ -115,15 +116,18 @@ export function onNextReactive(
         );
       let unprocessedText = doc.session.getTextRange(unprocessedRange);
       if (CoqStringUtils.coqTrimLeft(unprocessedText) === "") {
-        return;
+        return [];
       }
       let nextIndex = CoqStringUtils.next(unprocessedText);
       let newStopPos = doc.movePositionRight(lastEditStopPos, nextIndex);
       let query = unprocessedText.substring(0, nextIndex);
       let e = new Edit(Global.coqDocument, lastEditStopPos, newStopPos, query);
-      return e;
+      return [e];
     })
-    .do((e) => { doc.pushEdit(e); doc.moveCursorToPositionAndCenter(e.getStopPosition()); })
+    .do((e) => {
+      doc.pushEdit(e);
+      doc.moveCursorToPositionAndCenter(e.getStopPosition());
+    })
     .share()
     ;
 }
