@@ -28,6 +28,11 @@ export class CoqDocument implements ICoqDocument {
 
   getAllEdits(): IEdit[] { return this.edits; }
 
+  getEditAtPosition(pos: AceAjax.Position): Maybe<IEdit> {
+    let edit = _(this.edits).find(e => e.containsPosition(pos));
+    return edit ? just(edit) : nothing();
+  }
+
   private getEditStagesInstanceOf(stage): any[] {
     return _(this.edits)
       .map((e) => e.stage)
@@ -179,7 +184,7 @@ export class CoqDocument implements ICoqDocument {
     _(this.edits).remove(e);
   }
 
-  removeEditsAfter(e: IEdit): void {
+  removeEditAndFollowingOnes(e: IEdit): void {
     let self = this;
     let editIndex = _(this.edits).findIndex(e);
     let editsToKeep = _(this.edits).slice(0, editIndex).value();

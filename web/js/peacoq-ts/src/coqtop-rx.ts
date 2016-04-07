@@ -87,14 +87,14 @@ export function setupCoqtopCommunication(
 
   let coqtopResponseStream = coqtopOutputStream.map((r) => r.response);
 
-  coqtopInputStream
-    .filter((i) => !(i instanceof CoqtopInput.Status))
-    .filter((i) => !(i instanceof CoqtopInput.QueryPrime))
-    .subscribe((input) => { console.log("⟸", input); });
-  coqtopResponseStream
-    .filter((r) => !(r.input instanceof CoqtopInput.Status))
-    .filter((r) => !(r.input instanceof CoqtopInput.QueryPrime))
-    .subscribe((r) => { console.log("   ⟹", r.input, r.contents); });
+  // coqtopInputStream
+  //   .filter((i) => !(i instanceof CoqtopInput.Status))
+  //   .filter((i) => !(i instanceof CoqtopInput.QueryPrime))
+  //   .subscribe((input) => { console.log("⟸", input); });
+  // coqtopResponseStream
+  //   .filter((r) => !(r.input instanceof CoqtopInput.Status))
+  //   .filter((r) => !(r.input instanceof CoqtopInput.QueryPrime))
+  //   .subscribe((r) => { console.log("   ⟹", r.input, r.contents); });
 
   let coqtopGoodResponseStream =
     coqtopResponseStream.filter((r) => r.tag === "ValueGood")

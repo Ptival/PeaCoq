@@ -320,19 +320,6 @@ function countBackgroundGoals(goals: IGoals): number {
 //
 // }
 
-export function minPos(pos1: AceAjax.Position, pos2: AceAjax.Position): AceAjax.Position {
-  if (pos1.row < pos2.row) {
-    return pos1;
-  }
-  if (pos2.row < pos1.row) {
-    return pos2;
-  }
-  if (pos1.column < pos2.column) {
-    return pos1;
-  }
-  return pos2;
-}
-
 function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }

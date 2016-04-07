@@ -27,7 +27,7 @@ let fontSize = 16; // pixels
 let resizeBufferingTime = 250; // milliseconds
 
 // TODO: this should not be global
-let layout : W2UI.W2Layout;
+let layout: W2UI.W2Layout;
 let bottomLayout: W2UI.W2Layout;
 // let rightLayout: W2UI.W2Layout;
 // let contextTabs: W2UI.W2Tabs;
@@ -70,8 +70,13 @@ $(document).ready(() => {
 
   let editAtBecauseEditorChange: Rx.Observable<CoqtopInput.CoqtopInput> =
     Global.coqDocument.changeStream.flatMap((change) => {
-      console.log("should remove edits after", Coq85.minPos(change.start, change.end));
-      return [];
+      let maybeEdit = Global.coqDocument
+        .getEditAtPosition(minPos(change.start, change.end));
+      maybeEdit.fmap(e => Global.coqDocument.removeEditAndFollowingOnes(e));
+      return maybeEdit.caseOf({
+        nothing: () => [],
+        just: e => [new CoqtopInput.EditAt(e.getPreviousStateId())]
+      });
     });
 
   setupEditor(editor);
@@ -197,6 +202,7 @@ $(document).ready(() => {
         new CoqtopInput.AddPrime("Require Import PeaCoq.PeaCoq.")
       ]),
     addsToProcessStream,
+    editAtBecauseEditorChange,
   ]);
 
   // Disabled, see edit-stage.ts for reason why
@@ -265,7 +271,7 @@ $(document).ready(() => {
       let failedEditStage = _(Global.coqDocument.getEditStagesBeingProcessed()).find((s) => s.stateId === failedStateId);
       if (failedEditStage) {
         let failedEdit = failedEditStage.edit;
-        Global.coqDocument.removeEditsAfter(failedEdit);
+        Global.coqDocument.removeEditAndFollowingOnes(failedEdit);
         Global.tabs.errors.setValue(e.message, true);
         let errorStart = Global.coqDocument.movePositionRight(failedEdit.getStartPosition(), e.start);
         let errorStop = Global.coqDocument.movePositionRight(failedEdit.getStartPosition(), e.stop);
@@ -535,4 +541,17 @@ function setupUserActions(
     loadedFile: loadedFilesStream,
     next: nextStream,
   };
+}
+
+function minPos(pos1: AceAjax.Position, pos2: AceAjax.Position): AceAjax.Position {
+  if (pos1.row < pos2.row) {
+    return pos1;
+  }
+  if (pos2.row < pos1.row) {
+    return pos2;
+  }
+  if (pos1.column < pos2.column) {
+    return pos1;
+  }
+  return pos2;
 }

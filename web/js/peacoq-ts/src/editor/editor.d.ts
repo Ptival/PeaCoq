@@ -42,6 +42,7 @@ interface ICoqDocument {
   endAnchor: AceAjax.Anchor;
   session: AceAjax.IEditSession;
   getAllEdits(): IEdit[];
+  getEditAtPosition(pos: AceAjax.Position): Maybe<IEdit>;
   getEditStagesBeingProcessed(): IBeingProcessed[];
   // getEditStagesProcessed(): IProcessed[];
   getEditStagesToProcess(): IToProcess[];
@@ -53,7 +54,7 @@ interface ICoqDocument {
   pushEdit(e: IEdit): void;
   removeAllEdits(): void;
   removeEdit(e: IEdit): void;
-  removeEditsAfter(e: IEdit): void;
+  removeEditAndFollowingOnes(e: IEdit): void;
   resetEditor(s: string): void;
 }
 
@@ -63,6 +64,7 @@ interface IEdit {
   query: string;
   stage: IEditStage;
   containsPosition(p: AceAjax.Position): boolean;
+  getPreviousStateId(): number;
   getStartPosition(): AceAjax.Position;
   getStopPosition(): AceAjax.Position;
   remove(): void;

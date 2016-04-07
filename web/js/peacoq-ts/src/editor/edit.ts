@@ -33,14 +33,28 @@ export class Edit implements IEdit {
 
   containsPosition(p: AceAjax.Position): boolean {
     // TODO: I think ace handles this
+    /*
+    For our purpose, an edit contains its start position, but does
+    not contain its end position, so that modifications at the end
+    position are allowed.
+    */
     return (
       isBefore(Strictly.No, this.getStartPosition(), p)
-      && isBefore(Strictly.No, p, this.getStopPosition())
+      && isBefore(Strictly.Yes, p, this.getStopPosition())
     );
   }
 
+  getPreviousStateId(): number {
+    return this.previousEdit.caseOf({
+      nothing: () => 1,
+      just: (e) => (<IReady>e.stage).stateId,
+    });
+  }
+
   getStartPosition(): AceAjax.Position { return this.stage.getStartPosition(); }
+
   getStopPosition(): AceAjax.Position { return this.stage.getStopPosition(); }
+
   remove(): void {
     this.stage.remove();
     editRemovedSubject.onNext({});
