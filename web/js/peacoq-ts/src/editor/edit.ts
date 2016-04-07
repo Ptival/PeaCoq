@@ -6,6 +6,8 @@ const newEditSubject: Rx.Subject<IEdit> = new Rx.Subject<IEdit>();
 export const newEdit$: Rx.Observable<IEdit> = newEditSubject.asObservable();
 const editStageChangeSubject: Rx.Subject<IEdit> = new Rx.Subject<IEdit>();
 export const editStageChange$: Rx.Observable<IEdit> = editStageChangeSubject.asObservable();
+const editRemovedSubject: Rx.Subject<{}> = new Rx.Subject<{}>();
+export const editRemoved$: Rx.Observable<{}> = editRemovedSubject.asObservable();
 
 const freshEditId = (() => {
   let id = 0;
@@ -39,7 +41,10 @@ export class Edit implements IEdit {
 
   getStartPosition(): AceAjax.Position { return this.stage.getStartPosition(); }
   getStopPosition(): AceAjax.Position { return this.stage.getStopPosition(); }
-  remove(): void { this.stage.remove(); }
+  remove(): void {
+    this.stage.remove();
+    editRemovedSubject.onNext({});
+  }
   get stage(): IEditStage { return this._stage; }
   set stage(s: IEditStage) {
     this._stage = s;

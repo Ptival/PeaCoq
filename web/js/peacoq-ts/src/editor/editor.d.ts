@@ -80,6 +80,7 @@ interface IEditMarker {
 
 interface IEditStage {
   edit: IEdit;
+  getColor(): string;
   getStartPosition(): AceAjax.Position;
   getStopPosition(): AceAjax.Position;
   highlight(): void;

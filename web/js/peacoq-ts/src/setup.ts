@@ -18,7 +18,7 @@ import { getActiveProofTree } from "./prooftree/utils";
 import { Tab } from "./editor/tab";
 import { Tactic } from "./prooftree/tactic";
 import { TacticGroupNode } from "./prooftree/tacticgroupnode";
-import { setupTheme, theme } from "./theme";
+import * as Theme from "./theme";
 // // TODO: toolbar.ts should setup{Load,Save}File upon setupToolbar
 // // TODO: unless it can't because of keybindings?
 import { pickFile, saveFile, setupLoadFile, setupToolbar, setupSaveFile } from "./editor/toolbar";
@@ -35,15 +35,13 @@ let bottomLayout: W2UI.W2Layout;
 
 $(document).ready(() => {
 
-  let style = "";// "border: 1px solid #dfdfdf;";
-
   $("#interface").w2layout({
     name: "layout",
     panels: [
-      { type: "top", size: 34, resizable: false, style: style, content: $("<div>", { id: "toolbar" }) },
-      { type: "left", size: "50%", overflow: "hidden", resizable: true, style: style, content: $("<div>", { id: "editor", style: "height: 100%" }) },
-      { type: "main", size: "50%", style: style, overflow: "hidden", content: $("<div>", { id: "right" }) },
-      { type: "bottom", size: "20px", overflow: "hidden", resizable: false, style: style, content: $("<div>", { id: "bottom" }) },
+      { type: "top", size: 34, resizable: false, content: $("<div>", { id: "toolbar" }) },
+      { type: "left", size: "50%", overflow: "hidden", resizable: true, content: $("<div>", { id: "editor", style: "height: 100%" }) },
+      { type: "main", size: "50%", overflow: "hidden", content: $("<div>", { id: "right" }) },
+      { type: "bottom", size: "20px", overflow: "hidden", resizable: false, content: $("<div>", { id: "bottom" }) },
     ]
   });
 
@@ -85,16 +83,16 @@ $(document).ready(() => {
   $().w2layout({
     name: rightLayoutName,
     panels: [
-      { type: "main", size: "50%", resizable: true, style: style, tabs: { tabs: [], } },
-      { type: "bottom", size: "50%", resizable: true, style: style, tabs: { tabs: [], } },
+      { type: "main", size: "50%", resizable: true, tabs: { tabs: [], } },
+      { type: "bottom", size: "50%", resizable: true, tabs: { tabs: [], } },
     ],
   });
 
   $().w2layout({
     name: bottomLayoutName,
     panels: [
-      { type: "top", hidden: true, resizable: false, style: style, content: $("<div>", { id: "prooftree" }) },
-      { type: "main", size: "20px", overflow: "hidden", resizable: false, style: style, content: $("<div>", { id: "progress-bar", style: "height: 100%" }) },
+      { type: "top", hidden: true, resizable: false, content: $("<div>", { id: "prooftree" }) },
+      { type: "main", size: "20px", overflow: "hidden", resizable: false, content: $("<div>", { id: "progress-bar", style: "height: 100%" }) },
     ],
   });
 
@@ -179,13 +177,11 @@ $(document).ready(() => {
   let userActionStreams = setupUserActions(toolbarStreams, shortcutsStreams);
 
   Coq85.setupSyntaxHovering();
-  let themeChangeStream: Rx.Observable<{}> =
-    Rx.Observable.fromPromise(tabsAreReadyPromise)
-      .flatMap(() => setupTheme());
-  themeChangeStream.subscribe(() => onResize());
+  tabsAreReadyPromise.then(Theme.setupTheme);
+  Theme.afterChange$.subscribe(() => onResize());
   // These also help with the initial display...
-  themeChangeStream.subscribe(() => { rightLayout.refresh(); });
-  themeChangeStream.subscribe(() => { bottomLayout.refresh(); });
+  Theme.afterChange$.subscribe(() => { rightLayout.refresh(); });
+  Theme.afterChange$.subscribe(() => { bottomLayout.refresh(); });
 
   let editsToProcessStream = Coq85.onNextReactive(Global.coqDocument, userActionStreams.next);
   //editsToProcessStream.subscribe((e) => Global.coqDocument.pushEdit(e));

@@ -7,7 +7,10 @@ let barItemClass = "progress-bar-item";
 let progressBarId = "progress-bar";
 
 export function setupProgressBar(): void {
-  Edit.editStageChange$.subscribe(updateProgressBar);
+  Rx.Observable.merge(
+    Edit.editStageChange$,
+    Edit.editRemoved$
+  ).subscribe(updateProgressBar);
   let barClick$: Rx.Observable<Event> =
     Rx.Observable.fromEvent<Event>(document, "click")
       .filter(e => $(e.target).hasClass(barItemClass));
@@ -18,9 +21,12 @@ export function setupProgressBar(): void {
     Rx.Observable.fromEvent<Event>(document, "mouseout")
       .filter(e => $(e.target).hasClass(barItemClass));
   barMouseOver$.subscribe(
-    e => $(e.target).css("border", `4px solid ${Theme.theme.highlight}`)
+    e => $(e.target).css("background-color", `${Theme.theme.highlight}`)
   );
-  barMouseOut$.subscribe(e => $(e.target).css("border", "none"));
+  barMouseOut$.subscribe(e => {
+    let targetEdit: IEdit = d3.select(e.target).data()[0];
+    $(e.target).css("background-color", `${targetEdit.stage.getColor()}`);
+  });
   barMouseOver$.subscribe(e => {
     let targetEdit: IEdit = d3.select(e.target).data()[0];
     targetEdit.stage.highlight();
@@ -51,13 +57,7 @@ function updateProgressBar(): void {
   let eltWidth = $(`#${progressBarId}`).width() / allEdits.length;
   selection
     .style("width", `${eltWidth}px`)
-    .style("background-color", (d: IEdit) => {
-      let color = "black";
-      d.stage instanceof EditStage.ToProcess && (color = Theme.theme.toprocess);
-      d.stage instanceof EditStage.BeingProcessed && (color = Theme.theme.processing);
-      d.stage instanceof EditStage.Ready && (color = Theme.theme.processed);
-      return color;
-    })
+    .style("background-color", (d: IEdit) => d.stage.getColor())
     ;
   selection.exit().remove();
 }

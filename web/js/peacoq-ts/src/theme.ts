@@ -1,5 +1,7 @@
 import * as Global from "./global-variables";
 
+let afterChangeSubject = new Rx.Subject<{}>();
+export const afterChange$ = afterChangeSubject.asObservable();
 let cssPath = "js/lib/w2ui/";
 export let errorUnderlineClass = "theme_error_underline";
 
@@ -83,26 +85,17 @@ namespace DarkTheme {
 
 export let theme: Theme = DarkTheme;
 
-export function switchToBright(): void {
-  theme = BrightTheme;
-  setupTheme();
+export function switchTo(t: Theme): void {
+  theme = t;
+  update();
 }
 
-export function switchToDark(): void {
-  theme = DarkTheme;
-  setupTheme();
-}
+export function switchToBright(): void { switchTo(BrightTheme); }
 
-export function setupTheme(): Rx.Observable<{}> {
-  let themeChangeStream = Rx.Observable.create((observer) => {
-    $.get(theme.css, (response) => {
-      $('#theme').text(response);
-      observer.onNext({});
-    });
-    $("#w2uicss")
-      .load(() => observer.onNext({}))
-      .attr("href", theme.css);
-  })
+export function switchToDark(): void { switchTo(DarkTheme); }
+
+function update(): void {
+
   jss.set(".w2ui-layout>div .w2ui-resizer", {
     "background-color": "transparent"
   })
@@ -154,7 +147,7 @@ export function setupTheme(): Rx.Observable<{}> {
     "background-color": "transparent",
     "font-family": "monospace",
     "padding": "2px",
-  })
+  });
 
   jss.set("." + errorUnderlineClass, {
     position: "absolute",
@@ -164,5 +157,14 @@ export function setupTheme(): Rx.Observable<{}> {
   Global.coqDocument.editor.setTheme(theme.aceTheme);
   _(Global.getAllEditorTabs()).each((et) => { et.setTheme(theme.aceTheme); });
 
-  return themeChangeStream;
+  $.get(theme.css, (response) => {
+    $('#theme').text(response);
+    $("#w2uicss")
+      .load(() => afterChangeSubject.onNext({}))
+      .attr("href", theme.css);
+  });
+}
+
+export function setupTheme(): void {
+  update();
 }

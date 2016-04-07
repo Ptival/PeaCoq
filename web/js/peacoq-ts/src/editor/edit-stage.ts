@@ -1,3 +1,5 @@
+import * as Theme from "../theme";
+
 export abstract class EditStage implements IEditStage {
   edit: IEdit;
   protected marker: IEditMarker;
@@ -5,6 +7,7 @@ export abstract class EditStage implements IEditStage {
     this.edit = e;
     this.marker = m;
   }
+  abstract getColor(): string;
   getStartPosition(): AceAjax.Position { return this.marker.startPos; }
   getStopPosition(): AceAjax.Position { return this.marker.stopPos; }
   highlight(): void { this.marker.highlight(); }
@@ -16,6 +19,9 @@ export class ToProcess extends EditStage implements IToProcess {
   constructor(e: IEdit, m: IEditMarker) {
     super(e, m);
   }
+
+  getColor(): string { return Theme.theme.toprocess; }
+
   nextStageMarker(): IEditMarker {
     this.marker.markBeingProcessed();
     return this.marker;
@@ -24,10 +30,14 @@ export class ToProcess extends EditStage implements IToProcess {
 
 export class BeingProcessed extends EditStage implements IBeingProcessed {
   stateId: number;
+
   constructor(e: IToProcess, sid: number) {
     super(e.edit, e.nextStageMarker());
     this.stateId = sid;
   }
+
+  getColor(): string { return Theme.theme.processing; }
+
   nextStageMarker(): IEditMarker {
     this.marker.markProcessed();
     return this.marker;
@@ -71,4 +81,6 @@ export class Ready extends EditStage implements IReady {
     this.stateId = e.stateId;
     // this.status = s;
   }
+
+  getColor() { return Theme.theme.processed; }
 }
