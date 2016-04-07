@@ -1,5 +1,6 @@
 import { EditMarker } from "./edit-marker";
 import { ToProcess } from "./edit-stage";
+import { isBefore } from "./editor-utils";
 import { Strictly } from "../strictly";
 
 const newEditSubject: Rx.Subject<IEdit> = new Rx.Subject<IEdit>();
@@ -64,25 +65,4 @@ export class Edit implements IEdit {
     this._stage = s;
     editStageChangeSubject.onNext(this);
   }
-}
-
-/**
- * Checks if first argument is strictly before second argument
-**/
-function isBefore(flag: Strictly, pos1: AceAjax.Position, pos2: AceAjax.Position): boolean {
-  if (pos1.row < pos2.row) { return true; }
-  if (pos1.row > pos2.row) { return false; }
-  switch (flag) {
-    case Strictly.Yes: return pos1.column < pos2.column;
-    case Strictly.No: return pos1.column <= pos2.column;
-  };
-}
-
-function isAfter(flag: Strictly, pos1: AceAjax.Position, pos2: AceAjax.Position): boolean {
-  if (pos1.row > pos2.row) { return true; }
-  if (pos1.row < pos2.row) { return false; }
-  switch (flag) {
-    case Strictly.Yes: return pos1.column > pos2.column;
-    case Strictly.No: return pos1.column >= pos2.column;
-  };
 }

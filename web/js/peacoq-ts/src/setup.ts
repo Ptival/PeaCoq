@@ -5,6 +5,7 @@ import * as CoqtopInput from "./coqtop-input";
 import * as EditStage from "./editor/edit-stage";
 import { displayEdit, setupEditor } from "./editor/editor";
 import { EditorTab } from "./editor/editor-tab";
+import { isBefore } from "./editor/editor-utils";
 import * as FeedbackContent from "./coq/feedback-content";
 import * as Global from "./global-variables";
 // TODO: not sure if this file should be creating those nodes...
@@ -15,6 +16,7 @@ import { PeaCoqGoal } from "./peacoq-goal";
 import { setupProgressBar } from "./editor/progress-bar";
 import { ProofTree, proofTrees } from "./prooftree/prooftree";
 import { getActiveProofTree } from "./prooftree/utils";
+import { Strictly } from "./strictly";
 import { Tab } from "./editor/tab";
 import { Tactic } from "./prooftree/tactic";
 import { TacticGroupNode } from "./prooftree/tacticgroupnode";
@@ -24,14 +26,14 @@ import * as Theme from "./theme";
 import { pickFile, saveFile, setupLoadFile, setupToolbar, setupSaveFile } from "./editor/toolbar";
 
 let fontSize = 16; // pixels
-let resizeBufferingTime = 250; // milliseconds
+const resizeBufferingTime = 250; // milliseconds
 
 // TODO: this should not be global
 let layout: W2UI.W2Layout;
 let bottomLayout: W2UI.W2Layout;
-// let rightLayout: W2UI.W2Layout;
-// let contextTabs: W2UI.W2Tabs;
-// let coqtopTabs: W2UI.W2Tabs;
+// const rightLayout: W2UI.W2Layout;
+// const contextTabs: W2UI.W2Tabs;
+// const coqtopTabs: W2UI.W2Tabs;
 
 $(document).ready(() => {
 
@@ -45,15 +47,15 @@ $(document).ready(() => {
     ]
   });
 
-  let editor = ace.edit("editor");
-  let editorCursorChangeStream = Rx.Observable
+  const editor = ace.edit("editor");
+  const editorCursorChangeStream = Rx.Observable
     .create((observer) => {
       editor.selection.on("changeCursor", (e) => { observer.onNext(e); });
     })
     .share();
-  let editorCursorPositionStream = editorCursorChangeStream
+  const editorCursorPositionStream = editorCursorChangeStream
     .map(() => editor.selection.getCursor());
-  let readyEditUnderEditorCursorStream: Rx.Observable<IEdit> = editorCursorPositionStream
+  const readyEditUnderEditorCursorStream: Rx.Observable<IEdit> = editorCursorPositionStream
     .flatMap((pos) => {
       let stage = _(Global.coqDocument.getEditStagesReady())
         .find((stage) => stage.edit.containsPosition(pos));
@@ -68,11 +70,9 @@ $(document).ready(() => {
 
   Global.setCoqDocument(new CoqDocument(editor));
 
-  let editAtBecauseEditorChange: Rx.Observable<CoqtopInput.CoqtopInput> =
+  const editAtBecauseEditorChange: Rx.Observable<CoqtopInput.CoqtopInput> =
     Global.coqDocument.changeStream.flatMap((change) => {
-      let maybeEdit = Global.coqDocument
-        .getEditAtPosition(minPos(change.start, change.end));
-      maybeEdit.fmap(e => Global.coqDocument.removeEditAndFollowingOnes(e));
+      const maybeEdit = Global.coqDocument.getEditAtPosition(minPos(change.start, change.end));
       return maybeEdit.caseOf({
         nothing: () => [],
         just: e => [new CoqtopInput.EditAt(e.getPreviousStateId())]
@@ -82,8 +82,8 @@ $(document).ready(() => {
   setupEditor(editor);
   editor.focus();
 
-  let rightLayoutName = "right-layout";
-  let bottomLayoutName = "bottom-layout";
+  const rightLayoutName = "right-layout";
+  const bottomLayoutName = "bottom-layout";
 
   $().w2layout({
     name: rightLayoutName,
@@ -102,11 +102,11 @@ $(document).ready(() => {
   });
 
   layout = w2ui["layout"];
-  let rightLayout = w2ui[rightLayoutName];
+  const rightLayout = w2ui[rightLayoutName];
   bottomLayout = w2ui[bottomLayoutName];
-  let contextTabs = w2ui[rightLayoutName + "_main_tabs"];
+  const contextTabs = w2ui[rightLayoutName + "_main_tabs"];
   contextTabs.onClick = function(event) { $("#myTabsContent").html(event.target); };
-  let coqtopTabs = w2ui[rightLayoutName + "_bottom_tabs"];
+  const coqtopTabs = w2ui[rightLayoutName + "_bottom_tabs"];
 
   bottomLayout.on({ type: "render", execute: "after" }, () => {
     setupProgressBar();
@@ -117,16 +117,16 @@ $(document).ready(() => {
   //   .map(n => n%2 === 0)
   //   .subscribe(b => b ? showProofTreePanel() : hideProofTreePanel());
 
-  let rightLayoutRenderedStream = Rx.Observable
+  const rightLayoutRenderedStream = Rx.Observable
     .create((observer) => {
       rightLayout.on({ type: "render", execute: "after" }, () => observer.onNext({}));
     })
     .share();
 
-  let tabsAreReadyPromise = new Promise((onFulfilled) => {
+  const tabsAreReadyPromise = new Promise((onFulfilled) => {
     rightLayoutRenderedStream.take(1).subscribe(() => {
 
-      let tabs: ITabs = <any>{};
+      const tabs: ITabs = <any>{};
 
       // top panes
       tabs.pretty = new Tab("pretty", "Pretty", rightLayoutName, "main");
@@ -163,9 +163,9 @@ $(document).ready(() => {
   layout.content("main", rightLayout);
   layout.content("bottom", bottomLayout);
 
-  let windowResizeStream: Rx.Observable<{}> = Rx.Observable.fromEvent($(window), "resize");
-  let layoutResizeStream = setupW2LayoutResizeStream(layout);
-  let rightLayoutResizeStream = setupW2LayoutResizeStream(rightLayout);
+  const windowResizeStream: Rx.Observable<{}> = Rx.Observable.fromEvent($(window), "resize");
+  const layoutResizeStream = setupW2LayoutResizeStream(layout);
+  const rightLayoutResizeStream = setupW2LayoutResizeStream(rightLayout);
   Rx.Observable.merge(windowResizeStream, layoutResizeStream, rightLayoutResizeStream)
     // only fire once every <resizeBufferingTime> milliseconds
     .bufferWithTime(resizeBufferingTime).filter((a) => !_.isEmpty(a))
@@ -177,9 +177,38 @@ $(document).ready(() => {
   //layout.on({ type: "hide", execute: "after" }, () => { Global.coqDocument.recenterEditor(); });
   //layout.on({ type: "show", execute: "after" }, () => { Global.coqDocument.recenterEditor(); });
 
-  let toolbarStreams = setupToolbar();
-  let shortcutsStreams = setupKeybindings();
-  let userActionStreams = setupUserActions(toolbarStreams, shortcutsStreams);
+  const toolbarStreams = setupToolbar();
+  const shortcutsStreams = setupKeybindings();
+  const userActionStreams = setupUserActions(toolbarStreams, shortcutsStreams);
+
+  /*
+  Will have just(pos) when we are trying to reach some position, and
+  nothing() when we are not.
+  */
+  interface GoToPositions {
+    destinationPos: AceAjax.Position;
+    lastEditStopPos: AceAjax.Position;
+  }
+  const [forwardGoTo$, backwardGoTo$] = userActionStreams.goTo$
+    // filter out when position is already reached
+    .flatMap<GoToPositions>(() => {
+      const lastEditStopPos = Global.coqDocument.getLastEditStop();
+      const destinationPos = Global.coqDocument.editor.getCursorPosition();
+      return (
+        _.isEqual(lastEditStopPos, destinationPos)
+          ? []
+          : [{ destinationPos: destinationPos, lastEditStopPos: lastEditStopPos, }]
+      );
+    })
+    .partition(o => isBefore(Strictly.Yes, o.lastEditStopPos, o.destinationPos));
+  const editAtFromBackwardGoTo$ = backwardGoTo$.flatMap(o => {
+    const editAtPosition = Global.coqDocument.getEditAtPosition(o.destinationPos);
+    const stateIdToRewindTo = editAtPosition.fmap(e => e.getPreviousStateId());
+    return stateIdToRewindTo.caseOf({
+      nothing: () => [],
+      just: s => [new CoqtopInput.EditAt(s)],
+    });
+  });
 
   Coq85.setupSyntaxHovering();
   tabsAreReadyPromise.then(Theme.setupTheme);
@@ -188,14 +217,14 @@ $(document).ready(() => {
   Theme.afterChange$.subscribe(() => { rightLayout.refresh(); });
   Theme.afterChange$.subscribe(() => { bottomLayout.refresh(); });
 
-  let editsToProcessStream = Coq85.onNextReactive(Global.coqDocument, userActionStreams.next);
+  const editsToProcessStream = Coq85.onNextReactive(Global.coqDocument, userActionStreams.next$);
   //editsToProcessStream.subscribe((e) => Global.coqDocument.pushEdit(e));
   //editsToProcessStream.subscribe((e) => Global.coqDocument.moveCursorToPositionAndCenter(e.getStopPosition()));
-  let addsToProcessStream = Coq85.processEditsReactive(editsToProcessStream);
+  const addsToProcessStream = Coq85.processEditsReactive(editsToProcessStream);
 
-  let coqtopOutputStreams = Coqtop.setupCoqtopCommunication([
+  const coqtopOutputStreams = Coqtop.setupCoqtopCommunication([
     // reset Coqtop when a file is loaded
-    userActionStreams.loadedFile
+    userActionStreams.loadedFile$
       .startWith({})
       .flatMap(() => [
         new CoqtopInput.EditAt(1),
@@ -203,6 +232,7 @@ $(document).ready(() => {
       ]),
     addsToProcessStream,
     editAtBecauseEditorChange,
+    editAtFromBackwardGoTo$,
   ]);
 
   // Disabled, see edit-stage.ts for reason why
@@ -211,9 +241,9 @@ $(document).ready(() => {
     // keep only responses for adds produced by PeaCoq
     .filter((r) => r.input instanceof CoqtopInput.AddPrime && r.input.data !== undefined)
     .subscribe((r) => {
-      let stateId = r.contents[0];
-      let edit = r.input.data.edit;
-      let stage = edit.stage;
+      const stateId = r.contents[0];
+      const edit = r.input.data.edit;
+      const stage = edit.stage;
       if (stage instanceof EditStage.ToProcess) {
         edit.stage = new EditStage.BeingProcessed(stage, stateId);
       }
@@ -224,8 +254,8 @@ $(document).ready(() => {
     .subscribe((r) => {
       r.input.data.goals = new Goals(r.contents);
       // r.input.data.goals = goals;
-      // let edit = r.input.data.edit;
-      // let stage = edit.stage;
+      // const edit = r.input.data.edit;
+      // const stage = edit.stage;
       // if (stage instanceof EditStage.BeingProcessed) {
       //   edit.stage = new EditStage.Ready(stage, goals);
       //   if (Global.coqDocument.getEditStagesToProcess().length === 0) {
@@ -237,11 +267,11 @@ $(document).ready(() => {
   coqtopOutputStreams.goodResponse
     .filter((r) => r.input instanceof CoqtopInput.QueryPrime && r.input.data !== undefined)
     .subscribe((r) => {
-      let edit = r.input.data.edit;
-      let stage = edit.stage;
-      let c = eval(<any>r.contents);
+      const edit = r.input.data.edit;
+      const stage = edit.stage;
+      const c = eval(<any>r.contents);
       // right now c will be [] if there is no context, or a one-element list
-      let context = _(c).map((o) => new PeaCoqGoal(o.hyps, o.concl)).value();
+      const context = _(c).map((o) => new PeaCoqGoal(o.hyps, o.concl)).value();
       if (stage instanceof EditStage.BeingProcessed) {
         edit.stage = new EditStage.Ready(stage, r.input.data.goals, context);
         if (Global.coqDocument.getEditStagesToProcess().length === 0) {
@@ -265,27 +295,37 @@ $(document).ready(() => {
     .filter((f) => f.feedbackContent instanceof FeedbackContent.ErrorMsg)
     .distinctUntilChanged()
     .subscribe((f) => {
-      let e = <FeedbackContent.ErrorMsg><any>f.feedbackContent;
+      const e = <FeedbackContent.ErrorMsg><any>f.feedbackContent;
       assert(f.editOrState === "state", "Expected ErrorMsg to carry a state, not an edit");
-      let failedStateId = f.editOrStateId;
-      let failedEditStage = _(Global.coqDocument.getEditStagesBeingProcessed()).find((s) => s.stateId === failedStateId);
+      const failedStateId = f.editOrStateId;
+      const failedEditStage = _(Global.coqDocument.getEditStagesBeingProcessed()).find((s) => s.stateId === failedStateId);
       if (failedEditStage) {
-        let failedEdit = failedEditStage.edit;
+        const failedEdit = failedEditStage.edit;
         Global.coqDocument.removeEditAndFollowingOnes(failedEdit);
         Global.tabs.errors.setValue(e.message, true);
-        let errorStart = Global.coqDocument.movePositionRight(failedEdit.getStartPosition(), e.start);
-        let errorStop = Global.coqDocument.movePositionRight(failedEdit.getStartPosition(), e.stop);
-        let errorRange = new AceAjax.Range(errorStart.row, errorStart.column, errorStop.row, errorStop.column);
+        const errorStart = Global.coqDocument.movePositionRight(failedEdit.getStartPosition(), e.start);
+        const errorStop = Global.coqDocument.movePositionRight(failedEdit.getStartPosition(), e.stop);
+        const errorRange = new AceAjax.Range(errorStart.row, errorStart.column, errorStop.row, errorStop.column);
         Global.coqDocument.markError(errorRange);
+      }
+    });
+
+  coqtopOutputStreams.goodResponse
+    .filter(r => r.input instanceof CoqtopInput.EditAt)
+    .subscribe(r => {
+      const readyStages = _(Global.coqDocument.getEditStagesReady());
+      const firstStageAfter = _(readyStages).find(s => s.stateId > (<CoqtopInput.EditAt>r.input).stateId);
+      if (firstStageAfter) {
+        Global.coqDocument.removeEditAndFollowingOnes(firstStageAfter.edit);
       }
     });
 
 });
 
-// let lastStatus: IStatus;
+// const lastStatus: IStatus;
 
 // function editorOnEditAt(sid: number) {
-//   let edit = _(Global.coqDocument.editsProcessed).find((e) => e.stateId === sid);
+//   const edit = _(Global.coqDocument.editsProcessed).find((e) => e.stateId === sid);
 //   if (edit) {
 //     killEditsAfterPosition(Global.coqDocument, edit.getStopPosition());
 //     updateCoqtopTabs(edit.goals, edit.context);
@@ -305,160 +345,160 @@ function updateCoqtopTabs(goals: IGoals, context: PeaCoqContext) {
   // }
 }
 
-function proofTreeOnEdit(
-  query: string,
-  stateId: number,
-  lastStatus: IStatus,
-  status: IStatus,
-  goals: IGoals,
-  context: PeaCoqContext
-): void {
-
-  let trimmed = CoqStringUtils.coqTrim(query);
-
-  updateCoqtopTabs(goals, context);
-
-  if (
-    lastStatus.statusAllProofs.length + 1 === status.statusAllProofs.length
-    &&
-    proofTrees.length + 1 === status.statusAllProofs.length
-  ) {
-    // we are behind on the number of proof trees, create one
-    showProofTreePanel()
-      .then(() => { // needs to be before for width/height
-        let pt = new ProofTree(
-          status.statusProofName,
-          $("#prooftree")[0],
-          $("#prooftree").parent().width(),
-          $("#prooftree").parent().height()
-        );
-        proofTrees.unshift(pt);
-        assert(context.length === 1, "proofTreeOnGetContext: c.length === 1, c.length: " + context.length);
-        let g = new GoalNode(pt, nothing(), goals, context[0]);
-        assert(pt.rootNode !== undefined, "proofTreeOnGetContext: new GoalNode should set rootNode");
-        g.stateIds.push(stateId);
-        pt.curNode = g;
-        pt.update();
-      });
-    return;
-  } else {
-    // multiple trees might have been finished at once?
-    while (proofTrees.length > status.statusAllProofs.length) {
-      proofTrees.shift();
-      if (proofTrees.length === 0) {
-        $("#prooftree").empty();
-        hideProofTreePanel();
-      }
-    }
-  }
-
-  if (proofTrees.length === 0) { return; }
-
-  let activeProofTree = proofTrees[0];
-  let curNode = activeProofTree.curNode;
-
-  if (isUpperCase(trimmed[0]) || CoqStringUtils.isBullet(trimmed)) {
-    curNode.goals = goals;
-    curNode.stateIds.push(stateId);
-    return;
-  }
-
-  let tactic: Tactic = _.find(curNode.getTactics(), (t) => t.tactic === trimmed);
-
-  let tacticGroup: ITacticGroupNode = (
-    tactic
-      ? tactic.parentGroup
-      : new TacticGroupNode(activeProofTree, curNode, "")
-  );
-
-  /*
-  We need to figure out which foreground goals are relevant to this tactic node.
-  If the number of unfocused goals has changed by running the tactic, the tactic
-  must have solved the previous goal and the current foreground goals are the
-  remaining ones.
-  Otherwise, the delta foreground goals have been created by running the tactic.
-  */
-  let goalsBefore = curNode.goals;
-  let goalsAfter = goals;
-  let nbRelevantGoals =
-    goalsBefore.bgGoals.length === goalsAfter.bgGoals.length
-      ? goalsAfter.fgGoals.length - (goalsBefore.fgGoals.length - 1)
-      : 0;
-  let relevantGoals = context.slice(0, nbRelevantGoals);
-
-  let goalNodes: IGoalNode[] =
-    _(relevantGoals).map(function(goal) {
-      return new GoalNode(
-        activeProofTree,
-        just(tacticGroup),
-        goals,
-        goal
-      );
-    }).value();
-
-  if (!tactic) {
-    curNode.tacticGroups.push(tacticGroup);
-    tactic = new Tactic(trimmed, tacticGroup, goalNodes);
-    tacticGroup.tactics.push(tactic);
-  } else {
-    tactic.goals = goalNodes;
-  }
-
-  tacticGroup.isProcessed = true;
-
-  if (goalNodes.length > 0) {
-    let curGoal: IGoalNode = goalNodes[0];
-    curGoal.stateIds.push(stateId);
-    activeProofTree.curNode = curGoal;
-    activeProofTree.update();
-  } else {
-    curNode.onChildSolved(stateId);
-  }
-
-}
+// function proofTreeOnEdit(
+//   query: string,
+//   stateId: number,
+//   lastStatus: IStatus,
+//   status: IStatus,
+//   goals: IGoals,
+//   context: PeaCoqContext
+// ): void {
+//
+//   const trimmed = CoqStringUtils.coqTrim(query);
+//
+//   updateCoqtopTabs(goals, context);
+//
+//   if (
+//     lastStatus.statusAllProofs.length + 1 === status.statusAllProofs.length
+//     &&
+//     proofTrees.length + 1 === status.statusAllProofs.length
+//   ) {
+//     // we are behind on the number of proof trees, create one
+//     showProofTreePanel()
+//       .then(() => { // needs to be before for width/height
+//         const pt = new ProofTree(
+//           status.statusProofName,
+//           $("#prooftree")[0],
+//           $("#prooftree").parent().width(),
+//           $("#prooftree").parent().height()
+//         );
+//         proofTrees.unshift(pt);
+//         assert(context.length === 1, "proofTreeOnGetContext: c.length === 1, c.length: " + context.length);
+//         const g = new GoalNode(pt, nothing(), goals, context[0]);
+//         assert(pt.rootNode !== undefined, "proofTreeOnGetContext: new GoalNode should set rootNode");
+//         g.stateIds.push(stateId);
+//         pt.curNode = g;
+//         pt.update();
+//       });
+//     return;
+//   } else {
+//     // multiple trees might have been finished at once?
+//     while (proofTrees.length > status.statusAllProofs.length) {
+//       proofTrees.shift();
+//       if (proofTrees.length === 0) {
+//         $("#prooftree").empty();
+//         hideProofTreePanel();
+//       }
+//     }
+//   }
+//
+//   if (proofTrees.length === 0) { return; }
+//
+//   const activeProofTree = proofTrees[0];
+//   const curNode = activeProofTree.curNode;
+//
+//   if (isUpperCase(trimmed[0]) || CoqStringUtils.isBullet(trimmed)) {
+//     curNode.goals = goals;
+//     curNode.stateIds.push(stateId);
+//     return;
+//   }
+//
+//   let tactic: Tactic = _.find(curNode.getTactics(), (t) => t.tactic === trimmed);
+//
+//   const tacticGroup: ITacticGroupNode = (
+//     tactic
+//       ? tactic.parentGroup
+//       : new TacticGroupNode(activeProofTree, curNode, "")
+//   );
+//
+//   /*
+//   We need to figure out which foreground goals are relevant to this tactic node.
+//   If the number of unfocused goals has changed by running the tactic, the tactic
+//   must have solved the previous goal and the current foreground goals are the
+//   remaining ones.
+//   Otherwise, the delta foreground goals have been created by running the tactic.
+//   */
+//   const goalsBefore = curNode.goals;
+//   const goalsAfter = goals;
+//   const nbRelevantGoals =
+//     goalsBefore.bgGoals.length === goalsAfter.bgGoals.length
+//       ? goalsAfter.fgGoals.length - (goalsBefore.fgGoals.length - 1)
+//       : 0;
+//   const relevantGoals = context.slice(0, nbRelevantGoals);
+//
+//   const goalNodes: IGoalNode[] =
+//     _(relevantGoals).map(function(goal) {
+//       return new GoalNode(
+//         activeProofTree,
+//         just(tacticGroup),
+//         goals,
+//         goal
+//       );
+//     }).value();
+//
+//   if (!tactic) {
+//     curNode.tacticGroups.push(tacticGroup);
+//     tactic = new Tactic(trimmed, tacticGroup, goalNodes);
+//     tacticGroup.tactics.push(tactic);
+//   } else {
+//     tactic.goals = goalNodes;
+//   }
+//
+//   tacticGroup.isProcessed = true;
+//
+//   if (goalNodes.length > 0) {
+//     const curGoal: IGoalNode = goalNodes[0];
+//     curGoal.stateIds.push(stateId);
+//     activeProofTree.curNode = curGoal;
+//     activeProofTree.update();
+//   } else {
+//     curNode.onChildSolved(stateId);
+//   }
+//
+// }
 
 /*
   For now, let"s just rewind within the tree or give up. Eventually,
   we could rewind into old trees.
  */
-function proofTreeOnEditAt(sid: number): void {
-
-  if (proofTrees.length === 0) { return; }
-  let activeProofTree = proofTrees[0];
-  //lastStateId = sid;
-  let curNode = activeProofTree.curNode;
-
-  // clean up necessary for tactics waiting
-  activeProofTree.tacticWaiting = nothing();
-
-  // first, get rid of all stored stateIds > sid
-  // and mark their children tactic groups unprocessed
-  let allGoals = activeProofTree.rootNode.getAllGoalDescendants();
-  _(allGoals).each((g) => {
-    if (_(g.stateIds).some((s) => s >= sid)) {
-      _(g.tacticGroups).each((g) => { g.isProcessed = false; });
-    }
-    g.stateIds = _(g.stateIds).filter((s) => s <= sid).value();
-  });
-  let target = _(allGoals).find((g) => {
-    return _(g.stateIds).some((s) => s === sid);
-  });
-  if (target) {
-    activeProofTree.curNode = target;
-    activeProofTree.update();
-  } else {
-    proofTrees.length = 0;
-    hideProofTreePanel();
-    $("#prooftree").empty();
-  }
-
-}
+// function proofTreeOnEditAt(sid: number): void {
+//
+//   if (proofTrees.length === 0) { return; }
+//   const activeProofTree = proofTrees[0];
+//   //lastStateId = sid;
+//   const curNode = activeProofTree.curNode;
+//
+//   // clean up necessary for tactics waiting
+//   activeProofTree.tacticWaiting = nothing();
+//
+//   // first, get rid of all stored stateIds > sid
+//   // and mark their children tactic groups unprocessed
+//   const allGoals = activeProofTree.rootNode.getAllGoalDescendants();
+//   _(allGoals).each((g) => {
+//     if (_(g.stateIds).some((s) => s >= sid)) {
+//       _(g.tacticGroups).each((g) => { g.isProcessed = false; });
+//     }
+//     g.stateIds = _(g.stateIds).filter((s) => s <= sid).value();
+//   });
+//   const target = _(allGoals).find((g) => {
+//     return _(g.stateIds).some((s) => s === sid);
+//   });
+//   if (target) {
+//     activeProofTree.curNode = target;
+//     activeProofTree.update();
+//   } else {
+//     proofTrees.length = 0;
+//     hideProofTreePanel();
+//     $("#prooftree").empty();
+//   }
+//
+// }
 
 export function onResize(): void {
   Global.coqDocument.editor.resize();
   _(Global.getAllEditorTabs()).each((e) => e.resize());
   getActiveProofTree().fmap((t) => {
-    let parent = $("#prooftree").parent();
+    const parent = $("#prooftree").parent();
     t.resize(parent.width(), parent.height());
   });
 }
@@ -470,7 +510,7 @@ function hideProofTreePanel(): void {
 
 function showProofTreePanel(): Promise<{}> {
   return new Promise(function(onFulfilled) {
-    let handler = function(event) {
+    const handler = function(event) {
       event.onComplete = onFulfilled;
       bottomLayout.off("show", handler);
     };
@@ -500,20 +540,21 @@ function setupW2LayoutResizeStream(layout: W2UI.W2Layout): Rx.Observable<{}> {
 }
 
 interface UserActionStreams {
-  loadedFile: Rx.Observable<{}>,
-  next: Rx.Observable<{}>,
+  goTo$: Rx.Observable<{}>,
+  loadedFile$: Rx.Observable<{}>,
+  next$: Rx.Observable<{}>,
 }
 
 function setupUserActions(
   toolbarStreams: ToolbarStreams,
   shortcutsStreams: ShortcutsStreams
 ): UserActionStreams {
-  let fontDecreasedStream =
+  const fontDecreasedStream =
     Rx.Observable
       .merge(toolbarStreams.fontDecrease, shortcutsStreams.fontDecrease)
       .do(() => { fontSize--; })
       .share();
-  let fontIncreasedStream =
+  const fontIncreasedStream =
     Rx.Observable
       .merge(toolbarStreams.fontIncrease, shortcutsStreams.fontIncrease)
       .do(() => { fontSize++; })
@@ -521,25 +562,24 @@ function setupUserActions(
   Rx.Observable
     .merge(fontIncreasedStream, fontDecreasedStream)
     .subscribe(() => { updateFontSize(Global.coqDocument); });
-  Rx.Observable
-    .merge(toolbarStreams.goToCaret, shortcutsStreams.goToCaret)
-    .subscribe(() => console.log("TODO: go to caret"));
-  let nextStream = Rx.Observable
+  const goTo$ = Rx.Observable
+    .merge(toolbarStreams.goToCaret, shortcutsStreams.goToCaret);
+  const next$ = Rx.Observable
     .merge(toolbarStreams.next, shortcutsStreams.next);
-  Rx.Observable
-    .merge(toolbarStreams.previous, shortcutsStreams.previous)
-    .subscribe(() => console.log("TODO: previous"));
+  const prev$ = Rx.Observable
+    .merge(toolbarStreams.previous, shortcutsStreams.previous);
   Rx.Observable
     .merge(toolbarStreams.load, shortcutsStreams.load)
     .subscribe(pickFile);
   Rx.Observable
     .merge(toolbarStreams.save, shortcutsStreams.save)
     .subscribe(saveFile);
-  let loadedFilesStream = setupLoadFile();
+  const loadedFilesStream = setupLoadFile();
   setupSaveFile();
   return {
-    loadedFile: loadedFilesStream,
-    next: nextStream,
+    goTo$: goTo$,
+    loadedFile$: loadedFilesStream,
+    next$: next$,
   };
 }
 
