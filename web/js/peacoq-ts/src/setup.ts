@@ -71,7 +71,7 @@ $(document).ready(() => {
   Global.setCoqDocument(new CoqDocument(editor));
 
   const editAtBecauseEditorChange: Rx.Observable<CoqtopInput.CoqtopInput> =
-    Global.coqDocument.changeStream.flatMap((change) => {
+    Global.coqDocument.editorChange$.flatMap((change) => {
       const maybeEdit = Global.coqDocument.getEditAtPosition(minPos(change.start, change.end));
       return maybeEdit.caseOf({
         nothing: () => [],
@@ -181,10 +181,6 @@ $(document).ready(() => {
   const shortcutsStreams = setupKeybindings();
   const userActionStreams = setupUserActions(toolbarStreams, shortcutsStreams);
 
-  /*
-  Will have just(pos) when we are trying to reach some position, and
-  nothing() when we are not.
-  */
   interface GoToPositions {
     destinationPos: AceAjax.Position;
     lastEditStopPos: AceAjax.Position;
@@ -200,7 +196,9 @@ $(document).ready(() => {
           : [{ destinationPos: destinationPos, lastEditStopPos: lastEditStopPos, }]
       );
     })
+    // partition on the direction of the goTo
     .partition(o => isBefore(Strictly.Yes, o.lastEditStopPos, o.destinationPos));
+
   const editAtFromBackwardGoTo$ = backwardGoTo$.flatMap(o => {
     const editAtPosition = Global.coqDocument.getEditAtPosition(o.destinationPos);
     const stateIdToRewindTo = editAtPosition.fmap(e => e.getPreviousStateId());
@@ -217,7 +215,48 @@ $(document).ready(() => {
   Theme.afterChange$.subscribe(() => { rightLayout.refresh(); });
   Theme.afterChange$.subscribe(() => { bottomLayout.refresh(); });
 
-  const editsToProcessStream = Coq85.onNextReactive(Global.coqDocument, userActionStreams.next$);
+  const nextSubject = new Rx.Subject<{}>();
+  userActionStreams.next$.subscribe(() => nextSubject.onNext({}));
+
+  const editsToProcessStream =
+    Coq85.onNextReactive(Global.coqDocument, nextSubject.asObservable());
+
+  /*
+  Will have just(pos) when we are trying to reach some position, and
+  nothing() when we are not.
+  */
+  const forwardGoToSubject = new Rx.Subject<Maybe<AceAjax.Position>>();
+  forwardGoTo$.subscribe(o => forwardGoToSubject.onNext(just(o.destinationPos)));
+  const nextBecauseGoTo$ = Rx.Observable
+    .combineLatest(
+    forwardGoToSubject.asObservable(),
+    // TODO: this won't work on reload...
+    Global.coqDocument.editsChange$.map(() => Global.coqDocument.getLastEditStop())
+    )
+    .flatMap(([m, eStopPos]) => {
+      return m.caseOf({
+        nothing: () => [],
+        just: destinationPos => {
+          // we need to continue if both:
+          // 1. eStopPos < destinationPos
+          // 2. the range [eStopPos, destinationPos] contains some text
+          const cond1 = isBefore(Strictly.Yes, eStopPos, destinationPos);
+          let range = AceAjax.Range.fromPoints(eStopPos, destinationPos);
+          let text = Global.coqDocument.session.getDocument().getTextRange(range);
+          const cond2 = CoqStringUtils.coqTrimLeft(text) !== "";
+          if (cond1 && cond2) {
+            // need another next
+            return [{}];
+          } else {
+            // don't need another next
+            forwardGoToSubject.onNext(nothing());
+            return [];
+          }
+        },
+      });
+    });
+  nextBecauseGoTo$.subscribe(() => nextSubject.onNext({}));
+
   //editsToProcessStream.subscribe((e) => Global.coqDocument.pushEdit(e));
   //editsToProcessStream.subscribe((e) => Global.coqDocument.moveCursorToPositionAndCenter(e.getStopPosition()));
   const addsToProcessStream = Coq85.processEditsReactive(editsToProcessStream);

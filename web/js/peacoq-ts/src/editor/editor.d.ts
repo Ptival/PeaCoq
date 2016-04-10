@@ -37,8 +37,9 @@ interface ShortcutsStreams {
 }
 
 interface ICoqDocument {
-  changeStream: Rx.Observable<AceAjax.EditorChangeEvent>;
   editor: AceAjax.Editor;
+  editorChange$: Rx.Observable<AceAjax.EditorChangeEvent>;
+  editsChange$: Rx.Observable<{}>;
   endAnchor: AceAjax.Anchor;
   session: AceAjax.IEditSession;
   getAllEdits(): IEdit[];

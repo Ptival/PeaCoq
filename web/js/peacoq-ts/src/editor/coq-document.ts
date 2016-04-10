@@ -4,9 +4,11 @@ import { errorUnderlineClass, theme } from "./../theme";
 
 export class CoqDocument implements ICoqDocument {
   beginAnchor: AceAjax.Anchor;
-  changeStream: Rx.Observable<AceAjax.EditorChangeEvent>;
   editor: AceAjax.Editor;
+  editorChange$: Rx.Observable<AceAjax.EditorChangeEvent>;
   private edits: IEdit[];
+  private editsChangeSubject: Rx.Subject<{}>;
+  editsChange$: Rx.Observable<{}>;
   endAnchor: AceAjax.Anchor;
   session: AceAjax.IEditSession;
 
@@ -18,12 +20,14 @@ export class CoqDocument implements ICoqDocument {
     this.session = editor.getSession();
     this.beginAnchor = mkAnchor(this, 0, 0, "begin-marker", true);
     this.endAnchor = mkAnchor(this, 0, 0, "end-marker", false);
-    this.changeStream =
+    this.editorChange$ =
       Rx.Observable
         .create<AceAjax.EditorChangeEvent>((observer) => {
           self.session.on("change", (e) => observer.onNext(e));
         })
         .share();
+    this.editsChangeSubject = new Rx.Subject();
+    this.editsChange$ = this.editsChangeSubject.asObservable();
   }
 
   getAllEdits(): IEdit[] { return this.edits; }
@@ -151,7 +155,7 @@ export class CoqDocument implements ICoqDocument {
   markError(range: AceAjax.Range): void {
     let markerId = Global.coqDocument.session.addMarker(range, errorUnderlineClass, "text", false);
     this.moveCursorToPositionAndCenter(range.start);
-    let markerChangedStream = this.changeStream
+    let markerChangedStream = this.editorChange$
       .do((e) => console.log(range, AceAjax.Range.fromPoints(e.start, e.end)))
       .filter((e) => range.containsRange(AceAjax.Range.fromPoints(e.start, e.end)))
       .take(1);
@@ -161,7 +165,10 @@ export class CoqDocument implements ICoqDocument {
     });
   }
 
-  pushEdit(e: IEdit) { this.edits.push(e); }
+  pushEdit(e: IEdit) {
+    this.edits.push(e);
+    this.editsChangeSubject.onNext({});
+  }
 
   recenterEditor() {
     let pos = this.editor.getCursorPosition();
@@ -177,11 +184,13 @@ export class CoqDocument implements ICoqDocument {
   removeAllEdits(): void {
     _(this.edits).each((e) => e.remove());
     this.edits = [];
+    this.editsChangeSubject.onNext({});
   }
 
   removeEdit(e: IEdit): void {
     e.remove();
     _(this.edits).remove(e);
+    this.editsChangeSubject.onNext({});
   }
 
   removeEditAndFollowingOnes(e: IEdit): void {
