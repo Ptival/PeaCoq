@@ -62,18 +62,9 @@ export function setupCoqtopCommunication(
   let errorSubject = new Rx.Subject<CoqtopError>();
   let error$ = errorSubject.asObservable();
 
-  /*
-  Note: the scan has two effects
-  1. it ensures AJAX requests reach the server in order of emission
-  2. the current backend does not sequence requests, which causes issues
-     when sending multiple add requests even in the absence of network
-     reordering. the issue is that the server fills in stateIds, and if
-     it receives two adds and processes the second immediately, it will
-     add to the old stateId rather than the once produced by the first add.
-  */
   let output$: Rx.Observable<CoqtopOutput> =
     processInput$(input$)
-      .catch((r) => {
+      .doOnError((r) => {
         const [stateId, [errorStart, errorStop], errorMessage] = r.response.contents;
         errorSubject.onNext({
           errorMessage: unbsp(errorMessage),
@@ -81,8 +72,8 @@ export function setupCoqtopCommunication(
           errorStop: errorStop,
           stateId: stateId,
         });
-        return processInput$(input$);
       })
+      .retry()
       .share();
 
   error$.subscribe((e) => console.log("error", e));
@@ -94,7 +85,7 @@ export function setupCoqtopCommunication(
     .subscribe((input) => { console.log("⟸", input); });
   response$
     .filter((r) => !(r.input instanceof CoqtopInput.Status))
-    .subscribe((r) => { console.log("   ⟹", r.input, r.contents); });
+    .subscribe((r) => { console.log("   ⟹", r.input, r); });
 
   // this is needed for PeaCoq because we use add' so the STM's state
   // needs to be put back to where it worked
@@ -146,32 +137,37 @@ export function setupCoqtopCommunication(
 
 function processInput$(input$: Rx.Observable<CoqtopInput.CoqtopInput>): Rx.Observable<CoqtopOutput> {
   return input$
+    // .do(() => console.log("processing some input"))
     .concatMap(input => {
-      return $.ajax({
-        type: 'POST',
-        url: input.getCmd(),
-        data: { data: JSON.stringify(input.getArgs()) },
-        async: true,
-        error: e => console.log("Server did not respond"),
-        //success: () => console.log("Success"),
-      })
-        .then<CoqtopOutput>(r => ({
-          response: $.extend(r[0], { input: input }),
-          stateId: r[1][0],
-          editId: r[1][1],
-          messages: r[2][0],
-          feedback: r[2][1],
-        }));
+      // console.log("Ajax start");
+      return Rx.Observable
+        .fromPromise(
+        $
+          .ajax({
+            type: 'POST',
+            url: input.getCmd(),
+            data: { data: JSON.stringify(input.getArgs()) },
+            async: true,
+            error: e => console.log("Server did not respond", e),
+            // success: r => console.log("Success", r, r[0].tag),
+          })
+          .then<CoqtopOutput>(r => ({
+            response: $.extend(r[0], { input: input }),
+            stateId: r[1][0],
+            editId: r[1][1],
+            messages: r[2][0],
+            feedback: r[2][1],
+          }))
+        )
+        .concatMap(r => {
+          if (r.response.tag === "ValueFail") {
+            return Rx.Observable.throw<CoqtopOutput>(r);
+          } else {
+            // console.log("Returning", r);
+            return Rx.Observable.return(r);
+          }
+        })
+        ;
     })
-    // dealing with errors in the jQuery promise is annoying because
-    // it's not compliant to standards, and the console freaks out
-    // and reports errors even though I catch them later, so I deal
-    // with them here with Observables
-    .concatMap(r => {
-      if (r.response.tag === "ValueFail") {
-        return Rx.Observable.throw<CoqtopOutput>(r);
-      } else {
-        return Rx.Observable.return(r);
-      }
-    })
+    ;
 }
