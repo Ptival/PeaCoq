@@ -28,3 +28,25 @@ export function setCoqDocument(d: ICoqDocument) {
 export function setTabs(t: ITabs) {
   tabs = t;
 }
+//
+// export let input$ = Rx.Observable.interval(1000).publish();
+//
+// // input$.subscribe(x => console.log("input", x));
+//
+// export function process(input$: Rx.Observable<number>) {
+//   return input$
+//     .concatMap(x => Rx.Observable.return(x).delay(1000))
+//     .concatMap(x => {
+//       return (
+//         x % 10 === 5
+//         ? Rx.Observable.throw(new Error("bad"))
+//         : Rx.Observable.return(x)
+//       );
+//     });
+// }
+//
+// export let test = process(input$).catch(() => test);
+//
+// subscribeAndLog(test);
+//
+// input$.connect();

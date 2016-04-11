@@ -160,7 +160,6 @@ export class CoqDocument implements ICoqDocument {
       .filter((e) => range.containsRange(AceAjax.Range.fromPoints(e.start, e.end)))
       .take(1);
     markerChangedStream.subscribe(() => {
-      console.log("STILL SUBSCRIBED!");
       Global.coqDocument.session.removeMarker(markerId);
     });
   }

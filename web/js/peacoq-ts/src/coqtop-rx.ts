@@ -20,37 +20,47 @@ interface CoqtopOutput {
   feedback: Object[];
 }
 
+interface CoqtopError {
+  errorMessage: string;
+  errorStart: number;
+  errorStop: number;
+  stateId: number;
+}
+
 interface CoqtopOutputStreams {
-  failResponse: Rx.Observable<IValueFail>;
-  feedback: Rx.Observable<IFeedback>;
-  goal: Rx.Observable<Goals>;
-  goodResponse: Rx.Observable<CoqtopResponse>;
-  messages: Rx.Observable<IMessage>;
-  response: Rx.Observable<CoqtopResponse>;
-  stateId: Rx.Observable<number>;
+  error$: Rx.Observable<CoqtopError>;
+  feedback$: Rx.Observable<IFeedback>;
+  goals$: Rx.Observable<Goals>;
+  response$: Rx.Observable<CoqtopResponse>;
+  message$: Rx.Observable<IMessage>;
+  // stateId$: Rx.Observable<number>;
 }
 
 export function setupCoqtopCommunication(
-  inputs: Rx.Observable<CoqtopInput.CoqtopInput>[]
+  input$s: Rx.Observable<CoqtopInput.CoqtopInput>[]
 ): CoqtopOutputStreams {
 
-  let coqtopEditAtStream: Rx.Observable<CoqtopInput.CoqtopInput> =
-    Rx.Observable.empty<CoqtopInput.CoqtopInput>();
-
-  let coqtopStatusStream: Rx.Observable<CoqtopInput.CoqtopInput> =
+  let inputStatus$: Rx.Observable<CoqtopInput.CoqtopInput> =
     Rx.Observable
       .interval(statusPeriod)
       .map(() => new CoqtopInput.Status(false));
 
-  let inputSubject: Rx.Subject<CoqtopInput.CoqtopInput> = new Rx.Subject<CoqtopInput.CoqtopInput>();
+  let inputSubject: Rx.Subject<CoqtopInput.CoqtopInput> =
+    new Rx.Subject<CoqtopInput.CoqtopInput>();
 
-  let coqtopInputStream: Rx.Observable<CoqtopInput.CoqtopInput> =
+  let input$: Rx.ConnectableObservable<CoqtopInput.CoqtopInput> =
     Rx.Observable
       .merge(
-      coqtopStatusStream,
+      inputStatus$,
       inputSubject,
-      ...inputs
-      );
+      ...input$s
+      )
+      .publish();
+
+  // subscribeAndLog(coqtopInputStream);
+
+  let errorSubject = new Rx.Subject<CoqtopError>();
+  let error$ = errorSubject.asObservable();
 
   /*
   Note: the scan has two effects
@@ -61,55 +71,40 @@ export function setupCoqtopCommunication(
      it receives two adds and processes the second immediately, it will
      add to the old stateId rather than the once produced by the first add.
   */
-  let coqtopOutputStream: Rx.Observable<CoqtopOutput> =
-    coqtopInputStream
-      .scan<Promise<any>>((acc: Promise<any>, input: CoqtopInput.CoqtopInput) => {
-        return acc
-          .then(() => $.ajax({
-            type: 'POST',
-            url: input.getCmd(),
-            data: { data: JSON.stringify(input.getArgs()) },
-            async: true,
-            error: () => console.log("Server did not respond!"),
-            //success: () => console.log("Success"),
-          }))
-          .then<CoqtopOutput>((r) => ({
-            response: $.extend(r[0], { input: input }),
-            stateId: r[1][0],
-            editId: r[1][1],
-            messages: r[2][0],
-            feedback: r[2][1],
-          }));
-      }, Promise.resolve())
-      .flatMap((x) => x)
-      .share()
-    ;
+  let output$: Rx.Observable<CoqtopOutput> =
+    processInput$(input$)
+      .catch((r) => {
+        const [stateId, [errorStart, errorStop], errorMessage] = r.response.contents;
+        errorSubject.onNext({
+          errorMessage: unbsp(errorMessage),
+          errorStart: errorStart,
+          errorStop: errorStop,
+          stateId: stateId,
+        });
+        return processInput$(input$);
+      })
+      .share();
 
-  let coqtopResponseStream = coqtopOutputStream.map((r) => r.response);
+  error$.subscribe((e) => console.log("error", e));
 
-  coqtopInputStream
+  let response$ = output$.map((r) => r.response);
+
+  input$
     .filter((i) => !(i instanceof CoqtopInput.Status))
     .subscribe((input) => { console.log("⟸", input); });
-  coqtopResponseStream
+  response$
     .filter((r) => !(r.input instanceof CoqtopInput.Status))
     .subscribe((r) => { console.log("   ⟹", r.input, r.contents); });
 
-  let coqtopGoodResponseStream =
-    coqtopResponseStream.filter((r) => r.tag === "ValueGood")
-    ;
+  // this is needed for PeaCoq because we use add' so the STM's state
+  // needs to be put back to where it worked
+  // TODO: make a config flag for this feature
+  error$.subscribe(e => {
+    inputSubject.onNext(new CoqtopInput.EditAt(e.stateId));
+  });
 
-  let coqtopFailResponseStream: Rx.Observable<IValueFail> =
-    coqtopResponseStream
-      .filter((r) => r.tag === "ValueFail")
-      .map((r) => new ValueFail(r.contents))
-    ;
-
-  coqtopFailResponseStream.subscribe((vf) => {
-    inputSubject.onNext(new CoqtopInput.EditAt(vf.stateId));
-  })
-
-  let coqtopAddResponseStream: Rx.Observable<AddReturn> =
-    coqtopGoodResponseStream
+  let addReponse$: Rx.Observable<AddReturn> =
+    response$
       .filter((r) => r.input instanceof CoqtopInput.AddPrime)
       .map((r) => ({
         stateId: r.contents[0],
@@ -118,32 +113,65 @@ export function setupCoqtopCommunication(
       }))
     ;
 
-  let coqtopStateIdStream = coqtopOutputStream.map((r) => r.stateId);
+  let stateId$ = output$.map((r) => r.stateId);
 
-  let coqtopMessagesStream: Rx.Observable<IMessage> =
-    coqtopOutputStream
+  let message$: Rx.Observable<IMessage> =
+    output$
       .flatMap((r) => _(r.messages).map((m) => new Message(m)).value())
       .share();
 
-  let coqtopFeedbackStream: Rx.Observable<IFeedback> =
-    coqtopOutputStream
+  let feedback$: Rx.Observable<IFeedback> =
+    output$
       .flatMap((r) => _(r.feedback).map((f) => new Feedback(f)).value())
       .share();
 
-  let coqtopGoalStream: Rx.Observable<Goals> =
-    coqtopGoodResponseStream
+  let goals$: Rx.Observable<Goals> =
+    response$
       .filter((r) => r.input instanceof CoqtopInput.Goal)
       .filter((r) => r.contents !== null)
       .map((r) => new Goals(r.contents));
 
+  input$.connect();
+
   return {
-    failResponse: coqtopFailResponseStream,
-    feedback: coqtopFeedbackStream,
-    goal: coqtopGoalStream,
-    goodResponse: coqtopGoodResponseStream,
-    messages: coqtopMessagesStream,
-    response: coqtopResponseStream,
-    stateId: coqtopStateIdStream,
+    error$: error$,
+    feedback$: feedback$,
+    goals$: goals$,
+    message$: message$,
+    response$: response$,
+    // stateId$: stateId$,
   };
 
+}
+
+function processInput$(input$: Rx.Observable<CoqtopInput.CoqtopInput>): Rx.Observable<CoqtopOutput> {
+  return input$
+    .concatMap(input => {
+      return $.ajax({
+        type: 'POST',
+        url: input.getCmd(),
+        data: { data: JSON.stringify(input.getArgs()) },
+        async: true,
+        error: e => console.log("Server did not respond"),
+        //success: () => console.log("Success"),
+      })
+        .then<CoqtopOutput>(r => ({
+          response: $.extend(r[0], { input: input }),
+          stateId: r[1][0],
+          editId: r[1][1],
+          messages: r[2][0],
+          feedback: r[2][1],
+        }));
+    })
+    // dealing with errors in the jQuery promise is annoying because
+    // it's not compliant to standards, and the console freaks out
+    // and reports errors even though I catch them later, so I deal
+    // with them here with Observables
+    .concatMap(r => {
+      if (r.response.tag === "ValueFail") {
+        return Rx.Observable.throw<CoqtopOutput>(r);
+      } else {
+        return Rx.Observable.return(r);
+      }
+    })
 }

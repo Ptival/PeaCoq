@@ -72,13 +72,15 @@ $(document).ready(() => {
   Global.setCoqDocument(new CoqDocument(editor));
 
   const editAtBecauseEditorChange: Rx.Observable<CoqtopInput.CoqtopInput> =
-    Global.coqDocument.editorChange$.flatMap((change) => {
-      const maybeEdit = Global.coqDocument.getEditAtPosition(minPos(change.start, change.end));
-      return maybeEdit.caseOf({
-        nothing: () => [],
-        just: e => [new CoqtopInput.EditAt(e.getPreviousStateId())]
-      });
-    });
+    Global.coqDocument.editorChange$
+      .flatMap((change) => {
+        const maybeEdit = Global.coqDocument.getEditAtPosition(minPos(change.start, change.end));
+        return maybeEdit.caseOf({
+          nothing: () => [],
+          just: e => [new CoqtopInput.EditAt(e.getPreviousStateId())]
+        });
+      })
+      .share();
 
   setupEditor(editor);
   editor.focus();
@@ -200,14 +202,16 @@ $(document).ready(() => {
     // partition on the direction of the goTo
     .partition(o => isBefore(Strictly.Yes, o.lastEditStopPos, o.destinationPos));
 
-  const editAtFromBackwardGoTo$ = backwardGoTo$.flatMap(o => {
-    const editAtPosition = Global.coqDocument.getEditAtPosition(o.destinationPos);
-    const stateIdToRewindTo = editAtPosition.fmap(e => e.getPreviousStateId());
-    return stateIdToRewindTo.caseOf({
-      nothing: () => [],
-      just: s => [new CoqtopInput.EditAt(s)],
-    });
-  });
+  const editAtFromBackwardGoTo$ = backwardGoTo$
+    .flatMap(o => {
+      const editAtPosition = Global.coqDocument.getEditAtPosition(o.destinationPos);
+      const stateIdToRewindTo = editAtPosition.fmap(e => e.getPreviousStateId());
+      return stateIdToRewindTo.caseOf({
+        nothing: () => [],
+        just: s => [new CoqtopInput.EditAt(s)],
+      });
+    })
+    .share();
 
   Coq85.setupSyntaxHovering();
   tabsAreReadyPromise.then(Theme.setupTheme);
@@ -233,8 +237,8 @@ $(document).ready(() => {
     forwardGoToSubject.asObservable(),
     // TODO: this won't work on reload...
     Global.coqDocument.editsChange$
-    .map(() => Global.coqDocument.getLastEditStop())
-    .startWith({ row: 0, column: 0 }) // otherwise it doesn't fire before first change
+      .map(() => Global.coqDocument.getLastEditStop())
+      .startWith({ row: 0, column: 0 }) // otherwise it doesn't fire before first change
     )
     .flatMap(([m, eStopPos]) => {
       return m.caseOf({
@@ -264,10 +268,10 @@ $(document).ready(() => {
   //editsToProcessStream.subscribe((e) => Global.coqDocument.moveCursorToPositionAndCenter(e.getStopPosition()));
   const addsToProcessStream = Coq85.processEditsReactive(editsToProcessStream);
 
-  const coqtopOutputStreams = Coqtop.setupCoqtopCommunication([
+  const coqtopOutput$s = Coqtop.setupCoqtopCommunication([
     // reset Coqtop when a file is loaded
     userActionStreams.loadedFile$
-      .startWith({})
+      .startWith({}) // also do it on loading the page
       .flatMap(() => [
         new CoqtopInput.EditAt(1),
         new CoqtopInput.AddPrime("Require Import PeaCoq.PeaCoq.")
@@ -279,7 +283,7 @@ $(document).ready(() => {
 
   // Disabled, see edit-stage.ts for reason why
 
-  coqtopOutputStreams.goodResponse
+  coqtopOutput$s.response$
     // keep only responses for adds produced by PeaCoq
     .filter((r) => r.input instanceof CoqtopInput.AddPrime && r.input.data !== undefined)
     .subscribe((r) => {
@@ -291,7 +295,7 @@ $(document).ready(() => {
       }
     });
 
-  coqtopOutputStreams.goodResponse
+  coqtopOutput$s.response$
     .filter((r) => r.input instanceof CoqtopInput.Goal && r.input.data !== undefined)
     .subscribe((r) => {
       r.input.data.goals = new Goals(r.contents);
@@ -306,7 +310,7 @@ $(document).ready(() => {
       // }
     });
 
-  coqtopOutputStreams.goodResponse
+  coqtopOutput$s.response$
     .filter((r) => r.input instanceof CoqtopInput.QueryPrime && r.input.data !== undefined)
     .subscribe((r) => {
       const edit = r.input.data.edit;
@@ -325,7 +329,7 @@ $(document).ready(() => {
 
   // Logging feedbacks that I haven't figured out what to do with yet
   subscribeAndLog(
-    coqtopOutputStreams.feedback
+    coqtopOutput$s.feedback$
       .filter((f) => !(f.feedbackContent instanceof FeedbackContent.FileDependency || f.feedbackContent instanceof FeedbackContent.FileLoaded))
       .filter((f) => !(f.feedbackContent instanceof FeedbackContent.AddedAxiom))
       .filter((f) => !(f.feedbackContent instanceof FeedbackContent.Processed && f.editOrState === "state"))
@@ -333,26 +337,37 @@ $(document).ready(() => {
       .filter((f) => !(f.feedbackContent instanceof FeedbackContent.ErrorMsg))
   );
 
-  coqtopOutputStreams.feedback
-    .filter((f) => f.feedbackContent instanceof FeedbackContent.ErrorMsg)
-    .distinctUntilChanged()
-    .subscribe((f) => {
-      const e = <FeedbackContent.ErrorMsg><any>f.feedbackContent;
-      assert(f.editOrState === "state", "Expected ErrorMsg to carry a state, not an edit");
-      const failedStateId = f.editOrStateId;
-      const failedEditStage = _(Global.coqDocument.getEditStagesBeingProcessed()).find((s) => s.stateId === failedStateId);
-      if (failedEditStage) {
-        const failedEdit = failedEditStage.edit;
-        Global.coqDocument.removeEditAndFollowingOnes(failedEdit);
-        Global.tabs.errors.setValue(e.message, true);
-        const errorStart = Global.coqDocument.movePositionRight(failedEdit.getStartPosition(), e.start);
-        const errorStop = Global.coqDocument.movePositionRight(failedEdit.getStartPosition(), e.stop);
-        const errorRange = new AceAjax.Range(errorStart.row, errorStart.column, errorStop.row, errorStop.column);
-        Global.coqDocument.markError(errorRange);
-      }
+  // coqtopOutput$s.feedback$
+  //   .filter((f) => f.feedbackContent instanceof FeedbackContent.ErrorMsg)
+  //   .distinctUntilChanged()
+  //   .subscribe((f) => {
+  //     const e = <FeedbackContent.ErrorMsg><any>f.feedbackContent;
+  //     assert(f.editOrState === "state", "Expected ErrorMsg to carry a state, not an edit");
+  //     const failedStateId = f.editOrStateId;
+  //     const failedEditStage = _(Global.coqDocument.getEditStagesBeingProcessed()).find((s) => s.stateId === failedStateId);
+  //     if (failedEditStage) {
+  //       const failedEdit = failedEditStage.edit;
+  //       Global.coqDocument.removeEditAndFollowingOnes(failedEdit);
+  //       Global.tabs.errors.setValue(e.message, true);
+  //       const errorStart = Global.coqDocument.movePositionRight(failedEdit.getStartPosition(), e.start);
+  //       const errorStop = Global.coqDocument.movePositionRight(failedEdit.getStartPosition(), e.stop);
+  //       const errorRange = new AceAjax.Range(errorStart.row, errorStart.column, errorStop.row, errorStop.column);
+  //       Global.coqDocument.markError(errorRange);
+  //     }
+  //   });
+
+  coqtopOutput$s.error$
+    .subscribe((e) => {
+      let failedEdit =  Global.coqDocument.getEditStagesBeingProcessed()[0].edit;
+      Global.coqDocument.removeEditAndFollowingOnes(failedEdit);
+      Global.tabs.errors.setValue(e.errorMessage, true);
+      const errorStart = Global.coqDocument.movePositionRight(failedEdit.getStartPosition(), e.errorStart);
+      const errorStop = Global.coqDocument.movePositionRight(failedEdit.getStartPosition(), e.errorStop);
+      const errorRange = new AceAjax.Range(errorStart.row, errorStart.column, errorStop.row, errorStop.column);
+      Global.coqDocument.markError(errorRange);
     });
 
-  coqtopOutputStreams.goodResponse
+  coqtopOutput$s.response$
     .filter(r => r.input instanceof CoqtopInput.EditAt)
     .subscribe(r => {
       const readyStages = _(Global.coqDocument.getEditStagesReady());
