@@ -55,16 +55,17 @@ $(document).ready(() => {
     .share();
   const editorCursorPositionStream = editorCursorChangeStream
     .map(() => editor.selection.getCursor());
-  const readyEditUnderEditorCursorStream: Rx.Observable<IEdit> = editorCursorPositionStream
+  const editToBeDisplayed$: Rx.Observable<IEdit> = editorCursorPositionStream
     .flatMap((pos) => {
+      // we want to display the last edit whose stopPos is before `pos`
       let stage = _(Global.coqDocument.getEditStagesReady())
-        .find((stage) => stage.edit.containsPosition(pos));
+        .findLast((s) => isBefore(Strictly.No, s.getStopPosition(), pos));
       // if no edit, we should display the last edit before the cursor
       if (!stage) { stage = _(Global.coqDocument.getEditStagesReady()).last(); }
       return stage ? [stage.edit] : [];
     })
     .distinctUntilChanged();
-  readyEditUnderEditorCursorStream.subscribe((edit) => {
+  editToBeDisplayed$.subscribe((edit) => {
     displayEdit(edit);
   });
 
@@ -231,7 +232,9 @@ $(document).ready(() => {
     .combineLatest(
     forwardGoToSubject.asObservable(),
     // TODO: this won't work on reload...
-    Global.coqDocument.editsChange$.map(() => Global.coqDocument.getLastEditStop())
+    Global.coqDocument.editsChange$
+    .map(() => Global.coqDocument.getLastEditStop())
+    .startWith({ row: 0, column: 0 }) // otherwise it doesn't fire before first change
     )
     .flatMap(([m, eStopPos]) => {
       return m.caseOf({
