@@ -337,7 +337,9 @@ export function processEditsReactive(
   edit: Rx.Observable<IEdit>
 ): Rx.Observable<CoqtopInput.CoqtopInput> {
   return edit
-    .flatMap((e) => {
+    // need `concatMap` here to guarantee the commands are processed in
+    // the correct order: add, goal, context, add, goal, context, add, ...
+    .concatMap((e) => {
       let data = { edit: e };
       let add = new CoqtopInput.AddPrime(e.query);
       add.data = data;
