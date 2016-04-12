@@ -17,6 +17,13 @@ home = "/home/ptival"
 coqtop :: String
 coqtop = home ++ "/.nix-profile/bin/coqtop -ideslave -main-channel stdfds -I " ++ home ++ "/PeaCoq/plugin -Q " ++ home ++ "/PeaCoq/plugin PeaCoq"
 
+addGoalContext :: String -> CoqtopIO ()
+addGoalContext s = do
+  add' s
+  goal'
+  query' "PeaCoqGetContext."
+  return (ValueGood ())
+
 main :: IO ()
 main = do
   hs <- startCoqtop coqtop
@@ -25,17 +32,18 @@ main = do
     io :: Handles -> CoqtopIO ()
     io (_, _, _he, _ph) = do
       init Nothing
-      --add' "Require Import PeaCoq.PeaCoq."
-      --editAt (StateId 1)
+      init Nothing
+      editAt (StateId 1)
+      add' "Require Import PeaCoq.PeaCoq."
       hQuery "Add" "Require Import ZArith."
-      --status False
-      hQuery "Add" "Open Scope Z."
-      (_, ho, he, _) <- ask
-      liftIO $ whileM_ (hReady he) (hGetLine he)
-      liftIO . whileM_ (hReady ho) $ do
-        l <- hGetLine ho
-        putStrLn l
---      hResponse :: CoqtopIO AddOutput
+      hQuery "Goal" ()
+      hQuery "Add" "PeaCoqGetContext."
+      mapM_ addGoalContext
+        [ "Require Import ZArith."
+        ]
+      -- status False
+      -- editAt (StateId 1)
+      -- add' "Require Import ZArith."
       --status False
       --editAt (StateId 1)
       --add' "Require Import ZArith."
