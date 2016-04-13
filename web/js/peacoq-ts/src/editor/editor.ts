@@ -4,6 +4,14 @@ import { theme } from "../theme";
 
 let CoqMode = ace.require("peacoq-js/mode-coq").Mode;
 
+export function clearEdit(): void {
+  Global.tabs.pretty.div.html("");
+  _(Global.getAllEditorTabs()).each(t => {
+    t.setCaptionSuffix("");
+    t.setValue("", false)
+  });
+}
+
 export function displayEdit(edit: IEdit): void {
   let stage = edit.stage;
   if (stage instanceof EditStage.Ready) {

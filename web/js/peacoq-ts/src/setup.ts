@@ -3,7 +3,7 @@ import { CoqDocument } from "./editor/coq-document";
 import * as Coqtop from "./coqtop-rx";
 import * as CoqtopInput from "./coqtop-input";
 import * as EditStage from "./editor/edit-stage";
-import { displayEdit, setupEditor } from "./editor/editor";
+import { clearEdit, displayEdit, setupEditor } from "./editor/editor";
 import { EditorTab } from "./editor/editor-tab";
 import { isBefore } from "./editor/editor-utils";
 import * as FeedbackContent from "./coq/feedback-content";
@@ -183,6 +183,8 @@ $(document).ready(() => {
   const toolbarStreams = setupToolbar();
   const shortcutsStreams = setupKeybindings();
   const userActionStreams = setupUserActions(toolbarStreams, shortcutsStreams);
+
+  userActionStreams.loadedFile$.subscribe(() => clearEdit());
 
   interface GoToPositions {
     destinationPos: AceAjax.Position;

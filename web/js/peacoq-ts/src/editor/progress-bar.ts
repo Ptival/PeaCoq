@@ -8,6 +8,7 @@ let progressBarId = "progress-bar";
 
 export function setupProgressBar(): void {
   Rx.Observable.merge(
+    Global.coqDocument.editsChange$,
     Edit.editStageChange$,
     Edit.editRemoved$
   ).subscribe(updateProgressBar);
