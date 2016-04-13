@@ -163,6 +163,8 @@ function update(): void {
       .load(() => afterChangeSubject.onNext({}))
       .attr("href", theme.css);
   });
+
+  afterChangeSubject.onNext({});
 }
 
 export function setupTheme(): void {

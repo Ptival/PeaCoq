@@ -41,6 +41,7 @@ export function setupProgressBar(): void {
     Global.coqDocument.moveCursorToPositionAndCenter(targetEdit.getStopPosition());
     Global.coqDocument.editor.focus();
   });
+  Theme.afterChange$.subscribe(updateProgressBar);
 }
 
 function updateProgressBar(): void {
