@@ -5,7 +5,8 @@ import * as CoqtopInput from "./coqtop-input";
 import { Goals } from "./goals";
 import { processSequentiallyForever } from "./rx";
 
-let statusPeriod = 7500; // milliseconds
+let debugCoqtop = false; // print input/output requests
+let statusPeriod = 250; // milliseconds
 
 interface CoqtopResponse {
   input: CoqtopInput.CoqtopInput;
@@ -21,15 +22,8 @@ interface CoqtopOutput {
   feedback: Object[];
 }
 
-interface CoqtopError {
-  errorMessage: string;
-  errorStart: number;
-  errorStop: number;
-  stateId: number;
-}
-
 interface CoqtopOutputStreams {
-  error$: Rx.Observable<CoqtopError>;
+  error$: Rx.Observable<ValueFail>;
   feedback$: Rx.Observable<IFeedback>;
   goals$: Rx.Observable<Goals>;
   response$: Rx.Observable<CoqtopResponse>;
@@ -64,25 +58,21 @@ export function setupCoqtopCommunication(
   const output$ = outputAndError$s.output$;
   const error$ = outputAndError$s.error$
     .map(r => {
-      const [stateId, [errorStart, errorStop], errorMessage] = r.response.contents;
-      return {
-        errorMessage: unbsp(errorMessage),
-        errorStart: errorStart,
-        errorStop: errorStop,
-        stateId: stateId,
-      };
+      return new ValueFail(r.response.contents);
     })
     .share();
   error$.subscribe(vf => inputSubject.onNext(new CoqtopInput.EditAt(vf.stateId)));
 
   let response$ = output$.map((r) => r.response);
 
-  // input$
-  //   .filter((i) => !(i instanceof CoqtopInput.Status))
-  //   .subscribe((input) => { console.log("⟸", input); });
-  // response$
-  //   .filter((r) => !(r.input instanceof CoqtopInput.Status))
-  //   .subscribe((r) => { console.log("   ⟹", r.input, r); });
+  if (debugCoqtop) {
+    input$
+      .filter((i) => !(i instanceof CoqtopInput.Status))
+      .subscribe((input) => { console.log("⟸", input); });
+    response$
+      .filter((r) => !(r.input instanceof CoqtopInput.Status))
+      .subscribe((r) => { console.log("   ⟹", r.input, r); });
+  }
 
   // this is needed for PeaCoq because we use add' so the STM's state
   // needs to be put back to where it worked

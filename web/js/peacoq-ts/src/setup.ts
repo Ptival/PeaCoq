@@ -360,13 +360,15 @@ $(document).ready(() => {
 
   coqtopOutput$s.error$
     .subscribe((e) => {
-      let failedEdit =  Global.coqDocument.getEditStagesBeingProcessed()[0].edit;
+      let failedEdit = Global.coqDocument.getEditStagesBeingProcessed()[0].edit;
       Global.coqDocument.removeEditAndFollowingOnes(failedEdit);
-      Global.tabs.errors.setValue(e.errorMessage, true);
-      const errorStart = Global.coqDocument.movePositionRight(failedEdit.getStartPosition(), e.errorStart);
-      const errorStop = Global.coqDocument.movePositionRight(failedEdit.getStartPosition(), e.errorStop);
-      const errorRange = new AceAjax.Range(errorStart.row, errorStart.column, errorStop.row, errorStop.column);
-      Global.coqDocument.markError(errorRange);
+      Global.tabs.errors.setValue(e.message, true);
+      e.location.fmap((loc) => {
+        const errorStart = Global.coqDocument.movePositionRight(failedEdit.getStartPosition(), loc.startPos);
+        const errorStop = Global.coqDocument.movePositionRight(failedEdit.getStartPosition(), loc.stopPos);
+        const errorRange = new AceAjax.Range(errorStart.row, errorStart.column, errorStop.row, errorStop.column);
+        Global.coqDocument.markError(errorRange);
+      });
     });
 
   coqtopOutput$s.response$
