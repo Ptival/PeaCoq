@@ -83,7 +83,7 @@ namespace DarkTheme {
   export let tacticFill = "#9F9006";
 }
 
-export let theme: Theme = DarkTheme;
+export let theme: Theme = BrightTheme;
 
 export function switchTo(t: Theme): void {
   theme = t;
