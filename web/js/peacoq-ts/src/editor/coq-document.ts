@@ -156,7 +156,6 @@ export class CoqDocument implements ICoqDocument {
     let markerId = Global.coqDocument.session.addMarker(range, errorUnderlineClass, "text", false);
     this.moveCursorToPositionAndCenter(range.start);
     let markerChangedStream = this.editorChange$
-      .do((e) => console.log(range, AceAjax.Range.fromPoints(e.start, e.end)))
       .filter((e) => range.containsRange(AceAjax.Range.fromPoints(e.start, e.end)))
       .take(1);
     markerChangedStream.subscribe(() => {

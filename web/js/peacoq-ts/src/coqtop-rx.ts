@@ -73,9 +73,7 @@ export function setupCoqtopCommunication(
       };
     })
     .share();
-  error$.subscribe(e => inputSubject.onNext(new CoqtopInput.EditAt(e.stateId)));
-
-  error$.subscribe((e) => console.log("error", e));
+  error$.subscribe(vf => inputSubject.onNext(new CoqtopInput.EditAt(vf.stateId)));
 
   let response$ = output$.map((r) => r.response);
 
@@ -90,7 +88,7 @@ export function setupCoqtopCommunication(
   // needs to be put back to where it worked
   // TODO: make a config flag for this feature
   error$.subscribe(e => {
-    console.log("sending EditAt because of error");
+    // console.log("sending EditAt because of error");
     inputSubject.onNext(new CoqtopInput.EditAt(e.stateId));
   });
 
