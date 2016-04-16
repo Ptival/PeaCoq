@@ -1,12 +1,7 @@
-// import BinderKind from "./binder-kind";
-// import CasesPatternExpr from "./cases-pattern-expr";
-// import CaseStyle from "./case-style";
-// import Explicitation from "./explicitation";
-// import * as LocalBinder from "./local-binder";
-// import * as NameBase from "./name-base";
-// import PrimToken from "./prim-token";
-// import Reference from "./reference";
-// import Unparsing from "./unparsing";
+/*
+DO NOT TURN THIS FILE INTO A MODULE UNLESS YOU CHANGE THE HASKELL
+CODE TO RETURN QUALIFIED EXPRESSIONS!
+*/
 
 abstract class ConstrExpr {}
 

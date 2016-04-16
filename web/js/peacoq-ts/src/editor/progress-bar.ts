@@ -1,3 +1,4 @@
+import * as d3 from 'd3';
 import * as Edit from "./edit";
 import * as EditStage from "./edit-stage";
 import * as Global from "../global-variables";

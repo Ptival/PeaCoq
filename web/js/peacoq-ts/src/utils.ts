@@ -1,3 +1,7 @@
+/*
+DO NOT TURN THIS FILE INTO A MODULE AS SOME NON-MODULE FILES USE IT!
+*/
+
 let nbsp = "\u00A0";
 
 function unbsp(s: string): string {
@@ -184,23 +188,3 @@ function computeDiffList(oldHypsOriginal, newHypsOriginal) {
 function repeat(n: number, s: string): string {
   return Array(n + 1).join(s);
 }
-
-let diffColor = (function() {
-  let colors = [
-    "#ffbb78",
-    "#f7b6d2",
-    "#dbdb8d",
-    "#6b6ecf",
-    "#8ca252",
-    "#b5cf6b",
-    "#cedb9c",
-    "#bd9e39",
-    "#d6616b",
-    "#ce6dbd",
-    "#de9ed6",
-  ];
-  let scale = d3.scale.ordinal().range(colors);
-  return function(n) {
-    return scale(n);
-  };
-})();

@@ -13,22 +13,19 @@
     "suppressImplicitAnyIndexErrors": true,
     "target": "es5"
   },
+  "exclude": [
+    "typings/browser.d.ts",
+    "typings/browser"
+  ],
   "filesGlob": [
     "*.ts",
     "coq/*.ts",
     "editor/*.ts",
     "peacoq/*.ts",
     "prooftree/*.ts",
-    "DefinitelyTyped/ace/ace.d.ts",
-    "DefinitelyTyped/d3/d3.d.ts",
-    "DefinitelyTyped/es6-shim/es6-shim.d.ts",
-    "DefinitelyTyped/lodash/lodash.d.ts",
-    "DefinitelyTyped/jquery/jquery.d.ts",
-    "DefinitelyTyped/jss/jss.d.ts",
-    "DefinitelyTyped/mathjax/mathjax.d.ts",
-    "DefinitelyTyped/rx/rx.all.d.ts",
-    "DefinitelyTyped/tsmonad/tsmonad.d.ts",
-    "DefinitelyTyped/w2ui/w2ui.d.ts"
+    "typings/main.d.ts",
+    "!typings/browser/**",
+    "!typings/browser.d.ts"
   ],
   "formatCodeOptions": {
     "indentSize": 2,

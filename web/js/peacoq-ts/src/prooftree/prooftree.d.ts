@@ -1,5 +1,3 @@
-declare type ProofTreeLink = d3.svg.diagonal.Link<IProofTreeNode>;
-
 declare type TacticGroup = {
   name: string;
   tactics: string[];

@@ -1,29 +1,34 @@
+///<reference path="./typings/main.d.ts"/>
+
+import * as FeedbackContent from "./coq/feedback-content";
+
 import * as Coq85 from "./editor/coq85";
 import { CoqDocument } from "./editor/coq-document";
-import * as Coqtop from "./coqtop-rx";
-import * as CoqtopInput from "./coqtop-input";
 import * as EditStage from "./editor/edit-stage";
 import { clearEdit, displayEdit, setupEditor } from "./editor/editor";
 import { EditorTab } from "./editor/editor-tab";
 import { isBefore } from "./editor/editor-utils";
-import * as FeedbackContent from "./coq/feedback-content";
-import * as Global from "./global-variables";
-// TODO: not sure if this file should be creating those nodes...
-import { GoalNode } from "./prooftree/goalnode";
-import { Goals } from "./goals";
 import { setupKeybindings } from "./editor/keybindings";
-import { PeaCoqGoal } from "./peacoq-goal";
 import { setupProgressBar } from "./editor/progress-bar";
-import { ProofTree, proofTrees } from "./prooftree/prooftree";
-import { getActiveProofTree } from "./prooftree/utils";
-import { Strictly } from "./strictly";
 import { Tab } from "./editor/tab";
-import { Tactic } from "./prooftree/tactic";
-import { TacticGroupNode } from "./prooftree/tacticgroupnode";
-import * as Theme from "./theme";
 // // TODO: toolbar.ts should setup{Load,Save}File upon setupToolbar
 // // TODO: unless it can't because of keybindings?
 import { pickFile, saveFile, setupLoadFile, setupToolbar, setupSaveFile } from "./editor/toolbar";
+
+// TODO: not sure if this file should be creating those nodes...
+import { GoalNode } from "./prooftree/goalnode";
+import { ProofTree, proofTrees } from "./prooftree/prooftree";
+import { Tactic } from "./prooftree/tactic";
+import { TacticGroupNode } from "./prooftree/tacticgroupnode";
+import { getActiveProofTree } from "./prooftree/utils";
+
+import * as Coqtop from "./coqtop-rx";
+import * as CoqtopInput from "./coqtop-input";
+import * as Global from "./global-variables";
+import { Goals } from "./goals";
+import { PeaCoqGoal } from "./peacoq-goal";
+import { Strictly } from "./strictly";
+import * as Theme from "./theme";
 
 let fontSize = 16; // pixels
 const resizeBufferingTime = 250; // milliseconds
