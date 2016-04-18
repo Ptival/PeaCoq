@@ -1,12 +1,10 @@
 import * as d3 from "d3";
 import { FakeNode } from "./fakenode";
 import { GoalNode } from "./goalnode";
+import { ProofTreeLink } from "./utils";
 import * as ProofTreeUtils from "./utils";
 import { TacticGroupNode } from "./tacticgroupnode";
 import { Strictly } from "./../strictly";
-
-// can't figure out how to put this in prooftree.d.ts when d3 is not ambient
-type ProofTreeLink = d3.svg.diagonal.Link<IProofTreeNode>;
 
 /* Globals to be configured */
 let animationDuration = 2000;

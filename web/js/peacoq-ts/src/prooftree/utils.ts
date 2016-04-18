@@ -2,7 +2,7 @@ import * as d3 from "d3";
 import * as Global from "./../global-variables";
 
 // can't figure out how to put this in prooftree.d.ts when d3 is not ambient
-type ProofTreeLink = d3.svg.diagonal.Link<IProofTreeNode>;
+export type ProofTreeLink = d3.svg.diagonal.Link<IProofTreeNode>;
 
 /*
   Stuff that is somewhat general but mostly useful for the proof tree.
