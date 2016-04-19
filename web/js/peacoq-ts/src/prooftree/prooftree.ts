@@ -1,7 +1,5 @@
-import * as d3 from "d3";
 import { FakeNode } from "./fakenode";
 import { GoalNode } from "./goalnode";
-import { ProofTreeLink } from "./utils";
 import * as ProofTreeUtils from "./utils";
 import { TacticGroupNode } from "./tacticgroupnode";
 import { Strictly } from "./../strictly";
