@@ -3,30 +3,26 @@ import BlockType from "./block-type";
 export abstract class PpCmdToken<T> { }
 
 export class PpCmdPrint<T> extends PpCmdToken<T> {
-  token: T;
-  constructor(t: T) {
+  constructor(public token: T) {
     super();
-    this.token = t;
   }
 }
 
 export class PpCmdBox<T> extends PpCmdToken<T> {
-  blockType: BlockType;
-  contents: PpCmdToken<T>[];
-  constructor(b: BlockType, x: PpCmdToken<T>[]) {
+  constructor(
+    public blockType: BlockType,
+    public contents: PpCmdToken<T>[]
+  ) {
     super();
-    this.blockType = b;
-    this.contents = x;
   }
 }
 
 export class PpCmdPrintBreak<T> extends PpCmdToken<T> {
-  nspaces: number;
-  offset: number;
-  constructor(x: number, y: number) {
+  constructor(
+    public nspaces: number,
+    public offset: number
+  ) {
     super();
-    this.nspaces = x;
-    this.offset = y;
   }
 }
 
@@ -49,11 +45,7 @@ export class PpCmdForceNewline<T> extends PpCmdToken<T> { }
 export class PpCmdPrintIfBroken<T> extends PpCmdToken<T> { }
 
 export class PpCmdOpenBox<T> extends PpCmdToken<T> {
-  blockType: BlockType;
-  constructor(b: BlockType) {
-    super();
-    this.blockType = b;
-  }
+  constructor(public blockType: BlockType) { super(); }
 }
 
 export class PpCmdCloseBox<T> extends PpCmdToken<T> { }
@@ -69,11 +61,7 @@ export class PpCmdComment<T> extends PpCmdToken<T> {
 export type Tag = string;
 
 export class PpCmdOpenTag<T> extends PpCmdToken<T> {
-  tag: string;
-  constructor(t: Tag) {
-    super();
-    this.tag = t;
-  }
+  constructor(public tag: Tag) { super(); }
 }
 
 export class PpCmdCloseTag<T> extends PpCmdToken<T> { }

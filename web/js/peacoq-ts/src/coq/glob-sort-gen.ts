@@ -7,9 +7,9 @@ export class GProp<T> extends GlobSortGen<T> { }
 export class GSet<T> extends GlobSortGen<T> { }
 
 export class GType<T> extends GlobSortGen<T> {
-  type: T;
-  constructor(t: T) {
+  constructor(
+    public type: T
+  ) {
     super();
-    this.type = t;
   }
 }

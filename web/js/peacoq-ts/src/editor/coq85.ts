@@ -1,6 +1,6 @@
 import * as CoqtopInput from "./../coqtop-input";
 import * as Global from "./../global-variables";
-import { Edit } from "./edit";
+import * as Edit from "./edit";
 // TODO: the thing causing this import should go elsewhere
 import { Warning } from "../coq/message-level";
 
@@ -104,9 +104,9 @@ function reportFailure(f: string) { //, switchTab: boolean) {
 export function onNextReactive(
   doc: ICoqDocument,
   next: Rx.Observable<{}>
-): Rx.Observable<IEdit> {
+): Rx.Observable<IEdit<IToProcess>> {
   return next
-    .flatMap<IEdit>(() => {
+    .concatMap<IEdit<IToProcess>>(() => {
       let lastEditStopPos = doc.getLastEditStop();
       let endPos = doc.endAnchor.getPosition();
       let unprocessedRange =
@@ -121,12 +121,14 @@ export function onNextReactive(
       let nextIndex = CoqStringUtils.next(unprocessedText);
       let newStopPos = doc.movePositionRight(lastEditStopPos, nextIndex);
       let query = unprocessedText.substring(0, nextIndex);
-      let e = new Edit(Global.coqDocument, lastEditStopPos, newStopPos, query);
-      return [e];
+      let previousEdit = Global.coqDocument.edits.getLast();
+      let stage = new Edit.ToProcess(Global.coqDocument, lastEditStopPos, newStopPos);
+      let edit: IEdit<IToProcess> =
+        doc.edits.createEdit(Global.coqDocument, lastEditStopPos, newStopPos, query, previousEdit, stage);
+      return [edit];
     })
-    .do((e) => {
-      doc.pushEdit(e);
-      doc.moveCursorToPositionAndCenter(e.getStopPosition());
+    .do(e => {
+      doc.moveCursorToPositionAndCenter(e.stopPosition);
     })
     .share()
     ;
@@ -334,23 +336,23 @@ There are two ways to go:
 */
 
 export function processEditsReactive(
-  edit: Rx.Observable<IEdit>
+  edit: Rx.Observable<IEdit<IToProcess>>
 ): Rx.Observable<CoqtopInput.CoqtopInput> {
   return edit
     // need `concatMap` here to guarantee the commands are processed in
     // the correct order: add, goal, context, add, goal, context, add, ...
-    .concatMap((e) => {
+    .concatMap(e => {
       let data = { edit: e };
       let add = new CoqtopInput.AddPrime(e.query);
       add.data = data;
-      let goal = new CoqtopInput.Goal();
-      goal.data = data;
-      let context = new CoqtopInput.QueryPrime("PeaCoqGetContext.");
-      context.data = data;
+      // let goal = new CoqtopInput.Goal();
+      // goal.data = data;
+      // let context = new CoqtopInput.QueryPrime("PeaCoqGetContext.");
+      // context.data = data;
       return [
         add,
-        goal,
-        context,
+        // goal,
+        // context,
       ];
     })
     .share();

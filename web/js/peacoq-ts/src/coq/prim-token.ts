@@ -1,17 +1,9 @@
 abstract class PrimToken { }
 
 class Numeral extends PrimToken {
-  numeral: number;
-  constructor(n: number) {
-    super();
-    this.numeral = n;
-  }
+  constructor(public numeral: number) { super(); }
 }
 
 class PrimTokenString extends PrimToken {
-  string: string;
-  constructor(s: string) {
-    super();
-    this.string = s;
-  }
+  constructor(public string: string) { super(); }
 }

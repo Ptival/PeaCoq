@@ -39,21 +39,13 @@ class Apply extends CoqXMLTag {
 }
 
 class Constant extends CoqXMLTag {
-  constant: string;
-  constructor(s) {
-    super();
-    this.constant = s;
-  }
+  constructor(public constant: string) { super(); }
   toString() { return "Constant(" + this.constant + ")"; }
 }
 
 class Definition extends CoqXMLTag {
-  a: string;
-  b: string;
-  constructor(a, b) {
+  constructor(public a: string, public b: string) {
     super();
-    this.a = a;
-    this.b = b;
   }
   toString() {
     return "Definition(" + this.a + ", " + this.b + ")";
@@ -65,22 +57,14 @@ class Gallina extends CoqXMLTag {
 }
 
 class Ltac extends CoqXMLTag {
-  s: string;
-  constructor(s) {
+  constructor(public s: string) {
     super();
-    this.s = s;
   }
   toString() { return "Ltac(" + this.s + ")"; }
 }
 
 class Operator extends CoqXMLTag {
-  s: string;
-  ms: string;
-  constructor(s, ms) {
-    super();
-    this.s = s;
-    this.ms = ms;
-  }
+  constructor(public s: string, public ms: string) { super(); }
   toString() { return "Operator(" + this.s + ", " + this.ms + ")"; }
 }
 
@@ -97,31 +81,17 @@ class Recurse extends CoqXMLTag {
 }
 
 class SectionSubsetDescr extends CoqXMLTag {
-  s: string;
-  constructor(s) {
-    super();
-    this.s = s;
-  }
+  constructor(public s: string) { super(); }
   toString() { return "SectionSubsetDescr(" + this.s + ")"; }
 }
 
 class Theorem extends CoqXMLTag {
-  a: string;
-  b: string;
-  constructor(a, b) {
-    super();
-    this.a = a;
-    this.b = b;
-  }
+  constructor(public a: string, public b: string) { super(); }
   toString() { return "Theorem(" + this.a + ", " + this.b + ")"; }
 }
 
 class Token extends CoqXMLTag {
-  s: string;
-  constructor(s) {
-    super();
-    this.s = s;
-  }
+  constructor(public s: string) { super(); }
   toString() { return "Token(" + this.s + ")"; }
 }
 

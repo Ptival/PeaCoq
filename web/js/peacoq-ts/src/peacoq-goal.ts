@@ -11,13 +11,12 @@ export default PeaCoqGoal;
 
 export class PeaCoqGoal implements IPeaCoqGoal {
   private html: JQuery;
-  private hyps: PeaCoqHyp[];
-  private concl: IConstrExpr;
 
-  constructor(hyps, concl) {
+  constructor(
+    private hyps: PeaCoqHyp[],
+    private concl: IConstrExpr
+  ) {
     this.html = undefined; // rendered on-demand and cached
-    this.hyps = hyps;
-    this.concl = concl;
   }
 
   getHTML(): JQuery {

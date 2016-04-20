@@ -10,110 +10,122 @@ interface ITabs {
   infos: IEditorTab;
   debug: IEditorTab;
   failures: IEditorTab;
-  // feedback: IEditorTab;
+  // readonly feedback: IEditorTab;
   jobs: IEditorTab;
 }
 
 /* TODO: maybe fuse the parts of the toolbar and shortcuts that overlap? */
 
 interface ToolbarStreams {
-  fontDecrease: Rx.Observable<{}>;
-  fontIncrease: Rx.Observable<{}>;
-  goToCaret: Rx.Observable<{}>;
-  load: Rx.Observable<{}>;
-  next: Rx.Observable<{}>;
-  previous: Rx.Observable<{}>;
-  save: Rx.Observable<{}>;
+  readonly fontDecrease: Rx.Observable<{}>;
+  readonly fontIncrease: Rx.Observable<{}>;
+  readonly goToCaret: Rx.Observable<{}>;
+  readonly load: Rx.Observable<{}>;
+  readonly next: Rx.Observable<{}>;
+  readonly previous: Rx.Observable<{}>;
+  readonly save: Rx.Observable<{}>;
 }
 
 interface ShortcutsStreams {
-  fontIncrease: Rx.Observable<{}>;
-  fontDecrease: Rx.Observable<{}>;
-  goToCaret: Rx.Observable<{}>;
-  load: Rx.Observable<{}>;
-  next: Rx.Observable<{}>;
-  previous: Rx.Observable<{}>;
-  save: Rx.Observable<{}>;
+  readonly fontIncrease: Rx.Observable<{}>;
+  readonly fontDecrease: Rx.Observable<{}>;
+  readonly goToCaret: Rx.Observable<{}>;
+  readonly load: Rx.Observable<{}>;
+  readonly next: Rx.Observable<{}>;
+  readonly previous: Rx.Observable<{}>;
+  readonly save: Rx.Observable<{}>;
+}
+
+interface IEditArray {
+  readonly change$: Rx.Observable<{}>;
+  createEdit(
+    document: ICoqDocument,
+    startPosition: AceAjax.Position,
+    stopPosition: AceAjax.Position,
+    query: string,
+    previousEdit: Maybe<IEdit<any>>,
+    stage: IToProcess
+  );
+  getAll(): IEdit<any>[];
+  getLast(): Maybe<IEdit<any>>;
+  remove(r: IEdit<any>): void;
+  removeAll(): void;
+  removeEditAndFollowingOnes(e: IEdit<any>): void;
+  // replace(id: number, e: IEdit<any>): void;
 }
 
 interface ICoqDocument {
-  editor: AceAjax.Editor;
-  editorChange$: Rx.Observable<AceAjax.EditorChangeEvent>;
-  editsChange$: Rx.Observable<{}>;
-  endAnchor: AceAjax.Anchor;
-  session: AceAjax.IEditSession;
-  getAllEdits(): IEdit[];
-  getEditAtPosition(pos: AceAjax.Position): Maybe<IEdit>;
-  getEditStagesBeingProcessed(): IBeingProcessed[];
-  // getEditStagesProcessed(): IProcessed[];
-  getEditStagesToProcess(): IToProcess[];
-  getEditStagesReady(): IReady[];
+  readonly editor: AceAjax.Editor;
+  readonly editorChange$: Rx.Observable<AceAjax.EditorChangeEvent>;
+  readonly edits: IEditArray;
+  readonly endAnchor: AceAjax.Anchor;
+  readonly session: AceAjax.IEditSession;
+  getAllEdits(): IEdit<any>[];
+  getEditAtPosition(pos: AceAjax.Position): Maybe<IEdit<any>>;
+  getEditsBeingProcessed(): IEdit<IBeingProcessed>[];
+  getEditsToProcess(): IEdit<IToProcess>[];
+  getProcessedEdits(): IEdit<IProcessed>[];
   getLastEditStop(): AceAjax.Position;
   markError(range: AceAjax.Range): void;
   moveCursorToPositionAndCenter(pos: AceAjax.Position): void;
   movePositionRight(pos: AceAjax.Position, n: number): AceAjax.Position;
-  pushEdit(e: IEdit): void;
   removeAllEdits(): void;
-  removeEdit(e: IEdit): void;
-  removeEditAndFollowingOnes(e: IEdit): void;
+  removeEdit(e: IEdit<any>): void;
+  removeEditAndFollowingOnes(e: IEdit<any>): void;
   resetEditor(s: string): void;
 }
 
-interface IEdit {
-  id: number;
-  previousEdit: Maybe<IEdit>;
-  query: string;
-  stage: IEditStage;
+interface IEdit<S extends IEditStage> {
+  readonly array: IEditArray;
+  readonly id: number;
+  readonly previousEdit: Maybe<IEdit<any>>;
+  readonly query: string;
+  readonly stage: S;
+  readonly startPosition: AceAjax.Position;
+  readonly stopPosition: AceAjax.Position;
   containsPosition(p: AceAjax.Position): boolean;
-  getPreviousStateId(): number;
-  getStartPosition(): AceAjax.Position;
-  getStopPosition(): AceAjax.Position;
-  remove(): void;
-}
-
-interface IEditMarker {
-  startPos: AceAjax.Position;
-  stopPos: AceAjax.Position;
+  getColor(): string;
+  getPreviousStateId(): Maybe<number>;
+  getStateId(): Maybe<number>;
   highlight(): void;
-  markBeingProcessed(): void;
-  markProcessed(): void;
   remove(): void;
+  setStage<T extends IEditStage>(stage: T): IEdit<T>;
   unhighlight(): void;
 }
 
 interface IEditStage {
-  edit: IEdit;
+  readonly marker: IEditMarker;
   getColor(): string;
-  getStartPosition(): AceAjax.Position;
-  getStopPosition(): AceAjax.Position;
-  highlight(): void;
-  remove(): void;
-  unhighlight(): void;
+  getStateId(): Maybe<number>;
 }
 
 interface IToProcess extends IEditStage {
   nextStageMarker(): IEditMarker;
 }
 
-interface IBeingProcessed extends IEditStage {
+interface WithStateId {
   stateId: number;
+}
+
+interface IBeingProcessed extends IEditStage, WithStateId {
   nextStageMarker(): IEditMarker;
 }
 
-// Disabled, read edit-stage.ts for reason why
-
-// interface IProcessed extends IEditStage {
-//   // editId: number;
-//   stateId: number;
-//   nextStageMarker(): IEditMarker;
-// }
-
-interface IReady extends IEditStage {
-  context: PeaCoqContext;
+interface IProcessed extends IEditStage, WithStateId {
+  context: Maybe<PeaCoqContext>;
   // editId: number;
-  goals: IGoals;
-  stateId: number;
+  goals: Maybe<IGoals>;
   //status: IStatus;
+}
+
+interface IEditMarker {
+  startPosition: AceAjax.Position;
+  stopPosition: AceAjax.Position;
+  highlight(): void;
+  markBeingProcessed(): void;
+  markProcessed(): void;
+  remove(): void;
+  unhighlight(): void;
 }
 
 interface ITab {

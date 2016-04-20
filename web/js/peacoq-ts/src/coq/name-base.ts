@@ -1,10 +1,10 @@
 abstract class NameBase { }
 
 class Name extends NameBase {
-  id: string;
-  constructor(id: string) {
+  constructor(
+    public id: string
+  ) {
     super();
-    this.id = id;
   }
 }
 

@@ -5,7 +5,7 @@ import * as CoqtopInput from "./coqtop-input";
 import { Goals } from "./goals";
 import { processSequentiallyForever } from "./rx";
 
-let debugCoqtop = false; // print input/output requests
+let debugCoqtop = true; // print input/output requests
 let statusPeriod = 250; // milliseconds
 
 interface CoqtopResponse {

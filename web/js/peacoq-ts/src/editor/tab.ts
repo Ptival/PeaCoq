@@ -1,15 +1,18 @@
 export class Tab implements ITab {
-  caption: string;
   private _captionShouldBeBold: boolean;
   private captionSuffix: string;
   div: JQuery;
-  id: string;
+  // TODO: use Observables
   onClickHandlers: Function[];
   onResizeHandlers: Function[];
-  panel: string;
   tab: W2UI.W2Tabs;
 
-  constructor(id: string, caption: string, layout: string, panel: string) {
+  constructor(
+    public id: string,
+    public caption: string,
+    layout: string,
+    public panel: string
+  ) {
     this.caption = caption;
     this.captionSuffix = "";
     this.id = id;

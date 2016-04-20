@@ -1,16 +1,14 @@
 export class Tactic {
   //addReturn: AddReturn;
   goalIndex: number;
-  goals: IGoalNode[];
-  parentGroup: ITacticGroupNode;
-  tactic: string;
 
-  constructor(tactic: string, parentGroup: ITacticGroupNode, goals: IGoalNode[]) {
+  constructor(
+    public tactic: string,
+    public parentGroup: ITacticGroupNode,
+    public goals: IGoalNode[]
+  ) {
     //this.addReturn = waiting.addReturn;
     this.goalIndex = 0;
-    this.goals = goals;
-    this.parentGroup = parentGroup;
-    this.tactic = tactic;
 
     //let focusedBefore = getResponseFocused(parent.parent.response);
     //let focusedAfter = getResponseFocused(response);

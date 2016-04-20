@@ -5,20 +5,21 @@ export abstract class ProofTreeNode implements IProofTreeNode {
   depth: number;
   id: string;
   label: string;
-  proofTree: IProofTree;
   x: number;
   x0: number;
   y: number;
   y0: number;
 
-  constructor(proofTree: IProofTree, parent: Maybe<IProofTreeNode>) {
+  constructor(
+    public proofTree: IProofTree,
+    parent: Maybe<IProofTreeNode>
+  ) {
     this.body = undefined;
     this.depth = parent.caseOf({
       nothing: () => 0,
       just: (parent) => parent.depth + 1,
     });
     this.id = _.uniqueId();
-    this.proofTree = proofTree;
   }
 
   abstract click(): void;

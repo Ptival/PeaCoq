@@ -1,18 +1,16 @@
-export class EditMarker {
-  document: ICoqDocument;
+export class EditMarker implements IEditMarker {
   klass: string;
   markerId: number;
   markerRange: AceAjax.Range;
-  startPos: AceAjax.Position;
-  stopPos: AceAjax.Position;
 
-  constructor(doc: ICoqDocument, start: AceAjax.Position, stop: AceAjax.Position) {
-    this.document = doc;
-    this.startPos = start;
-    this.stopPos = stop;
+  constructor(
+    public document: ICoqDocument,
+    public startPosition: AceAjax.Position,
+    public stopPosition: AceAjax.Position
+  ) {
     this.klass = "toprocess";
-    this.markerRange = new AceAjax.Range(start.row, start.column, stop.row, stop.column);
-    this.markerId = doc.session.addMarker(this.markerRange, this.klass, "text", false);
+    this.markerRange = new AceAjax.Range(startPosition.row, startPosition.column, stopPosition.row, stopPosition.column);
+    this.markerId = document.session.addMarker(this.markerRange, this.klass, "text", false);
   }
 
   highlight(): void { this.updateWith("highlight"); }

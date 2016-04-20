@@ -5,10 +5,10 @@ class E extends ParenRelation { }
 class L extends ParenRelation { }
 
 class Prec extends ParenRelation {
-  precedence: number;
-  constructor(prec: number) {
+  constructor(
+    public precedence: number
+  ) {
     super();
-    this.precedence = prec;
   }
 }
 

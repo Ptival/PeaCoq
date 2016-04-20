@@ -364,7 +364,7 @@ class Arrow extends Term {
         res += this.left.toString();
         break;
       case Lambda:
-        throw new Error("This should not happen");
+        debugger; // should not happen
       default:
         throw new Error("Unknown Term: " + this.left);
     };
@@ -384,7 +384,7 @@ class Arrow extends Term {
         res += this.right.toString();
         break;
       case Lambda:
-        throw new Error("This should not happen");
+        debugger; // should not happen
       default:
         throw new Error("Unknown Term: " + this.right);
     };

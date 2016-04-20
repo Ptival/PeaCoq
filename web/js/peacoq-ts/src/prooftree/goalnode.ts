@@ -4,8 +4,6 @@ import { Strictly } from "./../strictly";
 export class GoalNode extends ProofTreeNode implements IGoalNode {
   // DO NOT USE "children" AS D3 WILL OVERWRITE
   closedBraces: number;
-  goal: IPeaCoqGoal;
-  goals: IGoals;
   html: JQuery;
   openBraces: number;
   // DO NOT USE "parent" AS D3 WILL OVERWRITE
@@ -17,14 +15,12 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
   constructor(
     proofTree: IProofTree,
     parent: Maybe<ITacticGroupNode>,
-    goals: IGoals,
-    goal: IPeaCoqGoal
+    public goals: IGoals,
+    public goal: IPeaCoqGoal
   ) {
     super(proofTree, parent);
 
     this.closedBraces = 0;
-    this.goal = goal;
-    this.goals = goals;
     this.html = $("<div>")
       .attr("id", _.uniqueId())
       .append(this.goal.getHTML())

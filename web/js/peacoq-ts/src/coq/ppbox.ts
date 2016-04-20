@@ -1,23 +1,19 @@
 abstract class PpBox { }
 
 class PpHB extends PpBox {
-  n: number;
-  constructor(n: number) { super(); this.n = n; }
+  constructor(public n: number) { super(); }
 }
 
 class PpHoVB extends PpBox {
-  n: number;
-  constructor(n: number) { super(); this.n = n; }
+  constructor(public n: number) { super(); }
 }
 
 class PpHVB extends PpBox {
-  n: number;
-  constructor(n: number) { super(); this.n = n; }
+  constructor(public n: number) { super(); }
 }
 
 class PpVB extends PpBox {
-  n: number;
-  constructor(n: number) { super(); this.n = n; }
+  constructor(public n: number) { super(); }
 }
 
 class PpTB extends PpBox { }

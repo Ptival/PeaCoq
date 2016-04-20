@@ -26,8 +26,6 @@ export class ProofTree implements IProofTree {
   private _curNode: IGoalNode;
   descendantsOffset: number;
   //diagonal: d3.svg.Diagonal<ProofTreeLink, ProofTreeNode>;
-  height: number;
-  name: string;
   paused: boolean;
   /* true until the user uses their mouse */
   usingKeyboard: boolean;
@@ -41,7 +39,6 @@ export class ProofTree implements IProofTree {
   tree: d3.layout.Tree<IProofTreeNode>;
   viewportX: number;
   viewportY: number;
-  private width: number;
   xFactor: number;
   yFactor: number;
 
@@ -55,20 +52,17 @@ export class ProofTree implements IProofTree {
   tipsLayer: d3.Selection<HTMLElement>;
 
   constructor(
-    name: string,
+    public name: string,
     anchor: HTMLElement,
-    width: number,
-    height: number
+    private width: number,
+    private height: number
   ) {
     let self = this;
 
     width = Math.max(0, width);
     height = Math.max(0, height);
 
-    this.name = name;
     this.anchor = d3.select(anchor);
-    this.width = width;
-    this.height = height;
 
     this.paused = false;
     this.svgId = _.uniqueId();

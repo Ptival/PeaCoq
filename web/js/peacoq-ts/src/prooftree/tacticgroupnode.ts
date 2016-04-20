@@ -5,22 +5,18 @@ let userTacticsGroupName = "PeaCoq user tactics";
 
 export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
   isProcessed: boolean;
-  name: string;
   // do not use parent, D3 will overwrite
-  private parentGoal: IGoalNode;
   span: JQuery;
   tacticIndex: number;
   tactics: ITactic[];
 
   constructor(
     proofTree: IProofTree,
-    parent: IGoalNode,
-    name: string
+    private parentGoal: IGoalNode,
+    public name: string
   ) {
-    super(proofTree, just(parent));
+    super(proofTree, just(parentGoal));
     this.isProcessed = false;
-    this.name = name;
-    this.parentGoal = parent;
     this.tactics = [];
     this.tacticIndex = 0;
   }

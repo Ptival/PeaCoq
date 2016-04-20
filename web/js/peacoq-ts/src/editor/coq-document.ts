@@ -1,21 +1,20 @@
-import * as EditStage from "./edit-stage";
+import * as Edit from "./edit";
+import { EditArray } from "./edit-array";
 import * as Global from "./../global-variables";
 import { errorUnderlineClass, theme } from "./../theme";
 
 export class CoqDocument implements ICoqDocument {
   beginAnchor: AceAjax.Anchor;
-  editor: AceAjax.Editor;
   editorChange$: Rx.Observable<AceAjax.EditorChangeEvent>;
-  private edits: IEdit[];
-  private editsChangeSubject: Rx.Subject<{}>;
-  editsChange$: Rx.Observable<{}>;
+  edits: IEditArray;
   endAnchor: AceAjax.Anchor;
   session: AceAjax.IEditSession;
 
-  constructor(editor: AceAjax.Editor) {
-    let self = this;
-    this.editor = editor;
-    this.edits = [];
+  constructor(
+    public editor: AceAjax.Editor
+  ) {
+    const self = this;
+    this.edits = new EditArray(this);
     // WARNING: This line must stay over calls to mkAnchor
     this.session = editor.getSession();
     this.beginAnchor = mkAnchor(this, 0, 0, "begin-marker", true);
@@ -26,40 +25,34 @@ export class CoqDocument implements ICoqDocument {
           self.session.on("change", (e) => observer.onNext(e));
         })
         .share();
-    this.editsChangeSubject = new Rx.Subject();
-    this.editsChange$ = this.editsChangeSubject.asObservable();
+    // this.editsChangeSubject = new Rx.Subject();
+    // this.editsChange$ = this.editsChangeSubject.asObservable();
+    const newEditSubject = new Rx.Subject<IEdit<IToProcess>>();
   }
 
-  getAllEdits(): IEdit[] { return this.edits; }
+  getAllEdits(): IEdit<any>[] { return this.edits.getAll(); }
 
-  getEditAtPosition(pos: AceAjax.Position): Maybe<IEdit> {
-    let edit = _(this.edits).find(e => e.containsPosition(pos));
+  getEditAtPosition(pos: AceAjax.Position): Maybe<IEdit<any>> {
+    const edit = _(this.getAllEdits()).find(e => e.containsPosition(pos));
     return edit ? just(edit) : nothing();
   }
 
-  private getEditStagesInstanceOf(stage): any[] {
-    return _(this.edits)
-      .map((e) => e.stage)
-      .filter((s) => {
-        return s instanceof stage;
-      })
+  private getEditsByStage(stage): IEdit<any>[] {
+    return _(this.getAllEdits())
+      .filter(e => { return e.stage instanceof stage; })
       .value();
   }
 
-  getEditStagesBeingProcessed(): IBeingProcessed[] {
-    return this.getEditStagesInstanceOf(EditStage.BeingProcessed);
+  getEditsBeingProcessed(): IEdit<IBeingProcessed>[] {
+    return this.getEditsByStage(Edit.BeingProcessed);
   }
 
-  getEditStagesToProcess(): IToProcess[] {
-    return this.getEditStagesInstanceOf(EditStage.ToProcess);
+  getEditsToProcess(): IEdit<IToProcess>[] {
+    return this.getEditsByStage(Edit.ToProcess);
   }
 
-  // getEditStagesProcessed(): IProcessed[] {
-  //   return this.getEditStagesInstanceOf(EditStage.Processed);
-  // }
-
-  getEditStagesReady(): IReady[] {
-    return this.getEditStagesInstanceOf(EditStage.Ready);
+  getProcessedEdits(): IEdit<IProcessed>[] {
+    return this.getEditsByStage(Edit.Processed);
   }
 
   // getStopPositions(): AceAjax.Position[] {
@@ -67,11 +60,10 @@ export class CoqDocument implements ICoqDocument {
   // }
 
   getLastEditStop(): AceAjax.Position {
-    if (this.edits.length > 0) {
-      return _(this.edits).last().getStopPosition();
-    } else {
-      return this.beginAnchor.getPosition();
-    }
+    return this.edits.getLast().caseOf({
+      nothing: () => this.beginAnchor.getPosition(),
+      just: last => last.stopPosition,
+    });
   }
 
   moveCursorToPositionAndCenter(pos: AceAjax.Position): void {
@@ -83,9 +75,9 @@ export class CoqDocument implements ICoqDocument {
 
   movePositionRight(pos: AceAjax.Position, n: number): AceAjax.Position {
     if (n === 0) { return pos; }
-    let row = pos.row;
-    let column = pos.column;
-    let line = this.session.getLine(row);
+    const row = pos.row;
+    const column = pos.column;
+    const line = this.session.getLine(row);
     if (column < line.length) {
       return this.movePositionRight({
         "row": row,
@@ -120,28 +112,28 @@ export class CoqDocument implements ICoqDocument {
   // }
 
   // processEdits(): Promise<any> {
-  //   let self = this;
+  //   const self = this;
   //   if (this.editsToProcess.length === 0 || isJust(this.editBeingProcessed)) {
   //     return Promise.resolve();
   //   }
-  //   let ebp = new EditBeingProcessed(this.editsToProcess.shift());
+  //   const ebp = new EditBeingProcessed(this.editsToProcess.shift());
   //   this.editBeingProcessed = just(ebp);
   //   return (
   //     peaCoqAddPrime(ebp.query)
   //       .then((response) => {
-  //         let stopPos = ebp.getStopPosition();
+  //         const stopPos = ebp.getStopPosition();
   //         self.session.selection.clearSelection();
   //         self.editor.moveCursorToPosition(stopPos);
   //         self.editor.scrollToLine(stopPos.row, true, true, () => { });
   //         self.editor.focus();
-  //         let sid: number = response.stateId;
-  //         let ls = lastStatus;
-  //         let s = peaCoqStatus(false);
-  //         let g = s.then(peaCoqGoal);
-  //         let c = g.then(peaCoqGetContext);
+  //         const sid: number = response.stateId;
+  //         const ls = lastStatus;
+  //         const s = peaCoqStatus(false);
+  //         const g = s.then(peaCoqGoal);
+  //         const c = g.then(peaCoqGetContext);
   //         return Promise.all<any>([s, g, c]).then(
   //           ([s, g, c]: [Status, Goals, PeaCoqContext]) => {
-  //             let e = new ProcessedEdit(ebp, sid, s, g, c);
+  //             const e = new ProcessedEdit(ebp, sid, s, g, c);
   //             self.editsProcessed.push(e);
   //             _(editHandlers).each((h) => h(ebp.query, sid, ls, s, g, c));
   //             this.editBeingProcessed = nothing();
@@ -153,9 +145,9 @@ export class CoqDocument implements ICoqDocument {
   // }
 
   markError(range: AceAjax.Range): void {
-    let markerId = Global.coqDocument.session.addMarker(range, errorUnderlineClass, "text", false);
+    const markerId = Global.coqDocument.session.addMarker(range, errorUnderlineClass, "text", false);
     this.moveCursorToPositionAndCenter(range.start);
-    let markerChangedStream = this.editorChange$
+    const markerChangedStream = this.editorChange$
       .filter((e) => range.containsRange(AceAjax.Range.fromPoints(e.start, e.end)))
       .take(1);
     markerChangedStream.subscribe(() => {
@@ -163,13 +155,8 @@ export class CoqDocument implements ICoqDocument {
     });
   }
 
-  pushEdit(e: IEdit) {
-    this.edits.push(e);
-    this.editsChangeSubject.onNext({});
-  }
-
   recenterEditor() {
-    let pos = this.editor.getCursorPosition();
+    const pos = this.editor.getCursorPosition();
     this.editor.scrollToLine(pos.row, true, true, () => { });
   }
 
@@ -179,25 +166,12 @@ export class CoqDocument implements ICoqDocument {
     this.editor.scrollToLine(0, true, true, () => { });
   }
 
-  removeAllEdits(): void {
-    _(this.edits).each((e) => e.remove());
-    this.edits = [];
-    this.editsChangeSubject.onNext({});
-  }
+  removeAllEdits(): void { this.edits.removeAll(); }
 
-  removeEdit(e: IEdit): void {
-    e.remove();
-    _(this.edits).remove(e);
-    this.editsChangeSubject.onNext({});
-  }
+  removeEdit(e: IEdit<any>): void { this.edits.remove(e); }
 
-  removeEditAndFollowingOnes(e: IEdit): void {
-    let self = this;
-    let editIndex = _(this.edits).findIndex(e);
-    let editsToKeep = _(this.edits).slice(0, editIndex).value();
-    let editsToRemove = _(this.edits).slice(editIndex, this.edits.length).value();
-    this.edits = editsToKeep;
-    _(editsToRemove).each((e) => self.removeEdit(e));
+  removeEditAndFollowingOnes(e: IEdit<any>): void {
+    this.edits.removeEditAndFollowingOnes(e);
   }
 
   // removeEdits(
@@ -205,7 +179,7 @@ export class CoqDocument implements ICoqDocument {
   //   beforeRemoval?: (e: ProcessedEdit) => void
   // ) {
   //   _.remove(this.editsProcessed, function(e) {
-  //     let toBeRemoved = predicate(e);
+  //     const toBeRemoved = predicate(e);
   //     if (toBeRemoved) {
   //       if (beforeRemoval) { beforeRemoval(e); }
   //       e.onRemove();
@@ -221,16 +195,16 @@ function mkAnchor(
   row: number, column: number,
   klass: string, insertRight: boolean
 ): AceAjax.Anchor {
-  let a = new AceAjax.Anchor(doc.session.getDocument(), row, column);
+  const a = new AceAjax.Anchor(doc.session.getDocument(), row, column);
   if (insertRight) { a.$insertRight = true; }
-  let marker = doc.session.addDynamicMarker(
+  const marker = doc.session.addDynamicMarker(
     {
       update: function(html, markerLayer, session, config) {
-        let screenPos = session.documentToScreenPosition(a);
-        let height = config.lineHeight;
-        let width = config.characterWidth;
-        let top = markerLayer.$getTop(screenPos.row, config);
-        let left = markerLayer.$padding + screenPos.column * width;
+        const screenPos = session.documentToScreenPosition(a);
+        const height = config.lineHeight;
+        const width = config.characterWidth;
+        const top = markerLayer.$getTop(screenPos.row, config);
+        const left = markerLayer.$padding + screenPos.column * width;
         html.push(
           "<div class='", klass, "' style='",
           "height:", height, "px;",

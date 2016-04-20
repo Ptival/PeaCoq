@@ -8,10 +8,10 @@ export abstract class MessageLevel {
 }
 
 export class Debug extends MessageLevel {
-  debug: string;
-  constructor(s) {
+  constructor(
+    public debug: string
+  ) {
     super();
-    this.debug = s;
   }
   getAssociatedTab() { return Global.tabs.debug; }
   toString() { return "Debug(" + this.debug + ")"; }

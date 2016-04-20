@@ -4,7 +4,7 @@ import * as FeedbackContent from "./coq/feedback-content";
 
 import * as Coq85 from "./editor/coq85";
 import { CoqDocument } from "./editor/coq-document";
-import * as EditStage from "./editor/edit-stage";
+import * as Edit from "./editor/edit";
 import { clearEdit, displayEdit, setupEditor } from "./editor/editor";
 import { EditorTab } from "./editor/editor-tab";
 import { isBefore } from "./editor/editor-utils";
@@ -58,18 +58,22 @@ $(document).ready(() => {
       editor.selection.on("changeCursor", (e) => { observer.onNext(e); });
     })
     .share();
+
   const editorCursorPositionStream = editorCursorChangeStream
     .map(() => editor.selection.getCursor());
-  const editToBeDisplayed$: Rx.Observable<IEdit> = editorCursorPositionStream
-    .flatMap((pos) => {
-      // we want to display the last edit whose stopPos is before `pos`
-      let stage = _(Global.coqDocument.getEditStagesReady())
-        .findLast((s) => isBefore(Strictly.No, s.getStopPosition(), pos));
-      // if no edit, we should display the last edit before the cursor
-      if (!stage) { stage = _(Global.coqDocument.getEditStagesReady()).last(); }
-      return stage ? [stage.edit] : [];
-    })
-    .distinctUntilChanged();
+
+  const editToBeDisplayed$: Rx.Observable<IEdit<any>> =
+    editorCursorPositionStream
+      .flatMap(pos => {
+        // we want to display the last edit whose stopPos is before `pos`
+        let edit = _(Global.coqDocument.getProcessedEdits())
+          .findLast((s) => isBefore(Strictly.No, s.stopPosition, pos));
+        // if no edit, we should display the last edit before the cursor
+        if (!edit) { edit = _(Global.coqDocument.getProcessedEdits()).last(); }
+        return edit ? [edit] : [];
+      })
+      .distinctUntilChanged();
+
   editToBeDisplayed$.subscribe((edit) => {
     displayEdit(edit);
   });
@@ -78,12 +82,18 @@ $(document).ready(() => {
 
   const editAtBecauseEditorChange: Rx.Observable<CoqtopInput.CoqtopInput> =
     Global.coqDocument.editorChange$
-      .flatMap((change) => {
+      .flatMap(change => {
         const maybeEdit = Global.coqDocument.getEditAtPosition(minPos(change.start, change.end));
-        return maybeEdit.caseOf({
-          nothing: () => [],
-          just: e => [new CoqtopInput.EditAt(e.getPreviousStateId())]
-        });
+        // debugger;
+        return (
+          maybeEdit
+            .bind(e => e.getPreviousStateId())
+            .fmap(s => new CoqtopInput.EditAt(s))
+            .caseOf({
+              nothing: () => [],
+              just: i => [i],
+            })
+        );
       })
       .share();
 
@@ -211,12 +221,15 @@ $(document).ready(() => {
 
   const editAtFromBackwardGoTo$ = backwardGoTo$
     .flatMap(o => {
-      const editAtPosition = Global.coqDocument.getEditAtPosition(o.destinationPos);
-      const stateIdToRewindTo = editAtPosition.fmap(e => e.getPreviousStateId());
-      return stateIdToRewindTo.caseOf({
-        nothing: () => [],
-        just: s => [new CoqtopInput.EditAt(s)],
-      });
+      const maybeEdit = Global.coqDocument.getEditAtPosition(o.destinationPos);
+      return (
+        maybeEdit
+          .bind(e => e.getPreviousStateId())
+          .fmap(s => new CoqtopInput.EditAt(s)).caseOf({
+            nothing: () => [],
+            just: i => [i],
+          })
+      );
     })
     .share();
 
@@ -243,7 +256,7 @@ $(document).ready(() => {
     .combineLatest(
     forwardGoToSubject.asObservable(),
     // TODO: this won't work on reload...
-    Global.coqDocument.editsChange$
+    Global.coqDocument.edits.change$
       .map(() => Global.coqDocument.getLastEditStop())
       .startWith({ row: 0, column: 0 }) // otherwise it doesn't fire before first change
     )
@@ -255,8 +268,8 @@ $(document).ready(() => {
           // 1. eStopPos < destinationPos
           // 2. the range [eStopPos, destinationPos] contains some text
           const cond1 = isBefore(Strictly.Yes, eStopPos, destinationPos);
-          let range = AceAjax.Range.fromPoints(eStopPos, destinationPos);
-          let text = Global.coqDocument.session.getDocument().getTextRange(range);
+          const range = AceAjax.Range.fromPoints(eStopPos, destinationPos);
+          const text = Global.coqDocument.session.getDocument().getTextRange(range);
           const cond2 = CoqStringUtils.coqTrimLeft(text) !== "";
           if (cond1 && cond2) {
             // need another next
@@ -281,67 +294,69 @@ $(document).ready(() => {
       .startWith({}) // also do it on loading the page
       .flatMap(() => [
         new CoqtopInput.EditAt(1),
-        new CoqtopInput.AddPrime("Require Import PeaCoq.PeaCoq.")
+        new CoqtopInput.AddPrime("Require Import PeaCoq.PeaCoq."),
+        //   new CoqtopInput.AddPrime(`
+        //
+        //     Theorem split_then_solve : (True /\\ True) /\\ True.
+        //     Proof.
+        //       split.
+        //       + split.
+        //         - exact I.
+        //         - exact I.
+        //       + exact I.
+        //     Qed.
+        //
+        // `)
       ]),
     addsToProcessStream,
     editAtBecauseEditorChange,
     editAtFromBackwardGoTo$,
   ]);
 
-  // Disabled, see edit-stage.ts for reason why
-
   coqtopOutput$s.response$
     // keep only responses for adds produced by PeaCoq
     .filter((r) => r.input instanceof CoqtopInput.AddPrime && r.input.data !== undefined)
     .subscribe((r) => {
       const stateId = r.contents[0];
-      const edit = r.input.data.edit;
-      const stage = edit.stage;
-      if (stage instanceof EditStage.ToProcess) {
-        edit.stage = new EditStage.BeingProcessed(stage, stateId);
+      const edit: IEdit<any> = r.input.data.edit;
+      if (edit.stage instanceof Edit.ToProcess) {
+        const newStage = new Edit.BeingProcessed(edit.stage, stateId);
+        const newEdit = edit.setStage(newStage);
+        if (Global.coqDocument.getEditsToProcess().length === 0) {
+          Global.coqDocument.moveCursorToPositionAndCenter(newEdit.stopPosition);
+        }
       }
     });
 
-  coqtopOutput$s.response$
-    .filter((r) => r.input instanceof CoqtopInput.Goal && r.input.data !== undefined)
-    .subscribe((r) => {
-      r.input.data.goals = new Goals(r.contents);
-      // r.input.data.goals = goals;
-      // const edit = r.input.data.edit;
-      // const stage = edit.stage;
-      // if (stage instanceof EditStage.BeingProcessed) {
-      //   edit.stage = new EditStage.Ready(stage, goals);
-      //   if (Global.coqDocument.getEditStagesToProcess().length === 0) {
-      //     Global.coqDocument.moveCursorToPositionAndCenter(stage.getStopPosition());
-      //   }
-      // }
-    });
-
-  coqtopOutput$s.response$
-    .filter((r) => r.input instanceof CoqtopInput.QueryPrime && r.input.data !== undefined)
-    .subscribe((r) => {
-      const edit = r.input.data.edit;
-      const stage = edit.stage;
-      const c = eval(<any>r.contents);
-      // right now c will be [] if there is no context, or a one-element list
-      const context = _(c).map((o) => new PeaCoqGoal(o.hyps, o.concl)).value();
-      if (stage instanceof EditStage.BeingProcessed) {
-        edit.stage = new EditStage.Ready(stage, r.input.data.goals, context);
-        if (Global.coqDocument.getEditStagesToProcess().length === 0) {
-          Global.coqDocument.moveCursorToPositionAndCenter(stage.getStopPosition());
+  coqtopOutput$s.feedback$
+    .filter(f => f.feedbackContent instanceof FeedbackContent.Processed)
+    .subscribe(f => {
+      if (f.editOrState === "state") {
+        const stateId = f.editOrStateId;
+        const editsBeingProcessed = Global.coqDocument.getEditsBeingProcessed();
+        const edit = _(editsBeingProcessed).find(e => e.stage.stateId === stateId);
+        if (edit) {
+          const newStage = new Edit.Processed(edit.stage);
+          const newEdit = edit.setStage(newStage);
+          if (Global.coqDocument.getEditsBeingProcessed().length === 0) {
+            Global.coqDocument.moveCursorToPositionAndCenter(newEdit.stopPosition);
+          }
         }
-        displayEdit(edit);
+      } else {
+        debugger; // not sure this ever happens
       }
     });
 
   // Logging feedbacks that I haven't figured out what to do with yet
   subscribeAndLog(
     coqtopOutput$s.feedback$
-      .filter((f) => !(f.feedbackContent instanceof FeedbackContent.FileDependency || f.feedbackContent instanceof FeedbackContent.FileLoaded))
-      .filter((f) => !(f.feedbackContent instanceof FeedbackContent.AddedAxiom))
-      .filter((f) => !(f.feedbackContent instanceof FeedbackContent.Processed && f.editOrState === "state"))
-      .filter((f) => !(f.feedbackContent instanceof FeedbackContent.ProcessingIn && f.editOrState === "state"))
-      .filter((f) => !(f.feedbackContent instanceof FeedbackContent.ErrorMsg))
+      .filter(f => !(f.feedbackContent instanceof FeedbackContent.FileDependency))
+      .filter(f => !(f.feedbackContent instanceof FeedbackContent.FileLoaded))
+      .filter(f => !(f.feedbackContent instanceof FeedbackContent.AddedAxiom))
+      .filter(f => !(f.feedbackContent instanceof FeedbackContent.Processed && f.editOrState === "state"))
+      .filter(f => !(f.feedbackContent instanceof FeedbackContent.ProcessingIn && f.editOrState === "state"))
+      .filter(f => !(f.feedbackContent instanceof FeedbackContent.ErrorMsg))
+      .distinctUntilChanged()
   );
 
   // coqtopOutput$s.feedback$
@@ -365,12 +380,12 @@ $(document).ready(() => {
 
   coqtopOutput$s.error$
     .subscribe((e) => {
-      let failedEdit = Global.coqDocument.getEditStagesBeingProcessed()[0].edit;
+      const failedEdit = Global.coqDocument.getEditsBeingProcessed()[0];
       Global.coqDocument.removeEditAndFollowingOnes(failedEdit);
       Global.tabs.errors.setValue(e.message, true);
       e.location.fmap((loc) => {
-        const errorStart = Global.coqDocument.movePositionRight(failedEdit.getStartPosition(), loc.startPos);
-        const errorStop = Global.coqDocument.movePositionRight(failedEdit.getStartPosition(), loc.stopPos);
+        const errorStart = Global.coqDocument.movePositionRight(failedEdit.startPosition, loc.startPos);
+        const errorStop = Global.coqDocument.movePositionRight(failedEdit.startPosition, loc.stopPos);
         const errorRange = new AceAjax.Range(errorStart.row, errorStart.column, errorStop.row, errorStop.column);
         Global.coqDocument.markError(errorRange);
       });
@@ -379,8 +394,9 @@ $(document).ready(() => {
   coqtopOutput$s.response$
     .filter(r => r.input instanceof CoqtopInput.EditAt)
     .subscribe(r => {
-      const readyStages = _(Global.coqDocument.getEditStagesReady());
-      const firstStageAfter = _(readyStages).find(s => s.stateId > (<CoqtopInput.EditAt>r.input).stateId);
+      const processedEdits = _(Global.coqDocument.getProcessedEdits());
+      const firstStageAfter =
+        _(processedEdits).find(e => e.stateId > (<CoqtopInput.EditAt>r.input).stateId);
       if (firstStageAfter) {
         Global.coqDocument.removeEditAndFollowingOnes(firstStageAfter.edit);
       }

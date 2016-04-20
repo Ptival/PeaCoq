@@ -730,7 +730,7 @@ function sepV(): PpCmds { return [].concat(str(","), spc()); }
 
 function constrLoc(c: ConstrExpr): CoqLocation {
   if (c instanceof CRef) {
-    let ref = c.ref;
+    let ref = c.reference;
     if (ref instanceof Ident) {
       return ref.id[0];
     }
@@ -872,17 +872,17 @@ function prGen(
 
       if (a instanceof CApp) {
         // TODO: ldots_var
-        let pf = a.function[0];
-        let f = a.function[1];
+        let pf = a.funct[0];
+        let f = a.funct[1];
         return pf.caseOf<PpResult>({
           nothing: () => {
             let b = <CApp>a; // TS bug
-            let [f, l] = [b.function[1], b.arguments];
+            let [f, l] = [b.funct[1], b.args];
             return ret(prApp(prmt, f, l), lApp);
           },
           just: (pf) => {
             let b = <CApp>a; // TS bug
-            let [i, f, l] = [pf, b.function[1], b.arguments];
+            let [i, f, l] = [pf, b.funct[1], b.args];
             let [l1, l2] = chop(i, l);
             let [c, rest] = sepLast(l1);
             // TODO: assert c[1] is empty option?
@@ -1048,7 +1048,7 @@ function prGen(
       }
 
       if (a instanceof CRef) {
-        let [r, us] = [a.ref, a.universeInstance];
+        let [r, us] = [a.reference, a.universeInstance];
         return ret(
           prCRef(r, us),
           lAtom

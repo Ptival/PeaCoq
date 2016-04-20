@@ -6,20 +6,20 @@ export abstract class CoqtopInput {
 }
 
 export class AddPrime extends CoqtopInput {
-  add: string;
-  constructor(a: string) {
+  constructor(
+    public add: string
+  ) {
     super();
-    this.add = a;
   }
   getArgs() { return this.add; }
   getCmd() { return "add'"; }
 }
 
 export class EditAt extends CoqtopInput {
-  stateId: number;
-  constructor(sid: number) {
+  constructor(
+    public stateId: number
+  ) {
     super();
-    this.stateId = sid;
   }
   getArgs() { return this.stateId; }
   getCmd() { return "editat"; }
@@ -32,8 +32,9 @@ export class Goal extends CoqtopInput {
 }
 
 export class Status extends CoqtopInput {
-  b: boolean;
-  constructor(b: boolean) {
+  constructor(
+    public b: boolean
+  ) {
     super();
     this.b = b;
   }
@@ -42,10 +43,10 @@ export class Status extends CoqtopInput {
 }
 
 export class QueryPrime extends CoqtopInput {
-  query: string;
-  constructor(s: string) {
+  constructor(
+    public query: string
+  ) {
     super();
-    this.query = s;
   }
   getArgs() { return this.query; }
   getCmd() { return "query'"; }

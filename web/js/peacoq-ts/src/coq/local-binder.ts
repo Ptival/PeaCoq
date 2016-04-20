@@ -5,24 +5,21 @@
 abstract class LocalBinder { }
 
 class LocalRawDef extends LocalBinder {
-  binderName: Located<NameBase>;
-  binderType: ConstrExpr;
-  constructor(n: Located<NameBase>, t: ConstrExpr) {
+  constructor(
+    public binderName: Located<NameBase>,
+    public binderType: ConstrExpr
+  ) {
     super();
-    this.binderName = n;
-    this.binderType = t;
   }
 }
 
 class LocalRawAssum extends LocalBinder {
-  names: Array<Located<NameBase>>;
-  binderKind: BinderKind;
-  term: ConstrExpr;
-  constructor(l: Array<Located<NameBase>>, bk: BinderKind, t: ConstrExpr) {
+  constructor(
+    public names: Array<Located<NameBase>>,
+    public binderKind: BinderKind,
+    public term: ConstrExpr
+  ) {
     super();
-    this.names = l;
-    this.binderKind = bk;
-    this.term = t;
   }
 }
 
