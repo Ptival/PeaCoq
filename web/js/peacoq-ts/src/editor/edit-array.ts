@@ -28,10 +28,11 @@ export class EditArray implements IEditArray {
     query: string,
     previousEdit: Maybe<IEdit<any>>,
     stage: IToProcess
-  ) {
+  ): IEdit<IToProcess> {
     const edit = new Edit(this, startPosition, stopPosition, query, previousEdit, stage);
     this.edits.push(edit);
     this.changeSubject.onNext({});
+    return <any>edit;
   }
 
   getAll(): IEdit<any>[] { return this.edits; }
@@ -129,6 +130,7 @@ class Edit<S extends IEditStage> implements IEdit<S> {
   setStage<T extends IEditStage>(stage: T): Edit<T> {
     // no strong update, so circumventing the type system
     this.stage = <any>stage;
+    this.array.stageChangeObserver.onNext({});
     return <any>this;
   }
 
