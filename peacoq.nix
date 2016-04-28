@@ -19,5 +19,5 @@ mkDerivation {
     utf8-string xml-conduit xml-types
   ];
   description = "PeaCoq is a web front-end to Coq";
-  license = stdenv.lib.licenses.unfree;
+  license = stdenv.lib.licenses.mit;
 }

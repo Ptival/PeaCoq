@@ -26,7 +26,7 @@ let
         ];
         executableToolDepends = [ alex happy ];
         description = "PeaCoq is a web front-end to Coq";
-        license = stdenv.lib.licenses.bsd3;
+        license = stdenv.lib.licenses.mit;
       };
 
   haskellPackages = if compiler == "default"
