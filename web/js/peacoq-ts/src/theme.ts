@@ -1,9 +1,10 @@
 import * as Global from "./global-variables";
 
-let afterChangeSubject = new Rx.Subject<{}>();
+const cssPath = "node_modules/w2ui/";
+
+const afterChangeSubject = new Rx.Subject<{}>();
 export const afterChange$ = afterChangeSubject.asObservable();
-let cssPath = "js/lib/w2ui/";
-export let errorUnderlineClass = "theme_error_underline";
+export const errorUnderlineClass = "theme_error_underline";
 
 interface Theme {
   aceTheme: string;
@@ -32,55 +33,55 @@ interface Theme {
 }
 
 namespace BrightTheme {
-  export let aceTheme = "";
-  export let background = "rgba(255, 255, 255, 1)";
-  export let css = cssPath + "w2ui.min.css";
-  export let contextDivider = "1px solid black";
-  export let errorUnderlineStyle = "2px dotted red";
-  export let foreground = "black";
-  export let goalStroke = "black";
-  export let linkStroke = "black";
-  export let processed = "rgba(144, 238, 144, 1)";
-  export let processing = "rgba(255, 179, 71, 1)";
-  export let highlight = "deepskyblue";
-  export let separatorColor = "#999999";
-  export let svgBackground = "white";
-  export let syntaxComment = "rgb(165, 42, 42)";
-  export let syntaxGallina = "blue";
-  export let syntaxKeyword = "red";
-  export let syntaxNotation = "brown";
-  export let syntaxTactic = "rgb(147, 112, 219)";
-  export let syntaxTerminator = "red";
-  export let syntaxVariable = "rgb(147, 112, 219)";
-  export let syntaxVernacular = "rgb(255, 69, 0)";
-  export let toprocess = "rgba(173, 216, 230, 1)";
-  export let tacticFill = "#FFF056";
+  export const aceTheme = "";
+  export const background = "rgba(255, 255, 255, 1)";
+  export const css = `${cssPath}/w2ui.min.css`;
+  export const contextDivider = "1px solid black";
+  export const errorUnderlineStyle = "2px dotted red";
+  export const foreground = "black";
+  export const goalStroke = "black";
+  export const linkStroke = "black";
+  export const processed = "rgba(144, 238, 144, 1)";
+  export const processing = "rgba(255, 179, 71, 1)";
+  export const highlight = "deepskyblue";
+  export const separatorColor = "#999999";
+  export const svgBackground = "white";
+  export const syntaxComment = "rgb(165, 42, 42)";
+  export const syntaxGallina = "blue";
+  export const syntaxKeyword = "red";
+  export const syntaxNotation = "brown";
+  export const syntaxTactic = "rgb(147, 112, 219)";
+  export const syntaxTerminator = "red";
+  export const syntaxVariable = "rgb(147, 112, 219)";
+  export const syntaxVernacular = "rgb(255, 69, 0)";
+  export const toprocess = "rgba(173, 216, 230, 1)";
+  export const tacticFill = "#FFF056";
 }
 
 namespace DarkTheme {
-  export let aceTheme = "ace/theme/monokai";
-  export let background = "rgba(39, 40, 34, 1)";
-  export let css = cssPath + "w2ui-dark.min.css";
-  export let contextDivider = "1px solid white";
-  export let errorUnderlineStyle = "2px dotted red";
-  export let foreground = "white";
-  export let goalStroke = "white";
-  export let linkStroke = "white";
-  export let processed = "rgba(4, 98, 4, 1)";
-  export let processing = "rgba(185, 109, 01, 1)";
-  export let highlight = "deepskyblue";
-  export let separatorColor = "#999999";
-  export let svgBackground = "black";
-  export let syntaxComment = "rgb(165, 42, 42)";
-  export let syntaxGallina = "lightblue";
-  export let syntaxKeyword = "red";
-  export let syntaxNotation = "brown";
-  export let syntaxTactic = "rgb(147, 112, 219)";
-  export let syntaxTerminator = "red";
-  export let syntaxVariable = "rgb(147, 112, 219)";
-  export let syntaxVernacular = "rgb(255, 69, 0)";
-  export let toprocess = "rgba(73, 116, 130, 1)";
-  export let tacticFill = "#9F9006";
+  export const aceTheme = "ace/theme/monokai";
+  export const background = "rgba(39, 40, 34, 1)";
+  export const css = `${cssPath}/w2ui-dark.min.css`;
+  export const contextDivider = "1px solid white";
+  export const errorUnderlineStyle = "2px dotted red";
+  export const foreground = "white";
+  export const goalStroke = "white";
+  export const linkStroke = "white";
+  export const processed = "rgba(4, 98, 4, 1)";
+  export const processing = "rgba(185, 109, 01, 1)";
+  export const highlight = "deepskyblue";
+  export const separatorColor = "#999999";
+  export const svgBackground = "black";
+  export const syntaxComment = "rgb(165, 42, 42)";
+  export const syntaxGallina = "lightblue";
+  export const syntaxKeyword = "red";
+  export const syntaxNotation = "brown";
+  export const syntaxTactic = "rgb(147, 112, 219)";
+  export const syntaxTerminator = "red";
+  export const syntaxVariable = "rgb(147, 112, 219)";
+  export const syntaxVernacular = "rgb(255, 69, 0)";
+  export const toprocess = "rgba(73, 116, 130, 1)";
+  export const tacticFill = "#9F9006";
 }
 
 export let theme: Theme = BrightTheme;

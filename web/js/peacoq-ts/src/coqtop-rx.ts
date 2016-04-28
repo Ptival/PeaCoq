@@ -8,42 +8,28 @@ import { processSequentiallyForever } from "./rx";
 let debugCoqtop = true; // print input/output requests
 let statusPeriod = 250; // milliseconds
 
-interface CoqtopResponse {
-  input: CoqtopInput.CoqtopInput;
-  tag: string;
-  contents: Array<any>;
-}
-
-interface CoqtopOutput {
-  response: CoqtopResponse;
-  stateId: number;
-  editId: number;
-  messages: Object[];
-  feedback: Object[];
-}
-
 interface CoqtopOutputStreams {
   error$: Rx.Observable<ValueFail>;
   feedback$: Rx.Observable<IFeedback>;
   goals$: Rx.Observable<Goals>;
-  response$: Rx.Observable<CoqtopResponse>;
+  response$: Rx.Observable<ICoqtopResponse>;
   message$: Rx.Observable<IMessage>;
   // stateId$: Rx.Observable<number>;
 }
 
 export function setupCoqtopCommunication(
-  input$s: Rx.Observable<CoqtopInput.CoqtopInput>[]
+  input$s: Rx.Observable<ICoqtopInput>[]
 ): CoqtopOutputStreams {
 
-  let inputStatus$: Rx.Observable<CoqtopInput.CoqtopInput> =
+  let inputStatus$: Rx.Observable<ICoqtopInput> =
     Rx.Observable
       .interval(statusPeriod)
       .map(() => new CoqtopInput.Status(false));
 
-  let inputSubject: Rx.Subject<CoqtopInput.CoqtopInput> =
-    new Rx.Subject<CoqtopInput.CoqtopInput>();
+  let inputSubject: Rx.Subject<ICoqtopInput> =
+    new Rx.Subject<ICoqtopInput>();
 
-  let input$: Rx.ConnectableObservable<CoqtopInput.CoqtopInput> =
+  let input$: Rx.ConnectableObservable<ICoqtopInput> =
     Rx.Observable
       .merge(
       inputStatus$,
@@ -54,7 +40,7 @@ export function setupCoqtopCommunication(
 
   // subscribeAndLog(coqtopInputStream);
 
-  let outputAndError$s = processSequentiallyForever<CoqtopInput.CoqtopInput, CoqtopOutput>(input$, processCommands);
+  let outputAndError$s = processSequentiallyForever<ICoqtopInput, ICoqtopOutput>(input$, processCommands);
   const output$ = outputAndError$s.output$;
   const error$ = outputAndError$s.error$
     .map(r => {
@@ -131,7 +117,7 @@ function wrapAjax(i: JQueryAjaxSettings): Promise<any> {
   });
 }
 
-function sendCommand(input: CoqtopInput.CoqtopInput): Promise<CoqtopOutput> {
+function sendCommand(input: ICoqtopInput): Promise<ICoqtopOutput> {
   return new Promise((onFulfilled, onRejected) => {
     wrapAjax({
       type: 'POST',
@@ -141,7 +127,7 @@ function sendCommand(input: CoqtopInput.CoqtopInput): Promise<CoqtopOutput> {
       // error: e => console.log("Server did not respond", e),
       // success: r => console.log("Success", r, r[0].tag),
     })
-      .then<CoqtopOutput>(r => ({
+      .then<ICoqtopOutput>(r => ({
         response: $.extend(r[0], { input: input }),
         stateId: r[1][0],
         editId: r[1][1],
@@ -150,6 +136,9 @@ function sendCommand(input: CoqtopInput.CoqtopInput): Promise<CoqtopOutput> {
       }))
       .then<void>(r => {
         if (r.response.tag === "ValueGood") {
+          if (input.callback !== undefined) {
+            input.callback(r.response);
+          }
           // console.log("onFulfilled", r);
           onFulfilled(r);
         } else if (r.response.tag === "ValueFail") {
@@ -162,6 +151,6 @@ function sendCommand(input: CoqtopInput.CoqtopInput): Promise<CoqtopOutput> {
   });
 }
 
-function processCommands(input$: Rx.Observable<CoqtopInput.CoqtopInput>): Rx.Observable<CoqtopOutput> {
+function processCommands(input$: Rx.Observable<ICoqtopInput>): Rx.Observable<ICoqtopOutput> {
   return input$.flatMap(i => sendCommand(i));
 }

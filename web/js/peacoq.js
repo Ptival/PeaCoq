@@ -1,16 +1,20 @@
 requirejs.config({
-  baseUrl: "js/lib",
   paths: {
-    ace: "./ace",
-    "peacoq-js": "../peacoq-js",
-    "peacoq-ts": "../peacoq-ts",
+    "ace": "../bower_components/ace/lib/ace",
+    "bootstrap": "../bower_components/bootstrap/dist/js/bootstrap",
+    "d3": "../bower_components/d3/d3",
+    "jquery": "../bower_components/jquery/dist/jquery",
+    "jquery.hotkeys": "../bower_components/jQuery.Hotkeys/jquery.hotkeys",
+    "jss": "../bower_components/jss/jss",
+    "lodash": "../bower_components/lodash/lodash",
+    "MathJax": "../bower_components/MathJax/MathJax",
+    "rx.all": "../bower_components/rxjs/dist/rx.all",
+    "tsmonad": "../node_modules/tsmonad/dist/tsmonad",
+    "w2ui": "../node_modules/w2ui/w2ui",
   },
   shim: {
     "bootstrap": { deps: ["jquery"] },
     "jquery.hotkeys": { deps: ["jquery"] },
-    "MathJax-master/MathJax": { deps: ["jquery"] },
-    "peacoq-ts": { deps: ["peacoq-ts/utils"] },
-    "w2ui/w2ui": { deps: ["jquery"] },
   },
   waitSeconds: 0,
 });
@@ -20,17 +24,16 @@ requirejs([
     "ace/ace",
     "d3",
     "jquery",
-    //"jquery-ui/jquery-ui",
     "jquery.hotkeys",
     "bootstrap",
     "jss",
     "lodash",
-    "MathJax-master/MathJax",
+    "MathJax",
     "rx.all",
     "tsmonad",
-    "w2ui/w2ui",
+    "w2ui",
   ],
-  function(ace, d3, $) {
+  function(ace) {
     window.ace = ace;
     // not sure how else this is usually done
     aceRequires = [
@@ -39,7 +42,7 @@ requirejs([
     ];
     window.AceAjax = $.extend({}, ...aceRequires);
     requirejs([
-      "ace/mode/ocaml",
+      // "ace/mode/ocaml",
       "peacoq-js/highlight-coq",
       "peacoq-js/mode-coq",
       "peacoq-ts/coq/binder-kind",

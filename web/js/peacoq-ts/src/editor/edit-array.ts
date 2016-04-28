@@ -80,6 +80,8 @@ const freshEditId = (() => {
 
 class Edit<S extends IEditStage> implements IEdit<S> {
   id: number;
+  private onReady: (s: IProcessed) => void;
+  ready: Promise<IProcessed>;
   stage: S;
 
   constructor(

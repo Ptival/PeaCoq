@@ -62,7 +62,7 @@ $(document).ready(() => {
   const editorCursorPositionStream = editorCursorChangeStream
     .map(() => editor.selection.getCursor());
 
-  const editToBeDisplayed$: Rx.Observable<IEdit<any>> =
+  const editToBeDisplayed$: Rx.Observable<IEdit<IProcessed>> =
     editorCursorPositionStream
       .flatMap(pos => {
         // we want to display the last edit whose stopPos is before `pos`
@@ -74,13 +74,18 @@ $(document).ready(() => {
       })
       .distinctUntilChanged();
 
-  editToBeDisplayed$.subscribe((edit) => {
-    displayEdit(edit);
-  });
+  editToBeDisplayed$
+    .flatMapLatest(edit => {
+      const stage = edit.stage;
+      const contextPromise = stage.getContext();
+      const goalsPromise = stage.getGoals();
+      return Rx.Observable.fromPromise(Promise.all<any>([contextPromise, goalsPromise]));
+    })
+    .subscribe(([context, goals]) => displayEdit(context, goals));
 
   Global.setCoqDocument(new CoqDocument(editor));
 
-  const editAtBecauseEditorChange: Rx.Observable<CoqtopInput.CoqtopInput> =
+  const editAtBecauseEditorChange: Rx.Observable<ICoqtopInput> =
     Global.coqDocument.editorChange$
       .flatMap(change => {
         const maybeEdit = Global.coqDocument.getEditAtPosition(minPos(change.start, change.end));
@@ -288,6 +293,10 @@ $(document).ready(() => {
   //editsToProcessStream.subscribe((e) => Global.coqDocument.moveCursorToPositionAndCenter(e.getStopPosition()));
   const addsToProcessStream = Coq85.processEditsReactive(editsToProcessStream);
 
+  const queriesSubject = new Rx.Subject<ICoqtopInput>();
+  const queriesObserver = queriesSubject.asObserver();
+  const queries$ = queriesSubject.asObservable();
+
   const coqtopOutput$s = Coqtop.setupCoqtopCommunication([
     // reset Coqtop when a file is loaded
     userActionStreams.loadedFile$
@@ -295,38 +304,12 @@ $(document).ready(() => {
       .flatMap(() => [
         new CoqtopInput.EditAt(1),
         new CoqtopInput.AddPrime("Require Import PeaCoq.PeaCoq."),
-        //   new CoqtopInput.AddPrime(`
-        //
-        //     Theorem split_then_solve : (True /\\ True) /\\ True.
-        //     Proof.
-        //       split.
-        //       + split.
-        //         - exact I.
-        //         - exact I.
-        //       + exact I.
-        //     Qed.
-        //
-        // `)
       ]),
     addsToProcessStream,
     editAtBecauseEditorChange,
     editAtFromBackwardGoTo$,
+    queries$,
   ]);
-
-  coqtopOutput$s.response$
-    // keep only responses for adds produced by PeaCoq
-    .filter((r) => r.input instanceof CoqtopInput.AddPrime && r.input.data !== undefined)
-    .subscribe((r) => {
-      const stateId = r.contents[0];
-      const edit: IEdit<any> = r.input.data.edit;
-      if (edit.stage instanceof Edit.ToProcess) {
-        const newStage = new Edit.BeingProcessed(edit.stage, stateId);
-        const newEdit = edit.setStage(newStage);
-        if (Global.coqDocument.getEditsToProcess().length === 0) {
-          Global.coqDocument.moveCursorToPositionAndCenter(newEdit.stopPosition);
-        }
-      }
-    });
 
   coqtopOutput$s.feedback$
     .filter(f => f.feedbackContent instanceof FeedbackContent.Processed)
@@ -336,9 +319,12 @@ $(document).ready(() => {
         const editsBeingProcessed = Global.coqDocument.getEditsBeingProcessed();
         const edit = _(editsBeingProcessed).find(e => e.stage.stateId === stateId);
         if (edit) {
-          const newStage = new Edit.Processed(edit.stage);
+          const newStage = new Edit.Processed(edit.stage, queriesObserver);
           const newEdit = edit.setStage(newStage);
-          if (Global.coqDocument.getEditsBeingProcessed().length === 0) {
+          if (
+            Global.coqDocument.getEditsToProcess().length === 0
+            && Global.coqDocument.getEditsBeingProcessed().length === 0
+          ) {
             Global.coqDocument.moveCursorToPositionAndCenter(newEdit.stopPosition);
           }
         }
@@ -394,11 +380,11 @@ $(document).ready(() => {
   coqtopOutput$s.response$
     .filter(r => r.input instanceof CoqtopInput.EditAt)
     .subscribe(r => {
-      const processedEdits = _(Global.coqDocument.getProcessedEdits());
-      const firstStageAfter =
-        _(processedEdits).find(e => e.stateId > (<CoqtopInput.EditAt>r.input).stateId);
-      if (firstStageAfter) {
-        Global.coqDocument.removeEditAndFollowingOnes(firstStageAfter.edit);
+      const processedEdits = Global.coqDocument.getProcessedEdits();
+      const firstEditAfter =
+        _(processedEdits).find(e => e.stage.stateId > (<CoqtopInput.EditAt>r.input).stateId);
+      if (firstEditAfter) {
+        Global.coqDocument.removeEditAndFollowingOnes(firstEditAfter);
       }
     });
 

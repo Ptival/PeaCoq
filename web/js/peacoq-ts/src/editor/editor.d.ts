@@ -113,10 +113,12 @@ interface IBeingProcessed extends IEditStage, WithStateId {
 }
 
 interface IProcessed extends IEditStage, WithStateId {
-  context: Maybe<PeaCoqContext>;
+  // context: Maybe<PeaCoqContext>;
   // editId: number;
-  goals: Maybe<IGoals>;
+  // goals: Maybe<IGoals>;
   //status: IStatus;
+  getContext(): Promise<PeaCoqContext>;
+  getGoals(): Promise<IGoals>;
 }
 
 interface IEditMarker {

@@ -5,8 +5,15 @@ let contrib_name = "peacoq_plugin"
 
 DECLARE PLUGIN "peacoq_plugin"
 
+open Context
+(* open Errors *)
+open Interface
 open Peacoq_utils
+open Pp
+open Printer
 open Proof
+open Util
+(* open Vernacexpr *)
 
 let print s = Pp.msg (Pp.str s)
 
@@ -56,36 +63,56 @@ let string_of_named_declaration convert (name, maybeTerm, typ) =
   ^ string_of_constr_expr (convert typ)
   ^ " }"
 
+let process_goal sigma g =
+  let env = Goal.V82.env sigma g in
+  let min_env = Environ.reset_context env in
+  let id = Goal.uid g in
+  let ccl =
+    let norm_constr = Reductionops.nf_evar sigma (Goal.V82.concl sigma g) in
+    string_of_ppcmds (pr_goal_concl_style_env env sigma norm_constr) in
+  let process_hyp d (env,l) =
+    let d = Context.map_named_list_declaration (Reductionops.nf_evar sigma) d in
+    let d' = List.map (fun x -> (x, pi2 d, pi3 d)) (pi1 d) in
+      (List.fold_right Environ.push_named d' env,
+       (string_of_ppcmds (pr_var_list_decl env sigma d)) :: l) in
+  let (_env, hyps) =
+    Context.fold_named_list_context process_hyp
+      (Termops.compact_named_context (Environ.named_context env)) ~init:(min_env,[]) in
+  { Interface.goal_hyp = List.rev hyps; Interface.goal_ccl = ccl; Interface.goal_id = id; }
+
+type peacoq_goal =
+  { pphyps: int list
+  ; ppconcl: Term.constr
+  }
+
+let string_of_goal env sigma (hyps, concl) =
+  let convert = constr_expr_of_constr env sigma in
+  (* hyps are stored in reverse order *)
+  let hyps = List.rev hyps in
+  "{ hyps: "
+  ^ string_of_list (string_of_named_declaration convert) hyps
+  ^ ", concl: " ^ string_of_constr_expr (convert concl)
+  ^ "}"
+
+let format_for_peacoq env sigma g =
+  let hyps = Environ.named_context_of_val (Goal.V82.nf_hyps sigma g) in
+  let concl = Goal.V82.concl sigma g in
+  "{ ppgoal: " ^ string_of_goal env sigma (hyps, concl)
+  ^ "; goal: " ^ "TODO"
+  ^ " }"
+
 VERNAC COMMAND EXTEND PeaCoqQuery CLASSIFIED AS QUERY
 | [ "PeaCoqGetContext" ] ->
    [
+
      try
-     let (evm, env) = Lemmas.get_current_context () in
+
+     let (sigma, env) = Lemmas.get_current_context () in
      let proof = Pfedit.get_pftreestate () in
+     let goals = Proof.map_structured_proof proof (format_for_peacoq env) in
+     print (string_of_pre_goals (fun s -> s) goals);
 
-     let goals =
-       Proof.map_structured_proof
-         proof
-         (fun evm g ->
-           (Environ.named_context_of_val (Goal.V82.nf_hyps evm g),
-            Goal.V82.concl evm g))
-     in
-
-     let convert = constr_expr_of_constr env evm in
-
-     let string_of_goal (hyps, concl) =
-       (* hyps are stored in reverse order *)
-       let hyps = List.rev hyps in
-       "{ hyps:\n"
-       ^ string_of_list (string_of_named_declaration convert) hyps
-       ^ "\n, concl:\n" ^ string_of_constr_expr (convert concl)
-       ^ "\n}"
-     in
-
-     print (string_of_list string_of_goal goals.fg_goals);
-
-     with e -> print (string_of_list (fun _ -> "") []);
-     (*let glob_constr = Constrintern.intern_constr env constr_expr in*)
+     with e -> print "";
 
    ]
 END;;

@@ -337,23 +337,18 @@ There are two ways to go:
 
 export function processEditsReactive(
   edit: Rx.Observable<IEdit<IToProcess>>
-): Rx.Observable<CoqtopInput.CoqtopInput> {
+): Rx.Observable<ICoqtopInput> {
   return edit
     // need `concatMap` here to guarantee the commands are processed in
     // the correct order: add, goal, context, add, goal, context, add, ...
-    .concatMap(e => {
-      let data = { edit: e };
+    .map(e => {
       let add = new CoqtopInput.AddPrime(e.query);
-      add.data = data;
-      // let goal = new CoqtopInput.Goal();
-      // goal.data = data;
-      // let context = new CoqtopInput.QueryPrime("PeaCoqGetContext.");
-      // context.data = data;
-      return [
-        add,
-        // goal,
-        // context,
-      ];
+      add.callback = r => {
+        const stateId = r.contents[0];
+        const newStage = new Edit.BeingProcessed(e.stage, stateId);
+        e.setStage(newStage);
+      };
+      return add;
     })
     .share();
 }

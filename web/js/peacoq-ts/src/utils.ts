@@ -1,7 +1,9 @@
 /*
 DO NOT TURN THIS FILE INTO A MODULE AS SOME NON-MODULE FILES USE IT!
 */
+let tup1: [number, number] = [1, 2, 3];
 
+let tup2: [number, number] = <any>[1, 2, "foo"];
 let nbsp = "\u00A0";
 
 function unbsp(s: string): string {

@@ -1,4 +1,6 @@
+import * as CoqtopInput from "../coqtop-input";
 import { EditMarker } from "./edit-marker";
+import * as Global from "../global-variables";
 import * as Theme from "../theme";
 
 export class ToProcess implements IToProcess {
@@ -58,20 +60,36 @@ export class BeingProcessed implements IBeingProcessed {
 */
 
 export class Processed implements IProcessed {
-  context: Maybe<PeaCoqContext>;
-  goals: Maybe<IGoals>;
+  private context: Promise<PeaCoqContext>;
+  private goals: Promise<IGoals>;
   marker: IEditMarker;
   stateId: number;
 
-  constructor(e: IBeingProcessed) {
-    // super(e.document, e.query, e.nextStageMarker(), e.id, e.previousEdit);
-    this.context = nothing(); // filled on-demand
-    this.goals = nothing(); // filled on-demand
+  constructor(
+    e: IBeingProcessed,
+    private inputObserver: Rx.Observer<ICoqtopInput>
+  ) {
     this.marker = e.nextStageMarker();
     this.stateId = e.stateId;
   }
 
   getColor() { return Theme.theme.processed; }
+
+  getContext(): Promise<PeaCoqContext> {
+    if (this.context === undefined) {
+      this.context = new Promise(onFulfilled => {
+        const query = new CoqtopInput.Query("PeaCoqGetContext.", this.stateId);
+        query.callback = r => onFulfilled(r);
+        this.inputObserver.onNext(query);
+      });
+    }
+    return this.context;
+  }
+
+  getGoals(): Promise<IGoals> {
+    // this should use the same logic as getcontext now
+    return Promise.resolve({ fgGoals: [], bgGoals: [], shelvedGoals: [], givenUpGoals: [] }); // FIXME
+  }
 
   getStateId() { return just(this.stateId); }
 

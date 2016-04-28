@@ -81,11 +81,11 @@ peacoqRoutes =
 
 data PeaCoqConfig =
   PeaCoqConfig
-  { configUserId  :: String
+  { configUserId :: String
   , configLogPath :: FilePath
   , configCoqtop :: String
   }
-  deriving (Read)
+  deriving (Read, Show)
 
 serverConfig :: MonadSnap m => PeaCoqConfig -> String -> Config m a
 serverConfig (PeaCoqConfig { configUserId = u, configLogPath = l }) nowString =

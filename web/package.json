@@ -1,0 +1,13 @@
+{
+  "name": "PeaCoq",
+  "description": "A web front-end for Coq, with benefits",
+  "author": "Valentin Robert <vrobert@cs.ucsd.edu>",
+  "license": "MIT",
+  "repository": "http://github.com/Ptival/PeaCoq",
+  "dependencies": {
+    "bower": "*",
+    "bower-requirejs": "*",
+    "tsmonad": "*",
+    "w2ui": "*"
+  }
+}

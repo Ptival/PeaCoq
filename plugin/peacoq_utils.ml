@@ -8,6 +8,7 @@ open Misctypes
 open Notation
 open Notation_term
 open Ppextend
+open Proof
 
 let quote_switch = false
 
@@ -336,7 +337,7 @@ let default_env () = {
   ninterp_only_parse = false;
 }
 
-let rec string_of_constr_expr ce = "\n" ^
+let rec string_of_constr_expr ce =
   mk_new (
       match ce with
       | CApp(loc, (pf, ce), l) ->
@@ -508,7 +509,7 @@ let string_of_interp_rule ir =
          "SynDefRule(" ^ quote(Names.KerName.to_string kernel_name) ^ ")"
     )
 
-let rec string_of_notation_constr nc = "\n" ^
+let rec string_of_notation_constr nc =
   mk_new (
       match nc with
       | NRef(gr) -> "NRef(" ^ string_of_global_reference gr ^ ")"
@@ -922,7 +923,7 @@ and mk_notation ?root:(root=None)
 
      failwith "mk_notation: missing case, see above"
 
-and string_of_expr env t = "\n" ^
+and string_of_expr env t =
   mk_new (
       match t with
       | Notation(n, cns, e) ->
@@ -965,6 +966,21 @@ and string_of_binder_expr env (nll, brk, bgk, e) =
       ^ string_of_expr env e
       ^ ")"
     )
+
+let string_of_pair string_of_a string_of_b (a, b) =
+  "[" ^ string_of_a a ^ ", " ^ string_of_b b ^ "]"
+
+let string_of_pre_goals string_of_a pgs =
+    "{\nfg_goals:\n" ^ string_of_list string_of_a pgs.fg_goals
+  ^ ",\nbg_goals:\n"
+  ^ string_of_list (
+        string_of_pair
+          (string_of_list string_of_a)
+          (string_of_list string_of_a)
+      ) pgs.bg_goals
+  ^ ",\nshelved_goals:\n" ^ string_of_list string_of_a pgs.shelved_goals
+  ^ ",\ngiven_up_goals:\n" ^ string_of_list string_of_a pgs.given_up_goals
+  ^ "\n}"
 
 (*
 let rec mk_term env (glob_constr, constr_expr): term =
