@@ -5,6 +5,14 @@
 
 [![Docker Hub](http://goto.ucsd.edu/~vrobert/docker.png)](https://hub.docker.com/r/ptival/peacoq/)
 
+Getting ready (everyone)
+------------------------
+
+```
+$ git clone https://github.com/Ptival/PeaCoq.git
+$ cd PeaCoq
+```
+
 Dependencies (NixOS)
 --------------------
 
@@ -33,8 +41,6 @@ Building (everyone)
 Optionally, you can run `cabal update`, then:
 
 ```
-$ git clone https://github.com/Ptival/PeaCoq.git
-$ cd PeaCoq
 $ ./setup.sh
 $ cabal install
 ```
