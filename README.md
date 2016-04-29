@@ -30,10 +30,20 @@ Dependencies (other distributions)
 
 Using your package manager of choice, pull the following dependencies:
 
-* Camlp5       v. 6.14   +   (not sure, just get the most recent available for you)
-* Coq          v. 8.5    +   (will **definitely** not work on <= 8.4)
-* npm (nodejs) v. 3.8.6  +/- (likely to work on earlier versions)
-* OCaml        v. 4.02.3 +   (might work on 4.01 if Coq builds with it)
+| Dependency    | Version | Bound | Comment                                      |
+| ------------- | ------- |:-----:| -------------------------------------------- |
+| cabal-install | 1.22    | ~     | Use the most recent available                |
+| Camlp5        | 6.14    | ?     | Not sure, just get the most recent available |
+| Coq           | 8.5     | +     | Will **definitely** not work on < 8.5        |
+| GHC           | 7.10.2  | ~+    | I believe I use some of the recent features  |
+| NodeJS (npm)  | 3.8.6   | ?     | Any version might work                       |
+| OCaml         | 4.02.3  | ~+    | Might work on anything >= 4, if Coq builds   |
+
+Plus, the following cabal dependencies must be pulled manually:
+
+```
+$ cabal install alex happy
+```
 
 Building (everyone)
 -------------------
