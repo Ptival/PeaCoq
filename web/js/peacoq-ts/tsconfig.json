@@ -7,9 +7,10 @@
     "module": "amd",
     "noImplicitAny": false,
     "noLib": false,
-    "outDir": "..",
+    "outDir": "../peacoq-js-of-ts",
     "preserveConstEnums": true,
     "removeComments": true,
+    "rootDir": ".",
     "suppressImplicitAnyIndexErrors": true,
     "target": "es5"
   },

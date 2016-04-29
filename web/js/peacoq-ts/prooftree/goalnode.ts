@@ -1,3 +1,5 @@
+/// <reference path="./prooftree.d.ts"/>
+
 import { ProofTreeNode } from "./prooftreenode";
 import { Strictly } from "./../strictly";
 

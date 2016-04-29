@@ -1,3 +1,5 @@
+/// <reference path="../editor/editor.d.ts"/>
+
 import * as Global from "./../global-variables";
 
 export default MessageLevel;

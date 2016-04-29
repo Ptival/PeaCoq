@@ -10,35 +10,35 @@ interface ITabs {
   infos: IEditorTab;
   debug: IEditorTab;
   failures: IEditorTab;
-  // readonly feedback: IEditorTab;
+  // feedback: IEditorTab;
   jobs: IEditorTab;
 }
 
 /* TODO: maybe fuse the parts of the toolbar and shortcuts that overlap? */
 
 interface ToolbarStreams {
-  readonly fontDecrease: Rx.Observable<{}>;
-  readonly fontIncrease: Rx.Observable<{}>;
-  readonly goToCaret: Rx.Observable<{}>;
-  readonly load: Rx.Observable<{}>;
-  readonly next: Rx.Observable<{}>;
-  readonly previous: Rx.Observable<{}>;
-  readonly save: Rx.Observable<{}>;
+  fontDecrease: Rx.Observable<{}>;
+  fontIncrease: Rx.Observable<{}>;
+  goToCaret: Rx.Observable<{}>;
+  load: Rx.Observable<{}>;
+  next: Rx.Observable<{}>;
+  previous: Rx.Observable<{}>;
+  save: Rx.Observable<{}>;
 }
 
 interface ShortcutsStreams {
-  readonly fontIncrease: Rx.Observable<{}>;
-  readonly fontDecrease: Rx.Observable<{}>;
-  readonly goToCaret: Rx.Observable<{}>;
-  readonly load: Rx.Observable<{}>;
-  readonly next: Rx.Observable<{}>;
-  readonly previous: Rx.Observable<{}>;
-  readonly save: Rx.Observable<{}>;
+  fontIncrease: Rx.Observable<{}>;
+  fontDecrease: Rx.Observable<{}>;
+  goToCaret: Rx.Observable<{}>;
+  load: Rx.Observable<{}>;
+  next: Rx.Observable<{}>;
+  previous: Rx.Observable<{}>;
+  save: Rx.Observable<{}>;
 }
 
 interface IEditArray {
-  readonly change$: Rx.Observable<{}>;
-  readonly stageChangeObserver: Rx.Observer<{}>;
+  change$: Rx.Observable<{}>;
+  stageChangeObserver: Rx.Observer<{}>;
   createEdit(
     document: ICoqDocument,
     startPosition: AceAjax.Position,
@@ -56,11 +56,11 @@ interface IEditArray {
 }
 
 interface ICoqDocument {
-  readonly editor: AceAjax.Editor;
-  readonly editorChange$: Rx.Observable<AceAjax.EditorChangeEvent>;
-  readonly edits: IEditArray;
-  readonly endAnchor: AceAjax.Anchor;
-  readonly session: AceAjax.IEditSession;
+  editor: AceAjax.Editor;
+  editorChange$: Rx.Observable<AceAjax.EditorChangeEvent>;
+  edits: IEditArray;
+  endAnchor: AceAjax.Anchor;
+  session: AceAjax.IEditSession;
   getAllEdits(): IEdit<any>[];
   getEditAtPosition(pos: AceAjax.Position): Maybe<IEdit<any>>;
   getEditsBeingProcessed(): IEdit<IBeingProcessed>[];
@@ -77,13 +77,13 @@ interface ICoqDocument {
 }
 
 interface IEdit<S extends IEditStage> {
-  readonly array: IEditArray;
-  readonly id: number;
-  readonly previousEdit: Maybe<IEdit<any>>;
-  readonly query: string;
-  readonly stage: S;
-  readonly startPosition: AceAjax.Position;
-  readonly stopPosition: AceAjax.Position;
+  array: IEditArray;
+  id: number;
+  previousEdit: Maybe<IEdit<any>>;
+  query: string;
+  stage: S;
+  startPosition: AceAjax.Position;
+  stopPosition: AceAjax.Position;
   containsPosition(p: AceAjax.Position): boolean;
   getColor(): string;
   getPreviousStateId(): Maybe<number>;
@@ -95,7 +95,7 @@ interface IEdit<S extends IEditStage> {
 }
 
 interface IEditStage {
-  readonly marker: IEditMarker;
+  marker: IEditMarker;
   getColor(): string;
   getStateId(): Maybe<number>;
 }

@@ -1,3 +1,5 @@
+/// <reference path="./prooftree.d.ts"/>
+
 import { FakeNode } from "./fakenode";
 import { GoalNode } from "./goalnode";
 import * as ProofTreeUtils from "./utils";
