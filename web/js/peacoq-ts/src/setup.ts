@@ -1,5 +1,3 @@
-///<reference path="./typings/browser.d.ts"/>
-
 import * as FeedbackContent from "./coq/feedback-content";
 
 import * as Coq85 from "./editor/coq85";
