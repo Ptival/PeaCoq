@@ -86,12 +86,12 @@ Note: certain shortcuts offer a poor user experience on Windows and possibly Mac
 They will eventually be re-bind-able. Feel free to alter them in
 `web/js/peacoq-ts/editor/keybindings.ts`.
 
-| Shortcut      | Action        |
-| ------------- | ------------- |
-| <C> <M> L     | Load a file   |
-| <C> <M> S     | Save a file   |
-| <C> <M> Up    | Step backward |
-| <C> <M> Right | Step to caret |
-| <C> <M> Down  | Step forward  |
-| <C> <M> +     | Increase font |
-| <C> <M> -     | Decrease font |
+| Shortcut        | Action        |
+| --------------- | ------------- |
+| `<C> <M> L`     | Load a file   |
+| `<C> <M> S`     | Save a file   |
+| `<C> <M> Up`    | Step backward |
+| `<C> <M> Right` | Step to caret |
+| `<C> <M> Down`  | Step forward  |
+| `<C> <M> +`     | Increase font |
+| `<C> <M> -`     | Decrease font |
