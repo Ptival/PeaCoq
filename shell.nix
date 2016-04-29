@@ -9,6 +9,7 @@ nixpkgs.lib.overrideDerivation
         ocaml_4_02
         ocamlPackages.camlp5_6_strict
         nodejs-5_x
+        zlib
       ]);
     }
   )

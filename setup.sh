@@ -12,7 +12,12 @@ camlp5 -v       >/dev/null 2>&1 || missing "camlp5"
 coqc -v         >/dev/null 2>&1 || missing "coq"
 ocamlc -v       >/dev/null 2>&1 || missing "ocaml"
 
-cabal install --only-dependencies
+if [ -d "${HOME}/.nix-profile" ]; then
+  CABALFLAGS="--extra-include-dirs=${HOME}/.nix-profile/include --extra-lib-dirs=${HOME}/.nix-profile/lib"
+else
+  CABALFLAGS=""
+fi
+cabal install --only-dependencies ${CABALFLAGS}
 cabal configure
 cabal build
 
