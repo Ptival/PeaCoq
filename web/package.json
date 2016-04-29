@@ -6,7 +6,6 @@
   "repository": "http://github.com/Ptival/PeaCoq",
   "dependencies": {
     "bower": "*",
-    "bower-requirejs": "*",
     "tsmonad": "*",
     "w2ui": "*"
   }
