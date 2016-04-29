@@ -5,15 +5,10 @@ let contrib_name = "peacoq_plugin"
 
 DECLARE PLUGIN "peacoq_plugin"
 
-open Context
-(* open Errors *)
-open Interface
 open Peacoq_utils
 open Pp
 open Printer
-open Proof
 open Util
-(* open Vernacexpr *)
 
 let print s = Pp.msg (Pp.str s)
 
@@ -63,6 +58,22 @@ let string_of_named_declaration convert (name, maybeTerm, typ) =
   ^ string_of_constr_expr (convert typ)
   ^ " }"
 
+module Interface = struct
+
+  type goal = {
+      goal_id : string;
+      goal_hyp : string list;
+      goal_ccl : string;
+    }
+
+  let string_of_goal g =
+    "{ goal_id: " ^ g.goal_id
+    ^ ", goal_hyp: " ^ string_of_list (fun s -> s) g.goal_hyp
+    ^ ", goal_ccl: " ^ g.goal_ccl
+    ^ "}"
+
+end
+
 let process_goal sigma g =
   let env = Goal.V82.env sigma g in
   let min_env = Environ.reset_context env in
@@ -98,7 +109,7 @@ let format_for_peacoq env sigma g =
   let hyps = Environ.named_context_of_val (Goal.V82.nf_hyps sigma g) in
   let concl = Goal.V82.concl sigma g in
   "{ ppgoal: " ^ string_of_goal env sigma (hyps, concl)
-  ^ "; goal: " ^ "TODO"
+  ^ "; goal: " ^ Interface.string_of_goal (process_goal sigma g)
   ^ " }"
 
 VERNAC COMMAND EXTEND PeaCoqQuery CLASSIFIED AS QUERY
