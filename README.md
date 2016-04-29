@@ -46,13 +46,21 @@ $ cabal install
 ```
 
 `setup.sh` will perform a lot of operations:
+
 1. `cabal configure` to make sure PeaCoq is build-able
+
 2. `cabal build` PeaCoq's server-side
+
 3. `make` the OCaml plugin that enriches Coq's protocol for PeaCoq
+
 4. `npm install` some JavaScript modules needed by the front-end
+
 5. `bower install` some JavaScript modules needed by the front-end
+
 6. `typings install` some TypeScript definitions needed to type-check the front-end
+
 7. `tsc -p .` transpiles the front-end from TypeScript to JavaScript
+
 8. Finally a configuration file will be created in your home directory
 
 So it will take a while the first time, and steps 1, 4, 5, and 6 will
