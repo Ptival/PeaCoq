@@ -12,6 +12,7 @@ camlp5 -v       >/dev/null 2>&1 || missing "camlp5"
 coqc -v         >/dev/null 2>&1 || missing "coq"
 ocamlc -v       >/dev/null 2>&1 || missing "ocaml"
 
+cabal install --only-dependencies
 cabal configure
 cabal build
 
