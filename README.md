@@ -1,5 +1,5 @@
-PeaCoq ![PeaCoq logo](http://goto.ucsd.edu/~vrobert/peacoq.png)
-=================================================================
+![PeaCoq logo](http://goto.ucsd.edu/~vrobert/peacoq.png) PeaCoq
+===============================================================
 
 [![Build Status](https://travis-ci.org/Ptival/PeaCoq.svg)](https://travis-ci.org/Ptival/PeaCoq)
 
