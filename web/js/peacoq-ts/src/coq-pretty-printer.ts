@@ -228,7 +228,7 @@ function prListSepLastSep<T>(
       if (noEmpty && isMt(e)) {
         return start(t);
       } else {
-        function aux(l: T[]): PpCmds {
+        const aux = (l: T[]) => {
           if (l.length === 0) {
             return mt();
           } else {
