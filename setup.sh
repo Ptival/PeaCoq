@@ -22,7 +22,7 @@ cabal configure
 cabal build
 
 ( cd plugin
-  make
+  make clean && make
 )
 
 ( cd web
