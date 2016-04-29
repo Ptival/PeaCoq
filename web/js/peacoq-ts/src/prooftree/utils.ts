@@ -12,19 +12,12 @@ export function getActiveProofTree(): Maybe<IProofTree> {
   );
 }
 
-type Hypothesis = {
-  div: HTMLElement;
-  hName: string;
-  hValue: string;
-  hType: string;
-}
-
 /*
  * Returns a rect of the absolute position of [elmt] within the canvas. It needs
  * [node] in order to return absolute values, where [node] is the node element
  * within which [elmt] lives.
  */
-function elmtRect(node, elmt) {
+function elmtRect(node: IProofTreeNode, elmt: HTMLElement) {
   let rect = elmt.getBoundingClientRect();
   let containerRect = $(elmt).parents("foreignObject")[0].getBoundingClientRect();
   let left = node.getScaledX() + deltaX(containerRect, rect);
@@ -35,16 +28,16 @@ function elmtRect(node, elmt) {
   };
 }
 
-function elmtRect0(node, elmt) {
-  let rect = elmt.getBoundingClientRect();
-  let containerRect = $(elmt).parents("foreignObject")[0].getBoundingClientRect();
-  let left = node.cX0 + deltaX(containerRect, rect);
-  let top = node.cY0 + deltaY(containerRect, rect);
-  return {
-    "left": left, "right": left + rect.width, "width": rect.width,
-    "top": top, "bottom": top + rect.height, "height": rect.height,
-  };
-}
+// function elmtRect0(node: IProofTreeNode, elmt: HTMLElement) {
+//   let rect = elmt.getBoundingClientRect();
+//   let containerRect = $(elmt).parents("foreignObject")[0].getBoundingClientRect();
+//   let left = node.cX0 + deltaX(containerRect, rect);
+//   let top = node.cY0 + deltaY(containerRect, rect);
+//   return {
+//     "left": left, "right": left + rect.width, "width": rect.width,
+//     "top": top, "bottom": top + rect.height, "height": rect.height,
+//   };
+// }
 
 type Rectangle = {
   bottom: number;
@@ -292,8 +285,8 @@ let diffColor = (function() {
     "#ce6dbd",
     "#de9ed6",
   ];
-  let scale = d3.scale.ordinal().range(colors);
-  return function(n) {
+  let scale = d3.scale.ordinal<number, string>().range(colors);
+  return function(n: number) {
     return scale(n);
   };
 })();

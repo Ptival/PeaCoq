@@ -58,7 +58,7 @@ function assert(condition: boolean, message: string): void {
   }
 }
 
-function avg(n1, n2) { return (n1 + n2) / 2; }
+function avg(n1: number, n2: number): number { return (n1 + n2) / 2; }
 
 function parseSVGTransform(a: string): any {
   let b = {};
@@ -79,7 +79,7 @@ function MissingOverload(fn: string, o: Object) {
   return (`Missing overload ${fn}, constructor: ${o.constructor.toString()}`);
 }
 
-function isUpperCase(character) {
+function isUpperCase(character: string): boolean {
   return /^[A-Z]$/.test(character);
 }
 
@@ -88,9 +88,9 @@ function outputError(error: any): void {
   console.log(error, error.stack);
 }
 
-function mkDot(x, y) { return { "x": x, "y": y }; }
+function mkDot(x: number, y: number): XY { return { "x": x, "y": y }; }
 
-function showDot(d) { return `${d.x} ${d.y}`; }
+function showDot(d: XY): string { return `${d.x} ${d.y}`; }
 
 /*
 
@@ -99,7 +99,7 @@ function showDot(d) { return `${d.x} ${d.y}`; }
   h_____g     f_____e
 
 */
-function connectRects(r1, r2, rightsLeft) {
+function connectRects(r1: ClientRect, r2: ClientRect, rightsLeft: number) {
   //console.log("rect1", r1, "rect2", r2);
   if (rightsLeft === undefined) { rightsLeft = r2.left; }
   let a = mkDot(r1.left, r1.top);
@@ -125,7 +125,7 @@ function connectRects(r1, r2, rightsLeft) {
   );
 }
 
-function byDiffId(d) {
+function byDiffId(d: Diff): string {
   let res = "{";
   if (d.oldHyp !== undefined) { res += d.oldHyp.hName; }
   res += "-";
@@ -133,12 +133,18 @@ function byDiffId(d) {
   return res + "}";
 }
 
-function sameNameAs(a) {
-  return function(b) { return a.hName === b.hName; };
+function sameNameAs(a: Hypothesis): (b: Hypothesis) => boolean {
+  return function(b: Hypothesis) { return a.hName === b.hName; };
 }
 
-function computeDiffList(oldHypsOriginal, newHypsOriginal) {
-  let diffList = [];
+interface Diff {
+  oldHyp: Hypothesis;
+  newHyp: Hypothesis;
+  isJump: boolean;
+}
+
+function computeDiffList(oldHypsOriginal: Hypothesis[], newHypsOriginal: Hypothesis[]): Diff[] {
+  let diffList: Diff[] = [];
 
   // slice() creates a shallow copy, since we will mutate this
   let oldHyps = oldHypsOriginal.slice();

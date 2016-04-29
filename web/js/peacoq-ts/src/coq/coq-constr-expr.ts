@@ -6,15 +6,15 @@ CODE TO RETURN QUALIFIED EXPRESSIONS!
 abstract class ConstrExpr { }
 
 type BinderExpr = [
-  Array<Located<NameBase>>,
+  Located<NameBase>[],
   BinderKind,
   ConstrExpr
 ];
 
 type ConstrNotationSubstitution = [
-  Array<ConstrExpr>,
-  Array<Array<ConstrExpr>>,
-  Array<Array<LocalBinder>>
+  ConstrExpr[],
+  ConstrExpr[][],
+  LocalBinder[][]
 ];
 
 type ProjFlag = Maybe<number>;
@@ -40,7 +40,7 @@ type CaseExpr = [
 
 type BranchExpr = [
   CoqLocation,
-  Array<Located<Array<CasesPatternExpr>>>,
+  Located<CasesPatternExpr[]>[],
   ConstrExpr
 ];
 
@@ -77,9 +77,9 @@ class CFix extends ConstrExpr {
 class CHole extends ConstrExpr {
   constructor(
     public location: CoqLocation,
-    public evarKinds,
-    public introPatternNamingExpr,
-    public rawGenericArgument
+    public evarKinds: any,
+    public introPatternNamingExpr: any,
+    public rawGenericArgument: any
   ) {
     super();
   }
@@ -88,7 +88,7 @@ class CHole extends ConstrExpr {
 class CLambdaN extends ConstrExpr {
   constructor(
     public location: CoqLocation,
-    public binders: Array<BinderExpr>,
+    public binders: BinderExpr[],
     public body: ConstrExpr
   ) {
     super();
@@ -109,7 +109,7 @@ class CLetIn extends ConstrExpr {
 class CLetTuple extends ConstrExpr {
   constructor(
     public location: CoqLocation,
-    public names: Array<Located<Name>>,
+    public names: Located<Name>[],
     public returnType: [Maybe<Located<Name>>, Maybe<ConstrExpr>],
     public bound: ConstrExpr,
     public body: ConstrExpr
@@ -126,7 +126,7 @@ class CNotation extends ConstrExpr {
     public notation: Notation,
     public substitution: ConstrNotationSubstitution,
     public precedence: number,
-    public unparsing: Array<Unparsing>
+    public unparsing: Unparsing[]
   ) {
     super();
   }
@@ -135,7 +135,7 @@ class CNotation extends ConstrExpr {
 class CProdN extends ConstrExpr {
   constructor(
     public location: CoqLocation,
-    public binderList: Array<BinderExpr>,
+    public binderList: BinderExpr[],
     public returnExpr: ConstrExpr
   ) {
     super();
@@ -169,7 +169,7 @@ class CSort extends ConstrExpr {
   }
 }
 
-function extractProdBinders(a: ConstrExpr): [Array<LocalBinder>, ConstrExpr] {
+function extractProdBinders(a: ConstrExpr): [LocalBinder[], ConstrExpr] {
   if (a instanceof CProdN) {
     let [loc, bl, c] = [a.location, a.binderList, a.returnExpr];
     if (bl.length === 0) {

@@ -7,7 +7,7 @@ abstract class CasesPatternExpr { }
 
 class CPatCstr extends CasesPatternExpr {
   constructor(
-    public location: Location,
+    public location: CoqLocation,
     public reference: Reference,
     public cases1: CasesPatternExpr[],
     public cases2: CasesPatternExpr[]
@@ -18,7 +18,7 @@ class CPatCstr extends CasesPatternExpr {
 
 class CPatAtom extends CasesPatternExpr {
   constructor(
-    public location: Location,
+    public location: CoqLocation,
     public reference: Maybe<Reference>
   ) {
     super();
@@ -31,7 +31,7 @@ class CPatAtom extends CasesPatternExpr {
 
 class CPatPrim extends CasesPatternExpr {
   constructor(
-    public location: Location,
+    public location: CoqLocation,
     public token: PrimToken
   ) {
     super();
@@ -42,7 +42,7 @@ class CPatPrim extends CasesPatternExpr {
 
 class CPatDelimiters extends CasesPatternExpr {
   constructor(
-    public location: Location,
+    public location: CoqLocation,
     public string: string,
     public cases: CasesPatternExpr
   ) {

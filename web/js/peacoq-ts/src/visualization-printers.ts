@@ -17,7 +17,7 @@ function markDifferent(s: string): string {
   return `<span class="syntax peacoq-diff">${s}</span>`;
 }
 
-function syntax(s) { return `<span class="syntax">${s}</span>`; }
+function syntax(s: string): string { return `<span class="syntax">${s}</span>`; }
 
 function htmlPrintPpCmdDiff(p: PpCmdType, old: PpCmdType): string {
   if (p.constructor !== old.constructor) {

@@ -96,3 +96,10 @@ interface ITacticGroupNode extends IProofTreeNode {
 
 declare type WorklistItem = () => Promise<TacticGroup[]>;
 declare type XY = { x: number; y: number; }
+
+interface Hypothesis {
+  div: HTMLElement;
+  hName: string;
+  hValue: string;
+  hType: string;
+}

@@ -126,7 +126,7 @@ $(document).ready(() => {
   const rightLayout = w2ui[rightLayoutName];
   bottomLayout = w2ui[bottomLayoutName];
   const contextTabs = w2ui[rightLayoutName + "_main_tabs"];
-  contextTabs.onClick = function(event) { $("#myTabsContent").html(event.target); };
+  contextTabs.onClick = function(event: W2UI.W2Event) { $("#myTabsContent").html(event.target); };
   const coqtopTabs = w2ui[rightLayoutName + "_bottom_tabs"];
 
   bottomLayout.on({ type: "render", execute: "after" }, () => {
@@ -576,7 +576,7 @@ function hideProofTreePanel(): void {
 
 function showProofTreePanel(): Promise<{}> {
   return new Promise(function(onFulfilled) {
-    const handler = function(event) {
+    const handler = function(event: W2UI.W2Event) {
       event.onComplete = onFulfilled;
       bottomLayout.off("show", handler);
     };

@@ -33,7 +33,7 @@ function beginOfBinder(b: LocalBinder): number {
   throw MatchFailure("beginOfBinder", b);
 }
 
-function beginOfBinders(bl) {
+function beginOfBinders(bl: LocalBinder[]) {
   if (bl.length === 0) { return 0; }
   else { return beginOfBinder(bl[0]); }
 }

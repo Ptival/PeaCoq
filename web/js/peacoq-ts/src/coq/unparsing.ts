@@ -17,7 +17,7 @@ class UnpListMetaVar extends Unparsing {
   constructor(
     public index: number,
     public parenRelation: ParenRelation,
-    public unparsing: Array<Unparsing>
+    public unparsing: Unparsing[]
   ) {
     super();
   }
@@ -44,7 +44,7 @@ class UnpTerminal extends Unparsing {
 class UnpBox extends Unparsing {
   constructor(
     public box: PpBox,
-    public unparsing: Array<Unparsing>
+    public unparsing: Unparsing[]
   ) {
     super();
   }
