@@ -42,7 +42,6 @@ Optionally, you can run `cabal update`, then:
 
 ```
 $ ./setup.sh
-$ cabal install
 ```
 
 `setup.sh` will perform a lot of operations:
