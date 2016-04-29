@@ -8,9 +8,11 @@
 Dependencies (NixOS)
 --------------------
 
-For all of you 1337 hax0rz, a `nix-shell` should pull all the necessary dependencies:
+For all of you 1337 hax0rz, a `nix-shell` should pull all the necessary dependencies.
+You will need cabal2nix to turn `peacoq.cabal` into `peacoq.nix`:
 
 ```
+$ cabal2nix . > peacoq.nix
 $ nix-shell
 # brace yourself, this might take a while the first time!
 ```
