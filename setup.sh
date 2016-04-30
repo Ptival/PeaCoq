@@ -7,39 +7,53 @@ function missing {
   exit 1
 }
 
+function log {
+  echo -e "\n\nPEACOQ: $1\n\n"
+}
+
 cabal --version >/dev/null 2>&1 || missing "cabal-install"
 camlp5 -v       >/dev/null 2>&1 || missing "camlp5"
 coqc -v         >/dev/null 2>&1 || missing "coq"
 ocamlc -v       >/dev/null 2>&1 || missing "ocaml"
 
 if [ ! -z "${NIX_LDFLAGS}" ] && [ ! -z "${NIX_CFLAGS_COMPILE}" ]; then
-  INCLUDEDIR=`echo ${NIX_CFLAGS_COMPILE} | grep -o '/nix/store\S*zlib\S*/include'`
+  INCLUDEDIR=`echo ${NIX_CFLAGS_COMPILE} | grep -o '/nix/store\S*zlib\S*/include' | head -1`
   echo "Setting --extra-include-dirs to: ${INCLUDEDIR}"
-  LIBDIR=`echo ${NIX_LDFLAGS} | grep -o '/nix/store\S*zlib\S*[0-9]/lib'`
+  LIBDIR=`echo ${NIX_LDFLAGS} | grep -o '/nix/store\S*zlib\S*[0-9]/lib' | head -1`
   echo "Setting --extra-lib-dirs to: ${LIBDIR}"
   CABALFLAGS="--extra-include-dirs=${INCLUDEDIR} --extra-lib-dirs=${LIBDIR}"
 else
+  LIBDIR=""
   CABALFLAGS=""
 fi
+log "Fetching Haskell dependencies"
 cabal install --only-dependencies ${CABALFLAGS}
+log "Configuring Haskell package"
 cabal configure
+log "Building Haskell package"
 cabal build
 
+log "Building OCaml plugin"
 ( cd plugin
   make clean && make
 )
 
 ( cd web
+  log "Installing npm dependencies"
   npm install
+  log "Installing bower dependencies"
   ./node_modules/bower/bin/bower install
   cd js/peacoq-ts/
+  log "Installing typings"
   ../../node_modules/typings/dist/bin.js install
+  log "Transpiling front-end"
   ../../node_modules/typescript/bin/tsc -p .
 )
 
 # TODO: the config file should not go in HOME, it's annoying for everyone
 # TODO: this config should be shared with the Haskell code somehow
 
+log "Setting up configuration file"
 PEACOQPATH=`pwd`
 CONFIGPATH="${HOME}"
 PEACOQCONFIG=".PeaCoqConfig.hs"
