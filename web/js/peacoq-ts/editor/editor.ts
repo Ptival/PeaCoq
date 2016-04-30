@@ -13,7 +13,6 @@ export function clearEdit(): void {
 }
 
 export function displayEdit(c: PeaCoqContext, g: IGoals): void {
-    debugger;
     Global.tabs.pretty.div.html("");
     _(c).take(1).each((g) => {
       Global.tabs.pretty.div.append(g.getHTML());
