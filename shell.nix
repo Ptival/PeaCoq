@@ -11,5 +11,8 @@ nixpkgs.lib.overrideDerivation
         nodejs-5_x
         zlib
       ]);
+      nativeBuildInputs = old.nativeBuildInputs ++ (with nixpkgs; [
+        zlib
+      ]);
     }
   )
