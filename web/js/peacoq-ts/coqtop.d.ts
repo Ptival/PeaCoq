@@ -19,5 +19,5 @@ interface ICoqtopOutput {
 interface ICoqtopResponse {
   input: ICoqtopInput;
   tag: string;
-  contents: Array<any>;
+  contents: any;
 }
