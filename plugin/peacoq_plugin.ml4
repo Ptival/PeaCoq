@@ -12,6 +12,9 @@ open Util
 
 let print s = Pp.msg (Pp.str s)
 
+(* don't want Pp.quote *)
+let quote = Peacoq_utils.quote
+
 (* : env -> evar_map -> constr -> constr_expr *)
 (*
 The boolean means:
@@ -49,14 +52,13 @@ let rec print_notations glob_constr = ()
 let map_option f = function None -> None | Some(x) -> Some(f x)
 
 let string_of_named_declaration convert (name, maybeTerm, typ) =
-  "{ name: "  ^ string_of_id name
-  ^ ", maybeTerm: "
-  ^ string_of_option
-      string_of_constr_expr
-      (map_option convert maybeTerm)
-  ^ ", type: "
-  ^ string_of_constr_expr (convert typ)
-  ^ " }"
+  string_of_object
+    [ ("name", string_of_id name)
+    ; ("maybeTerm", string_of_option
+                      string_of_constr_expr
+                      (map_option convert maybeTerm))
+    ; ("type", string_of_constr_expr (convert typ))
+    ]
 
 module Interface = struct
 
@@ -67,10 +69,11 @@ module Interface = struct
     }
 
   let string_of_goal g =
-    "{ goal_id: " ^ g.goal_id
-    ^ ", goal_hyp: " ^ string_of_list (fun s -> s) g.goal_hyp
-    ^ ", goal_ccl: " ^ g.goal_ccl
-    ^ "}"
+    string_of_object
+      [ ("goal_id", g.goal_id)
+      ; ("goal_hyp", string_of_list quote g.goal_hyp)
+      ; ("goal_ccl", quote g.goal_ccl)
+      ]
 
 end
 
@@ -100,17 +103,18 @@ let string_of_goal env sigma (hyps, concl) =
   let convert = constr_expr_of_constr env sigma in
   (* hyps are stored in reverse order *)
   let hyps = List.rev hyps in
-  "{ hyps: "
-  ^ string_of_list (string_of_named_declaration convert) hyps
-  ^ ", concl: " ^ string_of_constr_expr (convert concl)
-  ^ "}"
+  string_of_object
+    [ ("hyps", string_of_list (string_of_named_declaration convert) hyps)
+    ; ("concl", string_of_constr_expr (convert concl))
+    ]
 
 let format_for_peacoq env sigma g =
   let hyps = Environ.named_context_of_val (Goal.V82.nf_hyps sigma g) in
   let concl = Goal.V82.concl sigma g in
-  "{ ppgoal: " ^ string_of_goal env sigma (hyps, concl)
-  ^ "; goal: " ^ Interface.string_of_goal (process_goal sigma g)
-  ^ " }"
+  string_of_object
+    [ ("ppgoal", string_of_goal env sigma (hyps, concl))
+    ; ("goal", Interface.string_of_goal (process_goal sigma g))
+    ]
 
 VERNAC COMMAND EXTEND PeaCoqQuery CLASSIFIED AS QUERY
 | [ "PeaCoqGetContext" ] ->
