@@ -26,14 +26,14 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
   }
 
   getAllDescendants(): IProofTreeNode[] {
-    let children: IGoalNode[] = _(this.tactics).map((t) => t.goals).flatten<IGoalNode>().value();
-    let descendants: IProofTreeNode[] = _(children).map((c) => c.getAllDescendants()).flatten<IProofTreeNode>().value();
+    let children: IGoalNode[] = _(this.tactics).map(t => t.goals).flatten<IGoalNode>().value();
+    let descendants: IProofTreeNode[] = _(children).map(c => c.getAllDescendants()).flatten<IProofTreeNode>().value();
     return [].concat(children, descendants);
   }
 
   getAllGoalDescendants(): IGoalNode[] {
-    let children: IGoalNode[] = _(this.tactics).map((t) => t.goals).flatten<IGoalNode>().value();
-    let descendants: IGoalNode[] = _(children).map((c) => c.getAllGoalDescendants()).flatten<IGoalNode>().value();
+    let children: IGoalNode[] = _(this.tactics).map(t => t.goals).flatten<IGoalNode>().value();
+    let descendants: IGoalNode[] = _(children).map(c => c.getAllGoalDescendants()).flatten<IGoalNode>().value();
     return [].concat(children, descendants);
   }
 
@@ -83,7 +83,7 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
   isSolved(): boolean {
     return this.getFocusedTactic().caseOf({
       nothing: () => false,
-      just: (t) => this.isProcessed && t.isSolved(),
+      just: t => this.isProcessed && t.isSolved(),
     });
   }
 

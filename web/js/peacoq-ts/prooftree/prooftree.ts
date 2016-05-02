@@ -89,7 +89,7 @@ export class ProofTree implements IProofTree {
         return viewChildren;
       })
       .separation(
-      (d) => {
+      d => {
         // TODO: now that I put fake nodes, still need this?
         // TODO: this just won't work, need invisible children
         // for tactics without children
@@ -175,7 +175,7 @@ export class ProofTree implements IProofTree {
 
     centeredDescendant.caseOf({
       nothing: () => { self.descendantsOffset = 0; },
-      just: (d) => {
+      just: d => {
         if (d instanceof GoalNode) {
           // computing the difference in height between the <hr> is not
           // obvious...
@@ -201,7 +201,7 @@ export class ProofTree implements IProofTree {
     let visibleGrandChildren = _(curGoal.getViewGrandChildren());
     let emptyNodeArray: IProofTreeNode[] = [];
     let visibleNodes = _(emptyNodeArray);
-    curGoal.getParent().fmap((p) => {
+    curGoal.getParent().fmap(p => {
       visibleNodes = visibleNodes.concat([p]);
     });
     visibleNodes = visibleNodes.concat([curGoal]);
@@ -320,12 +320,12 @@ export class ProofTree implements IProofTree {
 
   isCurGoalChild(n: IProofTreeNode): boolean {
     let self = this;
-    return n.hasParentSuchThat((p) => self.isCurGoal(p));
+    return n.hasParentSuchThat(p => self.isCurGoal(p));
   }
 
   isCurGoalGrandChild(n: IProofTreeNode): boolean {
     let self = this;
-    return n.hasParentSuchThat((p) => self.isCurGoalChild(p));
+    return n.hasParentSuchThat(p => self.isCurGoalChild(p));
   }
 
   isCurNode(n: IProofTreeNode): boolean { return n.id === this.curNode.id; }
@@ -341,7 +341,7 @@ export class ProofTree implements IProofTree {
 
   isCurNodeChild(n: IProofTreeNode): boolean {
     let self = this;
-    return n.hasParentSuchThat((p) => self.isCurNode(p));
+    return n.hasParentSuchThat(p => self.isCurNode(p));
   }
 
   isCurNodeDescendant(strictly: Strictly, n: IProofTreeNode): boolean {
@@ -355,12 +355,12 @@ export class ProofTree implements IProofTree {
 
   isCurNodeGrandChild(n: IProofTreeNode): boolean {
     let self = this;
-    return n.hasParentSuchThat((p) => self.isCurNodeChild(p));
+    return n.hasParentSuchThat(p => self.isCurNodeChild(p));
   }
 
   isCurNodeParent(n: IProofTreeNode): boolean {
     let self = this;
-    return this.curNode.hasParentSuchThat((p) => p.id === n.id);
+    return this.curNode.hasParentSuchThat(p => p.id === n.id);
   }
 
   // isCurNodeSibling(n: ProofTreeNode): boolean {
@@ -517,7 +517,7 @@ export class ProofTree implements IProofTree {
       .append("path")
       .classed("link", true)
       .attr("fill", "none")
-      .attr("d", (d) => {
+      .attr("d", d => {
         //let src = swapXY(centerRight0(d.source));
         //let tgt = swapXY(centerLeft0(d.target));
         //return self.diagonal({ "source": src, "target": tgt });
@@ -529,7 +529,7 @@ export class ProofTree implements IProofTree {
   onLinkExit(s: d3.Selection<ProofTreeLink>): void {
     s
       .transition()
-      // .attr("d", (d) => {
+      // .attr("d", d => {
       //   return d.source.getGoalAncestor().caseOf({
       //     nothing: () => diagonal({ "source": d.source, "target": d.source }),
       //     just: (g) => diagonal({ "source": g, "target": g })
@@ -545,7 +545,7 @@ export class ProofTree implements IProofTree {
     s
       .transition()
       .style("opacity", 1)
-      .attr("d", (d) => {
+      .attr("d", d => {
         return diagonal({ "source": d.source, "target": d.target });
       })
       .attr("stroke-width", self.linkWidth.bind(self))
@@ -555,13 +555,13 @@ export class ProofTree implements IProofTree {
   onRectEnter(s: d3.selection.Enter<IProofTreeNode>): void {
     s
       .append("rect")
-      .classed("goal", (d) => d instanceof GoalNode)
-      .classed("tactic", (d) => d instanceof TacticGroupNode)
-      .attr("x", (d) => d.getOriginalScaledX())
-      .attr("y", (d) => d.getOriginalScaledY())
-      .attr("width", function(d) { return d.getWidth(); })
-      .attr("height", function(d) { return d.getHeight(); })
-      .attr("rx", function(d) { return d instanceof GoalNode ? 0 : 10; })
+      .classed("goal", d => d instanceof GoalNode)
+      .classed("tactic", d => d instanceof TacticGroupNode)
+      .attr("x", d => d.getOriginalScaledX())
+      .attr("y", d => d.getOriginalScaledY())
+      .attr("width", d => d.getWidth())
+      .attr("height", d => d.getHeight())
+      .attr("rx", d => d instanceof GoalNode ? 0 : 10)
       ;
   }
 
@@ -571,13 +571,13 @@ export class ProofTree implements IProofTree {
       // .attr("x", function(d) {
       //   return d.getGoalAncestor().caseOf({
       //     nothing: () => d.getScaledX(),
-      //     just: (gp) => gp.getScaledX(),
+      //     just: gp => gp.getScaledX(),
       //   });
       // })
       // .attr("y", function(d) {
       //   return d.getGoalAncestor().caseOf({
       //     nothing: () => d.getScaledY(),
-      //     just: (gp) => gp.getScaledY(),
+      //     just: gp => gp.getScaledY(),
       //   });
       // })
       .style("opacity", "0")
@@ -614,13 +614,13 @@ export class ProofTree implements IProofTree {
       // .attr("x", function(d) {
       //   return d.getGoalAncestor().caseOf({
       //     nothing: () => d.getScaledX(),
-      //     just: (gp) => gp.getScaledX(),
+      //     just: gp => gp.getScaledX(),
       //   });
       // })
       // .attr("y", function(d) {
       //   return d.getGoalAncestor().caseOf({
       //     nothing: () => d.getScaledY(),
-      //     just: (gp) => gp.getScaledY(),
+      //     just: gp => gp.getScaledY(),
       //   });
       // })
       .style("opacity", "0")
@@ -705,7 +705,7 @@ export class ProofTree implements IProofTree {
     //       return (
     //         _(group.tactics)
     //           .filter(
-    //           (tactic) => {
+    //           tactic => {
     //             return (
     //               !_(groupNode.tactics)
     //                 .some(function(node) {
@@ -714,7 +714,7 @@ export class ProofTree implements IProofTree {
     //               );
     //           })
     //           .map(
-    //           (tactic) => {
+    //           tactic => {
     //             return function() {
     //               return self.runTactic(tactic, groupNode);
     //             }
@@ -913,7 +913,7 @@ export class ProofTree implements IProofTree {
           if (d instanceof GoalNode) { $(body).append(d.html); }
           if (d instanceof TacticGroupNode) { d.updateNode(); }
         });
-      textEnter.attr("width", (d) => d.getWidth());
+      textEnter.attr("width", d => d.getWidth());
 
       // nodes now have a size, we can compute zooming factors
       self.computeXYFactors();
@@ -936,7 +936,7 @@ export class ProofTree implements IProofTree {
       self.viewportX = - (
         curNode.getParent().caseOf({
           nothing: () => curNode.getScaledX(),
-          just: (p) => p.getScaledX(),
+          just: p => p.getScaledX(),
         })
       );
 

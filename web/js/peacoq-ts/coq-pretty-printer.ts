@@ -343,7 +343,7 @@ function printHunks(
       let cl = pop(envlist);
       pp1 = prListWithSep(
         () => aux(sl),
-        (x) => pr([n, prec], x),
+        x => pr([n, prec], x),
         cl
       );
       pp2 = aux(l);
@@ -440,7 +440,7 @@ function prGlobSortInstance<T>(i: IGlobSortGen<T>): PpCmds {
 function prOptNoSpc<T>(pr: (t: T) => PpCmds, x: Maybe<T>): PpCmds {
   return x.caseOf({
     nothing: () => mt(),
-    just: (x) => pr(x),
+    just: x => pr(x),
   });
 }
 
@@ -450,9 +450,9 @@ function prUnivAnnot<T>(pr: (T) => PpCmds, x: T): PpCmds {
 
 function prUniverseInstance(us: Maybe<InstanceExpr>): PpCmds {
   return prOptNoSpc(
-    (x) => {
+    x => {
       return prUnivAnnot(
-        (y) => prListWithSep(spc, prGlobSortInstance, y),
+        y => prListWithSep(spc, prGlobSortInstance, y),
         x
       );
     },
@@ -495,7 +495,7 @@ function prExplArgs(
 ): PpCmds {
   return expl.caseOf({
     nothing: () => pr([lApp, new L()], a),
-    just: (expl) => {
+    just: expl => {
       let e = expl.some[1];
       if (e instanceof ExplByPos) {
         throw "Anomaly: Explicitation by position not implemented";
@@ -515,7 +515,7 @@ function prApp(
 ) {
   return ([].concat(
     pr([lApp, new L()], a),
-    prList((x) => { return [].concat(spc(), prExplArgs(pr, x)); }, l)
+    prList(x => { return [].concat(spc(), prExplArgs(pr, x)); }, l)
   ));
 }
 
@@ -607,7 +607,7 @@ function prWithComments(
   loc: CoqLocation,
   pp
 ): PpCmds {
-  return prLocated((x) => x, [loc, pp]);
+  return prLocated(x => x, [loc, pp]);
 }
 
 function prPatt(
@@ -628,7 +628,7 @@ function prPatt(
           [].concat(
             prReference(p.reference),
             prList(
-              (x) => prPatt(spc, [lApp, new L()], x),
+              x => prPatt(spc, [lApp, new L()], x),
               p.cases2
             )
           ),
@@ -641,7 +641,7 @@ function prPatt(
             str("@"),
             prReference(p.reference),
             prList(
-              (x) => prPatt(spc, [lApp, new L()], x),
+              x => prPatt(spc, [lApp, new L()], x),
               p.cases1
             )
           ),
@@ -654,12 +654,12 @@ function prPatt(
             str("@"),
             prReference(p.reference),
             prList(
-              (x) => prPatt(spc, [lApp, new L()], x),
+              x => prPatt(spc, [lApp, new L()], x),
               p.cases1
             )
           )),
           prList(
-            (x) => prPatt(spc, [lApp, new L()], x),
+            x => prPatt(spc, [lApp, new L()], x),
             p.cases2
           )
         ),
@@ -669,7 +669,7 @@ function prPatt(
       let r = p.reference;
       return r.caseOf<PpResult>({
         nothing: () => [str("_"), lAtom],
-        just: (r) => [prReference(r), lAtom],
+        just: r => [prReference(r), lAtom],
       });
       //} else if (p instanceof CPatOr) {
       // TODO
@@ -701,7 +701,7 @@ function prAsin(
 ): PpCmds {
   let prefix = na.caseOf({
     nothing: () => mt(),
-    just: (na) => [].concat(
+    just: na => [].concat(
       spc(),
       keyword("as"),
       spc(),
@@ -710,7 +710,7 @@ function prAsin(
   });
   let suffix = indnalopt.caseOf({
     nothing: () => mt(),
-    just: (i) => [].concat(
+    just: i => [].concat(
       spc(),
       keyword("in"),
       spc(),
@@ -784,11 +784,11 @@ function prCaseType(
   // TODO: po instanceof CHole with IntroAnonymous
   return po.caseOf({
     nothing: () => mt(),
-    just: (po) => [].concat(
+    just: po => [].concat(
       spc(),
       hov(2, [].concat(
         keyword("return"),
-        prSepCom(spc, (x) => pr(lSimpleConstr, x), po)
+        prSepCom(spc, x => pr(lSimpleConstr, x), po)
       ))
     ),
   });
@@ -811,12 +811,12 @@ function prEqn(
           hov(0, [].concat(
             prListWithSep(
               prBar,
-              (x) => prListWithSep(sepV, (y) => prPatt(mt, lTop, y), x),
+              x => prListWithSep(sepV, y => prPatt(mt, lTop, y), x),
               pl1
             ),
             str(" =>")
           )),
-          prSepCom(spc, (x) => pr(lTop, x), rhs)
+          prSepCom(spc, x => pr(lTop, x), rhs)
         )
       )
     )
@@ -832,7 +832,7 @@ function prSimpleReturnType(
 
   na.caseOf({
     nothing: () => { res = res.concat(mt()); },
-    just: (na) => {
+    just: na => {
       let name = na.some[1];
       if (name instanceof Name) {
         res = res.concat(spc(), keyword("as"), spc(), prId(name.id));
@@ -891,7 +891,7 @@ function prGen(
             let [f, l] = [b.funct[1], b.args];
             return ret(prApp(prmt, f, l), lApp);
           },
-          just: (pf) => {
+          just: pf => {
             let b = <CApp>a; // TS bug
             let [i, f, l] = [pf, b.funct[1], b.args];
             let [l1, l2] = chop(i, l);
@@ -905,7 +905,7 @@ function prGen(
                 [].concat(
                   p,
                   prList(
-                    (a) => {
+                    a => {
                       return [].concat(spc(), prExplArgs(prmt, a));
                     },
                     l2
@@ -932,7 +932,7 @@ function prGen(
             hov(0,
               prListWithSep(
                 sepV,
-                (x) => prCaseItem(prDangling, x),
+                x => prCaseItem(prDangling, x),
                 a.cases
               )
             ),
@@ -962,7 +962,7 @@ function prGen(
         let [bl, a1] = extractLamBinders(a);
         return ret(
           hov(0, [].concat(
-            hov(2, prDelimitedBinders(prFun, spc, (x) => pr(spc, lTop, x), bl)),
+            hov(2, prDelimitedBinders(prFun, spc, x => pr(spc, lTop, x), bl)),
             prFunSep,
             pr(spc, lTop, a1)
           )),
@@ -1026,7 +1026,7 @@ function prGen(
           let [s, env]: [Notation, ConstrNotationSubstitution] = [a.notation, a.substitution];
           return prNotation(
             (x, y) => pr(mt, x, y),
-            (x, y, z) => prBindersGen((x) => pr(mt, lTop, x), x, y, z),
+            (x, y, z) => prBindersGen(x => pr(mt, lTop, x), x, y, z),
             s,
             env,
             a.unparsing,
@@ -1049,7 +1049,7 @@ function prGen(
             prDelimitedBinders(
               prForall,
               spc,
-              (x) => pr(mt, lTop, x),
+              x => pr(mt, lTop, x),
               bl),
             str(","),
             pr(spc, lTop, aRest)

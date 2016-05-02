@@ -41,13 +41,13 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
 
   getAllDescendants(): IProofTreeNode[] {
     let children: ITacticGroupNode[] = this.tacticGroups;
-    let descendants: IProofTreeNode[] = _(children).map((c) => c.getAllDescendants()).flatten<IProofTreeNode>().value();
+    let descendants: IProofTreeNode[] = _(children).map(c => c.getAllDescendants()).flatten<IProofTreeNode>().value();
     return [].concat(children, descendants);
   }
 
   getAllGoalDescendants(): GoalNode[] {
     let children: ITacticGroupNode[] = this.tacticGroups;
-    let descendants: GoalNode[] = _(children).map((c) => c.getAllGoalDescendants()).flatten<GoalNode>().value();
+    let descendants: GoalNode[] = _(children).map(c => c.getAllGoalDescendants()).flatten<GoalNode>().value();
     let result: GoalNode[] = [this];
     return result.concat(descendants);
   }
@@ -59,7 +59,7 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
   }
 
   getGoalAncestor(): Maybe<IGoalNode> {
-    return this.parentGroup.bind((g) => g.getGoalAncestor());
+    return this.parentGroup.bind(g => g.getGoalAncestor());
   }
 
   getFocusedTacticGroup(): TsMonad.Maybe<ITacticGroupNode> {
@@ -74,7 +74,7 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
   getGoalAncestors(): IGoalNode[] {
     return this.getGrandParent().caseOf({
       nothing: () => [this],
-      just: (gp) => [].concat([this], gp.getGoalAncestors()),
+      just: gp => [].concat([this], gp.getGoalAncestors()),
     });
   }
 
@@ -134,7 +134,7 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
     let focusedTacticGroup = this.getFocusedTacticGroup();
     return this.getFocusedTacticGroup().caseOf({
       nothing: () => false,
-      just: (tg) => tg.isSolved(),
+      just: tg => tg.isSolved(),
     });
   }
 
@@ -150,7 +150,7 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
           //   //proofTreeQueryWish('Qed.');
           // }
         },
-        just: (p) => p.onChildSolvedAndUnfocused(sid),
+        just: p => p.onChildSolvedAndUnfocused(sid),
       });
     }
     //  else if (autoLayout) {

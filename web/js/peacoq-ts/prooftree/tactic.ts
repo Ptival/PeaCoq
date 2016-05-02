@@ -37,7 +37,7 @@ export class Tactic {
   }
 
   isSolved(): boolean {
-    return _.every(this.goals, (g) => g.isSolved());
+    return _.every(this.goals, g => g.isSolved());
   }
 
 }

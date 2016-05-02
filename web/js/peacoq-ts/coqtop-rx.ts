@@ -4,7 +4,7 @@ import { ValueFail } from "./coq/value-fail";
 import * as CoqtopInput from "./coqtop-input";
 import { processSequentiallyForever } from "./rx";
 
-let debugCoqtop = true; // print input/output requests
+let debugCoqtop = false; // print input/output requests
 let statusPeriod = 250; // milliseconds
 
 interface CoqtopOutputStreams {
@@ -47,15 +47,15 @@ export function setupCoqtopCommunication(
     .share();
   error$.subscribe(vf => inputSubject.onNext(new CoqtopInput.EditAt(vf.stateId)));
 
-  let response$ = output$.map((r) => r.response);
+  let response$ = output$.map(r => r.response);
 
   if (debugCoqtop) {
     input$
-      .filter((i) => !(i instanceof CoqtopInput.Status))
-      .subscribe((input) => { console.log("⟸", input); });
+      .filter(i => !(i instanceof CoqtopInput.Status))
+      .subscribe(input => { console.log("⟸", input); });
     response$
-      .filter((r) => !(r.input instanceof CoqtopInput.Status))
-      .subscribe((r) => { console.log("   ⟹", r.input, r); });
+      .filter(r => !(r.input instanceof CoqtopInput.Status))
+      .subscribe(r => { console.log("   ⟹", r.input, r); });
   }
 
   // this is needed for PeaCoq because we use add' so the STM's state
@@ -68,24 +68,24 @@ export function setupCoqtopCommunication(
 
   let addReponse$: Rx.Observable<AddReturn> =
     response$
-      .filter((r) => r.input instanceof CoqtopInput.AddPrime)
-      .map((r) => ({
+      .filter(r => r.input instanceof CoqtopInput.AddPrime)
+      .map(r => ({
         stateId: r.contents[0],
         eitherNullStateId: r.contents[1][0],
         output: r.contents[1][1],
       }))
     ;
 
-  let stateId$ = output$.map((r) => r.stateId);
+  let stateId$ = output$.map(r => r.stateId);
 
   let message$: Rx.Observable<IMessage> =
     output$
-      .flatMap((r) => _(r.messages).map((m) => new Message(m)).value())
+      .flatMap(r => _(r.messages).map(m => new Message(m)).value())
       .share();
 
   let feedback$: Rx.Observable<IFeedback> =
     output$
-      .flatMap((r) => _(r.feedback).map((f) => new Feedback(f)).value())
+      .flatMap(r => _(r.feedback).map(f => new Feedback(f)).value())
       .share();
 
   input$.connect();

@@ -8,8 +8,8 @@ let any = new Pattern.Anything();
 
 function patternScopeDelimiters(l: PpCmds): PpCmds {
   return replacePpCmd(
-    ppCmdIsStringSuchThat((s) => s.startsWith("%")),
-    (t) => [].concat(
+    ppCmdIsStringSuchThat(s => s.startsWith("%")),
+    t => [].concat(
       str('<span style="vertical-align: sub; color: #9C27B0; font-size: xx-small;">'),
       str((<any>t).token.string.replace("%", "")),
       str('</span>')
@@ -66,7 +66,7 @@ function patternAbs(l: PpCmds): PpCmds {
       any,
       any
     ],
-    (match) => {
+    match => {
       return [].concat(
         str("|"),
         l[2],
@@ -105,7 +105,7 @@ function patternDivides(l: PpCmds): PpCmds {
       box([box([any, tok("divides"), any])]),
       any, any, any, any
     ],
-    (match) => {
+    match => {
       return [].concat(
         [l[2]],
         [l[1]], // space
@@ -127,7 +127,7 @@ function patternZSquare(l: PpCmds): PpCmds {
       ]),
       any, any
     ],
-    (match) => {
+    match => {
       return [].concat(
         [l[2]],
         str("²")
@@ -158,7 +158,7 @@ function patternZOfNat(l: PpCmds): PpCmds {
       any,
       any
     ],
-    (match) => {
+    match => {
       return [].concat(
         [l[2]],
         str('<span style="vertical-align: sub; font-size: xx-small;">'),
@@ -211,7 +211,7 @@ function patternSumLambda(l: PpCmds): PpCmds {
       any,
       new Pattern.BinderPattern("upperBound")
     ],
-    (match) => {
+    match => {
       return [].concat(
         str('<span style="display: flex; flex-flow: row; align-items: center;">'),
         str('<span style="font-family: MathJax_Size4; font-size:120%;">(</span>'),
@@ -245,7 +245,7 @@ function patternSum(l: PpCmds): PpCmds {
       any,
       new Pattern.BinderPattern("upperBound")
     ],
-    (match) => {
+    match => {
       return [].concat(
         str('<span style="display: flex; flex-flow: row; align-items: center;">'),
         str('<span style="font-family: MathJax_Size4; font-size:120%;">(</span>'),
