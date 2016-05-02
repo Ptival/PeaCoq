@@ -12,30 +12,31 @@ export function clearEdit(): void {
   });
 }
 
-export function displayEdit(c: PeaCoqContext, g: IGoals): void {
+export function displayEdit(c: PeaCoqContext): void {
     Global.tabs.pretty.div.html("");
-    _(c).take(1).each((g) => {
-      Global.tabs.pretty.div.append(g.getHTML());
+    debugger;
+    _(c.fgGoals).take(1).each(g => {
+      Global.tabs.pretty.div.append(g.ppgoal.getHTML());
     });
     Global.tabs.pretty.click();
     // TODO: if performance becomes an issue, do this more lazily?
     Global.tabs.foreground.setValue(
-      _(g.fgGoals).map((g) => g.toString()).value().join("\n\n\n"), false
+      _(c.fgGoals).map((g) => g.toString()).value().join("\n\n\n"), false
     );
-    Global.tabs.foreground.setCaptionSuffix("(" + g.fgGoals.length + ")");
-    let bgGoals = _(g.bgGoals).map((ba) => [].concat(ba.before, ba.after)).flatten().value();
+    Global.tabs.foreground.setCaptionSuffix("(" + c.fgGoals.length + ")");
+    let bgGoals = _(c.bgGoals).map((ba) => [].concat(ba.before, ba.after)).flatten().value();
     Global.tabs.background.setValue(
       _(bgGoals).map((g) => g.toString()).value().join("\n\n\n"), false
     );
     Global.tabs.background.setCaptionSuffix("(" + bgGoals.length + ")");
     Global.tabs.shelved.setValue(
-      _(g.shelvedGoals).map((g) => g.toString()).value().join("\n\n\n"), false
+      _(c.shelvedGoals).map((g) => g.toString()).value().join("\n\n\n"), false
     );
-    Global.tabs.shelved.setCaptionSuffix("(" + g.shelvedGoals.length + ")");
+    Global.tabs.shelved.setCaptionSuffix("(" + c.shelvedGoals.length + ")");
     Global.tabs.givenUp.setValue(
-      _(g.givenUpGoals).map((g) => g.toString()).value().join("\n\n\n"), false
+      _(c.givenUpGoals).map((g) => g.toString()).value().join("\n\n\n"), false
     );
-    Global.tabs.givenUp.setCaptionSuffix("(" + g.givenUpGoals.length + ")");
+    Global.tabs.givenUp.setCaptionSuffix("(" + c.givenUpGoals.length + ")");
 }
 
 export function setupEditor(e: AceAjax.Editor) {

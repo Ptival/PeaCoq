@@ -26,16 +26,16 @@ interface IGlobSortGen<T> { }
 
 interface IGoal { }
 
-interface GoalBeforeAfter {
-  before: IGoal[];
-  after: IGoal[];
+interface BeforeAfter<T> {
+  before: T[];
+  after: T[];
 }
 
-interface IGoals {
-  fgGoals: IGoal[];
-  bgGoals: GoalBeforeAfter[];
-  shelvedGoals: IGoal[];
-  givenUpGoals: IGoal[];
+interface IGoals<T> {
+  fgGoals: T[];
+  bgGoals: BeforeAfter<T>[];
+  shelvedGoals: T[];
+  givenUpGoals: T[];
 }
 
 interface IMessage {

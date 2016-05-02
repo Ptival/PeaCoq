@@ -1045,14 +1045,15 @@ let string_of_pair string_of_a string_of_b (a, b) =
 
 let string_of_pre_goals string_of_a pgs =
   string_of_object
-    [ ("fg_goals", string_of_list string_of_a pgs.fg_goals)
-    ; ("bg_goals", string_of_list (
-                       string_of_pair
-                         (string_of_list string_of_a)
-                         (string_of_list string_of_a)
-                     ) pgs.bg_goals)
-    ; ("shelved_goals", string_of_list string_of_a pgs.shelved_goals)
-    ; ("given_up_goals", string_of_list string_of_a pgs.given_up_goals)
+    [ ("fgGoals", string_of_list string_of_a pgs.fg_goals)
+    ; ("bgGoals",
+       string_of_list (
+           string_of_pair
+             (string_of_list string_of_a)
+             (string_of_list string_of_a)
+         ) pgs.bg_goals)
+    ; ("shelvedGoals", string_of_list string_of_a pgs.shelved_goals)
+    ; ("givenUpGoals", string_of_list string_of_a pgs.given_up_goals)
     ]
 
 (*

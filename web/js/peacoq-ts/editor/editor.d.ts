@@ -118,7 +118,6 @@ interface IProcessed extends IEditStage, WithStateId {
   // goals: Maybe<IGoals>;
   //status: IStatus;
   getContext(): Promise<PeaCoqContext>;
-  getGoals(): Promise<IGoals>;
 }
 
 interface IEditMarker {

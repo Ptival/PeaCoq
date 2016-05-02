@@ -1,6 +1,10 @@
 import * as CoqtopInput from "../coqtop-input";
 import { EditMarker } from "./edit-marker";
 import * as Global from "../global-variables";
+import * as Goal from "../goal";
+import * as Goals from "../goals";
+import { walkJSON } from "../peacoq/json";
+import { PeaCoqGoal } from "../peacoq-goal";
 import * as Theme from "../theme";
 
 export class ToProcess implements IToProcess {
@@ -61,7 +65,6 @@ export class BeingProcessed implements IBeingProcessed {
 
 export class Processed implements IProcessed {
   private context: Promise<PeaCoqContext>;
-  private goals: Promise<IGoals>;
   marker: IEditMarker;
   stateId: number;
 
@@ -79,18 +82,26 @@ export class Processed implements IProcessed {
     if (this.context === undefined) {
       this.context = new Promise(onFulfilled => {
         const query = new CoqtopInput.Query("PeaCoqGetContext.", this.stateId);
-        query.callback = r => onFulfilled(r);
-        this.inputObserver.onNext(query);
-      });
+        query.callback = r => {
+          const c: IGoals<any> = JSON.parse(r.contents);
+          const processed = Goals.apply(
+            c => {
+              const pp: any = walkJSON(c.ppgoal);
+              return {
+                goal: new Goal.Goal(c.goal),
+                ppgoal: new PeaCoqGoal(pp.hyps, pp.concl),
+              };
+            },
+            c
+         );
+      onFulfilled(processed);
     }
-    return this.context;
+    this.inputObserver.onNext(query);
+  });
+}
+return this.context;
   }
 
-  getGoals(): Promise<IGoals> {
-    // this should use the same logic as getcontext now
-    return Promise.resolve({ fgGoals: [], bgGoals: [], shelvedGoals: [], givenUpGoals: [] }); // FIXME
-  }
-
-  getStateId() { return just(this.stateId); }
+getStateId() { return just(this.stateId); }
 
 }

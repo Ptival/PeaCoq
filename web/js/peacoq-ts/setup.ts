@@ -23,7 +23,6 @@ import { getActiveProofTree } from "./prooftree/utils";
 import * as Coqtop from "./coqtop-rx";
 import * as CoqtopInput from "./coqtop-input";
 import * as Global from "./global-variables";
-import { Goals } from "./goals";
 import { PeaCoqGoal } from "./peacoq-goal";
 import { Strictly } from "./strictly";
 import * as Theme from "./theme";
@@ -73,13 +72,8 @@ $(document).ready(() => {
       .distinctUntilChanged();
 
   editToBeDisplayed$
-    .flatMapLatest(edit => {
-      const stage = edit.stage;
-      const contextPromise = stage.getContext();
-      const goalsPromise = stage.getGoals();
-      return Rx.Observable.fromPromise(Promise.all<any>([contextPromise, goalsPromise]));
-    })
-    .subscribe(([context, goals]) => displayEdit(context, goals));
+    .flatMapLatest(edit => edit.stage.getContext())
+    .subscribe(context => displayEdit(context));
 
   Global.setCoqDocument(new CoqDocument(editor));
 
@@ -402,7 +396,7 @@ $(document).ready(() => {
 //   lastStatus = s;
 // }
 
-function updateCoqtopTabs(goals: IGoals, context: PeaCoqContext) {
+function updateCoqtopTabs(context: PeaCoqContext) {
   console.log("TODO: updateCoqtopTabs");
   // clearCoqtopTabs(false);
   // if (context.length > 0) {

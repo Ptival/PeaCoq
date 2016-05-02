@@ -286,7 +286,7 @@ export function sameBodyAndType(hyp1: HTMLElement, hyp2: HTMLElement): boolean {
   return true;
 }
 
-function countBackgroundGoals(goals: IGoals): number {
+function countBackgroundGoals<T>(goals: IGoals<T>): number {
   return _.reduce(
     goals.bgGoals,
     (acc, elt) => acc + elt.before.length + elt.after.length,

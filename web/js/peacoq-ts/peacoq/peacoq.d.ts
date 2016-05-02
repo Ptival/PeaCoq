@@ -1,4 +1,9 @@
-type PeaCoqContext = IPeaCoqGoal[];
+interface PeaCoqContextElement {
+  goal: IGoal;
+  ppgoal: IPeaCoqGoal;
+}
+
+type PeaCoqContext = IGoals<PeaCoqContextElement>
 
 interface IPeaCoqGoal {
   getHTML(): JQuery;

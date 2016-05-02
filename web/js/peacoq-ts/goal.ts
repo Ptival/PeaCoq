@@ -3,10 +3,10 @@ export class Goal implements IGoal {
   goalHyp: string[];
   goalCcl: string;
 
-  constructor(g: [string, string[], string]) {
-    this.goalId = + g[0];
-    this.goalHyp = _(g[1]).map(unbsp).value();
-    this.goalCcl = unbsp(g[2]);
+  constructor(o: any) {
+    this.goalId = + o.goal_id;
+    this.goalHyp = _(o.goal_hyp).map(unbsp).value();
+    this.goalCcl = unbsp(o.goal_ccl);
   }
 
   toString(): string {

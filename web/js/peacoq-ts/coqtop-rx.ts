@@ -2,7 +2,6 @@ import { Feedback } from "./coq/feedback";
 import { Message } from "./coq/message";
 import { ValueFail } from "./coq/value-fail";
 import * as CoqtopInput from "./coqtop-input";
-import { Goals } from "./goals";
 import { processSequentiallyForever } from "./rx";
 
 let debugCoqtop = true; // print input/output requests
@@ -11,7 +10,6 @@ let statusPeriod = 250; // milliseconds
 interface CoqtopOutputStreams {
   error$: Rx.Observable<ValueFail>;
   feedback$: Rx.Observable<IFeedback>;
-  goals$: Rx.Observable<Goals>;
   response$: Rx.Observable<ICoqtopResponse>;
   message$: Rx.Observable<IMessage>;
   // stateId$: Rx.Observable<number>;
@@ -90,18 +88,11 @@ export function setupCoqtopCommunication(
       .flatMap((r) => _(r.feedback).map((f) => new Feedback(f)).value())
       .share();
 
-  let goals$: Rx.Observable<Goals> =
-    response$
-      .filter((r) => r.input instanceof CoqtopInput.Goal)
-      .filter((r) => r.contents !== null)
-      .map((r) => new Goals(r.contents));
-
   input$.connect();
 
   return {
     error$: error$,
     feedback$: feedback$,
-    goals$: goals$,
     message$: message$,
     response$: response$,
     // stateId$: stateId$,

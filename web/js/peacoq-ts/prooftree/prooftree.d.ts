@@ -61,8 +61,7 @@ interface IGoalNode extends IProofTreeNode {
   // constructor(
   //   IProofTree: IProofTree, parent: Maybe<ITacticGroupNode>, goals: IGoals, goal: IPeaCoqGoal
   // );
-  goal: IPeaCoqGoal;
-  goals: IGoals;
+  context: PeaCoqContext;
   html: JQuery;
   stateIds: number[];
   tacticGroups: ITacticGroupNode[];

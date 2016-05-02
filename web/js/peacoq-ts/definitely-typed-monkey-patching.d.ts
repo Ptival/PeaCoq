@@ -16,3 +16,9 @@ declare namespace W2UI {
     onComplete: () => void;
   }
 }
+
+declare namespace Rx {
+  export interface Observable<T> extends IObservable<T> {
+    flatMapLatest<TResult>(selector: (value: T, index: number, source: Observable<T>) => IPromise<TResult>, thisArg?: any): Observable<TResult>;	// alias for selectSwitch
+  }
+}
