@@ -2,7 +2,7 @@ import * as Edit from "./edit";
 import * as Global from "../global-variables";
 import { theme } from "../theme";
 
-let CoqMode = ace.require("peacoq-js/mode-coq").Mode;
+const CoqMode = ace.require("peacoq-js/mode-coq").Mode;
 
 export function clearEdit(): void {
   Global.tabs.pretty.div.html("");
@@ -12,9 +12,16 @@ export function clearEdit(): void {
   });
 }
 
+function countBackgroundGoals<T>(goals: IGoals<T>): number {
+  return _.reduce(
+    goals.bgGoals,
+    (acc, elt) => acc + elt.before.length + elt.after.length,
+    0
+  );
+}
+
 export function displayEdit(c: PeaCoqContext): void {
     Global.tabs.pretty.div.html("");
-    debugger;
     _(c.fgGoals).take(1).each(g => {
       Global.tabs.pretty.div.append(g.ppgoal.getHTML());
     });
@@ -24,11 +31,12 @@ export function displayEdit(c: PeaCoqContext): void {
       _(c.fgGoals).map((g) => g.toString()).value().join("\n\n\n"), false
     );
     Global.tabs.foreground.setCaptionSuffix("(" + c.fgGoals.length + ")");
-    let bgGoals = _(c.bgGoals).map((ba) => [].concat(ba.before, ba.after)).flatten().value();
+    const bgGoals = _(c.bgGoals).map((ba) => [].concat(ba.before, ba.after)).flatten().value();
     Global.tabs.background.setValue(
       _(bgGoals).map((g) => g.toString()).value().join("\n\n\n"), false
     );
-    Global.tabs.background.setCaptionSuffix("(" + bgGoals.length + ")");
+    const nbBgGoals = countBackgroundGoals(c);
+    Global.tabs.background.setCaptionSuffix("(" + nbBgGoals + ")");
     Global.tabs.shelved.setValue(
       _(c.shelvedGoals).map((g) => g.toString()).value().join("\n\n\n"), false
     );
@@ -41,7 +49,7 @@ export function displayEdit(c: PeaCoqContext): void {
 
 export function setupEditor(e: AceAjax.Editor) {
   e.setTheme(theme.aceTheme);
-  //let OCamlMode = ace.require("ace/mode/ocaml").Mode;
+  //const OCamlMode = ace.require("ace/mode/ocaml").Mode;
 
   //ace.require("ace/keyboard/textarea");
   e.session.setMode(new CoqMode());

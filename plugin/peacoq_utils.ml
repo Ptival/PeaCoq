@@ -1047,10 +1047,11 @@ let string_of_pre_goals string_of_a pgs =
   string_of_object
     [ ("fgGoals", string_of_list string_of_a pgs.fg_goals)
     ; ("bgGoals",
-       string_of_list (
-           string_of_pair
-             (string_of_list string_of_a)
-             (string_of_list string_of_a)
+       string_of_list (fun (before, after) ->
+           string_of_object
+             [ ("before", string_of_list string_of_a before)
+             ; ("after", string_of_list string_of_a after)
+             ]
          ) pgs.bg_goals)
     ; ("shelvedGoals", string_of_list string_of_a pgs.shelved_goals)
     ; ("givenUpGoals", string_of_list string_of_a pgs.given_up_goals)

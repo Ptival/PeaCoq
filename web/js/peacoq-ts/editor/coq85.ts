@@ -286,14 +286,6 @@ export function sameBodyAndType(hyp1: HTMLElement, hyp2: HTMLElement): boolean {
   return true;
 }
 
-function countBackgroundGoals<T>(goals: IGoals<T>): number {
-  return _.reduce(
-    goals.bgGoals,
-    (acc, elt) => acc + elt.before.length + elt.after.length,
-    0
-  );
-}
-
 // function killEditsAfterPosition(doc: CoqDocument, pos: AceAjax.Position) {
 //   // we will need to rewind to the state before the oldest edit we remove
 //   let editToRewindTo: Maybe<ProcessedEdit> = nothing();

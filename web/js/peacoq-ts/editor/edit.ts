@@ -93,15 +93,15 @@ export class Processed implements IProcessed {
               };
             },
             c
-         );
-      onFulfilled(processed);
+          );
+          onFulfilled(processed);
+        }
+        this.inputObserver.onNext(query);
+      });
     }
-    this.inputObserver.onNext(query);
-  });
-}
-return this.context;
+    return this.context;
   }
 
-getStateId() { return just(this.stateId); }
+  getStateId() { return just(this.stateId); }
 
 }
