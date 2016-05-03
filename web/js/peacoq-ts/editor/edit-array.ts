@@ -1,3 +1,4 @@
+import { Processed } from "./edit";
 import { isBefore } from "./editor-utils";
 import { Strictly } from "../strictly";
 
@@ -78,11 +79,21 @@ const freshEditId = (() => {
   return () => { return id++; }
 })();
 
+/*
+`stage$` should follow this success lifecycle:
+onNext(IToProcess)
+onNext(IBeingProcessed)
+onNext(IProcessed)
+onCompleted
+
+As a consequence, `processedStage` should containt an `IProcessed`.
+*/
 class Edit<S extends IEditStage> implements IEdit<S> {
   id: number;
-  private onReady: (s: IProcessed) => void;
-  ready: Promise<IProcessed>;
+  private processedStage: Promise<IProcessed>;
   stage: S;
+  stage$: Rx.Observable<S>;
+  private stageObserver: Rx.Observer<S>;
 
   constructor(
     public array: IEditArray,
@@ -94,7 +105,12 @@ class Edit<S extends IEditStage> implements IEdit<S> {
   ) {
     this.id = freshEditId();
     // need to circumvent the type system here
-    this.stage = <any>stage;
+    // this.stage = <any>stage;
+    const stageSubject = new Rx.Subject<S>();
+    this.stage$ = stageSubject.asObservable();
+    this.stageObserver = stageSubject.asObserver();
+    this.processedStage = <Promise<any>>this.stage$.toPromise();
+    this.setStage(stage); // keep last
   }
 
   containsPosition(p: AceAjax.Position): boolean {
@@ -119,6 +135,10 @@ class Edit<S extends IEditStage> implements IEdit<S> {
     });
   }
 
+  getProcessedStage(): Promise<IProcessed> {
+    return new Promise(onF => this.processedStage.then(v => onF(v)));
+  }
+
   getStateId(): Maybe<number> {
     return this.stage.getStateId();
   };
@@ -132,6 +152,10 @@ class Edit<S extends IEditStage> implements IEdit<S> {
   setStage<T extends IEditStage>(stage: T): Edit<T> {
     // no strong update, so circumventing the type system
     this.stage = <any>stage;
+    this.stageObserver.onNext(this.stage);
+    if (this.stage instanceof Processed) {
+      this.stageObserver.onCompleted();
+    }
     this.array.stageChangeObserver.onNext({});
     return <any>this;
   }

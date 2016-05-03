@@ -87,6 +87,7 @@ interface IEdit<S extends IEditStage> {
   containsPosition(p: AceAjax.Position): boolean;
   getColor(): string;
   getPreviousStateId(): Maybe<number>;
+  getProcessedStage(): Rx.IPromise<IProcessed>;
   getStateId(): Maybe<number>;
   highlight(): void;
   remove(): void;

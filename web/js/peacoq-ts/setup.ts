@@ -37,6 +37,10 @@ let bottomLayout: W2UI.W2Layout;
 // const contextTabs: W2UI.W2Tabs;
 // const coqtopTabs: W2UI.W2Tabs;
 
+const emptyContext: PeaCoqContext = {
+  fgGoals: [], bgGoals: [], shelvedGoals: [], givenUpGoals: [],
+};
+
 $(document).ready(() => {
 
   $("#interface").w2layout({
@@ -56,27 +60,28 @@ $(document).ready(() => {
     })
     .share();
 
-  const editorCursorPositionStream = editorCursorChangeStream
+  const editorCursorPosition$ = editorCursorChangeStream
     .map(() => editor.selection.getCursor());
 
-  const editToBeDisplayed$: Rx.Observable<IEdit<IProcessed>> =
-    editorCursorPositionStream
-      .flatMap(pos => {
+  const editToBeDisplayed$: Rx.Observable<Maybe<IEdit<IProcessed>>> =
+    editorCursorPosition$
+      .map(pos => {
         // we want to display the last edit whose stopPos is before `pos`
-        let edit = _(Global.coqDocument.getProcessedEdits())
+        const edit = _(Global.coqDocument.getProcessedEdits())
           .findLast(s => isBefore(Strictly.No, s.stopPosition, pos));
-        // if no edit, we should display the last edit before the cursor
-        // if (!edit) { edit = _(Global.coqDocument.getProcessedEdits()).last(); }
-        return edit ? [edit] : [];
+        return edit ? just(edit) : nothing();
       })
       .distinctUntilChanged();
 
   editToBeDisplayed$
-    .flatMapLatest(edit => edit.stage.getContext())
+    .flatMapLatest(edit => edit.caseOf({
+      nothing: () => Promise.resolve(emptyContext),
+      just: e => e.stage.getContext(),
+    }))
     .subscribe(context => displayEdit(context));
 
-// editToBeDisplayed$
-//   .subscribe(edit => console.log(edit.stage.stateId));
+  editToBeDisplayed$
+    .subscribe(edit => console.log(edit));
 
   Global.setCoqDocument(new CoqDocument(editor));
 
