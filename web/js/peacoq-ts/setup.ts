@@ -13,6 +13,8 @@ import { Tab } from "./editor/tab";
 // // TODO: unless it can't because of keybindings?
 import { pickFile, saveFile, setupLoadFile, setupToolbar, setupSaveFile } from "./editor/toolbar";
 
+import { emptyContext } from "./peacoq/peacoq";
+
 // TODO: not sure if this file should be creating those nodes...
 import { GoalNode } from "./prooftree/goalnode";
 import { ProofTree, proofTrees } from "./prooftree/prooftree";
@@ -36,10 +38,6 @@ let bottomLayout: W2UI.W2Layout;
 // const rightLayout: W2UI.W2Layout;
 // const contextTabs: W2UI.W2Tabs;
 // const coqtopTabs: W2UI.W2Tabs;
-
-const emptyContext: PeaCoqContext = {
-  fgGoals: [], bgGoals: [], shelvedGoals: [], givenUpGoals: [],
-};
 
 $(document).ready(() => {
 

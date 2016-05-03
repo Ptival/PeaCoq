@@ -4,6 +4,7 @@ import * as Global from "../global-variables";
 import * as Goal from "../goal";
 import * as Goals from "../goals";
 import { walkJSON } from "../peacoq/json";
+import { emptyContext } from "../peacoq/peacoq";
 import { PeaCoqGoal } from "../peacoq-goal";
 import * as Theme from "../theme";
 
@@ -83,18 +84,29 @@ export class Processed implements IProcessed {
       this.context = new Promise(onFulfilled => {
         const query = new CoqtopInput.Query("PeaCoqGetContext.", this.stateId);
         query.callback = r => {
-          const c: IGoals<any> = JSON.parse(r.contents);
-          const processed = Goals.apply(
-            c => {
-              const pp: any = walkJSON(c.ppgoal);
-              return {
-                goal: new Goal.Goal(c.goal),
-                ppgoal: new PeaCoqGoal(pp.hyps, pp.concl),
-              };
-            },
-            c
-          );
-          onFulfilled(processed);
+          if (r.contents.length === 0) {
+            onFulfilled(emptyContext);
+          } else {
+            console.log(r.contents);
+            // Escaping because JSON.parse sucks :(
+            const safeContents = r.contents
+              .replace(/\n/g, "\\n")
+              .replace(/\r/g, "\\r")
+              .replace(/\t/g, "\\t")
+              .replace(/\f/g, "\\f");
+            const c: IGoals<any> = JSON.parse(safeContents);
+            const processed: PeaCoqContext = Goals.apply(
+              c => {
+                const pp: any = walkJSON(c.ppgoal);
+                return {
+                  goal: new Goal.Goal(c.goal),
+                  ppgoal: new PeaCoqGoal(pp.hyps, pp.concl),
+                };
+              },
+              c
+            );
+            onFulfilled(processed);
+          }
         }
         this.inputObserver.onNext(query);
       });
