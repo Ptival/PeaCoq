@@ -1,25 +1,26 @@
+import * as DebugFlags from "../debug-flags";
 import { Processed } from "./edit";
 import { isBefore } from "./editor-utils";
 import { Strictly } from "../strictly";
 
 export class EditArray implements IEditArray {
-  private changeSubject: Rx.Subject<{}>;
   change$: Rx.Observable<{}>;
-  private edits: IEdit<any>[];
-  private removeSubject: Rx.Subject<IEdit<any>>;
+  private edits: IEdit<IEditStage>[];
+  private editCreatedSubject: Rx.Subject<IEdit<IEditStage>>;
+  private editRemovedSubject: Rx.Subject<IEdit<IEditStage>>;
   stageChangeObserver: Rx.Observer<{}>;
 
   constructor(
     public document: ICoqDocument
   ) {
     this.edits = [];
-    this.changeSubject = new Rx.Subject<{}>();
-    this.change$ = this.changeSubject.asObservable();
-    this.removeSubject = new Rx.Subject<IEdit<any>>();
-    this.removeSubject.subscribe(e => e.remove()); // remove marker
+    this.editRemovedSubject = new Rx.Subject<IEdit<any>>();
     const stageChangeSubject = new Rx.Subject<{}>();
     this.stageChangeObserver = stageChangeSubject.asObserver();
-    stageChangeSubject.subscribe(({}) => this.changeSubject.onNext({}));
+    this.editCreatedSubject = new Rx.Subject<IEdit<IEditStage>>();
+    if (DebugFlags.editCreated) {
+      subscribeAndLog(this.editCreatedSubject.asObservable());
+    }
   }
 
   createEdit(
@@ -32,7 +33,7 @@ export class EditArray implements IEditArray {
   ): IEdit<IToProcess> {
     const edit = new Edit(this, startPosition, stopPosition, query, previousEdit, stage);
     this.edits.push(edit);
-    this.changeSubject.onNext({});
+    this.editCreatedSubject.onNext(edit);
     return <any>edit;
   }
 
@@ -44,14 +45,18 @@ export class EditArray implements IEditArray {
 
   remove(r: IEdit<any>) {
     _(this.edits).remove(e => e.id === r.id);
-    this.removeSubject.onNext(r);
-    this.changeSubject.onNext({});
+    r.cleanup();
+    this.editRemovedSubject.onNext(r);
   }
 
   removeAll(): void {
-    _(this.edits).each(e => this.removeSubject.onNext(e));
+    const edits = this.edits;
     this.edits = [];
-    this.changeSubject.onNext({});
+    // trying to be a little efficient here, so not calling `remove`
+    _(edits).each(e => {
+      e.cleanup();
+      this.editRemovedSubject.onNext(e);
+    });
   }
 
   removeEditAndFollowingOnes(r: IEdit<any>): void {
@@ -60,17 +65,11 @@ export class EditArray implements IEditArray {
     const editsToKeep = _(this.edits).slice(0, editIndex).value();
     const editsToRemove = _(this.edits).slice(editIndex, this.edits.length).value();
     this.edits = editsToKeep;
-    _(editsToRemove).each(e => this.removeSubject.onNext(e));
-    this.changeSubject.onNext({});
+    _(editsToRemove).each(e => {
+      e.cleanup();
+      this.editRemovedSubject.onNext(e);
+    });
   }
-
-  // replace(id: number, e: IEdit): void {
-  //   const foundIndex = _(this.edits).findIndex(e => e.id === id);
-  //   if (foundIndex !== -1) {
-  //     this.edits[foundIndex] = e;
-  //     this.changeSubject.onNext({});
-  //   }
-  // }
 
 }
 
@@ -113,6 +112,10 @@ class Edit<S extends IEditStage> implements IEdit<S> {
     this.setStage(stage); // keep last
   }
 
+  cleanup(): void {
+    this.stage.marker.remove();
+  }
+
   containsPosition(p: AceAjax.Position): boolean {
     // TODO: I think ace handles this
     /*
@@ -144,10 +147,6 @@ class Edit<S extends IEditStage> implements IEdit<S> {
   };
 
   highlight(): void { this.stage.marker.highlight(); }
-
-  remove(): void {
-    this.stage.marker.remove();
-  }
 
   setStage<T extends IEditStage>(stage: T): Edit<T> {
     // no strong update, so circumventing the type system
