@@ -37,8 +37,9 @@ interface ShortcutsStreams {
 }
 
 interface IEditArray {
-  change$: Rx.Observable<{}>;
-  stageChangeObserver: Rx.Observer<{}>;
+  editChangedStage$: Rx.Observable<IEdit<IEditStage>>;
+  editCreated$: Rx.Observable<IEdit<IEditStage>>;
+  editRemoved$: Rx.Observable<IEdit<IEditStage>>;
   createEdit(
     document: ICoqDocument,
     startPosition: AceAjax.Position,
@@ -82,6 +83,7 @@ interface IEdit<S extends IEditStage> {
   previousEdit: Maybe<IEdit<any>>;
   query: string;
   stage: S;
+  stage$: Rx.Observable<IEditStage>;
   startPosition: AceAjax.Position;
   stopPosition: AceAjax.Position;
   cleanup(): void;

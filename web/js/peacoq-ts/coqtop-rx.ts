@@ -1,10 +1,10 @@
+import * as DebugFlags from "./debug-flags";
 import { Feedback } from "./coq/feedback";
 import { Message } from "./coq/message";
 import { ValueFail } from "./coq/value-fail";
 import * as CoqtopInput from "./coqtop-input";
 import { processSequentiallyForever } from "./rx";
 
-let debugCoqtop = false; // print input/output requests
 let statusPeriod = 250; // milliseconds
 
 interface CoqtopOutputStreams {
@@ -49,10 +49,12 @@ export function setupCoqtopCommunication(
 
   let response$ = output$.map(r => r.response);
 
-  if (debugCoqtop) {
+  if (DebugFlags.requestToCoqtop) {
     input$
       .filter(i => !(i instanceof CoqtopInput.Status))
       .subscribe(input => { console.log("⟸", input); });
+  }
+  if (DebugFlags.responseFromCoqtop) {
     response$
       .filter(r => !(r.input instanceof CoqtopInput.Status))
       .subscribe(r => { console.log("   ⟹", r.input, r); });

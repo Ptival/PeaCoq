@@ -24,6 +24,7 @@ import { getActiveProofTree } from "./prooftree/utils";
 
 import * as Coqtop from "./coqtop-rx";
 import * as CoqtopInput from "./coqtop-input";
+import * as DebugFlags from "./debug-flags";
 import * as Global from "./global-variables";
 import { PeaCoqGoal } from "./peacoq-goal";
 import { Strictly } from "./strictly";
@@ -78,8 +79,7 @@ $(document).ready(() => {
     }))
     .subscribe(context => displayEdit(context));
 
-  editToBeDisplayed$
-    .subscribe(edit => console.log(edit));
+  if (DebugFlags.editToBeDisplayed) { subscribeAndLog(editToBeDisplayed$); }
 
   Global.setCoqDocument(new CoqDocument(editor));
 
@@ -259,7 +259,7 @@ $(document).ready(() => {
     .combineLatest(
     forwardGoToSubject.asObservable(),
     // TODO: this won't work on reload...
-    Global.coqDocument.edits.change$
+    Global.coqDocument.edits.editCreated$
       .map(() => Global.coqDocument.getLastEditStop())
       .startWith({ row: 0, column: 0 }) // otherwise it doesn't fire before first change
     )

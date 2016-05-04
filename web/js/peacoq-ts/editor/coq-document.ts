@@ -25,7 +25,6 @@ export class CoqDocument implements ICoqDocument {
           self.session.on("change", (e) => observer.onNext(e));
         })
         .share();
-    // this.editsChangeSubject = new Rx.Subject();
     // this.editsChange$ = this.editsChangeSubject.asObservable();
     const newEditSubject = new Rx.Subject<IEdit<IToProcess>>();
   }

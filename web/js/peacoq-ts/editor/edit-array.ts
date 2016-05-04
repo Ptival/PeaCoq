@@ -4,23 +4,27 @@ import { isBefore } from "./editor-utils";
 import { Strictly } from "../strictly";
 
 export class EditArray implements IEditArray {
-  change$: Rx.Observable<{}>;
   private edits: IEdit<IEditStage>[];
-  private editCreatedSubject: Rx.Subject<IEdit<IEditStage>>;
-  private editRemovedSubject: Rx.Subject<IEdit<IEditStage>>;
-  stageChangeObserver: Rx.Observer<{}>;
+
+  public editChangedStage$: Rx.Subject<IEdit<IEditStage>>;
+  public editCreated$: Rx.Subject<IEdit<IEditStage>>;
+  public editRemoved$: Rx.Subject<IEdit<IEditStage>>;
 
   constructor(
     public document: ICoqDocument
   ) {
     this.edits = [];
-    this.editRemovedSubject = new Rx.Subject<IEdit<any>>();
-    const stageChangeSubject = new Rx.Subject<{}>();
-    this.stageChangeObserver = stageChangeSubject.asObserver();
-    this.editCreatedSubject = new Rx.Subject<IEdit<IEditStage>>();
-    if (DebugFlags.editCreated) {
-      subscribeAndLog(this.editCreatedSubject.asObservable());
+
+    this.editChangedStage$ = new Rx.Subject<any>();
+    if (DebugFlags.editChangedStage) {
+      this.editChangedStage$.subscribe(e =>
+        console.log("edit changed stage", e.stage, e)
+      );
     }
+    this.editCreated$ = new Rx.Subject<any>();
+    if (DebugFlags.editCreated) { subscribeAndLog(this.editCreated$, "edit created"); }
+    this.editRemoved$ = new Rx.Subject<any>();
+    if (DebugFlags.editRemoved) { subscribeAndLog(this.editRemoved$, "edit removed"); }
   }
 
   createEdit(
@@ -33,7 +37,8 @@ export class EditArray implements IEditArray {
   ): IEdit<IToProcess> {
     const edit = new Edit(this, startPosition, stopPosition, query, previousEdit, stage);
     this.edits.push(edit);
-    this.editCreatedSubject.onNext(edit);
+    this.editCreated$.onNext(edit);
+    edit.stage$.subscribe(_ => this.editChangedStage$.onNext(edit));
     return <any>edit;
   }
 
@@ -46,7 +51,7 @@ export class EditArray implements IEditArray {
   remove(r: IEdit<any>) {
     _(this.edits).remove(e => e.id === r.id);
     r.cleanup();
-    this.editRemovedSubject.onNext(r);
+    this.editRemoved$.onNext(r);
   }
 
   removeAll(): void {
@@ -55,7 +60,7 @@ export class EditArray implements IEditArray {
     // trying to be a little efficient here, so not calling `remove`
     _(edits).each(e => {
       e.cleanup();
-      this.editRemovedSubject.onNext(e);
+      this.editRemoved$.onNext(e);
     });
   }
 
@@ -67,7 +72,7 @@ export class EditArray implements IEditArray {
     this.edits = editsToKeep;
     _(editsToRemove).each(e => {
       e.cleanup();
-      this.editRemovedSubject.onNext(e);
+      this.editRemoved$.onNext(e);
     });
   }
 
@@ -88,11 +93,11 @@ onCompleted
 As a consequence, `processedStage` should containt an `IProcessed`.
 */
 class Edit<S extends IEditStage> implements IEdit<S> {
-  id: number;
   private processedStage: Promise<IProcessed>;
+
+  id: number;
   stage: S;
-  stage$: Rx.Observable<S>;
-  private stageObserver: Rx.Observer<S>;
+  stage$: Rx.Subject<S>;
 
   constructor(
     public array: IEditArray,
@@ -103,17 +108,14 @@ class Edit<S extends IEditStage> implements IEdit<S> {
     stage: IToProcess
   ) {
     this.id = freshEditId();
-    // need to circumvent the type system here
-    // this.stage = <any>stage;
-    const stageSubject = new Rx.Subject<S>();
-    this.stage$ = stageSubject.asObservable();
-    this.stageObserver = stageSubject.asObserver();
+    this.stage$ = new Rx.Subject<any>();
     this.processedStage = <Promise<any>>this.stage$.toPromise();
     this.setStage(stage); // keep last
   }
 
   cleanup(): void {
     this.stage.marker.remove();
+    this.stage$.onCompleted();
   }
 
   containsPosition(p: AceAjax.Position): boolean {
@@ -148,14 +150,11 @@ class Edit<S extends IEditStage> implements IEdit<S> {
 
   highlight(): void { this.stage.marker.highlight(); }
 
-  setStage<T extends IEditStage>(stage: T): Edit<T> {
+  setStage<T extends IEditStage>(stage: T): IEdit<T> {
     // no strong update, so circumventing the type system
     this.stage = <any>stage;
-    this.stageObserver.onNext(this.stage);
-    if (this.stage instanceof Processed) {
-      this.stageObserver.onCompleted();
-    }
-    this.array.stageChangeObserver.onNext({});
+    this.stage$.onNext(this.stage);
+    if (this.stage instanceof Processed) { this.stage$.onCompleted(); }
     return <any>this;
   }
 

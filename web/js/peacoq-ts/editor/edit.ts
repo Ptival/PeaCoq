@@ -1,4 +1,5 @@
 import * as CoqtopInput from "../coqtop-input";
+import * as DebugFlags from "../debug-flags";
 import { EditMarker } from "./edit-marker";
 import * as Global from "../global-variables";
 import * as Goal from "../goal";
@@ -84,10 +85,10 @@ export class Processed implements IProcessed {
       this.context = new Promise(onFulfilled => {
         const query = new CoqtopInput.Query("PeaCoqGetContext.", this.stateId);
         query.callback = r => {
+          if (DebugFlags.rawPeaCoqContext) { console.log(r.contents); }
           if (r.contents.length === 0) {
             onFulfilled(emptyContext);
           } else {
-            console.log(r.contents);
             // Escaping because JSON.parse sucks :(
             const safeContents = r.contents
               .replace(/\n/g, "\\n")

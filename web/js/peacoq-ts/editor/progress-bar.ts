@@ -1,3 +1,4 @@
+import * as DebugFlags from "../debug-flags";
 import * as Edit from "./edit";
 import * as Global from "../global-variables";
 import * as Theme from "../theme";
@@ -6,10 +7,16 @@ let barItemClass = "progress-bar-item";
 let progressBarId = "progress-bar";
 
 export function setupProgressBar(): void {
-  Global.coqDocument.edits.change$.subscribe(updateProgressBar);
+  Rx.Observable.merge(
+    Theme.afterChange$,
+    Global.coqDocument.edits.editCreated$,
+    Global.coqDocument.edits.editChangedStage$,
+    Global.coqDocument.edits.editRemoved$
+  ).subscribe(updateProgressBar);
   let barClick$: Rx.Observable<Event> =
     Rx.Observable.fromEvent<Event>(document, "click")
       .filter(e => $(e.target).hasClass(barItemClass));
+  if (DebugFlags.progressBarClick) { subscribeAndLog(barClick$); }
   let barMouseOver$: Rx.Observable<Event> =
     Rx.Observable.fromEvent<Event>(document, "mouseover")
       .filter(e => $(e.target).hasClass(barItemClass));
@@ -36,7 +43,6 @@ export function setupProgressBar(): void {
     Global.coqDocument.moveCursorToPositionAndCenter(targetEdit.stopPosition);
     Global.coqDocument.editor.focus();
   });
-  Theme.afterChange$.subscribe(updateProgressBar);
 }
 
 function updateProgressBar(): void {

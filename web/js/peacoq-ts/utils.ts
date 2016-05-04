@@ -18,8 +18,8 @@ function replaceNBSPWithSpaces(s: string): string {
   return s.replace(/\u00A0/g, " ");
 }
 
-function subscribeAndLog(s: Rx.Observable<any>): void {
-  s.subscribe(x => { console.log(x); })
+function subscribeAndLog(s: Rx.Observable<any>, info?: string): void {
+  s.subscribe(x => { info ? console.log(info, x) : console.log(x); })
 }
 
 type Maybe<T> = TsMonad.Maybe<T>;
