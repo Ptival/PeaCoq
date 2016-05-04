@@ -53,33 +53,34 @@ $(document).ready(() => {
   });
 
   const editor = ace.edit("editor");
-  const editorCursorChangeStream = Rx.Observable
+  const textCursorChangeEvent$ = Rx.Observable
     .create(observer => {
       editor.selection.on("changeCursor", e => { observer.onNext(e); });
     })
     .share();
 
-  const editorCursorPosition$ = editorCursorChangeStream
+  const textCursorPosition$ = textCursorChangeEvent$
     .map(() => editor.selection.getCursor());
+  if (DebugFlags.textCursorPosition) { subscribeAndLog(textCursorPosition$); }
 
-  const editToBeDisplayed$: Rx.Observable<Maybe<IEdit<IProcessed>>> =
-    editorCursorPosition$
+  /* nothing() if no edit to display, just(edit) if there is one */
+  const editToBeDisplayed$: Rx.Observable<Maybe<IEdit<IEditStage>>> =
+    textCursorPosition$
       .map(pos => {
         // we want to display the last edit whose stopPos is before `pos`
-        const edit = _(Global.coqDocument.getProcessedEdits())
+        const edit = _(Global.coqDocument.getAllEdits())
           .findLast(s => isBefore(Strictly.No, s.stopPosition, pos));
         return edit ? just(edit) : nothing();
       })
       .distinctUntilChanged();
+  if (DebugFlags.editToBeDisplayed) { subscribeAndLog(editToBeDisplayed$); }
 
   editToBeDisplayed$
     .flatMapLatest(edit => edit.caseOf({
       nothing: () => Promise.resolve(emptyContext),
-      just: e => e.stage.getContext(),
+      just: e => e.getProcessedStage().then(s => s.getContext()),
     }))
     .subscribe(context => displayEdit(context));
-
-  if (DebugFlags.editToBeDisplayed) { subscribeAndLog(editToBeDisplayed$); }
 
   Global.setCoqDocument(new CoqDocument(editor));
 

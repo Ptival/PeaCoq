@@ -16,3 +16,4 @@ export const editCreated = false;
 export const editRemoved = false;
 export const editToBeDisplayed = false;
 export const progressBarClick = false;
+export const textCursorPosition = false;
