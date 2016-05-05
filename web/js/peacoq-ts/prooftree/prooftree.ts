@@ -165,7 +165,7 @@ export class ProofTree implements IProofTree {
     let centeredDescendant =
       this.curNode.getFocusedChild().caseOf<Maybe<IProofTreeNode>>({
         nothing: () => nothing(),
-        just: (fc) => fc.getFocusedChild().caseOf({
+        just: fc => fc.getFocusedChild().caseOf({
           nothing: () => just(fc),
           just: (fgc) => just(fgc),
         })
