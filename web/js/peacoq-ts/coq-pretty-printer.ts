@@ -1,5 +1,4 @@
 import { PpHBox, PpVBox, PpHVBox, PpHoVBox, PpTBox } from "./coq/block-type";
-import { GProp, GSet, GType } from "./coq/glob-sort-gen";
 import * as PpCmd from "./coq/ppcmd-token";
 import * as StrToken from "./coq/str-token";
 
