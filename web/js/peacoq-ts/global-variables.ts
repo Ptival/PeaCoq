@@ -1,5 +1,3 @@
-/// <reference path="./prooftree/prooftree.d.ts"/>
-
 import * as MyRx from "./rx";
 
 export let coqDocument: ICoqDocument;

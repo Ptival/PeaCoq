@@ -21,6 +21,7 @@
   "filesGlob": [
     "*.ts",
     "coq/*.ts",
+    "definitions/*.d.ts",
     "editor/*.ts",
     "peacoq/*.ts",
     "prooftree/*.ts",

@@ -1,5 +1,3 @@
-/// <reference path="./prooftree.d.ts"/>
-
 import { ProofTreeNode } from "./prooftreenode";
 
 export class FakeNode extends ProofTreeNode implements IFakeNode {
