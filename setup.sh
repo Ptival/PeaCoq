@@ -42,8 +42,6 @@ log "Building OCaml plugin"
 ( cd web
   log "Installing npm dependencies"
   npm install
-  log "Installing bower dependencies"
-  ./node_modules/bower/bin/bower install
   cd js/peacoq-ts/
   log "Installing typings"
   ../../node_modules/typings/dist/bin.js install

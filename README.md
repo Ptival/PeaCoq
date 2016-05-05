@@ -64,13 +64,11 @@ $ ./setup.sh
 
 4. `npm install` some JavaScript modules needed by the front-end
 
-5. `bower install` some JavaScript modules needed by the front-end
+5. `typings install` some TypeScript definitions needed to type-check the front-end
 
-6. `typings install` some TypeScript definitions needed to type-check the front-end
+6. `tsc -p .` transpiles the front-end from TypeScript to JavaScript
 
-7. `tsc -p .` transpiles the front-end from TypeScript to JavaScript
-
-8. Finally a configuration file will be created in your home directory
+7. Finally a configuration file will be created in your home directory
 
 So it will take a while the first time, and steps 1, 4, 5, and 6 will
 require an Internet connection.

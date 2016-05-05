@@ -1,14 +1,14 @@
 requirejs.config({
   paths: {
-    "ace": "../bower_components/ace/lib/ace",
-    "bootstrap": "../bower_components/bootstrap/dist/js/bootstrap",
-    "d3": "../bower_components/d3/d3",
-    "jquery": "../bower_components/jquery/dist/jquery",
-    "jquery.hotkeys": "../bower_components/jQuery.Hotkeys/jquery.hotkeys",
-    "jss": "../bower_components/jss/jss",
-    "lodash": "../bower_components/lodash/lodash",
-    "MathJax": "../bower_components/MathJax/MathJax",
-    "rx.all": "../bower_components/rxjs/dist/rx.all",
+    "ace": "../node_modules/ace-code-editor/lib/ace",
+    "bootstrap": "../node_modules/bootstrap/dist/js/bootstrap",
+    "d3": "../node_modules/d3/d3",
+    "jquery": "../node_modules/jquery/dist/jquery",
+    "jquery.hotkeys": "../node_modules/jquery.hotkeys/jquery.hotkeys",
+    "jss": "../node_modules/jss-browserify/jss",
+    "lodash": "../node_modules/lodash/lodash",
+    "MathJax": "../node_modules/mathjax/MathJax",
+    "rx": "../node_modules/rx/dist/rx.all",
     "tsmonad": "../node_modules/tsmonad/dist/tsmonad",
     "w2ui": "../node_modules/w2ui/w2ui",
   },
@@ -21,15 +21,17 @@ requirejs.config({
 
 // Start the main app logic.
 requirejs([
+    // need binding?
     "ace/ace",
+    // don't need binding
+    "bootstrap",
     "d3",
     "jquery",
     "jquery.hotkeys",
-    "bootstrap",
     "jss",
     "lodash",
     "MathJax",
-    "rx.all",
+    "rx",
     "tsmonad",
     "w2ui",
   ],

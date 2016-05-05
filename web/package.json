@@ -5,10 +5,19 @@
   "license": "MIT",
   "repository": "http://github.com/Ptival/PeaCoq",
   "dependencies": {
-    "bower": "*",
-    "tsmonad": "*",
-    "typescript": "*",
-    "typings": "*",
-    "w2ui": "*"
+    "ace-code-editor": "^1.2.3",
+    "bootstrap": "^3.3.6",
+    "d3": "^3.5.17",
+    "jquery": "^2.2.3",
+    "jquery.hotkeys": "^0.1.0",
+    "jss-browserify": "^0.6.0",
+    "lodash": "^4.11.2",
+    "mathjax": "^2.6.1",
+    "requirejs": "^2.2.0",
+    "rx": "^4.1.0",
+    "tsmonad": "^0.6.0",
+    "typescript": "^1.8.10",
+    "typings": "^0.8.1",
+    "w2ui": "^1.4.3"
   }
 }
