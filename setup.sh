@@ -16,7 +16,7 @@ camlp5 -v       >/dev/null 2>&1 || missing "camlp5"
 coqc -v         >/dev/null 2>&1 || missing "coq"
 ocamlc -v       >/dev/null 2>&1 || missing "ocaml"
 
-if [ ! -z "${NIX_LDFLAGS}" ] && [ ! -z "${NIX_CFLAGS_COMPILE}" ]; then
+if [ -v "NIX_LDFLAGS" ] && [ -v "NIX_CFLAGS_COMPILE" ]; then
   INCLUDEDIR=`echo ${NIX_CFLAGS_COMPILE} | grep -o '/nix/store\S*zlib\S*/include' | head -1`
   echo "Setting --extra-include-dirs to: ${INCLUDEDIR}"
   LIBDIR=`echo ${NIX_LDFLAGS} | grep -o '/nix/store\S*zlib\S*[0-9]/lib' | head -1`
@@ -26,6 +26,7 @@ else
   LIBDIR=""
   CABALFLAGS=""
 fi
+
 log "Fetching Haskell dependencies"
 cabal install --only-dependencies ${CABALFLAGS}
 log "Configuring Haskell package"
