@@ -42,3 +42,21 @@ instance FromXML a => FromXML (Value a) where
       errorLoc :: Maybe Int -> Maybe Int -> ErrorLocation
       errorLoc (Just s) (Just e) = Just (s, e)
       errorLoc _        _        = Nothing
+
+instance Functor Value where
+  fmap f (ValueGood a) = ValueGood (f a)
+  fmap _ (ValueFail s loc msg) = ValueFail s loc msg
+
+instance Applicative Value where
+  pure = ValueGood
+
+  (ValueGood f) <*> (ValueGood a) = ValueGood (f a)
+  (ValueGood _) <*> (ValueFail s loc msg) = ValueFail s loc msg
+  (ValueFail s loc msg) <*> _ = ValueFail s loc msg
+
+instance Monad Value  where
+  return = pure
+
+  (ValueGood a)         >>= f = f a
+  (ValueFail s loc msg) >>= _ = ValueFail s loc msg
+
