@@ -20,7 +20,8 @@ cache:
 
 before_install:
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then ./scripts/before-install-linux.sh; fi
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then ./scripts/before-install-osx.sh; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:/opt/alex/$ALEXVER/bin:/opt/happy/$HAPPYVER/bin:$PATH; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ];   then ./scripts/before-install-osx.sh; fi
 
 install:
   - cabal sandbox init

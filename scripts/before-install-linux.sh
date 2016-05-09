@@ -13,10 +13,9 @@ $PKGMGR update
 sudo add-apt-repository -y ppa:hvr/ghc
 $PKGMGR update
 $PKGMGR install cabal-install-$CABALVER ghc-$GHCVER
-export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$PATH
+export PATH=/opt/cabal/$CABALVER/bin:$PATH
 cabal update
 $PKGMGR install alex-$ALEXVER happy-$HAPPYVER
-export PATH=/opt/alex/$ALEXVER/bin:/opt/happy/$HAPPYVER/bin:$PATH
 
 # Coq and OCaml plugin
 $PKGMGR install coq ocaml camlp5
