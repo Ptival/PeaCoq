@@ -30,7 +30,7 @@ fi
 log "Fetching Haskell dependencies"
 cabal install --only-dependencies ${CABALFLAGS}
 log "Configuring Haskell package"
-cabal configure
+cabal configure --enable-tests
 log "Building Haskell package"
 cabal build
 

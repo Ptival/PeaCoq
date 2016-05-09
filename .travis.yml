@@ -5,6 +5,10 @@ language: sh
 services:
   - docker
 
+os:
+  - linux
+  - osx
+
 sudo: required
 
 env:
@@ -31,9 +35,7 @@ before_install:
 
 install:
   - cabal sandbox init
-  - travis_retry cabal install --only-dependencies --enable-tests
-  - cabal configure --enable-tests
-  - cabal build
+  - ./setup.sh
 
 script:
   - cabal test
