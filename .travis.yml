@@ -13,10 +13,6 @@ sudo: required
 
 env:
   global:
-    - CABALVER=1.22
-    - GHCVER=7.10.2
-    - ALEXVER=3.1.4
-    - HAPPYVER=1.19.5
 
 cache:
   directories:
@@ -25,7 +21,6 @@ cache:
 before_install:
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then ./scripts/before-install-linux.sh; fi
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then ./scripts/before-install-osx.sh; fi
-  - cabal update
 
 install:
   - cabal sandbox init

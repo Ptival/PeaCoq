@@ -1,17 +1,18 @@
 #!/bin/bash
 set -ev
 
-ALEXVER="3.1.4"
-CABALVER="1.22.9.0"
-GHCVER="7.10.3b"
-HAPPYVER="1.19.5"
+ALEXVER=3.1.4
+HAPPYVER=1.19.5
 PKGMGR="brew"
 
 $PKGMGR update
-$PKGMGR install cabal-install-$CABALVER
-$PKGMGR install ghc-$GHCVER
+
+# Haskell server
+$PKGMGR install cabal-install ghc
 export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$PATH
 cabal update
-cabal install alex-$ALEXVER
-cabal install happy-$HAPPYVER
+cabal install alex-$ALEXVER happy-$HAPPYVER
 export PATH=/opt/alex/$ALEXVER/bin:/opt/happy/$HAPPYVER/bin:$PATH
+
+# Coq and OCaml plugin
+$PKGMGR install coq ocaml camlp5
