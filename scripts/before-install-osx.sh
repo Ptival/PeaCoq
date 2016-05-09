@@ -4,7 +4,7 @@ set -ev
 PKGMGR="brew"
 
 $PKGMGR update
-$PKGMGR install cabal-install-$CABALVER
+$PKGMGR install cabal-install
 $PKGMGR install ghc-$GHCVER
 export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$PATH
 cabal update
