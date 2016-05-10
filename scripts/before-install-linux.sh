@@ -1,10 +1,8 @@
 #!/bin/bash
 set -euv
 
-# ALEXVER=3.1.4
-# CABALVER=1.22
-# GHCVER=7.10.2
-# HAPPYVER=1.19.5
+COQVER=8.5
+OCAMLVER=4.02.3
 PKGMGR="sudo apt-get"
 
 $PKGMGR update
@@ -18,4 +16,4 @@ cabal update
 $PKGMGR install alex-$ALEXVER happy-$HAPPYVER
 
 # Coq and OCaml plugin
-$PKGMGR install coq ocaml camlp5
+$PKGMGR install coq-$COQVER ocaml-$OCAMLVER camlp5
