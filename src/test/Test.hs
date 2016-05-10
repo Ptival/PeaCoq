@@ -16,7 +16,7 @@ import Handlers
 import XMLProtocol
 
 coqtop :: String
-coqtop = "coqtop -ideslave -main-channel stdfds -I ../PeaCoq/plugin -Q ../PeaCoq/plugin PeaCoq"
+coqtop = "coqtop -ideslave -main-channel stdfds -I plugin/ -Q plugin/ PeaCoq"
 
 addGoalContext :: String -> CoqtopIO ()
 addGoalContext s = do
