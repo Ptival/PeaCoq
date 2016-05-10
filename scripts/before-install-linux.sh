@@ -1,10 +1,10 @@
 #!/bin/bash
 set -ev
 
-ALEXVER=3.1.4
-CABALVER=1.22
-GHCVER=7.10.2
-HAPPYVER=1.19.5
+# ALEXVER=3.1.4
+# CABALVER=1.22
+# GHCVER=7.10.2
+# HAPPYVER=1.19.5
 PKGMGR="sudo apt-get"
 
 $PKGMGR update
