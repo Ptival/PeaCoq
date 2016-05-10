@@ -36,7 +36,7 @@ cabal build
 
 log "Building OCaml plugin"
 ( cd plugin
-  make clean && make
+  make -B
 )
 
 ( cd web
