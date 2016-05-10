@@ -15,7 +15,7 @@ import Utils
 
 data StateId
   = StateId Int
-  deriving (Generic, Show)
+  deriving (Eq, Generic, Show)
 
 instance FromJSON StateId
 instance ToJSON StateId

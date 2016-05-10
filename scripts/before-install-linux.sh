@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ev
+set -euv
 
 # ALEXVER=3.1.4
 # CABALVER=1.22

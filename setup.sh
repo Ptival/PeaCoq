@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -eu -o pipefail
+set -euv
 
 function missing {
   echo >&2 "$1 is missing. Please install it."

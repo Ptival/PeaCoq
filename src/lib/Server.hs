@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Main where
+module Server where
 
 import           Control.Concurrent                          (forkIO, threadDelay)
 import           Control.Monad                               (forever, forM)
@@ -103,8 +103,8 @@ serverConfig (PeaCoqConfig { configUserId = u, configLogPath = l }) nowString =
       --putStrLn $ "On attu, visit: http://attu.cs.washington.edu:" ++ show port
       --putStrLn $ "Otherwise, visit: http://localhost:" ++ show port
 
-main :: IO ()
-main = do
+serve :: IO ()
+serve = do
   now <- getZonedTime
   let nowString = formatTime defaultTimeLocale "%F-%H-%M-%S" now
   homeDir <- getHomeDirectory

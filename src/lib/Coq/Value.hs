@@ -19,6 +19,12 @@ data Value a
   | ValueGood a
   deriving (Generic, Show)
 
+instance Eq a => Eq (Value a) where
+  ValueFail s loc msg == ValueFail s' loc' msg' =
+    s == s' && loc == loc' && msg == msg'
+  ValueGood a == ValueGood b =
+    a == b
+
 instance ToJSON a => ToJSON (Value a)
 
 instance FromXML a => FromXML (Value a) where
@@ -59,4 +65,3 @@ instance Monad Value  where
 
   (ValueGood a)         >>= f = f a
   (ValueFail s loc msg) >>= _ = ValueFail s loc msg
-

@@ -1,4 +1,4 @@
-Name:                PeaCoq
+Name:                peacoq
 Version:             0.1
 Synopsis:            PeaCoq is a web front-end to Coq
 Description:         PeaCoq is still a web front-end to Coq
@@ -10,55 +10,99 @@ Category:            Web
 Build-type:          Simple
 Cabal-version:       >=1.22
 
-Executable peacoq
-
+Library
   default-language: Haskell2010
+  extra-libraries:  z
+  hs-source-dirs:   src/lib
+  build-depends:
+    adjunctions               >= 4.2   && < 4.4,
+    aeson                     >= 0.8   && < 0.12,
+    array                     >= 0.5   && < 0.6,
+    base                      >= 4.8   && < 4.9,
+    bytestring                >= 0.10  && < 0.11,
+    conduit                   >= 1.2   && < 1.3,
+    conduit-extra             >= 1.1   && < 1.2,
+    containers                >= 0.5   && < 0.6,
+    data-default              >= 0.5   && < 0.6,
+    directory                 >= 1.2   && < 1.3,
+    exceptions                >= 0.6   && < 0.9,
+    filemanip                 >= 0.3   && < 0.4,
+    hslogger                  >= 1.2   && < 1.3,
+    lens                      >= 4.11  && < 4.14,
+    MissingH                  >= 1.3   && < 1.4,
+    monad-loops               >= 0.4   && < 0.5,
+    mtl                       >= 2.2   && < 2.3,
+    network                   >= 2.6   && < 2.7,
+    process                   >= 1.2   && < 1.3,
+    random                    >= 1.0   && < 1.2,
+    snap                      >= 0.14  && < 0.15,
+    snap-core                 >= 0.9   && < 0.10,
+    snap-server               >= 0.9   && < 0.10,
+    tagsoup                   >= 0.13  && < 0.14,
+    text                      >= 1.2   && < 1.3,
+    time                      >= 1.5   && < 1.6,
+    transformers              >= 0.4   && < 0.5,
+    unordered-containers      >= 0.2   && < 0.3,
+    utf8-string               >= 0.3   && < 1.1,
+    xml-conduit               >= 1.3   && < 1.4,
+    xml-types                 >= 0.3   && < 0.4
+  exposed-modules:
+    CoqIO,
+    Coq.StateId,
+    Coq.Value,
+    Handlers,
+    Server,
+    XMLProtocol
+  other-modules:
+    Conduits,
+    -- CoqIO,
+    CoqParse,
+    FromString,
+    FromXML,
+    -- Handlers,
+    -- ParseXML,
+    PeaCoq,
+    Session,
+    -- ShowXML,
+    ToXML,
+    Utils,
+    -- XMLProtocol,
+    Coq.CoqInfo,
+    Coq.CoqObject,
+    Coq.EditId,
+    Coq.Evar,
+    Coq.FeedbackContent,
+    Coq.Feedback,
+    Coq.Goal,
+    Coq.Goals,
+    Coq.Loc,
+    Coq.Message,
+    Coq.MessageLevel,
+    Coq.OptionState,
+    Coq.OptionValue,
+    Coq.SearchConstraint,
+    -- Coq.StateId,
+    Coq.Status,
+    -- Coq.Value,
+    Snap.Extras.JSON
 
-  hs-source-dirs: src
+Executable peacoq
+  default-language: Haskell2010
+  extra-libraries:  z
+  hs-source-dirs: src/exec
+  main-is: Main.hs
+  build-depends: base, peacoq
 
-  Main-is: Main.hs
-
-  Build-tools:
-
-  Build-depends:
-                adjunctions               >= 4.2   && < 4.4,
-                aeson                     >= 0.8   && < 0.12,
-                array                     >= 0.5   && < 0.6,
-                base                      >= 4.8   && < 4.9,
-                bytestring                >= 0.10  && < 0.11,
-                conduit                   >= 1.2   && < 1.3,
-                conduit-extra             >= 1.1   && < 1.2,
-                containers                >= 0.5   && < 0.6,
-                data-default              >= 0.5   && < 0.6,
-                directory                 >= 1.2   && < 1.3,
-                exceptions                >= 0.6   && < 0.9,
-                filemanip                 >= 0.3   && < 0.4,
-                hslogger                  >= 1.2   && < 1.3,
-                lens                      >= 4.11  && < 4.14,
-                MissingH                  >= 1.3   && < 1.4,
-                monad-loops               >= 0.4   && < 0.5,
-                mtl                       >= 2.2   && < 2.3,
-                network                   >= 2.6   && < 2.7,
-                process                   >= 1.2   && < 1.3,
-                random                    >= 1.0   && < 1.2,
-                snap                      >= 0.14  && < 0.15,
-                snap-core                 >= 0.9   && < 0.10,
-                snap-server               >= 0.9   && < 0.10,
-                tagsoup                   >= 0.13  && < 0.14,
-                text                      >= 1.2   && < 1.3,
-                time                      >= 1.5   && < 1.6,
-                transformers              >= 0.4   && < 0.5,
-                unordered-containers      >= 0.2   && < 0.3,
-                utf8-string               >= 0.3   && < 1.1,
-                xml-conduit               >= 1.3   && < 1.4,
-                xml-types                 >= 0.3   && < 0.4
-
-  Extra-libraries: z
-
-  Other-modules:
-
-  if impl(ghc >= 6.12.0)
-    ghc-options: -threaded -Wall -fwarn-tabs -funbox-strict-fields -O2
-                 -fno-warn-unused-do-bind
-  else
-    ghc-options: -threaded -Wall -fwarn-tabs -funbox-strict-fields -O2
+Test-Suite coqtop
+  type:             exitcode-stdio-1.0
+  default-language: Haskell2010
+  hs-source-dirs:   src/test
+  ghc-options:      -Wall
+  main-is:          Test.hs
+  build-depends:
+    base                      >= 4.8   && < 4.9,
+    HUnit                     >= 1.3   && < 1.4,
+    monad-loops               >= 0.4   && < 0.5,
+    mtl                       >= 2.2   && < 2.3,
+    process                   >= 1.2   && < 1.3,
+    peacoq
