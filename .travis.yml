@@ -1,6 +1,8 @@
 # https://www.refme.com/blog/2015/11/05/haskell-travis-heroku-and-docker-oh-my/
 
+dist:     trusty
 language: sh
+sudo:     required
 
 services:
   - docker
@@ -14,8 +16,6 @@ matrix:
         - GHCVER=7.10.2
         - HAPPYVER=1.19.5
     - os: osx
-
-sudo: required
 
 cache:
   directories:
