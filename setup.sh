@@ -36,7 +36,7 @@ cabal build
 
 log "Building OCaml plugin"
 ( cd plugin
-  make -B || { echo "FAILED"; exit 1 }
+  make -B || exit 1
 )
 
 ( cd web
