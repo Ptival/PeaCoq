@@ -27,3 +27,5 @@ tar -xzvf coq-8.5pl1.tar.gz
 
 # Frontend
 $PKGMGR install npm
+curl -sL https://deb.nodesource.com/setup_6.x | sudo -E bash -
+$PKGMGR install -y nodejs
