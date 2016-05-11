@@ -47,7 +47,7 @@ log "Building OCaml plugin"
   ../../node_modules/typings/dist/bin.js install
   log "Transpiling front-end"
   ../../node_modules/typescript/bin/tsc -p .
-)
+) || exit 1
 
 # TODO: the config file should not go in HOME, it's annoying for everyone
 # TODO: this config should be shared with the Haskell code somehow
