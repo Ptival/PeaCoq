@@ -46,6 +46,9 @@ let string_of_option string_of_elt o =
       | Some(elt) -> ("just", [string_of_elt elt])
     )
 
+let string_of_pair string_of_a string_of_b (a, b) =
+  string_of_string_list [string_of_a a; string_of_b b]
+
 let string_of_inductive (mi, i) =
   mk_new (
       "Inductive",
@@ -311,7 +314,16 @@ let rec string_of_cases_pattern_expr e =
           ; string_of_option string_of_reference ro
           ])
       | CPatOr(_) -> ("TODO_CPatOr", [])
-      | CPatNotation(_) -> ("TODO_CPatNotation", [])
+      | CPatNotation(loc, n, cpns, cpel) ->
+         ("CPatNotation",
+          [ string_of_location loc
+          ; quote n
+          ; string_of_pair
+              (string_of_list string_of_cases_pattern_expr)
+              (string_of_list (string_of_list string_of_cases_pattern_expr))
+              cpns
+          ; string_of_list string_of_cases_pattern_expr cpel
+          ])
       | CPatPrim(loc, tok) ->
          ("CPatPrim",
           [ string_of_location loc
@@ -1039,9 +1051,6 @@ and string_of_binder_expr env (nll, brk, bgk, e) =
       ; string_of_expr env e
       ]
     )
-
-let string_of_pair string_of_a string_of_b (a, b) =
-  string_of_string_list [string_of_a a; string_of_b b]
 
 let string_of_pre_goals string_of_a pgs =
   string_of_object

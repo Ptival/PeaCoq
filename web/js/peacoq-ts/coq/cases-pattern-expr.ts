@@ -27,6 +27,22 @@ class CPatAtom extends CasesPatternExpr {
 
 // TODO CPatAtom
 // TODO CPatOr
+
+type CasesPatternNotationSubstitution = [
+  CasesPatternExpr[],
+  CasesPatternExpr[][]
+];
+
+class CPatNotation extends CasesPatternExpr {
+  constructor(
+    public location: CoqLocation,
+    public notation: Notation,
+    public substitution: CasesPatternNotationSubstitution,
+    public patterns: CasesPatternExpr[]
+  ) {
+    super();
+  }
+}
 // TODO CPatNotation
 
 class CPatPrim extends CasesPatternExpr {
