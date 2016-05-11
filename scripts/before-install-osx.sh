@@ -14,3 +14,6 @@ cabal install alex happy
 
 # Coq and OCaml plugin
 $PKGMGR install coq ocaml camlp5
+
+# Frontend
+$PKGMGR install node
