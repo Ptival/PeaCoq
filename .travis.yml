@@ -19,9 +19,10 @@ matrix:
 
 cache:
   directories:
-    - '.cabal-sandbox'
-    - 'web/js/peacoq-ts/typings'
-    - 'web/node_modules'
+    - .cabal-sandbox
+    - coq-8.5pl1
+    - web/js/peacoq-ts/typings
+    - web/node_modules
 
 before_install:
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then ./scripts/before-install-linux.sh; fi
