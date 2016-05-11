@@ -24,3 +24,6 @@ tar -xzvf coq-8.5pl1.tar.gz
   sudo make
   sudo make install
 )
+
+# Frontend
+$PKGMGR install npm
