@@ -14,6 +14,7 @@ function log {
 cabal --version >/dev/null 2>&1 || missing "cabal-install"
 camlp5 -v       >/dev/null 2>&1 || missing "camlp5"
 coqc -v         >/dev/null 2>&1 || missing "coq"
+if [[ `coqtop -v` != *"version 8.5"* ]]; then missing "coqtop version 8.5"; fi
 ocamlc -v       >/dev/null 2>&1 || missing "ocaml"
 
 if [ -v "NIX_LDFLAGS" ] && [ -v "NIX_CFLAGS_COMPILE" ]; then
