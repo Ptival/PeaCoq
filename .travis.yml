@@ -1,11 +1,9 @@
+# Temporarily disabled docker
 # https://www.refme.com/blog/2015/11/05/haskell-travis-heroku-and-docker-oh-my/
 
 dist:     trusty
 language: sh
 sudo:     required
-
-services:
-  - docker
 
 matrix:
   include:
