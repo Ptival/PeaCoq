@@ -24,7 +24,8 @@ addons:
       - nodejs
 
 env:
-  COQVER="8.5-pl1"
+  global:
+    - COQVER=8.5-pl1
 
 cache:
   directories:
