@@ -17,7 +17,7 @@ coqc -v         >/dev/null 2>&1 || missing "coq"
 if [[ `coqtop -v` != *"version 8.5"* ]]; then missing "coqtop version 8.5"; fi
 ocamlc -v       >/dev/null 2>&1 || missing "ocaml"
 
-if [ -n "NIX_LDFLAGS" ] && [ -n "NIX_CFLAGS_COMPILE" ]; then
+if [ -n "${NIX_LDFLAGS+x}" ] && [ -n "${NIX_CFLAGS_COMPILE+x}" ]; then
   INCLUDEDIR=`echo ${NIX_CFLAGS_COMPILE} | grep -o '/nix/store\S*zlib\S*/include' | head -1`
   echo "Setting --extra-include-dirs to: ${INCLUDEDIR}"
   LIBDIR=`echo ${NIX_LDFLAGS} | grep -o '/nix/store\S*zlib\S*[0-9]/lib' | head -1`
