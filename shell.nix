@@ -6,7 +6,7 @@ nixpkgs.lib.overrideDerivation
         cabal-install
         coq_8_5
         ghc
-        ocaml_4_02
+        ocaml # need 4.0.1 to work with camlp5
         ocamlPackages.camlp5_6_strict
         nodejs-5_x
         zlib

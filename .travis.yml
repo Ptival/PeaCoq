@@ -38,6 +38,10 @@ before_install:
 install:
   - export PATH=/opt/cabal/1.24/bin:$PATH
   - export PATH=$HOME/coq-8.5pl1/bin:$PATH
+  - which coqc
+  - ls $HOME
+  - ls $HOME/coq-8.5pl1
+  - ls $HOME/coq-8.5pl1/bin
   - ./setup.sh
 
 script:
