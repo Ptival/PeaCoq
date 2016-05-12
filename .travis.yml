@@ -16,7 +16,7 @@ addons:
       - hvr-ghc
     packages:
       - cabal-install-1.24
-      - ghc-head
+      - ghc-7.10.3
       - alex
       - happy
       - ocaml
@@ -37,6 +37,7 @@ before_install:
 
 install:
   - export PATH=/opt/cabal/1.24/bin:$PATH
+  - export PATH=/opt/ghc/7.10.3/bin:$PATH
   - export PATH=$TRAVIS_BUILD_DIR/coq-8.5pl1/bin:$PATH
   - ls $TRAVIS_BUILD_DIR
   - ls $TRAVIS_BUILD_DIR/coq-8.5pl1
