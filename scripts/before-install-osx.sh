@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 set -euv
 
-COQVER="8.5pl1"
-COQ="coq-8.5pl1"
 PKGMGR="brew"
 
 $PKGMGR update
@@ -16,10 +14,10 @@ cabal install alex happy
 $PKGMGR install ocaml camlp5
 # Brew packages a version of coq that was not built with its version of
 # ocaml so coq complains
-if [ ! -d "$HOME/$COQ" ]; then
-  wget https://coq.inria.fr/distrib/V$COQVER/files/$COQ.tar.gz
-  tar -xzvf $COQ.tar.gz
-  ( cd $COQ
+if [ ! -d "$TRAVIS_BUILD_DIR/coq-$COQVER" ]; then
+  wget https://coq.inria.fr/distrib/V$COQVER/files/coq-$COQVER.tar.gz
+  tar -xzvf coq-$COQVER.tar.gz
+  ( cd coq-$COQVER
     ./configure -local
     make -j2
     make install

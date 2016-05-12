@@ -23,11 +23,14 @@ addons:
       - camlp5
       - nodejs
 
+env:
+  COQVER="8.5-pl1"
+
 cache:
   directories:
     - $HOME/.cabal
     - $HOME/.ghc
-    - $TRAVIS_BUILD_DIR/coq-8.5pl1
+    - $TRAVIS_BUILD_DIR/coq-$COQVER
     - $TRAVIS_BUILD_DIR/web/js/peacoq-ts/typings
     - $TRAVIS_BUILD_DIR/web/node_modules
 
@@ -38,10 +41,8 @@ before_install:
 install:
   - export PATH=/opt/cabal/1.24/bin:$PATH
   - export PATH=/opt/ghc/7.10.3/bin:$PATH
-  - export PATH=$TRAVIS_BUILD_DIR/coq-8.5pl1/bin:$PATH
-  - ls $TRAVIS_BUILD_DIR
-  - ls $TRAVIS_BUILD_DIR/coq-8.5pl1
-  - ls $TRAVIS_BUILD_DIR/coq-8.5pl1/bin
+  - export PATH=$TRAVIS_BUILD_DIR/coq-$COQVER/bin:$PATH
+  - cabal update
   - ./setup.sh
 
 script:
