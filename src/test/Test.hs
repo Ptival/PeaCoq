@@ -12,7 +12,7 @@ import Test.HUnit
 import Coq.StateId
 import Coq.Value
 import CoqIO
-import Handlers
+import PeaCoqHandler
 import XMLProtocol
 
 coqtop :: String

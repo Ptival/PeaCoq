@@ -13,6 +13,7 @@ Cabal-version:       >=1.22
 Library
   default-language: Haskell2010
   extra-libraries:  z
+  ghc-options:      -Wall
   hs-source-dirs:   src/lib
   build-depends:
     adjunctions               >= 4.2   && < 4.4,
@@ -51,6 +52,7 @@ Library
     Coq.StateId,
     Coq.Value,
     Handlers,
+    PeaCoqHandler,
     Server,
     XMLProtocol
   other-modules:
@@ -60,6 +62,24 @@ Library
     FromString,
     FromXML,
     -- Handlers,
+    Handlers.About,
+    Handlers.Add,
+    Handlers.Annotate,
+    Handlers.EditAt,
+    Handlers.Evars,
+    Handlers.GetOptions,
+    Handlers.Goal,
+    Handlers.Hints,
+    Handlers.Init,
+    Handlers.Interp,
+    Handlers.MkCases,
+    Handlers.PrintAST,
+    Handlers.Query,
+    Handlers.Quit,
+    Handlers.Search,
+    Handlers.SetOptions,
+    Handlers.Status,
+    Handlers.StopWorker,
     -- ParseXML,
     PeaCoq,
     Session,
@@ -89,6 +109,7 @@ Library
 Executable peacoq
   default-language: Haskell2010
   extra-libraries:  z
+  ghc-options:      -Wall
   hs-source-dirs: src/exec
   main-is: Main.hs
   build-depends: base, peacoq
@@ -96,6 +117,7 @@ Executable peacoq
 Test-Suite coqtop
   type:             exitcode-stdio-1.0
   default-language: Haskell2010
+  ghc-options:      -Wall
   hs-source-dirs:   src/test
   ghc-options:      -Wall
   main-is:          Test.hs

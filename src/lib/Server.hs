@@ -31,6 +31,7 @@ import           System.Process
 
 import           Handlers
 import           PeaCoq
+import           PeaCoqHandler
 import           Session
 
 {- Configuration -}
@@ -136,13 +137,13 @@ closeSession _hash (SessionState _ (hi, ho, _, ph) _) = do
   hClose hi
   hClose ho
   terminateProcess ph -- not stricly necessary
-  waitForProcess ph
+  _ <- waitForProcess ph
   return ()
 
 cleanStaleSessions :: String -> IORef GlobalState -> IO ()
 cleanStaleSessions hash globRef = forever $ do
   sessionsToClose <- atomicModifyIORef' globRef markAndSweep
-  forM sessionsToClose (closeSession hash)
+  _ <- forM sessionsToClose (closeSession hash)
   threadDelay sessionTimeoutMicroseconds
   where
     markAndSweep :: GlobalState -> (GlobalState, [SessionState])
@@ -154,7 +155,7 @@ newPeaCoqGlobalState :: String -> String -> IO (IORef GlobalState)
 newPeaCoqGlobalState coqtop hash = liftIO $ do
   globRef <- newIORef $ GlobalState 0 IM.empty coqtop
   -- spawn a parallel thread to regularly clean up
-  forkIO $ cleanStaleSessions hash globRef
+  _ <- forkIO $ cleanStaleSessions hash globRef
   return globRef
 
 globRefInit :: IORef GlobalState -> SnapletInit PeaCoq PeaCoqGlobRef

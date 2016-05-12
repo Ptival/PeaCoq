@@ -34,7 +34,7 @@ cabal install --only-dependencies ${CABALFLAGS}
 log "Configuring Haskell package"
 cabal configure --enable-tests
 log "Building Haskell package"
-cabal build
+cabal build -j2
 
 log "Building OCaml plugin"
 ( cd plugin

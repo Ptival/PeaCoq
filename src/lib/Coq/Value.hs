@@ -24,6 +24,7 @@ instance Eq a => Eq (Value a) where
     s == s' && loc == loc' && msg == msg'
   ValueGood a == ValueGood b =
     a == b
+  _ == _ = False
 
 instance ToJSON a => ToJSON (Value a)
 
