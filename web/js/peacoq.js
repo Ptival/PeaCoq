@@ -15,6 +15,7 @@ requirejs.config({
   shim: {
     "bootstrap": { deps: ["jquery"] },
     "jquery.hotkeys": { deps: ["jquery"] },
+    "w2ui": { deps: ["jquery"] },
   },
   waitSeconds: 0,
 });
