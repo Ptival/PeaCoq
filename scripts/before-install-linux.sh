@@ -20,7 +20,7 @@ OCAMLVER=4.02.3
 wget https://coq.inria.fr/distrib/V8.5pl1/files/coq-8.5pl1.tar.gz
 tar -xzvf coq-8.5pl1.tar.gz
 ( cd coq-8.5pl1
-  yes "" | ./configure
+  ./configure -local
   make
   make install
 ) || exit 1
