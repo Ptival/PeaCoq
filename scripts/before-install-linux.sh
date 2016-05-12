@@ -2,30 +2,30 @@
 set -euv
 
 OCAMLVER=4.02.3
-PKGMGR="sudo apt-get"
+# PKGMGR="sudo apt-get"
 
-$PKGMGR update
+# $PKGMGR update
 
 # Haskell server
-sudo add-apt-repository -y ppa:hvr/ghc
-$PKGMGR update
-$PKGMGR install cabal-install-$CABALVER ghc-$GHCVER
-export PATH=/opt/cabal/$CABALVER/bin:$PATH
-cabal update
-$PKGMGR install alex-$ALEXVER happy-$HAPPYVER
+# sudo add-apt-repository -y ppa:hvr/ghc
+# $PKGMGR update
+# $PKGMGR install cabal-install-$CABALVER ghc-$GHCVER
+# export PATH=/opt/cabal/$CABALVER/bin:$PATH
+# cabal update
+# $PKGMGR install alex-$ALEXVER happy-$HAPPYVER
 
 # Coq and OCaml plugin
-$PKGMGR install ocaml camlp5
+# $PKGMGR install ocaml camlp5
 # Trusty packages 8.4, so we need to install manually?
 wget https://coq.inria.fr/distrib/V8.5pl1/files/coq-8.5pl1.tar.gz
 tar -xzvf coq-8.5pl1.tar.gz
 ( cd coq-8.5pl1
   yes "" | ./configure
   make
-  sudo make install
+  make install
 ) || exit 1
 
 # Frontend
-$PKGMGR install npm
-curl -sL https://deb.nodesource.com/setup_6.x | sudo -E bash -
-$PKGMGR install -y nodejs
+# $PKGMGR install npm
+# curl -sL https://deb.nodesource.com/setup_6.x | sudo -E bash -
+# $PKGMGR install -y nodejs

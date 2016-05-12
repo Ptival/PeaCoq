@@ -21,5 +21,5 @@ tar -xzvf coq-8.5pl1.tar.gz
 ( cd coq-8.5pl1
   yes "" | ./configure
   make
-  sudo make install
+  make install
 ) || exit 1
