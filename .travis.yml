@@ -27,9 +27,9 @@ cache:
   directories:
     - $HOME/.cabal
     - $HOME/.ghc
-    - coq-8.5pl1
-    - web/js/peacoq-ts/typings
-    - web/node_modules
+    - $TRAVIS_BUILD_DIR/coq-8.5pl1
+    - $TRAVIS_BUILD_DIR/web/js/peacoq-ts/typings
+    - $TRAVIS_BUILD_DIR/web/node_modules
 
 before_install:
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then ./scripts/before-install-linux.sh; fi
@@ -37,10 +37,10 @@ before_install:
 
 install:
   - export PATH=/opt/cabal/1.24/bin:$PATH
-  - export PATH=$HOME/coq-8.5pl1/bin:$PATH
-  - ls $HOME
-  - ls $HOME/coq-8.5pl1
-  - ls $HOME/coq-8.5pl1/bin
+  - export PATH=$TRAVIS_BUILD_DIR/coq-8.5pl1/bin:$PATH
+  - ls $TRAVIS_BUILD_DIR
+  - ls $TRAVIS_BUILD_DIR/coq-8.5pl1
+  - ls $TRAVIS_BUILD_DIR/coq-8.5pl1/bin
   - ./setup.sh
 
 script:
