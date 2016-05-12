@@ -47,7 +47,8 @@ install:
   - ls $TRAVIS_BUILD_DIR/coq-$COQVER/bin
   - export PATH=$TRAVIS_BUILD_DIR/coq-$COQVER/bin:$PATH
   - cabal update
-  - ./setup.sh
+  # building src/Handlers.hs takes more than 10 minutes on Travis :(
+  - travis_wait 30 ./setup.sh
 
 script:
   - cabal test
