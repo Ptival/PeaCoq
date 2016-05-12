@@ -25,7 +25,7 @@ addons:
 
 env:
   global:
-    - COQVER=8.5-pl1
+    - COQVER=8.5pl1
 
 cache:
   directories:
