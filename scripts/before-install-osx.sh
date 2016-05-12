@@ -13,7 +13,7 @@ cabal update
 cabal install alex happy
 
 # Coq and OCaml plugin
-$PKGMGR install coq ocaml camlp5
+$PKGMGR install ocaml camlp5
 # Brew packages a version of coq that was not built with its version of
 # ocaml so coq complains
 if [ ! -d "$HOME/$COQ" ]; then
