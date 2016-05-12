@@ -3,7 +3,7 @@ set -euv
 
 # Coq and OCaml plugin
 # Trusty packages 8.4, so we need to install manually?
-if [ ! -d "$TRAVIS_BUILD_DIR/coq-$COQVER" ]; then
+if [ ! -f "$TRAVIS_BUILD_DIR/coq-$COQVER/bin/coqc" ]; then
   wget https://coq.inria.fr/distrib/V$COQVER/files/coq-$COQVER.tar.gz
   tar -xzvf coq-$COQVER.tar.gz
   ( cd coq-$COQVER

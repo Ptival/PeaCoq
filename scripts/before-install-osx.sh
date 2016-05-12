@@ -14,7 +14,7 @@ cabal install alex happy
 $PKGMGR install ocaml camlp5
 # Brew packages a version of coq that was not built with its version of
 # ocaml so coq complains
-if [ ! -d "$TRAVIS_BUILD_DIR/coq-$COQVER" ]; then
+if [ ! -f "$TRAVIS_BUILD_DIR/coq-$COQVER/bin/coqc" ]; then
   wget https://coq.inria.fr/distrib/V$COQVER/files/coq-$COQVER.tar.gz
   tar -xzvf coq-$COQVER.tar.gz
   ( cd coq-$COQVER
