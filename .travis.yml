@@ -42,6 +42,9 @@ before_install:
 install:
   - export PATH=/opt/cabal/1.24/bin:$PATH
   - export PATH=/opt/ghc/7.10.3/bin:$PATH
+  - ls $TRAVIS_BUILD_DIR
+  - ls $TRAVIS_BUILD_DIR/coq-$COQVER
+  - ls $TRAVIS_BUILD_DIR/coq-$COQVER/bin
   - export PATH=$TRAVIS_BUILD_DIR/coq-$COQVER/bin:$PATH
   - cabal update
   - ./setup.sh
