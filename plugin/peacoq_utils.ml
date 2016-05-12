@@ -315,6 +315,13 @@ let rec string_of_cases_pattern_expr e =
           ])
       | CPatOr(_) -> ("TODO_CPatOr", [])
       | CPatNotation(loc, n, cpns, cpel) ->
+         let (unp, prec) =
+           begin
+             match n with
+             | "( _ )" -> ([], 0)
+             | _       -> Notation.find_notation_printing_rule n
+           end
+         in
          ("CPatNotation",
           [ string_of_location loc
           ; quote n
@@ -323,6 +330,9 @@ let rec string_of_cases_pattern_expr e =
               (string_of_list (string_of_list string_of_cases_pattern_expr))
               cpns
           ; string_of_list string_of_cases_pattern_expr cpel
+          (* added for PeaCoq *)
+          ; string_of_int prec
+          ; string_of_unparsing_list unp
           ])
       | CPatPrim(loc, tok) ->
          ("CPatPrim",
@@ -478,7 +488,7 @@ let rec string_of_constr_expr ce =
       | CRecord(_) -> ("TODO_CRecord", [])
 
       | CCases(loc, style, ceo, casel, branchl) ->
-         ("CCases(",
+         ("CCases",
           [ string_of_location loc
           ; string_of_case_style style
           ; string_of_option string_of_constr_expr ceo

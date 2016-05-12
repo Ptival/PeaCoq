@@ -595,7 +595,7 @@ function casesPatternExprLoc(p: CasesPatternExpr): CoqLocation {
   if (p instanceof CPatCstr) { return p.location; }
   if (p instanceof CPatAtom) { return p.location; }
   // if (p instanceof CPatOr) { return p.location; }
-  // if (p instanceof CPatNotation) { return p.location; }
+  if (p instanceof CPatNotation) { return p.location; }
   // if (p instanceof CPatRecord) { return p.location; }
   if (p instanceof CPatPrim) { return p.location; }
   if (p instanceof CPatDelimiters) { return p.location; }
@@ -672,8 +672,41 @@ function prPatt(
       });
       //} else if (p instanceof CPatOr) {
       // TODO
-      //} else if (p instanceof CPatNotation) {
-      // TODO
+    } else if (p instanceof CPatNotation) {
+      if (
+        p.notation === "( _ )"
+        && p.substitution[0].length === 1
+        && p.substitution[1].length === 0
+        && p.patterns.length === 0
+      ) {
+        return [
+          [].concat(
+            prPatt(() => str("("), [Number.MAX_VALUE, new E()], p),
+            str(")")
+          )
+          , lAtom
+        ];
+      } else {
+        const s = p.notation;
+        const [l, ll] = p.substitution;
+        const args = p.patterns;
+        const [strmNot, lNot] = prNotation(
+          (x, y) => prPatt(mt, x, y),
+          (x, y, z) => mt(),
+          s,
+          [l, ll, []],
+          p.unparsing,
+          p.precedence
+        );
+        const prefix =
+          (args.length === 0 || precLess(lNot, [lApp, new L()]))
+            ? strmNot
+            : surround(strmNot);
+        return [
+          [].concat(prefix, prList(x => prPatt(spc, [lApp, new L()], x), args)),
+          args.length === 0 ? lNot : lApp
+        ];
+      }
     } else if (p instanceof CPatPrim) {
       return [prPrimToken(p.token), lAtom];
     } else if (p instanceof CPatDelimiters) {

@@ -38,7 +38,9 @@ class CPatNotation extends CasesPatternExpr {
     public location: CoqLocation,
     public notation: Notation,
     public substitution: CasesPatternNotationSubstitution,
-    public patterns: CasesPatternExpr[]
+    public patterns: CasesPatternExpr[],
+    public precedence: number,
+    public unparsing: Unparsing[]
   ) {
     super();
   }
