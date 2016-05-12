@@ -15,7 +15,7 @@ addons:
     sources:
       - hvr-ghc
     packages:
-      - cabal-install-head
+      - cabal-install-1.24
       - ghc-head
       - alex
       - happy
@@ -36,6 +36,7 @@ before_install:
   - if [ "$TRAVIS_OS_NAME" = "osx" ];   then ./scripts/before-install-osx.sh; fi
 
 install:
+  - export PATH=/opt/cabal/1.24/bin:$PATH
   - export PATH=$HOME/coq-8.5pl1/bin:$PATH
   - ./setup.sh
 

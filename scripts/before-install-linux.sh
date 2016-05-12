@@ -1,31 +1,18 @@
 #!/usr/bin/env bash
 set -euv
 
-OCAMLVER=4.02.3
-# PKGMGR="sudo apt-get"
-
-# $PKGMGR update
-
-# Haskell server
-# sudo add-apt-repository -y ppa:hvr/ghc
-# $PKGMGR update
-# $PKGMGR install cabal-install-$CABALVER ghc-$GHCVER
-# export PATH=/opt/cabal/$CABALVER/bin:$PATH
-# cabal update
-# $PKGMGR install alex-$ALEXVER happy-$HAPPYVER
+COQ="coq-8.5pl1"
 
 # Coq and OCaml plugin
-# $PKGMGR install ocaml camlp5
 # Trusty packages 8.4, so we need to install manually?
-wget https://coq.inria.fr/distrib/V8.5pl1/files/coq-8.5pl1.tar.gz
-tar -xzvf coq-8.5pl1.tar.gz
-( cd coq-8.5pl1
-  ./configure -local
-  make
-  make install
-) || exit 1
-
-# Frontend
-# $PKGMGR install npm
-# curl -sL https://deb.nodesource.com/setup_6.x | sudo -E bash -
-# $PKGMGR install -y nodejs
+if [ ! -d "$HOME/$COQ" ]; then
+  wget https://coq.inria.fr/distrib/V8.5pl1/files/$COQ.tar.gz
+  tar -xzvf $COQ.tar.gz
+  ( cd $COQ
+    ./configure -local
+    make -j2
+    make install
+  ) || exit 1
+else
+  echo "Using coq from cache"
+fi
