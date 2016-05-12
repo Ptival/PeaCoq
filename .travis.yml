@@ -8,11 +8,6 @@ sudo:     false
 matrix:
   include:
     - os: linux
-      env:
-        - ALEXVER=3.1.4
-        - CABALVER=1.22
-        - GHCVER=7.10.2
-        - HAPPYVER=1.19.5
     - os: osx
 
 addons:
@@ -20,10 +15,10 @@ addons:
     sources:
       - hvr-ghc
     packages:
-      - cabal-install-$CABALVER
-      - ghc-$GHCVER
-      - alex-$ALEXVER
-      - happy-$HAPPYVER
+      - cabal-install-head
+      - ghc-head
+      - alex
+      - happy
       - ocaml
       - camlp5
       - nodejs
