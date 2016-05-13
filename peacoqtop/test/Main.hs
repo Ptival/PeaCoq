@@ -1,4 +1,4 @@
-module Test where
+module Main where
 
 import Control.Monad.RWS.Strict
 import Data.List                (isInfixOf)

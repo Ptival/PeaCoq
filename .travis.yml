@@ -48,5 +48,5 @@ install:
   - travis_wait 40 ./setup.sh
 
 script:
-  - (cd peacoqtop && cabal test)
-  - (cd peacoq-server && cabal test)
+  - (cd peacoqtop && ./dist/build/peacoqtop-test/peacoqtop-test)
+  - (cd peacoq-server && ./dist/build/peacoq-server-test/peacoq-server-test)

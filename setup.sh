@@ -29,18 +29,24 @@ else
   CABALFLAGS=""
 fi
 
-log "Cleaning up Haskell packages"
-ghc-pkg unregister peacoqtop || true
+log "Cleaning up Haskell packages (reverse order)"
 ghc-pkg unregister peacoq-server || true
+ghc-pkg unregister peacoqtop || true
 
 log "Building and installing peacoqtop"
 ( cd peacoqtop
-  cabal install --enable-tests -j2 ${CABALFLAGS}
+  cabal configure --enable-tests ${CABALFLAGS}
+  cabal build -j2
+  cabal copy
+  cabal register
 ) || exit 1
 
 log "Building and installing peacoq-server"
 ( cd peacoq-server
-  cabal install --enable-tests -j2 ${CABALFLAGS}
+  cabal configure --enable-tests ${CABALFLAGS}
+  cabal build -j2
+  cabal copy
+  cabal register
 ) || exit 1
 
 log "Building OCaml plugin"

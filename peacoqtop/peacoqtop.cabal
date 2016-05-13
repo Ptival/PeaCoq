@@ -67,9 +67,10 @@ Executable peacoqtop
   default-language: Haskell2010
   extra-libraries:  z
   ghc-options:      -Wall
-  hs-source-dirs: exec
-  main-is: Main.hs
-  build-depends: base, peacoqtop
+  hs-source-dirs:   exec
+  main-is:          Main.hs
+  build-depends:
+    base, peacoqtop
 
 Test-Suite peacoqtop-test
   type:             exitcode-stdio-1.0
@@ -79,9 +80,9 @@ Test-Suite peacoqtop-test
   ghc-options:      -Wall
   main-is:          Main.hs
   build-depends:
+    peacoqtop,
     base                      >= 4.8   && < 4.9,
     HUnit                     >= 1.3   && < 1.4,
     monad-loops               >= 0.4   && < 0.5,
     mtl                       >= 2.2   && < 2.3,
-    process                   >= 1.2   && < 1.3,
-    peacoqtop
+    process                   >= 1.2   && < 1.3

@@ -68,11 +68,12 @@ Executable peacoq-server
   default-language: Haskell2010
   extra-libraries:  z
   ghc-options:      -Wall
-  hs-source-dirs: exec
-  main-is: Main.hs
-  build-depends: base, peacoq-server
+  hs-source-dirs:   exec
+  main-is:          Main.hs
+  build-depends:
+    base, peacoq-server
 
-Test-Suite coqtop
+Test-Suite peacoq-server-test
   type:             exitcode-stdio-1.0
   default-language: Haskell2010
   ghc-options:      -Wall
@@ -81,8 +82,8 @@ Test-Suite coqtop
   main-is:          Main.hs
   build-depends:
     base                      >= 4.8   && < 4.9,
-    HUnit                     >= 1.3   && < 1.4,
-    monad-loops               >= 0.4   && < 0.5,
-    mtl                       >= 2.2   && < 2.3,
-    process                   >= 1.2   && < 1.3,
+    -- HUnit                     >= 1.3   && < 1.4,
+    -- monad-loops               >= 0.4   && < 0.5,
+    -- mtl                       >= 2.2   && < 2.3,
+    -- process                   >= 1.2   && < 1.3,
     peacoq-server
