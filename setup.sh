@@ -38,7 +38,7 @@ log "Building peacoqtop"
   log "Building Haskell package"
   cabal build -j2
   log "Installing Haskell package"
-  cabal install
+  cabal install --force-reinstalls
 ) || exit 1
 
 log "Building peacoq-server"
@@ -50,7 +50,7 @@ log "Building peacoq-server"
   log "Building Haskell package"
   cabal build -j2
   log "Installing Haskell package"
-  cabal install
+  cabal install --force-reinstalls
 ) || exit 1
 
 log "Building OCaml plugin"
