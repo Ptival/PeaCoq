@@ -1,0 +1,40 @@
+module Handlers (
+  module Handlers.About,
+  module Handlers.Add,
+  module Handlers.Annotate,
+  module Handlers.EditAt,
+  module Handlers.Evars,
+  module Handlers.GetOptions,
+  module Handlers.Goal,
+  module Handlers.Hints,
+  module Handlers.Init,
+  module Handlers.Interp,
+  module Handlers.MkCases,
+  module Handlers.PrintAST,
+  module Handlers.Query,
+  module Handlers.Quit,
+  module Handlers.Search,
+  module Handlers.SetOptions,
+  module Handlers.Status,
+  module Handlers.StopWorker
+) where
+
+import Handlers.About
+import Handlers.Add
+import Handlers.Annotate
+import Handlers.EditAt
+import Handlers.Evars
+import Handlers.GetOptions
+import Handlers.Goal
+import Handlers.Hints
+import Handlers.Init
+import Handlers.Interp
+import Handlers.MkCases
+import Handlers.PrintAST
+import Handlers.Query
+import Handlers.Quit
+import Handlers.Search
+import Handlers.SetOptions
+import Handlers.Status
+import Handlers.StopWorker
+

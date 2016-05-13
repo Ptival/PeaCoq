@@ -29,12 +29,29 @@ else
   CABALFLAGS=""
 fi
 
-log "Fetching Haskell dependencies"
-cabal install --only-dependencies ${CABALFLAGS}
-log "Configuring Haskell package"
-cabal configure --enable-tests
-log "Building Haskell package"
-cabal build -j2
+log "Building peacoqtop"
+( cd peacoqtop
+  log "Fetching Haskell dependencies"
+  cabal install --only-dependencies ${CABALFLAGS}
+  log "Configuring Haskell package"
+  cabal configure --enable-tests
+  log "Building Haskell package"
+  cabal build -j2
+  log "Installing Haskell package"
+  cabal install
+) || exit 1
+
+log "Building peacoq-server"
+( cd peacoq-server
+  log "Fetching Haskell dependencies"
+  cabal install --only-dependencies ${CABALFLAGS}
+  log "Configuring Haskell package"
+  cabal configure --enable-tests
+  log "Building Haskell package"
+  cabal build -j2
+  log "Installing Haskell package"
+  cabal install
+) || exit 1
 
 log "Building OCaml plugin"
 ( cd plugin

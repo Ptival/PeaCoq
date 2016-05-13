@@ -1,0 +1,88 @@
+Name:                peacoq-server
+Version:             0.1
+Synopsis:            Server to bridge a web interface to coqtop
+Description:         Server to bridge a web interface to coqtop
+License:             MIT
+Author:              Valentin Robert
+Maintainer:          vrobert@cs.ucsd.edu
+Stability:           Experimental
+Category:            Web
+Build-type:          Simple
+Cabal-version:       >=1.22
+
+Library
+  default-language: Haskell2010
+  extra-libraries:  z
+  ghc-options:      -Wall
+  hs-source-dirs:   lib
+  build-depends:    peacoqtop,
+    adjunctions               >= 4.2   && < 4.4,
+    aeson                     >= 0.8   && < 0.12,
+    base                      >= 4.8   && < 4.9,
+    bytestring                >= 0.10  && < 0.11,
+    containers                >= 0.5   && < 0.6,
+    directory                 >= 1.2   && < 1.3,
+    hslogger                  >= 1.2   && < 1.3,
+    lens                      >= 4.11  && < 4.14,
+    MissingH                  >= 1.3   && < 1.4,
+    mtl                       >= 2.2   && < 2.3,
+    network                   >= 2.6   && < 2.7,
+    process                   >= 1.2   && < 1.3,
+    random                    >= 1.0   && < 1.2,
+    snap                      >= 0.14  && < 0.15,
+    snap-core                 >= 0.9   && < 0.10,
+    snap-server               >= 0.9   && < 0.10,
+    text                      >= 1.2   && < 1.3,
+    time                      >= 1.5   && < 1.6,
+    transformers              >= 0.4   && < 0.5,
+    unordered-containers      >= 0.2   && < 0.3,
+    utf8-string               >= 0.3   && < 1.1
+  exposed-modules:
+    Handlers,
+    PeaCoqHandler,
+    Server
+  other-modules:
+    Handlers.About,
+    Handlers.Add,
+    Handlers.Annotate,
+    Handlers.EditAt,
+    Handlers.Evars,
+    Handlers.GetOptions,
+    Handlers.Goal,
+    Handlers.Hints,
+    Handlers.Init,
+    Handlers.Interp,
+    Handlers.MkCases,
+    Handlers.PrintAST,
+    Handlers.Query,
+    Handlers.Quit,
+    Handlers.Search,
+    Handlers.SetOptions,
+    Handlers.Status,
+    Handlers.StopWorker,
+    PeaCoq,
+    Session,
+    Snap.Extras.JSON
+
+Executable peacoq-server
+  default-language: Haskell2010
+  extra-libraries:  z
+  ghc-options:      -Wall
+  hs-source-dirs: exec
+  main-is: Main.hs
+  build-depends: base, peacoq-server
+
+Test-Suite coqtop
+  type:             exitcode-stdio-1.0
+  default-language: Haskell2010
+  ghc-options:      -Wall
+  hs-source-dirs:   test
+  ghc-options:      -Wall
+  main-is:          Main.hs
+  build-depends:
+    base                      >= 4.8   && < 4.9,
+    HUnit                     >= 1.3   && < 1.4,
+    monad-loops               >= 0.4   && < 0.5,
+    mtl                       >= 2.2   && < 2.3,
+    process                   >= 1.2   && < 1.3,
+    peacoq-server
