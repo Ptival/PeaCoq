@@ -3,7 +3,7 @@
 
 [![Build Status](https://travis-ci.org/Ptival/PeaCoq.svg)](https://travis-ci.org/Ptival/PeaCoq)
 
-[![Docker Hub](http://goto.ucsd.edu/~vrobert/docker.png)](https://hub.docker.com/r/ptival/peacoq/)
+# [![Docker Hub](http://goto.ucsd.edu/~vrobert/docker.png)](https://hub.docker.com/r/ptival/peacoq/)
 
 Getting ready (everyone)
 ------------------------
@@ -16,11 +16,10 @@ $ cd PeaCoq
 Dependencies (NixOS)
 --------------------
 
-For all of you 1337 hax0rz, a `nix-shell` should pull all the necessary dependencies.
-You will need cabal2nix to turn `peacoq.cabal` into `peacoq.nix`:
+For all of you 1337 hax0rz, `shell.nix` should pull all the necessary
+dependencies.
 
 ```
-$ cabal2nix . > peacoq.nix
 $ nix-shell
 # brace yourself, this might take a while the first time!
 ```
@@ -48,7 +47,7 @@ $ cabal install alex happy
 Building (everyone)
 -------------------
 
-Optionally, you can run `cabal update`, then:
+Optionally (but recommended), you can run `cabal update`, then:
 
 ```
 $ ./setup.sh
@@ -56,28 +55,33 @@ $ ./setup.sh
 
 `setup.sh` will perform a lot of operations:
 
-1. `cabal configure` to make sure PeaCoq is build-able
+1. Check that the required software is present and versions
 
-2. `cabal build` PeaCoq's server-side
+2. Clean up existing installations of `peacoqtop` and `peacoq-server`
 
-3. `make` the OCaml plugin that enriches Coq's protocol for PeaCoq
+3. Build and install `peacoqtop`, a wrapper around `coqtop`
 
-4. `npm install` some JavaScript modules needed by the front-end
+4. Build and install `peacoq-server`, a small server to communicate with the
+  front-end
 
-5. `typings install` some TypeScript definitions needed to type-check the front-end
+5. `make` the OCaml plugin that enriches Coq's protocol for PeaCoq
 
-6. `tsc -p .` transpiles the front-end from TypeScript to JavaScript
+6. `npm install` some JavaScript modules needed by the front-end
 
-7. Finally a configuration file will be created in your home directory
+7. `typings install` some TypeScript definitions needed to type-check the front-end
 
-So it will take a while the first time, and steps 1, 4, 5, and 6 will
+8. `tsc -p .` transpiles the front-end from TypeScript to JavaScript
+
+9. Finally a configuration file will be created in your home directory
+
+So it will take a while the first time, and steps 3, 4, 6, and 7 will
 require an Internet connection.
 
 Running PeaCoq
 --------------
 
 ```
-./dist/build/peacoq/peacoq -p <PORT>
+./peacoq-server/dist/build/peacoq-server/peacoq-server -p <PORT>
 ```
 
 Then navigate to `http://localhost:<PORT>/index.html` to start using PeaCoq!
@@ -102,3 +106,4 @@ They will eventually be re-bind-able. Feel free to alter them in
 | `<C> <M> Down`  | Step forward  |
 | `<C> <M> +`     | Increase font |
 | `<C> <M> -`     | Decrease font |
+
