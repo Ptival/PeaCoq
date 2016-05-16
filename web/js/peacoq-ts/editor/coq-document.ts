@@ -173,6 +173,10 @@ export class CoqDocument implements ICoqDocument {
     this.edits.removeEditAndFollowingOnes(e);
   }
 
+  removeFollowingEdits(e: IEdit<any>): void {
+    this.edits.removeFollowingEdits(e);
+  }
+
   // removeEdits(
   //   predicate: (e: ProcessedEdit) => boolean,
   //   beforeRemoval?: (e: ProcessedEdit) => void

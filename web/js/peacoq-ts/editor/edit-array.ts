@@ -64,16 +64,25 @@ export class EditArray implements IEditArray {
     });
   }
 
-  removeEditAndFollowingOnes(r: IEdit<any>): void {
-    const editIndex = _(this.edits).findIndex(r);
-    if (editIndex === -1) { debugger; }
-    const editsToKeep = _(this.edits).slice(0, editIndex).value();
-    const editsToRemove = _(this.edits).slice(editIndex, this.edits.length).value();
+  private removeEditsFromIndex(i: number): void {
+    if (i < 0) { debugger; }
+    const editsToKeep = _(this.edits).slice(0, i).value();
+    const editsToRemove = _(this.edits).slice(i, this.edits.length).value();
     this.edits = editsToKeep;
     _(editsToRemove).each(e => {
       e.cleanup();
       this.editRemoved$.onNext(e);
     });
+  }
+
+  removeEditAndFollowingOnes(r: IEdit<any>): void {
+    const editIndex = _(this.edits).findIndex(r);
+    this.removeEditsFromIndex(editIndex);
+  }
+
+  removeFollowingEdits(r: IEdit<any>): void {
+    const editIndex = _(this.edits).findIndex(r);
+    this.removeEditsFromIndex(editIndex + 1);
   }
 
 }

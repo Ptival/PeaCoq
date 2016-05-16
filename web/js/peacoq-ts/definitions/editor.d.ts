@@ -53,6 +53,7 @@ interface IEditArray {
   remove(r: IEdit<any>): void;
   removeAll(): void;
   removeEditAndFollowingOnes(e: IEdit<any>): void;
+  removeFollowingEdits(e: IEdit<any>): void;
   // replace(id: number, e: IEdit<any>): void;
 }
 
@@ -72,8 +73,9 @@ interface ICoqDocument {
   moveCursorToPositionAndCenter(pos: AceAjax.Position): void;
   movePositionRight(pos: AceAjax.Position, n: number): AceAjax.Position;
   removeAllEdits(): void;
-  removeEdit(e: IEdit<any>): void;
-  removeEditAndFollowingOnes(e: IEdit<any>): void;
+  removeEdit(e: IEdit<IEditStage>): void;
+  removeEditAndFollowingOnes(e: IEdit<IEditStage>): void;
+  removeFollowingEdits(e: IEdit<IEditStage>): void;
   resetEditor(s: string): void;
 }
 

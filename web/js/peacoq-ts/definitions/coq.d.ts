@@ -41,7 +41,7 @@ interface IGoals<T> {
 interface IMessage {
   content: string;
   level: IMessageLevel;
-  display(): void;
+  // display(): void;
 }
 
 interface IMessageLevel { }

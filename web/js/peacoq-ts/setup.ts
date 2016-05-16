@@ -662,3 +662,27 @@ function minPos(pos1: AceAjax.Position, pos2: AceAjax.Position): AceAjax.Positio
   }
   return pos2;
 }
+
+function mapCursorPositionToContext(
+  pos$: Rx.Observable<AceAjax.Position>
+): Rx.Observable<PeaCoqContext> {
+
+  /* nothing() if no edit to display, just(edit) if there is one */
+  const editToBeDisplayed$: Rx.Observable<Maybe<IEdit<IEditStage>>> =
+    pos$
+      .map(pos => {
+        // we want to display the last edit whose stopPos is before `pos`
+        const edit = _(Global.coqDocument.getAllEdits())
+          .findLast(s => isBefore(Strictly.No, s.stopPosition, pos));
+        return edit ? just(edit) : nothing();
+      })
+      .distinctUntilChanged();
+  if (DebugFlags.editToBeDisplayed) { subscribeAndLog(editToBeDisplayed$); }
+
+  return editToBeDisplayed$
+    .flatMapLatest(edit => edit.caseOf({
+      nothing: () => Promise.resolve(emptyContext),
+      just: e => e.getProcessedStage().then(s => s.getContext()),
+    }));
+
+}

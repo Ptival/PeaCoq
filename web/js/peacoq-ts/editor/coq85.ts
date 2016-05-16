@@ -33,9 +33,9 @@ function isQueryWarning(m: IMessage) {
   );
 }
 
-function onMessage(m: IMessage) {
-  m.display();
-}
+// function onMessage(m: IMessage) {
+//   m.display();
+// }
 
 function parentHeight(): string {
   return $(this).parent().css("height");
@@ -76,12 +76,12 @@ function clearCoqtopTabs(clearFailures: boolean): void {
     Global.tabs.background,
     Global.tabs.shelved,
     Global.tabs.givenUp,
-    Global.tabs.notices,
-    Global.tabs.warnings,
-    Global.tabs.errors,
-    Global.tabs.infos
+    // Global.tabs.notices,
+    // Global.tabs.warnings,
+    // Global.tabs.errors,
+    // Global.tabs.infos
   ];
-  if (clearFailures) { tabsToClear.push(Global.tabs.failures); }
+  // if (clearFailures) { tabsToClear.push(Global.tabs.failures); }
   _(tabsToClear)
     .each((et: IEditorTab) => {
       et.clearValue();
@@ -89,10 +89,10 @@ function clearCoqtopTabs(clearFailures: boolean): void {
   Global.tabs.pretty.div.html("");
 }
 
-function reportFailure(f: string) { //, switchTab: boolean) {
-  Global.tabs.failures.setValue(f, true);
-  //yif (switchTab) { failures.click(); }
-}
+// function reportFailure(f: string) { //, switchTab: boolean) {
+//   // Global.tabs.failures.setValue(f, true);
+//   //yif (switchTab) { failures.click(); }
+// }
 
 // function getPreviousEditContext(e: IEdit): Maybe<PeaCoqContext> {
 //   return e.previousEdit.bind((e) => {

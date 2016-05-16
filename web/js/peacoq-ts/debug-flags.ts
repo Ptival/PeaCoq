@@ -5,8 +5,11 @@ related bits of information.
 
 // coqtop-related
 
+export const errorFromCoqtop = true;
+export const feedbackFromCoqtop = true;
+export const messageFromCoqtop = true;
 export const requestToCoqtop = false;
-export const responseFromCoqtop = false;
+export const responseFromCoqtop = true;
 export const rawPeaCoqContext = false;
 
 // editor-related

@@ -6,6 +6,7 @@ Where the `a`s may be numerals, strings, arrays or objects
 */
 
 export function walkJSON(input: any): any {
+  // console.log(input);
   if (typeof input === "object") {
     if (input.hasOwnProperty("constructorName")) {
       const processedArgs = _(input.constructorArgs).map(walkJSON).value();

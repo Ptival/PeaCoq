@@ -59,6 +59,10 @@ export function setupCoqtopCommunication(
       .filter(r => !(r.input instanceof CoqtopInput.Status))
       .subscribe(r => { console.log("   ⟹", r.input, r); });
   }
+  if (DebugFlags.errorFromCoqtop) {
+    error$
+      .subscribe(vf => { console.log("   ⟹ ERROR", vf); });
+  }
 
   // this is needed for PeaCoq because we use add' so the STM's state
   // needs to be put back to where it worked
@@ -84,11 +88,19 @@ export function setupCoqtopCommunication(
     output$
       .flatMap(r => _(r.messages).map(m => new Message(m)).value())
       .share();
+  if (DebugFlags.messageFromCoqtop) {
+    message$.subscribe(m => console.log("Message", m));
+  }
 
   let feedback$: Rx.Observable<IFeedback> =
     output$
       .flatMap(r => _(r.feedback).map(f => new Feedback(f)).value())
       .share();
+  if (DebugFlags.feedbackFromCoqtop) {
+    feedback$
+      .distinctUntilChanged() // so redundant!
+      .subscribe(f => console.log("Feedback", f));
+  }
 
   input$.connect();
 

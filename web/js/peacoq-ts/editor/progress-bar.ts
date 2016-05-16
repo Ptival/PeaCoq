@@ -61,6 +61,10 @@ function updateProgressBar(): void {
   selection
     .style("width", `${eltWidth}px`)
     .style("background-color", (d: IEdit<any>) => d.getColor())
+    .attr("title", d => "StateID: " + d.getStateId().caseOf({
+      nothing: () => "unassigned yet",
+      just: sid => `${sid}`,
+    }))
     ;
   selection.exit().remove();
 }

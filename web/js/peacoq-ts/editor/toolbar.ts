@@ -122,6 +122,7 @@ export function pickFile(): void {
 }
 
 export function saveFile(): void {
+debugger;
   let editor = Global.coqDocument.editor;
   let text = editor.getValue();
   let blob = new Blob([text], { type: 'text/plain;charset=UTF-8' });
