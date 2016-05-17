@@ -15,8 +15,7 @@
     "target": "es5"
   },
   "exclude": [
-    "typings/main.d.ts",
-    "typings/main"
+    "typings/globals"
   ],
   "filesGlob": [
     "*.ts",
@@ -25,9 +24,8 @@
     "editor/*.ts",
     "peacoq/*.ts",
     "prooftree/*.ts",
-    "typings/browser.d.ts",
-    "!typings/main/**",
-    "!typings/main.d.ts"
+    "typings/index.d.ts",
+    "!typings/globals/**"
   ],
   "formatCodeOptions": {
     "indentSize": 2,

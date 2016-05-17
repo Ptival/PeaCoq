@@ -1,5 +1,5 @@
 {
-  "ambientDependencies": {
+  "globalDependencies": {
     "ace": "registry:dt/ace#0.0.0+20160317120654",
     "d3": "registry:dt/d3#0.0.0+20160317120654",
     "es6-shim": "registry:dt/es6-shim#0.31.2+20160317120654",
@@ -17,6 +17,5 @@
     "rx.time-lite": "registry:dt/rx.time-lite#0.0.0+20160316171810",
     "tsmonad": "registry:dt/tsmonad#0.0.0+20160317120654",
     "w2ui": "registry:dt/w2ui#1.4.3+20160316171810"
-  },
-  "dependencies": {}
+  }
 }
