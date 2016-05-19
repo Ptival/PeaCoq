@@ -4,6 +4,7 @@
   },
   "compilerOptions": {
     "declaration": false,
+    "experimentalDecorators": true,
     "module": "amd",
     "noImplicitAny": false,
     "noLib": false,

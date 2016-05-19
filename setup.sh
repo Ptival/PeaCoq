@@ -58,7 +58,8 @@ log "Building OCaml plugin"
   log "Installing npm dependencies"
   npm install
   cd js/peacoq-ts/
-  log "Installing typings"
+  log "Installing typings (and removing stale ones)"
+  ../../node_modules/typings/dist/bin.js prune
   ../../node_modules/typings/dist/bin.js install
   log "Transpiling front-end"
   ../../node_modules/typescript/bin/tsc -p .
@@ -81,3 +82,4 @@ PeaCoqConfig
 , configCoqtop = "coqtop -ideslave -main-channel stdfds -I ${PEACOQPATH}/plugin -Q ${PEACOQPATH}/plugin PeaCoq"
 }
 END
+

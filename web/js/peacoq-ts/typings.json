@@ -7,6 +7,7 @@
     "jss": "registry:dt/jss#0.6.0+20160315014830",
     "lodash": "registry:dt/lodash#3.10.0+20160330154726",
     "mathjax": "registry:dt/mathjax#0.0.0+20160317120654",
+    "polymer-ts": "registry:dt/polymer-ts#0.1.25+20160404114553",
     "rx": "registry:dt/rx#2.5.3+20150720134954",
     "rx-lite": "registry:dt/rx-lite#0.0.0+20160417154549",
     "rx.async-lite": "registry:dt/rx.async-lite#0.0.0+20160316171810",
