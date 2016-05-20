@@ -70,6 +70,10 @@ cabal copy
 cabal register
 )
 
+# this path is ridiculous!
+log "Symbolically linking peacoq-server to peacoq"
+ln -sf peacoq-server/dist/build/peacoq-server/peacoq-server peacoq
+
 (
 set -euv
 cd web
@@ -97,7 +101,7 @@ cat <<END > ${FILE}
 PeaCoqConfig
 { configUserId = ""
 , configLogPath = "${LOGPATH}"
-, configCoqtop = "coqtop -ideslave -main-channel stdfds -I ${PEACOQPATH}/plugin -Q ${PEACOQPATH}/plugin PeaCoq"
+, configCoqtop = "coqtop -ideslave -main-channel stdfds -I ${PEACOQPATH}/peacoqtop/plugin -Q ${PEACOQPATH}/peacoqtop/plugin PeaCoq"
 }
 END
 

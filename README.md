@@ -81,7 +81,7 @@ Running PeaCoq
 --------------
 
 ```
-./peacoq-server/dist/build/peacoq-server/peacoq-server -p <PORT>
+./peacoq -p <PORT>
 ```
 
 Then navigate to `http://localhost:<PORT>/index.html` to start using PeaCoq!
