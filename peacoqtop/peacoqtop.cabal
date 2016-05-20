@@ -86,3 +86,4 @@ Test-Suite peacoqtop-test
     monad-loops               >= 0.4   && < 0.5,
     mtl                       >= 2.2   && < 2.3,
     process                   >= 1.2   && < 1.3
+

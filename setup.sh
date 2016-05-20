@@ -33,37 +33,55 @@ log "Cleaning up Haskell packages (reverse order)"
 ghc-pkg unregister peacoq-server || true
 ghc-pkg unregister peacoqtop || true
 
+log "Building OCaml plugin (needed by peacoqtop's tests)"
+(
+set -euv
+cd peacoqtop/plugin
+make -B
+)
+
 log "Building and installing peacoqtop"
-( cd peacoqtop
-  cabal configure --enable-tests ${CABALFLAGS}
-  cabal build -j2
-  cabal copy
-  cabal register
-) || exit 1
+(
+set -euv
+cd peacoqtop
+log "Dependencies"
+cabal install --only-dependencies --enable-tests ${CABALFLAGS}
+log "Configure"
+cabal configure --enable-tests ${CABALFLAGS}
+log "Build"
+cabal build -j2
+log "Copy and register"
+cabal copy
+cabal register
+)
 
 log "Building and installing peacoq-server"
-( cd peacoq-server
-  cabal configure --enable-tests ${CABALFLAGS}
-  cabal build -j2
-  cabal copy
-  cabal register
-) || exit 1
+(
+set -euv
+cd peacoq-server
+log "Dependencies"
+cabal install --only-dependencies --enable-tests ${CABALFLAGS}
+log "Configure"
+cabal configure --enable-tests ${CABALFLAGS}
+log "Dependencies"
+cabal build -j2
+log "Copy and register"
+cabal copy
+cabal register
+)
 
-log "Building OCaml plugin"
-( cd plugin
-  make -B
-) || exit 1
-
-( cd web
-  log "Installing npm dependencies"
-  npm install
-  cd js/peacoq-ts/
-  log "Installing typings (and removing stale ones)"
-  ../../node_modules/typings/dist/bin.js prune
-  ../../node_modules/typings/dist/bin.js install
-  log "Transpiling front-end"
-  ../../node_modules/typescript/bin/tsc -p .
-) || exit 1
+(
+set -euv
+cd web
+log "Installing npm dependencies"
+npm install
+cd js/peacoq-ts/
+log "Installing typings"
+./typings-bin prune
+./typings-bin install
+log "Transpiling front-end"
+./tsc -p .
+)
 
 # TODO: the config file should not go in HOME, it's annoying for everyone
 # TODO: this config should be shared with the Haskell code somehow

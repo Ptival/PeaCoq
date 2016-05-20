@@ -14,7 +14,7 @@ import Coqtop
 import XMLProtocol
 
 pathFromCabalFileDirectoryToPluginFolder :: String
-pathFromCabalFileDirectoryToPluginFolder = "../plugin"
+pathFromCabalFileDirectoryToPluginFolder = "plugin"
 
 coqtop :: String
 coqtop =
@@ -49,7 +49,9 @@ testCoqtopVersion :: Test
 testCoqtopVersion = TestCase $ do
   (_, ho, _, _) <- runInteractiveCommand "coqtop -v"
   o <- hGetContents ho
-  assertBool "coqtop version is 8.5" ("version 8.5" `isInfixOf` o)
+  putStrLn coqtop
+  putStrLn o
+  assertBool ("coqtop version is 8.5: " ++ o) ("version 8.5" `isInfixOf` o)
 
 testInit :: Test
 testInit = TestCase $ do
