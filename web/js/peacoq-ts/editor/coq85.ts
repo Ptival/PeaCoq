@@ -103,9 +103,9 @@ function clearCoqtopTabs(clearFailures: boolean): void {
 
 export function onNextReactive(
   doc: ICoqDocument,
-  next: Rx.Observable<{}>
+  next$: Rx.Observable<{}>
 ): Rx.Observable<IEdit<IToProcess>> {
-  return next
+  return next$
     .concatMap<IEdit<IToProcess>>(() => {
       let lastEditStopPos = doc.getLastEditStop();
       let endPos = doc.endAnchor.getPosition();

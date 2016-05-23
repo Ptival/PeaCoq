@@ -68,6 +68,7 @@ interface ICoqDocument {
   getEditsBeingProcessed(): IEdit<IBeingProcessed>[];
   getEditsToProcess(): IEdit<IToProcess>[];
   getProcessedEdits(): IEdit<IProcessed>[];
+  getLastEdit(): Maybe<IEdit<IEditStage>>;
   getLastEditStop(): AceAjax.Position;
   markError(range: AceAjax.Range): void;
   moveCursorToPositionAndCenter(pos: AceAjax.Position): void;

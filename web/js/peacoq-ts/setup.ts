@@ -250,6 +250,25 @@ $(document).ready(() => {
   const editsToProcessStream =
     Coq85.onNextReactive(Global.coqDocument, nextSubject.asObservable());
 
+  const editAtBecausePrev$ =
+    userActionStreams.prev$.flatMap(() =>
+      Global.coqDocument.getLastEdit()
+        .bind(e => e.previousEdit)
+        .bind(pe => {
+          const stage = pe.stage;
+          if (stage instanceof Edit.Processed) {
+            Global.coqDocument.moveCursorToPositionAndCenter(pe.stopPosition);
+            return just(new CoqtopInput.EditAt(stage.stateId));
+          } else {
+            return nothing();
+          }
+        })
+        .caseOf({
+          nothing: () => [],
+          just: cmd => [cmd],
+        })
+    );
+
   /*
   Will have just(pos) when we are trying to reach some position, and
   nothing() when we are not.
@@ -308,6 +327,7 @@ $(document).ready(() => {
     editAtBecauseEditorChange,
     editAtFromBackwardGoTo$,
     queries$,
+    editAtBecausePrev$,
   ]);
 
   coqtopOutput$s.feedback$
@@ -610,6 +630,7 @@ interface UserActionStreams {
   goTo$: Rx.Observable<{}>,
   loadedFile$: Rx.Observable<{}>,
   next$: Rx.Observable<{}>,
+  prev$: Rx.Observable<{}>,
 }
 
 function setupUserActions(
@@ -647,6 +668,7 @@ function setupUserActions(
     goTo$: goTo$,
     loadedFile$: loadedFilesStream,
     next$: next$,
+    prev$: prev$,
   };
 }
 
