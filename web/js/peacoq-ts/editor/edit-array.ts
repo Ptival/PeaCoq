@@ -8,6 +8,7 @@ export class EditArray implements IEditArray {
 
   public editChangedStage$: Rx.Subject<IEdit<IEditStage>>;
   public editCreated$: Rx.Subject<IEdit<IEditStage>>;
+  public editProcessed$: Rx.Observable<IEdit<IProcessed>>;
   public editRemoved$: Rx.Subject<IEdit<IEditStage>>;
 
   constructor(
@@ -21,6 +22,10 @@ export class EditArray implements IEditArray {
         console.log("edit changed stage", e.stage, e)
       );
     }
+    this.editProcessed$ =
+      <Rx.Observable<IEdit<any>>>
+      this.editChangedStage$
+        .filter(e => e.stage instanceof Processed);
     this.editCreated$ = new Rx.Subject<any>();
     if (DebugFlags.editCreated) { subscribeAndLog(this.editCreated$, "edit created"); }
     this.editRemoved$ = new Rx.Subject<any>();

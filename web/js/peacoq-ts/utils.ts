@@ -51,6 +51,10 @@ function bindAll<T, U>(l: Maybe<T>[], f: (...args: T[]) => U): Maybe<U> {
   })
 }
 
+function listFromMaybe<T>(m: Maybe<T>): T[] {
+  return m.caseOf({ nothing: () => [], just: x => [x] });
+}
+
 function assert(condition: boolean, message: string): void {
   if (!condition) {
     alert(`Assertion failed: ${message}`);

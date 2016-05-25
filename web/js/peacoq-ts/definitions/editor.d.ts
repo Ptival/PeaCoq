@@ -38,6 +38,7 @@ interface ShortcutsStreams {
 
 interface IEditArray {
   editChangedStage$: Rx.Observable<IEdit<IEditStage>>;
+  editProcessed$: Rx.Observable<IEdit<IProcessed>>;
   editCreated$: Rx.Observable<IEdit<IEditStage>>;
   editRemoved$: Rx.Observable<IEdit<IEditStage>>;
   createEdit(
@@ -148,4 +149,10 @@ interface IEditorTab extends ITab {
   resize(): void;
   setTheme(s: string): void;
   setValue(s: string, switchToTab: boolean);
+}
+
+interface IEditorError {
+  error: IValueFail;
+  failedEdit: IEdit<IBeingProcessed>;
+  range: Maybe<AceAjax.Range>;
 }

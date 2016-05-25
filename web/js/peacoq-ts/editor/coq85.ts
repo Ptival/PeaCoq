@@ -127,9 +127,6 @@ export function onNextReactive(
         doc.edits.createEdit(Global.coqDocument, lastEditStopPos, newStopPos, query, previousEdit, stage);
       return [edit];
     })
-    .do(e => {
-      doc.moveCursorToPositionAndCenter(e.stopPosition);
-    })
     .share()
     ;
 }

@@ -94,8 +94,8 @@ requirejs(
           "peacoq-js-of-ts/coq-string-utils",
           "peacoq-js-of-ts/setup",
           "peacoq-js-of-ts/utils",
-          "peacoq-js-of-ts/ui-container",
-          "peacoq-js-of-ts/ui-widget",
+          // "peacoq-js-of-ts/ui-container",
+          // "peacoq-js-of-ts/ui-widget",
         ]
       )
     );

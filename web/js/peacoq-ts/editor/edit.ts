@@ -72,6 +72,7 @@ export class Processed implements IProcessed {
 
   constructor(
     e: IBeingProcessed,
+    // this is needed so that the edit can query for its context on-demand
     private inputObserver: Rx.Observer<ICoqtopInput>
   ) {
     this.marker = e.nextStageMarker();

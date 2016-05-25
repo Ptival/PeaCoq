@@ -1,9 +1,4 @@
-interface ErrorLocation {
-  startPos: number;
-  stopPos: number;
-}
-
-export class ValueFail {
+export class ValueFail implements IValueFail {
   stateId: number;
   location: Maybe<ErrorLocation>;
   message: string;

@@ -53,6 +53,13 @@ interface IStatus {
   // statusProofNum: number;
 }
 
+interface ErrorLocation {
+  startPos: number;
+  stopPos: number;
+}
+
 interface IValueFail {
+  location: Maybe<ErrorLocation>;
+  message: string;
   stateId: number;
 }

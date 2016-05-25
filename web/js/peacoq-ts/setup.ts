@@ -6,9 +6,11 @@ import * as Edit from "./editor/edit";
 import { clearEdit, displayEdit, setupEditor } from "./editor/editor";
 import { EditorTab } from "./editor/editor-tab";
 import { isBefore } from "./editor/editor-utils";
+import { pimpMyError } from "./editor/error";
 import { setupKeybindings } from "./editor/keybindings";
 import { setupProgressBar } from "./editor/progress-bar";
 import { Tab } from "./editor/tab";
+import { setupTextCursorPositionUpdate } from "./editor/text-cursor-position";
 // // TODO: toolbar.ts should setup{Load,Save}File upon setupToolbar
 // // TODO: unless it can't because of keybindings?
 import { pickFile, saveFile, setupLoadFile, setupToolbar, setupSaveFile } from "./editor/toolbar";
@@ -250,24 +252,15 @@ $(document).ready(() => {
   const editsToProcessStream =
     Coq85.onNextReactive(Global.coqDocument, nextSubject.asObservable());
 
+  const previousEditToReach$: Rx.Observable<IEdit<IProcessed>> =
+    userActionStreams.prev$
+      .flatMap(() => listFromMaybe(Global.coqDocument.getLastEdit()))
+      .flatMap(e => listFromMaybe(e.previousEdit))
+      .filter(e => e.stage instanceof Edit.Processed);
+
   const editAtBecausePrev$ =
-    userActionStreams.prev$.flatMap(() =>
-      Global.coqDocument.getLastEdit()
-        .bind(e => e.previousEdit)
-        .bind(pe => {
-          const stage = pe.stage;
-          if (stage instanceof Edit.Processed) {
-            Global.coqDocument.moveCursorToPositionAndCenter(pe.stopPosition);
-            return just(new CoqtopInput.EditAt(stage.stateId));
-          } else {
-            return nothing();
-          }
-        })
-        .caseOf({
-          nothing: () => [],
-          just: cmd => [cmd],
-        })
-    );
+    previousEditToReach$
+      .map(e => new CoqtopInput.EditAt(e.stage.stateId));
 
   /*
   Will have just(pos) when we are trying to reach some position, and
@@ -311,6 +304,8 @@ $(document).ready(() => {
   //editsToProcessStream.subscribe(e => Global.coqDocument.moveCursorToPositionAndCenter(e.getStopPosition()));
   const addsToProcessStream = Coq85.processEditsReactive(editsToProcessStream);
 
+  // TODO: I don't like how I pass queriesObserver to each edit stage, I should
+  // improve on this design
   const queriesSubject = new Rx.Subject<ICoqtopInput>();
   const queriesObserver = queriesSubject.asObserver();
   const queries$ = queriesSubject.asObservable();
@@ -339,13 +334,13 @@ $(document).ready(() => {
         const edit = _(editsBeingProcessed).find(e => e.stage.stateId === stateId);
         if (edit) {
           const newStage = new Edit.Processed(edit.stage, queriesObserver);
-          const newEdit = edit.setStage(newStage);
-          if (
-            Global.coqDocument.getEditsToProcess().length === 0
-            && Global.coqDocument.getEditsBeingProcessed().length === 0
-          ) {
-            Global.coqDocument.moveCursorToPositionAndCenter(newEdit.stopPosition);
-          }
+          edit.setStage(newStage);
+          // if (
+          //   Global.coqDocument.getEditsToProcess().length === 0
+          //   && Global.coqDocument.getEditsBeingProcessed().length === 0
+          // ) {
+          //   Global.coqDocument.moveCursorToPositionAndCenter(edit.stopPosition);
+          // }
         }
       } else {
         debugger; // not sure this ever happens
@@ -383,18 +378,36 @@ $(document).ready(() => {
   //     }
   //   });
 
-  coqtopOutput$s.error$
-    .subscribe(e => {
-      const failedEdit = Global.coqDocument.getEditsBeingProcessed()[0];
-      Global.coqDocument.removeEditAndFollowingOnes(failedEdit);
-      Global.tabs.errors.setValue(e.message, true);
-      e.location.fmap(loc => {
-        const errorStart = Global.coqDocument.movePositionRight(failedEdit.startPosition, loc.startPos);
-        const errorStop = Global.coqDocument.movePositionRight(failedEdit.startPosition, loc.stopPos);
-        const errorRange = new AceAjax.Range(errorStart.row, errorStart.column, errorStop.row, errorStop.column);
-        Global.coqDocument.markError(errorRange);
-      });
-    });
+  const editorError$: Rx.Observable<IEditorError>
+    = coqtopOutput$s.error$.map(pimpMyError).share();
+
+  editorError$.subscribe(ee =>
+    Global.coqDocument.removeEditAndFollowingOnes(ee.failedEdit)
+  );
+
+  editorError$.subscribe(ee =>
+    Global.tabs.errors.setValue(ee.error.message, true)
+  );
+
+  editorError$.subscribe(ee => ee.range.fmap(range =>
+    Global.coqDocument.markError(range)
+  ));
+
+  editorError$.subscribe(ee =>
+    // so, apparently we won't receive feedbacks for the edits before this one
+    // so we need to mark them all processed...
+    _(Global.coqDocument.getEditsBeingProcessed())
+      // ASSUMPTION: state IDs are assigned monotonically
+      .filter(e => e.stage.stateId < ee.error.stateId)
+      .each(e => e.setStage(new Edit.Processed(e.stage, queriesObserver)))
+  );
+
+  setupTextCursorPositionUpdate(
+    Global.coqDocument.edits.editProcessed$,
+    editorError$,
+    previousEditToReach$,
+    editsToProcessStream
+  );
 
   coqtopOutput$s.response$
     .filter(r => r.input instanceof CoqtopInput.EditAt)
