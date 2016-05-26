@@ -21,7 +21,7 @@ export function walkJSON(input: any): any {
     }
     return output;
   }
-  if (typeof input === "number" || typeof input === "string") {
+  if (_(["boolean", "number", "string"]).includes(typeof input)) {
     return input;
   }
   debugger;
