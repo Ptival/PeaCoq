@@ -11,6 +11,7 @@ import { setupKeybindings } from "./editor/keybindings";
 import { setupProgressBar } from "./editor/progress-bar";
 import { Tab } from "./editor/tab";
 import { setupTextCursorPositionUpdate } from "./editor/text-cursor-position";
+import { setupUserInteractionForwardGoto } from "./editor/user-interaction-forward-goto";
 // // TODO: toolbar.ts should setup{Load,Save}File upon setupToolbar
 // // TODO: unless it can't because of keybindings?
 import { pickFile, saveFile, setupLoadFile, setupToolbar, setupSaveFile } from "./editor/toolbar";
@@ -246,7 +247,7 @@ $(document).ready(() => {
   Theme.afterChange$.subscribe(() => { rightLayout.refresh(); });
   Theme.afterChange$.subscribe(() => { bottomLayout.refresh(); });
 
-  const nextSubject = new Rx.Subject<{}>();
+  const nextSubject = new Rx.ReplaySubject(1);
   userActionStreams.next$.subscribe(() => nextSubject.onNext({}));
 
   const editsToProcessStream =
@@ -268,37 +269,6 @@ $(document).ready(() => {
   */
   const forwardGoToSubject = new Rx.Subject<Maybe<AceAjax.Position>>();
   forwardGoTo$.subscribe(o => forwardGoToSubject.onNext(just(o.destinationPos)));
-  const nextBecauseGoTo$ = Rx.Observable
-    .combineLatest(
-    forwardGoToSubject.asObservable(),
-    // TODO: this won't work on reload...
-    Global.coqDocument.edits.editCreated$
-      .map(() => Global.coqDocument.getLastEditStop())
-      .startWith({ row: 0, column: 0 }) // otherwise it doesn't fire before first change
-    )
-    .flatMap(([m, eStopPos]) => {
-      return m.caseOf({
-        nothing: () => [],
-        just: destinationPos => {
-          // we need to continue if both:
-          // 1. eStopPos < destinationPos
-          // 2. the range [eStopPos, destinationPos] contains some text
-          const cond1 = isBefore(Strictly.Yes, eStopPos, destinationPos);
-          const range = AceAjax.Range.fromPoints(eStopPos, destinationPos);
-          const text = Global.coqDocument.session.getDocument().getTextRange(range);
-          const cond2 = CoqStringUtils.coqTrimLeft(text) !== "";
-          if (cond1 && cond2) {
-            // need another next
-            return [{}];
-          } else {
-            // don't need another next
-            forwardGoToSubject.onNext(nothing());
-            return [];
-          }
-        },
-      });
-    });
-  nextBecauseGoTo$.subscribe(() => nextSubject.onNext({}));
 
   //editsToProcessStream.subscribe(e => Global.coqDocument.pushEdit(e));
   //editsToProcessStream.subscribe(e => Global.coqDocument.moveCursorToPositionAndCenter(e.getStopPosition()));
@@ -324,6 +294,16 @@ $(document).ready(() => {
     queries$,
     editAtBecausePrev$,
   ]);
+
+  const nextBecauseGoTo$ = setupUserInteractionForwardGoto(
+    forwardGoTo$.map(goto => goto.destinationPos),
+    Global.coqDocument.edits.editCreated$,
+    coqtopOutput$s.error$
+  );
+
+  nextBecauseGoTo$
+    .delay(0) // this is needed to set up the feedback properly
+    .subscribe(() => nextSubject.onNext({}));
 
   coqtopOutput$s.feedback$
     .filter(f => f.feedbackContent instanceof FeedbackContent.Processed)
