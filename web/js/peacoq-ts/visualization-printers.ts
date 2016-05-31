@@ -71,13 +71,17 @@ function htmlPrintPpCmdDiff(p: PpCmdType, old: PpCmdType): string {
   throw MatchFailure("htmlPrintPpCmd", p);
 }
 
+function box<T>(p: PpCmdType, s: string): string {
+  return `<span class="box syntax">${s}</span>`;
+}
+
 export function htmlPrintPpCmd(p: PpCmdType): string {
   if (p instanceof PpCmd.PpCmdPrint) {
     return htmlPrintStrToken(p.token);
   }
   if (p instanceof PpCmd.PpCmdBox) {
     // FIXME: use blockType
-    return syntax(htmlPrintPpCmds(p.contents));
+    return box(p, htmlPrintPpCmds(p.contents));
   }
   if (p instanceof PpCmd.PpCmdPrintBreak) {
     return " ".repeat(p.nspaces);

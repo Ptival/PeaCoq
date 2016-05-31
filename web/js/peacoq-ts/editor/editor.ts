@@ -1,6 +1,7 @@
 import * as Edit from "./edit";
 import * as Global from "../global-variables";
 import { theme } from "../theme";
+import * as VisualizationInteractions from "../visualization-interactions";
 
 const CoqMode = ace.require("peacoq-js/mode-coq").Mode;
 
@@ -26,6 +27,7 @@ export function displayEdit(c: PeaCoqContext): void {
       Global.tabs.pretty.div.append(g.ppgoal.getHTML());
     });
     Global.tabs.pretty.click();
+    VisualizationInteractions.setup();
     // TODO: if performance becomes an issue, do this more lazily?
     Global.tabs.foreground.setValue(
       _(c.fgGoals).map(g => g.goal.toString()).value().join("\n\n\n"), false
