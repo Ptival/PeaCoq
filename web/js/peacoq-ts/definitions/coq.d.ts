@@ -44,7 +44,8 @@ interface IMessage {
   // display(): void;
 }
 
-interface IMessageLevel { }
+interface IMessageLevel {
+}
 
 interface IStatus {
   // statusPath: string[];

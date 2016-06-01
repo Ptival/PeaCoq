@@ -1,8 +1,8 @@
-import { MessageLevel, mkMessageLevel } from "./message-level";
+import { mkMessageLevel } from "./message-level";
 
 export class Message implements IMessage {
   content: string;
-  level: MessageLevel;
+  level: IMessageLevel;
   constructor(m) {
     this.level = mkMessageLevel(m[0]);
     this.content = unbsp(m[1]);

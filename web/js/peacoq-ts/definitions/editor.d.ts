@@ -4,14 +4,6 @@ interface ITabs {
   background: IEditorTab;
   shelved: IEditorTab;
   givenUp: IEditorTab;
-  notices: IEditorTab;
-  warnings: IEditorTab;
-  errors: IEditorTab;
-  infos: IEditorTab;
-  debug: IEditorTab;
-  failures: IEditorTab;
-  // feedback: IEditorTab;
-  jobs: IEditorTab;
 }
 
 /* TODO: maybe fuse the parts of the toolbar and shortcuts that overlap? */

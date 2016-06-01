@@ -2,6 +2,7 @@ import * as FeedbackContent from "./coq/feedback-content";
 
 import * as Coq85 from "./editor/coq85";
 import { CoqDocument } from "./editor/coq-document";
+import { CoqtopPanel } from "./editor/coqtop-panel";
 import * as Edit from "./editor/edit";
 import { clearEdit, displayEdit, setupEditor } from "./editor/editor";
 import { EditorTab } from "./editor/editor-tab";
@@ -114,7 +115,7 @@ $(document).ready(() => {
     name: rightLayoutName,
     panels: [
       { type: "main", size: "50%", resizable: true, tabs: { tabs: [], } },
-      { type: "bottom", size: "50%", resizable: true, tabs: { tabs: [], } },
+      { type: "bottom", size: "50%", resizable: true, content: $("<div>", { id: "bottom-right" }) },
     ],
   });
 
@@ -162,18 +163,6 @@ $(document).ready(() => {
       tabs.givenUp = new EditorTab("givenup", "Given up", rightLayoutName, "main");
 
       contextTabs.click("pretty");
-
-      // bottom panes
-      tabs.notices = new EditorTab("notices", "Notices", rightLayoutName, "bottom");
-      tabs.warnings = new EditorTab("warnings", "Warnings", rightLayoutName, "bottom");
-      tabs.errors = new EditorTab("errors", "Errors", rightLayoutName, "bottom");
-      tabs.infos = new EditorTab("infos", "Infos", rightLayoutName, "bottom");
-      tabs.debug = new EditorTab("debug", "Debug", rightLayoutName, "bottom");
-      tabs.failures = new EditorTab("failures", "Failures", rightLayoutName, "bottom");
-      // tabs.feedback = new EditorTab("feedback", "Feedback", rightLayoutName, "bottom");
-      tabs.jobs = new EditorTab("jobs", "Jobs", rightLayoutName, "bottom");
-
-      coqtopTabs.click("notices");
 
       Global.setTabs(tabs);
 
@@ -365,8 +354,10 @@ $(document).ready(() => {
     Global.coqDocument.removeEditAndFollowingOnes(ee.failedEdit)
   );
 
-  editorError$.subscribe(ee =>
-    Global.tabs.errors.setValue(ee.error.message, true)
+  new CoqtopPanel(
+    $(w2ui[rightLayoutName].get("bottom").content),
+    coqtopOutput$s.error$,
+    coqtopOutput$s.message$
   );
 
   editorError$.subscribe(ee => ee.range.fmap(range =>

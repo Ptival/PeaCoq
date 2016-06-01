@@ -12,14 +12,6 @@ export function getAllEditorTabs(): IEditorTab[] {
     tabs.background,
     tabs.shelved,
     tabs.givenUp,
-    tabs.notices,
-    tabs.warnings,
-    tabs.errors,
-    tabs.infos,
-    tabs.debug,
-    tabs.failures,
-    // tabs.feedback,
-    tabs.jobs,
   ]
 }
 
