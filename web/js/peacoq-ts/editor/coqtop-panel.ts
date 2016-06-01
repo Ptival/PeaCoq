@@ -25,7 +25,8 @@ function makeAlert(message, klass) {
     .text(message)
     .addClass(`alert alert-${klass}`)
     .css("font-family", "monospace")
-    .css("margin-bottom", "2px");
+    .css("margin-bottom", "2px")
+    .css("white-space", "pre");
 }
 
 function classify(level: IMessageLevel) {
