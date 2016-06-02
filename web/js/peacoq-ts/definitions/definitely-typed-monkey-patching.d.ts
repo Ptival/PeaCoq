@@ -28,3 +28,13 @@ declare namespace W2UI {
     onComplete: () => void;
   }
 }
+
+interface JQueryContextMenuBuildOptions {
+  selector: string;
+  trigger?: string;
+  build: (trigger: JQuery, event: Event) => boolean | any;
+}
+
+interface JQueryStatic {
+    contextMenu(options: JQueryContextMenuBuildOptions): JQuery;
+}
