@@ -200,3 +200,13 @@ function computeDiffList(oldHypsOriginal: Hypothesis[], newHypsOriginal: Hypothe
 function repeat(n: number, s: string): string {
   return Array(n + 1).join(s);
 }
+
+function prefixes<T>(a: T[]): T[][] {
+  return _(a).reduce(
+    (acc, elt) =>
+      acc.length === 0
+       ? [[elt]]
+       : [].concat(acc, [[].concat(_(acc).last(), elt)]),
+    []
+  );
+}
