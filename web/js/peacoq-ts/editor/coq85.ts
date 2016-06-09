@@ -332,7 +332,7 @@ export function processEditsReactive(
     // the correct order: add, goal, context, add, goal, context, add, ...
     .map(e => {
       let add = new CoqtopInput.AddPrime(e.query);
-      add.callback = r => {
+      add["callback"] = r => {
         const stateId = r.contents[0];
         const newStage = new Edit.BeingProcessed(e.stage, stateId);
         e.setStage(newStage);

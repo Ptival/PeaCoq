@@ -75,3 +75,7 @@ a, button {
 svg body {
   font-size: 12px;
 }
+
+li.context-menu-item {
+  font-family: monospace;
+}

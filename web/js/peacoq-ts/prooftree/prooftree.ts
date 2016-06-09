@@ -14,11 +14,6 @@ let animationDuration = 2000;
 let goalBodyPadding = 4;
 let verticalSpacingBetweenNodes = 10;
 
-/* Globals not to be touched */
-
-/* 0 is the active tree, rest is stack of background ones*/
-export let proofTrees: ProofTree[] = [];
-
 export class ProofTree implements IProofTree {
   anchor: d3.Selection<HTMLElement>;
   /* whatever the client wants to store as meta-data */

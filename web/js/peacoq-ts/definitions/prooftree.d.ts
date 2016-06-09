@@ -10,6 +10,7 @@ interface IStrictly { }
 interface IProofTree {
   curNode: IGoalNode;
   rootNode: IGoalNode;
+  tacticWaiting: Maybe<string>;
   xFactor: number;
   yFactor: number;
   getGoalWidth(): number;

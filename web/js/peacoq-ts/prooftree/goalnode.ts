@@ -15,14 +15,15 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
   constructor(
     proofTree: IProofTree,
     parent: Maybe<ITacticGroupNode>,
-    public context: PeaCoqContext
+    public context: PeaCoqContext,
+    public index: number
   ) {
     super(proofTree, parent);
 
     this.closedBraces = 0;
     this.html = $("<div>")
       .attr("id", _.uniqueId())
-      .append(this.context.fgGoals[0].ppgoal.getHTML())
+      .append(this.context.fgGoals[this.index].ppgoal.getHTML())
       ;
     this.openBraces = 0;
     this.parentGroup = parent;

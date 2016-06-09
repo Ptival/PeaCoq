@@ -21,13 +21,15 @@ import { emptyContext } from "./peacoq/peacoq";
 
 // TODO: not sure if this file should be creating those nodes...
 import { GoalNode } from "./prooftree/goalnode";
-import { ProofTree, proofTrees } from "./prooftree/prooftree";
+import { ProofTree } from "./prooftree/prooftree";
 import { Tactic } from "./prooftree/tactic";
 import { TacticGroupNode } from "./prooftree/tacticgroupnode";
 import { getActiveProofTree } from "./prooftree/utils";
+import { proofTreeOnEdit, proofTreeOnEditAt } from "./prooftree/prooftree-handlers";
 
 import * as Coqtop from "./coqtop-rx";
 import * as CoqtopInput from "./coqtop-input";
+import * as CoqtopOutput from "./coqtop-output";
 import * as DebugFlags from "./debug-flags";
 import * as Global from "./global-variables";
 import { PeaCoqGoal } from "./peacoq-goal";
@@ -122,8 +124,8 @@ $(document).ready(() => {
   $().w2layout({
     name: bottomLayoutName,
     panels: [
-      { type: "top", hidden: true, resizable: false, content: $("<div>", { id: "prooftree" }) },
-      { type: "main", size: "20px", overflow: "hidden", resizable: false, content: $("<div>", { id: "progress-bar", style: "height: 100%" }) },
+      { type: "top", size: "90%", hidden: true, resizable: false, content: $("<div>", { id: "prooftree" }) },
+      { type: "main", size: "10%", overflow: "hidden", resizable: false, content: $("<div>", { id: "progress-bar", height: "100%" }) },
     ],
   });
 
@@ -138,10 +140,6 @@ $(document).ready(() => {
     setupProgressBar();
     bottomLayout.refresh();
   });
-
-  // Rx.Observable.interval(1000)
-  //   .map(n => n%2 === 0)
-  //   .subscribe(b => b ? showProofTreePanel() : hideProofTreePanel());
 
   const rightLayoutRenderedStream = Rx.Observable
     .create(observer => {
@@ -380,8 +378,18 @@ $(document).ready(() => {
     editsToProcessStream
   );
 
-  coqtopOutput$s.response$
-    .filter(r => r.input instanceof CoqtopInput.EditAt)
+  const outputFromAdd$ =
+    coqtopOutput$s.response$
+      .filter(r => r.input instanceof CoqtopInput.AddPrime)
+      .share();
+
+  const outputFromEditAt$: Rx.Observable<ICoqtopResponse<CoqtopInput.EditAt, CoqtopOutput.EditAt>> =
+    <Rx.Observable<ICoqtopResponse<any, any>>>
+    coqtopOutput$s.response$
+      .filter(r => r.input instanceof CoqtopInput.EditAt)
+      .share();
+
+  outputFromEditAt$
     .subscribe(r => {
       const processedEdits = Global.coqDocument.getProcessedEdits();
       const firstEditAfter =
@@ -390,6 +398,36 @@ $(document).ready(() => {
         Global.coqDocument.removeEditAndFollowingOnes(firstEditAfter);
       }
     });
+
+  // I'm not sure when this happens, for now I'll assume it doesn't
+  outputFromEditAt$.subscribe(r => {
+    if (r.contents.hasOwnProperty("Right")) { throw r; }
+  });
+
+  // outputFromEditAt$
+  //   .subscribe(r => proofTreeOnEditAt(
+  //     hideProofTreePanel,
+  //     r.input.getArgs()
+  //   ));
+
+  // Global.coqDocument.edits.editProcessed$
+  //   .flatMap(e =>
+  //     e.stage.getContext()
+  //       .then(c => ({
+  //         edit: e,
+  //         context: c,
+  //       }))
+  //   )
+  // .subscribe(({ edit, context }) => {
+  //   // TODO: gotta find a way to know how status length evolved
+  //   proofTreeOnEdit(
+  //     showProofTreePanel,
+  //     hideProofTreePanel,
+  //     edit.query,
+  //     edit.stage.stateId,
+  //     context
+  //   );
+  // });
 
 });
 
@@ -416,155 +454,6 @@ function updateCoqtopTabs(context: PeaCoqContext) {
   // }
 }
 
-// function proofTreeOnEdit(
-//   query: string,
-//   stateId: number,
-//   lastStatus: IStatus,
-//   status: IStatus,
-//   goals: IGoals,
-//   context: PeaCoqContext
-// ): void {
-//
-//   const trimmed = CoqStringUtils.coqTrim(query);
-//
-//   updateCoqtopTabs(goals, context);
-//
-//   if (
-//     lastStatus.statusAllProofs.length + 1 === status.statusAllProofs.length
-//     &&
-//     proofTrees.length + 1 === status.statusAllProofs.length
-//   ) {
-//     // we are behind on the number of proof trees, create one
-//     showProofTreePanel()
-//       .then(() => { // needs to be before for width/height
-//         const pt = new ProofTree(
-//           status.statusProofName,
-//           $("#prooftree")[0],
-//           $("#prooftree").parent().width(),
-//           $("#prooftree").parent().height()
-//         );
-//         proofTrees.unshift(pt);
-//         assert(context.length === 1, "proofTreeOnGetContext: c.length === 1, c.length: " + context.length);
-//         const g = new GoalNode(pt, nothing(), goals, context[0]);
-//         assert(pt.rootNode !== undefined, "proofTreeOnGetContext: new GoalNode should set rootNode");
-//         g.stateIds.push(stateId);
-//         pt.curNode = g;
-//         pt.update();
-//       });
-//     return;
-//   } else {
-//     // multiple trees might have been finished at once?
-//     while (proofTrees.length > status.statusAllProofs.length) {
-//       proofTrees.shift();
-//       if (proofTrees.length === 0) {
-//         $("#prooftree").empty();
-//         hideProofTreePanel();
-//       }
-//     }
-//   }
-//
-//   if (proofTrees.length === 0) { return; }
-//
-//   const activeProofTree = proofTrees[0];
-//   const curNode = activeProofTree.curNode;
-//
-//   if (isUpperCase(trimmed[0]) || CoqStringUtils.isBullet(trimmed)) {
-//     curNode.goals = goals;
-//     curNode.stateIds.push(stateId);
-//     return;
-//   }
-//
-//   let tactic: Tactic = _.find(curNode.getTactics(), t => t.tactic === trimmed);
-//
-//   const tacticGroup: ITacticGroupNode = (
-//     tactic
-//       ? tactic.parentGroup
-//       : new TacticGroupNode(activeProofTree, curNode, "")
-//   );
-//
-//   /*
-//   We need to figure out which foreground goals are relevant to this tactic node.
-//   If the number of unfocused goals has changed by running the tactic, the tactic
-//   must have solved the previous goal and the current foreground goals are the
-//   remaining ones.
-//   Otherwise, the delta foreground goals have been created by running the tactic.
-//   */
-//   const goalsBefore = curNode.goals;
-//   const goalsAfter = goals;
-//   const nbRelevantGoals =
-//     goalsBefore.bgGoals.length === goalsAfter.bgGoals.length
-//       ? goalsAfter.fgGoals.length - (goalsBefore.fgGoals.length - 1)
-//       : 0;
-//   const relevantGoals = context.slice(0, nbRelevantGoals);
-//
-//   const goalNodes: IGoalNode[] =
-//     _(relevantGoals).map(function(goal) {
-//       return new GoalNode(
-//         activeProofTree,
-//         just(tacticGroup),
-//         goals,
-//         goal
-//       );
-//     }).value();
-//
-//   if (!tactic) {
-//     curNode.tacticGroups.push(tacticGroup);
-//     tactic = new Tactic(trimmed, tacticGroup, goalNodes);
-//     tacticGroup.tactics.push(tactic);
-//   } else {
-//     tactic.goals = goalNodes;
-//   }
-//
-//   tacticGroup.isProcessed = true;
-//
-//   if (goalNodes.length > 0) {
-//     const curGoal: IGoalNode = goalNodes[0];
-//     curGoal.stateIds.push(stateId);
-//     activeProofTree.curNode = curGoal;
-//     activeProofTree.update();
-//   } else {
-//     curNode.onChildSolved(stateId);
-//   }
-//
-// }
-
-/*
-  For now, let"s just rewind within the tree or give up. Eventually,
-  we could rewind into old trees.
- */
-// function proofTreeOnEditAt(sid: number): void {
-//
-//   if (proofTrees.length === 0) { return; }
-//   const activeProofTree = proofTrees[0];
-//   //lastStateId = sid;
-//   const curNode = activeProofTree.curNode;
-//
-//   // clean up necessary for tactics waiting
-//   activeProofTree.tacticWaiting = nothing();
-//
-//   // first, get rid of all stored stateIds > sid
-//   // and mark their children tactic groups unprocessed
-//   const allGoals = activeProofTree.rootNode.getAllGoalDescendants();
-//   _(allGoals).each(g => {
-//     if (_(g.stateIds).some(s => s >= sid)) {
-//       _(g.tacticGroups).each(g => { g.isProcessed = false; });
-//     }
-//     g.stateIds = _(g.stateIds).filter(s => s <= sid).value();
-//   });
-//   const target = _(allGoals).find(g => {
-//     return _(g.stateIds).some(s => s === sid);
-//   });
-//   if (target) {
-//     activeProofTree.curNode = target;
-//     activeProofTree.update();
-//   } else {
-//     proofTrees.length = 0;
-//     hideProofTreePanel();
-//     $("#prooftree").empty();
-//   }
-//
-// }
-
 export function onResize(): void {
   Global.coqDocument.editor.resize();
   _(Global.getAllEditorTabs()).each(e => e.resize());
@@ -572,11 +461,6 @@ export function onResize(): void {
     const parent = $("#prooftree").parent();
     t.resize(parent.width(), parent.height());
   });
-}
-
-function hideProofTreePanel(): void {
-  layout.set("bottom", { size: "20px" });
-  bottomLayout.hide("top");
 }
 
 function showProofTreePanel(): Promise<{}> {
@@ -589,6 +473,11 @@ function showProofTreePanel(): Promise<{}> {
     layout.set("bottom", { size: "30%" });
     bottomLayout.show("top");
   });
+}
+
+function hideProofTreePanel(): void {
+  layout.set("bottom", { size: "20px" });
+  bottomLayout.hide("top");
 }
 
 function updateFontSize(d: ICoqDocument): void {
@@ -683,6 +572,7 @@ function mapCursorPositionToContext(
         return edit ? just(edit) : nothing();
       })
       .distinctUntilChanged();
+
   if (DebugFlags.editToBeDisplayed) { subscribeAndLog(editToBeDisplayed$); }
 
   return editToBeDisplayed$

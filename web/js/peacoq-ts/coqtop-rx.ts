@@ -10,7 +10,7 @@ let statusPeriod = 250; // milliseconds
 interface CoqtopOutputStreams {
   error$: Rx.Observable<ValueFail>;
   feedback$: Rx.Observable<IFeedback>;
-  response$: Rx.Observable<ICoqtopResponse>;
+  response$: Rx.Observable<ICoqtopResponse<ICoqtopInput, any>>;
   message$: Rx.Observable<IMessage>;
   // stateId$: Rx.Observable<number>;
 }
@@ -38,7 +38,7 @@ export function setupCoqtopCommunication(
 
   // subscribeAndLog(coqtopInputStream);
 
-  let outputAndError$s = processSequentiallyForever<ICoqtopInput, ICoqtopOutput>(input$, processCommands);
+  let outputAndError$s = processSequentiallyForever(input$, processCommands);
   const output$ = outputAndError$s.output$;
   const error$ = outputAndError$s.error$
     .map(r => {
@@ -72,15 +72,15 @@ export function setupCoqtopCommunication(
     inputSubject.onNext(new CoqtopInput.EditAt(e.stateId));
   });
 
-  let addReponse$: Rx.Observable<AddReturn> =
-    response$
-      .filter(r => r.input instanceof CoqtopInput.AddPrime)
-      .map(r => ({
-        stateId: r.contents[0],
-        eitherNullStateId: r.contents[1][0],
-        output: r.contents[1][1],
-      }))
-    ;
+  // let addResponse$: Rx.Observable<AddReturn> =
+  //   response$
+  //     .filter(r => r.input instanceof CoqtopInput.AddPrime)
+  //     .map(r => ({
+  //       stateId: r.contents[0],
+  //       eitherNullStateId: r.contents[1][0],
+  //       output: r.contents[1][1],
+  //     }))
+  //   ;
 
   let stateId$ = output$.map(r => r.stateId);
 
@@ -122,7 +122,7 @@ function wrapAjax(i: JQueryAjaxSettings): Promise<any> {
   });
 }
 
-function sendCommand(input: ICoqtopInput): Promise<ICoqtopOutput> {
+function sendCommand<I extends ICoqtopInput>(input: I): Promise<ICoqtopOutput<I, any>> {
   return new Promise((onFulfilled, onRejected) => {
     wrapAjax({
       type: 'POST',
@@ -132,7 +132,7 @@ function sendCommand(input: ICoqtopInput): Promise<ICoqtopOutput> {
       // error: e => console.log("Server did not respond", e),
       // success: r => console.log("Success", r, r[0].tag),
     })
-      .then<ICoqtopOutput>(r => ({
+      .then<ICoqtopOutput<I, any>>(r => ({
         response: $.extend(r[0], { input: input }),
         stateId: r[1][0],
         editId: r[1][1],
@@ -156,6 +156,6 @@ function sendCommand(input: ICoqtopInput): Promise<ICoqtopOutput> {
   });
 }
 
-function processCommands(input$: Rx.Observable<ICoqtopInput>): Rx.Observable<ICoqtopOutput> {
+function processCommands<I extends ICoqtopInput>(input$: Rx.Observable<I>): Rx.Observable<ICoqtopOutput<I, any>> {
   return input$.flatMap(i => sendCommand(i));
 }
