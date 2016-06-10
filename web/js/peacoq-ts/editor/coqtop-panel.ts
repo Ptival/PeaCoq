@@ -26,6 +26,7 @@ function makeAlert(message, klass) {
     .addClass(`alert alert-${klass}`)
     .css("font-family", "monospace")
     .css("margin-bottom", "2px")
+    .css("padding", "2px")
     .css("white-space", "pre");
 }
 
