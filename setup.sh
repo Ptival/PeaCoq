@@ -101,7 +101,7 @@ cat <<END > ${FILE}
 PeaCoqConfig
 { configUserId = ""
 , configLogPath = "${LOGPATH}"
-, configCoqtop = "coqtop -ideslave -main-channel stdfds -I ${PEACOQPATH}/peacoqtop/plugin -Q ${PEACOQPATH}/peacoqtop/plugin PeaCoq"
+, configCoqtop = "coqtop -ideslave -main-channel stdfds -async-proofs on -I ${PEACOQPATH}/peacoqtop/plugin -Q ${PEACOQPATH}/peacoqtop/plugin PeaCoq"
 }
 END
 

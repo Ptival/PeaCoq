@@ -85,13 +85,14 @@ export class Processed implements IProcessed {
     if (this.context === undefined) {
       this.context = new Promise(onFulfilled => {
         const query = new CoqtopInput.Query("PeaCoqGetContext.", this.stateId);
-        query["callback"] = r => {
-          if (DebugFlags.rawPeaCoqContext) { console.log(r.contents); }
-          if (r.contents.length === 0) {
+        query["callback"] = (r: ICoqtopOutput<ICoqtopInput, any>) => {
+          const contents = r.output.response.contents;
+          if (DebugFlags.rawPeaCoqContext) { console.log(contents); }
+          if (contents.length === 0) {
             onFulfilled(emptyContext);
           } else {
             // Escaping because JSON.parse sucks :(
-            const safeContents = r.contents
+            const safeContents = contents
               .replace(/\n/g, "\\n")
               .replace(/\r/g, "\\r")
               .replace(/\t/g, "\\t")

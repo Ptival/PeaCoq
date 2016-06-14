@@ -11,6 +11,20 @@ import CoqParse
 type AboutInput = ()
 type AboutOutput = CoqInfo
 
+{-
+  <= add ((s, eid), (sid, verbose))
+  `s` is the sentence
+  `eid` is a frontend-defined number for the sentence
+  `sid` is the state ID we believe we are currently in?
+  `verbose` is some verbosity flag (for what?)
+
+  => (newid, (rc, out))
+  `newid` is the new state ID
+  `rc` is Left if the added edit is the current "tip" of the document,
+  or Right s' if the edit closed the current focus and the tip is now
+  at state s'
+  `out` is ?
+-}
 type AddInput = ((String, Int), (StateId, Bool))
 type AddOutput = (StateId, (Either () StateId, String))
 
