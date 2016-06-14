@@ -332,10 +332,17 @@ export function processEditsReactive(
     // the correct order: add, goal, context, add, goal, context, add, ...
     .map(e => {
       let add = new CoqtopInput.AddPrime(e.query);
-      add["callback"] = r => {
-        const stateId = r.contents[0];
-        const newStage = new Edit.BeingProcessed(e.stage, stateId);
-        e.setStage(newStage);
+      add["callback"] = (io: ICoqtopOutput<ICoqtopInput, any>) => {
+        const response = io.output.response;
+        if (response.tag === "ValueGood") {
+          const stateId = io.output.response.contents[0];
+          const newStage = new Edit.BeingProcessed(e.stage, stateId);
+          e.setStage(newStage);
+        } else if (response.tag === "ValueFail") {
+          // TODO?
+        } else {
+          debugger;
+        }
       };
       return add;
     })

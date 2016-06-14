@@ -1,6 +1,6 @@
-import { FeedbackContent } from "./feedback-content";
+import * as FeedbackContent from "./feedback-content";
 
-export class Feedback implements IFeedback {
+export class Feedback implements IFeedback<IFeedbackContent> {
   // TODO: give this a less lame type
   editOrState: string;
   editOrStateId: number;

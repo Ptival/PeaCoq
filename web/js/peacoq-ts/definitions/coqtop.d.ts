@@ -1,7 +1,7 @@
 
 interface ICoqtopInput {
   // this is easier than pattern-matching on the output stream
-  callback?: (r: ICoqtopResponse<this, any>) => void;
+  callback?: (r: ICoqtopOutput<this, any>) => void;
   // the user might want to attach data that gets copied in the output
   // data: any;
   getArgs(): Object;
@@ -9,15 +9,17 @@ interface ICoqtopInput {
 }
 
 interface ICoqtopOutput<I, O> {
-  response: ICoqtopResponse<I, O>;
-  stateId: number;
-  editId: number;
-  messages: Object[];
-  feedback: Object[];
+  input: I;
+  output: {
+    response: ICoqtopResponse<O>;
+    stateId: number;
+    editId: number;
+    messages: Object[];
+    feedback: Object[];
+  }
 }
 
-interface ICoqtopResponse<I, O> {
-  input: I;
+interface ICoqtopResponse<O> {
   tag: string;
   contents: O;
 }

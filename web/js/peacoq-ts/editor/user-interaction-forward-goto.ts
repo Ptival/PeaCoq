@@ -6,7 +6,7 @@ import { Strictly } from "../strictly";
 export function setupUserInteractionForwardGoto(
   forwardGoto$: Rx.Observable<AceAjax.Position>,
   editCreated$: Rx.Observable<IEdit<IEditStage>>,
-  error$: Rx.Observable<IValueFail>
+  errorMsg$: Rx.Observable<IFeedback<FeedbackContent.IErrorMsg>>
 ): Rx.Observable<{}> {
 
   return forwardGoto$.flatMap(dest => {
@@ -20,7 +20,7 @@ export function setupUserInteractionForwardGoto(
         return CoqStringUtils.coqTrimLeft(text) !== "";
       })
       // if an error occurs, abort
-      .takeUntil(error$)
+      .takeUntil(errorMsg$)
       // if another goto command occurs, abort and let the other one do the work
       .takeUntil(forwardGoto$)
       .map(_ => ({}))

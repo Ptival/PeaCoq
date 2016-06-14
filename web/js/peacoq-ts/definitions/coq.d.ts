@@ -14,13 +14,25 @@ interface AddReturn {
 
 interface IConstrExpr { }
 
-interface IFeedback {
+interface IFeedback<C extends IFeedbackContent> {
   editOrState: string;
   editOrStateId: number;
-  feedbackContent: IFeedbackContent;
+  feedbackContent: C;
 }
 
 interface IFeedbackContent { }
+
+declare namespace FeedbackContent {
+  interface IAddedAxiom extends IFeedbackContent { }
+  interface IErrorMsg extends IFeedbackContent {
+    message: string;
+  }
+  interface IFileDependency extends IFeedbackContent { }
+  interface IFileLoaded extends IFeedbackContent { }
+  interface IProcessed extends IFeedbackContent { }
+  interface IProcessingIn extends IFeedbackContent { }
+  interface IWorkerStatus extends IFeedbackContent { }
+}
 
 interface IGlobSortGen<T> { }
 

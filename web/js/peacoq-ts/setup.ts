@@ -29,7 +29,6 @@ import { proofTreeOnEdit, proofTreeOnEditAt } from "./prooftree/prooftree-handle
 
 import * as Coqtop from "./coqtop-rx";
 import * as CoqtopInput from "./coqtop-input";
-import * as CoqtopOutput from "./coqtop-output";
 import * as DebugFlags from "./debug-flags";
 import * as Global from "./global-variables";
 import { PeaCoqGoal } from "./peacoq-goal";
@@ -285,15 +284,14 @@ $(document).ready(() => {
   const nextBecauseGoTo$ = setupUserInteractionForwardGoto(
     forwardGoTo$.map(goto => goto.destinationPos),
     Global.coqDocument.edits.editCreated$,
-    coqtopOutput$s.error$
+    coqtopOutput$s.feedback$s.errorMsg$
   );
 
   nextBecauseGoTo$
     .delay(0) // this is needed to set up the feedback properly
     .subscribe(() => nextSubject.onNext({}));
 
-  coqtopOutput$s.feedback$
-    .filter(f => f.feedbackContent instanceof FeedbackContent.Processed)
+  coqtopOutput$s.feedback$s.processed$
     .subscribe(f => {
       if (f.editOrState === "state") {
         const stateId = f.editOrStateId;
@@ -345,8 +343,10 @@ $(document).ready(() => {
   //     }
   //   });
 
-  const editorError$: Rx.Observable<IEditorError>
-    = coqtopOutput$s.error$.map(pimpMyError).share();
+  const editorError$: Rx.Observable<IEditorError> =
+    coqtopOutput$s.valueFail$
+      .map(vf => pimpMyError(vf))
+      .share();
 
   editorError$.subscribe(ee =>
     Global.coqDocument.removeEditAndFollowingOnes(ee.failedEdit)
@@ -354,7 +354,7 @@ $(document).ready(() => {
 
   new CoqtopPanel(
     $(w2ui[rightLayoutName].get("bottom").content),
-    coqtopOutput$s.error$,
+    coqtopOutput$s.feedback$s.errorMsg$,
     coqtopOutput$s.message$
   );
 
@@ -368,6 +368,7 @@ $(document).ready(() => {
     _(Global.coqDocument.getEditsBeingProcessed())
       // ASSUMPTION: state IDs are assigned monotonically
       .filter(e => e.stage.stateId < ee.error.stateId)
+      .each(_ => { debugger; })
       .each(e => e.setStage(new Edit.Processed(e.stage, queriesObserver)))
   );
 
@@ -378,18 +379,7 @@ $(document).ready(() => {
     editsToProcessStream
   );
 
-  const outputFromAdd$ =
-    coqtopOutput$s.response$
-      .filter(r => r.input instanceof CoqtopInput.AddPrime)
-      .share();
-
-  const outputFromEditAt$: Rx.Observable<ICoqtopResponse<CoqtopInput.EditAt, CoqtopOutput.EditAt>> =
-    <Rx.Observable<ICoqtopResponse<any, any>>>
-    coqtopOutput$s.response$
-      .filter(r => r.input instanceof CoqtopInput.EditAt)
-      .share();
-
-  outputFromEditAt$
+  coqtopOutput$s.valueGood$s.editAt$
     .subscribe(r => {
       const processedEdits = Global.coqDocument.getProcessedEdits();
       const firstEditAfter =
@@ -400,9 +390,10 @@ $(document).ready(() => {
     });
 
   // I'm not sure when this happens, for now I'll assume it doesn't
-  outputFromEditAt$.subscribe(r => {
-    if (r.contents.hasOwnProperty("Right")) { throw r; }
-  });
+  coqtopOutput$s.valueGood$s.editAt$
+    .subscribe(io => {
+      if (io.output.response.contents.hasOwnProperty("Right")) { throw io; }
+    });
 
   // outputFromEditAt$
   //   .subscribe(r => proofTreeOnEditAt(

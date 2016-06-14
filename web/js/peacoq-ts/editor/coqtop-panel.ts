@@ -5,10 +5,10 @@ const maxMessagesOnScreen = 2;
 export class CoqtopPanel {
   constructor(
     private container: JQuery,
-    private error$: Rx.Observable<IValueFail>,
+    private feedbackError$: Rx.Observable<IFeedback<FeedbackContent.IErrorMsg>>,
     private message$: Rx.Observable<IMessage>
   ) {
-    error$.subscribe(e => this.addAlert(e.message, "danger"));
+    feedbackError$.subscribe(e => this.addAlert(e.feedbackContent.message, "danger"));
     message$.groupBy(m => m.level.constructor).subscribe(
       group => group.subscribe(m => this.addAlert(m.content, classify(m.level)))
     );

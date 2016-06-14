@@ -146,5 +146,7 @@ interface IEditorTab extends ITab {
 interface IEditorError {
   error: IValueFail;
   failedEdit: IEdit<IBeingProcessed>;
+  // lastValidStateId: number,
+  // message: string;
   range: Maybe<AceAjax.Range>;
 }

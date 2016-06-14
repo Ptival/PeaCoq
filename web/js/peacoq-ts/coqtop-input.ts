@@ -1,5 +1,5 @@
 
-export class AddPrime implements ICoqtopInput {
+export class AddPrime implements CoqtopInput.IAddPrime {
   constructor(
     public add: string
   ) { }
@@ -7,7 +7,7 @@ export class AddPrime implements ICoqtopInput {
   getCmd() { return "add'"; }
 }
 
-export class EditAt implements ICoqtopInput {
+export class EditAt implements CoqtopInput.IEditAt {
   constructor(
     public stateId: number
   ) { }
@@ -15,12 +15,12 @@ export class EditAt implements ICoqtopInput {
   getCmd() { return "editat"; }
 }
 
-export class Goal implements ICoqtopInput {
+export class Goal implements CoqtopInput.IGoal {
   getArgs() { return []; }
   getCmd() { return "goal"; }
 }
 
-export class Status implements ICoqtopInput {
+export class Status implements CoqtopInput.IStatus {
   constructor(
     public b: boolean
   ) { }
@@ -28,7 +28,7 @@ export class Status implements ICoqtopInput {
   getCmd() { return "status"; }
 }
 
-export class Query implements ICoqtopInput {
+export class Query implements CoqtopInput.IQuery {
   constructor(
     public query: string,
     public stateId: number
@@ -37,7 +37,7 @@ export class Query implements ICoqtopInput {
   getCmd() { return "query"; }
 }
 
-export class QueryPrime implements ICoqtopInput {
+export class QueryPrime implements CoqtopInput.IQueryPrime {
   constructor(
     public query: string
   ) { }

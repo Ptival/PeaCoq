@@ -1,19 +1,12 @@
 import * as DebugFlags from "./debug-flags";
 import { Feedback } from "./coq/feedback";
+import * as FeedbackContent from "./coq/feedback-content";
 import { Message } from "./coq/message";
 import { ValueFail } from "./coq/value-fail";
 import * as CoqtopInput from "./coqtop-input";
 import { processSequentiallyForever } from "./rx";
 
-let statusPeriod = 250; // milliseconds
-
-interface CoqtopOutputStreams {
-  error$: Rx.Observable<ValueFail>;
-  feedback$: Rx.Observable<IFeedback>;
-  response$: Rx.Observable<ICoqtopResponse<ICoqtopInput, any>>;
-  message$: Rx.Observable<IMessage>;
-  // stateId$: Rx.Observable<number>;
-}
+let statusPeriod = 10000; // milliseconds
 
 export function setupCoqtopCommunication(
   input$s: Rx.Observable<ICoqtopInput>[]
@@ -39,15 +32,16 @@ export function setupCoqtopCommunication(
   // subscribeAndLog(coqtopInputStream);
 
   let outputAndError$s = processSequentiallyForever(input$, processCommands);
-  const output$ = outputAndError$s.output$;
-  const error$ = outputAndError$s.error$
-    .map(r => {
-      return new ValueFail(r.response.contents);
-    })
-    .share();
-  error$.subscribe(vf => inputSubject.onNext(new CoqtopInput.EditAt(vf.stateId)));
 
-  let response$ = output$.map(r => r.response);
+  const io$ = outputAndError$s.output$;
+
+  // const error$ = outputAndError$s.error$
+  //   .map(r => {
+  //     return new ValueFail(r.response.contents);
+  //   })
+  //   .share();
+
+  // error$.subscribe(vf => inputSubject.onNext(new CoqtopInput.EditAt(vf.stateId)));
 
   if (DebugFlags.requestToCoqtop) {
     input$
@@ -55,22 +49,50 @@ export function setupCoqtopCommunication(
       .subscribe(input => { console.log("⟸", input); });
   }
   if (DebugFlags.responseFromCoqtop) {
-    response$
-      .filter(r => !(r.input instanceof CoqtopInput.Status))
-      .subscribe(r => { console.log("   ⟹", r.input, r); });
+    io$
+      .filter(io => !(io.input instanceof CoqtopInput.Status))
+      .subscribe(io => { console.log("   ⟹", io.input, io.output); });
   }
-  if (DebugFlags.errorFromCoqtop) {
-    error$
-      .subscribe(vf => { console.log("   ⟹ ERROR", vf); });
+  // if (DebugFlags.errorFromCoqtop) {
+  //   error$
+  //     .subscribe(vf => { console.log("   ⟹ ERROR", vf); });
+  // }
+
+  let message$: Rx.Observable<IMessage> =
+    io$
+      .concatMap(io => _(io.output.messages).map(m => new Message(m)).value())
+      .share();
+  if (DebugFlags.messageFromCoqtop) {
+    message$.subscribe(m => console.log("Message", m));
+  }
+
+  /* IMPORTANT: It is important to process Feedback messages before
+  processing the output value, because a ValueFail may refer to state
+  IDs that are only present in the current output's feedback. We
+  artificially delay the output value stream to achieve this easily. */
+
+  const feedback$: Rx.Subject<IFeedback<IFeedbackContent>> = new Rx.Subject<IFeedback<IFeedbackContent>>();
+  const value$: Rx.Subject<ICoqtopResponse<any>> = new Rx.Subject<any>();
+
+  io$.subscribe(io => {
+    Rx.Observable.fromArray(_(io.output.feedback).map(f => new Feedback(f)).value())
+      .subscribe(f => feedback$.onNext(f));
+    console.log("All feedbacks should have been processed, now pushing return value");
+    value$.onNext(io.output.response);
+  });
+  if (DebugFlags.feedbackFromCoqtop) {
+    feedback$
+      .distinctUntilChanged() // so redundant when calling status
+      .subscribe(f => console.log("Feedback", f));
   }
 
   // this is needed for PeaCoq because we use add' so the STM's state
   // needs to be put back to where it worked
   // TODO: make a config flag for this feature
-  error$.subscribe(e => {
+  // error$.subscribe(e => {
     // console.log("sending EditAt because of error");
-    inputSubject.onNext(new CoqtopInput.EditAt(e.stateId));
-  });
+  //   inputSubject.onNext(new CoqtopInput.EditAt(e.stateId));
+  // });
 
   // let addResponse$: Rx.Observable<AddReturn> =
   //   response$
@@ -82,33 +104,31 @@ export function setupCoqtopCommunication(
   //     }))
   //   ;
 
-  let stateId$ = output$.map(r => r.stateId);
-
-  let message$: Rx.Observable<IMessage> =
-    output$
-      .flatMap(r => _(r.messages).map(m => new Message(m)).value())
-      .share();
-  if (DebugFlags.messageFromCoqtop) {
-    message$.subscribe(m => console.log("Message", m));
-  }
-
-  let feedback$: Rx.Observable<IFeedback> =
-    output$
-      .flatMap(r => _(r.feedback).map(f => new Feedback(f)).value())
-      .share();
-  if (DebugFlags.feedbackFromCoqtop) {
-    feedback$
-      .distinctUntilChanged() // so redundant!
-      .subscribe(f => console.log("Feedback", f));
-  }
+  // let stateId$ = output$.map(r => r.stateId);
 
   input$.connect();
 
+  const [goodResponse$, badResponse$] = io$.partition(o => o.output.response.tag === "ValueGood");
+
   return {
-    error$: error$,
+    input$: input$,
+    // io$: io$,
+    // error$: error$,
+    feedback$s: {
+      addedAxiom$: <any>(feedback$.filter(f => f.feedbackContent instanceof FeedbackContent.AddedAxiom)),
+      errorMsg$: <any>feedback$.filter(f => f.feedbackContent instanceof FeedbackContent.ErrorMsg),
+      fileDependency$: <any>feedback$.filter(f => f.feedbackContent instanceof FeedbackContent.FileDependency),
+      fileLoaded$: <any>feedback$.filter(f => f.feedbackContent instanceof FeedbackContent.FileLoaded),
+      processed$: <any>feedback$.filter(f => f.feedbackContent instanceof FeedbackContent.Processed),
+      processingIn$: <any>feedback$.filter(f => f.feedbackContent instanceof FeedbackContent.ProcessingIn),
+    },
     feedback$: feedback$,
     message$: message$,
-    response$: response$,
+    valueFail$: badResponse$.map(x => new ValueFail(x.output.response.contents)),
+    valueGood$s: {
+      add$: goodResponse$.filter(r => r.input instanceof CoqtopInput.AddPrime),
+      editAt$: goodResponse$.filter(r => r.input instanceof CoqtopInput.EditAt),
+    },
     // stateId$: stateId$,
   };
 
@@ -133,29 +153,27 @@ function sendCommand<I extends ICoqtopInput>(input: I): Promise<ICoqtopOutput<I,
       // success: r => console.log("Success", r, r[0].tag),
     })
       .then<ICoqtopOutput<I, any>>(r => ({
-        response: $.extend(r[0], { input: input }),
-        stateId: r[1][0],
-        editId: r[1][1],
-        messages: r[2][0],
-        feedback: r[2][1],
-      }))
-      .then<void>(r => {
-        if (r.response.tag === "ValueGood") {
-          if (input.callback !== undefined) {
-            input.callback(r.response);
-          }
-          // console.log("onFulfilled", r);
-          onFulfilled(r);
-        } else if (r.response.tag === "ValueFail") {
-          // console.log("onRejected", r);
-          onRejected(r);
-        } else {
-          debugger;
+        input: input,
+        output: {
+          response: r[0],
+          stateId: r[1][0],
+          editId: r[1][1],
+          messages: r[2][0],
+          feedback: r[2][1],
         }
+      }))
+      .then(r => {
+        if (input.callback !== undefined) {
+          input.callback(r);
+        }
+        onFulfilled(r);
       });
   });
 }
 
-function processCommands<I extends ICoqtopInput>(input$: Rx.Observable<I>): Rx.Observable<ICoqtopOutput<I, any>> {
-  return input$.flatMap(i => sendCommand(i));
+function processCommands<I extends ICoqtopInput>(input$: Rx.Observable<I>): Rx.Observable<{ continue: boolean, output: ICoqtopOutput<I, any> }> {
+  return input$
+    .concatMap(i => sendCommand(i))
+    .map(io => ({ continue: io.output.response.tag === "ValueGood", output: io }))
+    ;
 }

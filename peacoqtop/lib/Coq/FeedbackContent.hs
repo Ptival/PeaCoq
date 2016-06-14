@@ -57,4 +57,8 @@ instance FromXML FeedbackContent where
         return Processed
       "processingin" ->
         ProcessingIn <$> forceXML
+      "workerstatus" -> do
+        id <- forceXML
+        status <- forceXML
+        return $ WorkerStatus id status
       _ -> error $ "Unknown feedback_content: " ++ val
