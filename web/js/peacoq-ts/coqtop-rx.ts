@@ -77,7 +77,7 @@ export function setupCoqtopCommunication(
   io$.subscribe(io => {
     Rx.Observable.fromArray(_(io.output.feedback).map(f => new Feedback(f)).value())
       .subscribe(f => feedback$.onNext(f));
-    console.log("All feedbacks should have been processed, now pushing return value");
+    // console.log("All feedbacks should have been processed, now pushing return value");
     value$.onNext(io.output.response);
   });
   if (DebugFlags.feedbackFromCoqtop) {
