@@ -156,7 +156,7 @@ function update(): void {
   });
 
   Global.coqDocument.editor.setTheme(theme.aceTheme);
-  _(Global.getAllEditorTabs()).each((et) => { et.setTheme(theme.aceTheme); });
+  Global.coqDocument.contextPanel.setTheme(theme.aceTheme);
 
   $.get(theme.css, (response) => {
     $('#theme').text(response);

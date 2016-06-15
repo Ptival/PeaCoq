@@ -3,14 +3,15 @@ import * as FeedbackContent from "./coq/feedback-content";
 import * as Coq85 from "./editor/coq85";
 import { CoqDocument } from "./editor/coq-document";
 import { CoqtopPanel } from "./editor/coqtop-panel";
+import { ContextPanel } from "./editor/context-panel";
 import * as Edit from "./editor/edit";
-import { clearEdit, displayEdit, setupEditor } from "./editor/editor";
-import { EditorTab } from "./editor/editor-tab";
+import { setupEditor } from "./editor/editor";
+
 import { isBefore } from "./editor/editor-utils";
 import { pimpMyError } from "./editor/error";
 import { setupKeybindings } from "./editor/keybindings";
 import { setupProgressBar } from "./editor/progress-bar";
-import { Tab } from "./editor/tab";
+
 import { setupTextCursorPositionUpdate } from "./editor/text-cursor-position";
 import { setupUserInteractionForwardGoto } from "./editor/user-interaction-forward-goto";
 // // TODO: toolbar.ts should setup{Load,Save}File upon setupToolbar
@@ -85,7 +86,7 @@ $(document).ready(() => {
       nothing: () => Promise.resolve(emptyContext),
       just: e => e.getProcessedStage().then(s => s.getContext()),
     }))
-    .subscribe(context => displayEdit(context));
+    .subscribe(context => Global.coqDocument.contextPanel.display(context));
 
   Global.setCoqDocument(new CoqDocument(editor));
 
@@ -152,16 +153,10 @@ $(document).ready(() => {
       const tabs: ITabs = <any>{};
 
       // top panes
-      tabs.pretty = new Tab("pretty", "Pretty", rightLayoutName, "main");
-      tabs.pretty.div.css("padding-left", "4px");
-      tabs.foreground = new EditorTab("foreground", "Foreground", rightLayoutName, "main");
-      tabs.background = new EditorTab("background", "Background", rightLayoutName, "main");
-      tabs.shelved = new EditorTab("shelved", "Shelved", rightLayoutName, "main");
-      tabs.givenUp = new EditorTab("givenup", "Given up", rightLayoutName, "main");
 
       contextTabs.click("pretty");
 
-      Global.setTabs(tabs);
+      Global.coqDocument.contextPanel = new ContextPanel(Global.coqDocument, rightLayoutName);
 
       // TODO: stream this
       updateFontSize(Global.coqDocument);
@@ -177,11 +172,14 @@ $(document).ready(() => {
   const windowResizeStream: Rx.Observable<{}> = Rx.Observable.fromEvent($(window), "resize");
   const layoutResizeStream = setupW2LayoutResizeStream(layout);
   const rightLayoutResizeStream = setupW2LayoutResizeStream(rightLayout);
-  Rx.Observable.merge(windowResizeStream, layoutResizeStream, rightLayoutResizeStream)
+
+  const resize$ =
+    Rx.Observable.merge(windowResizeStream, layoutResizeStream, rightLayoutResizeStream)
     // only fire once every <resizeBufferingTime> milliseconds
-    .bufferWithTime(resizeBufferingTime).filter(a => !_.isEmpty(a))
-    .subscribe(onResize)
-    ;
+    .bufferWithTime(resizeBufferingTime).filter(a => !_.isEmpty(a));
+
+  resize$.subscribe(onResize);
+  resize$.subscribe(() => Global.coqDocument.contextPanel.onResize());
 
   // TODO: this is probably needed so that the main editor stays centered
   // when the prooftree panel showsup or hides
@@ -192,7 +190,7 @@ $(document).ready(() => {
   const shortcutsStreams = setupKeybindings();
   const userActionStreams = setupUserActions(toolbarStreams, shortcutsStreams);
 
-  userActionStreams.loadedFile$.subscribe(() => clearEdit());
+  userActionStreams.loadedFile$.subscribe(() => Global.coqDocument.contextPanel.clear());
 
   interface GoToPositions {
     destinationPos: AceAjax.Position;
@@ -447,7 +445,6 @@ function updateCoqtopTabs(context: PeaCoqContext) {
 
 export function onResize(): void {
   Global.coqDocument.editor.resize();
-  _(Global.getAllEditorTabs()).each(e => e.resize());
   getActiveProofTree().fmap(t => {
     const parent = $("#prooftree").parent();
     t.resize(parent.width(), parent.height());
@@ -473,9 +470,7 @@ function hideProofTreePanel(): void {
 
 function updateFontSize(d: ICoqDocument): void {
   d.editor.setOption("fontSize", fontSize);
-  _(Global.getAllEditorTabs()).each((e: EditorTab) => {
-    e.setOption("fontSize", fontSize);
-  });
+  Global.coqDocument.contextPanel.onFontSizeChanged(fontSize);
   jss.set("#pretty-content", { "font-size": fontSize + "px" });
   jss.set("svg body", { "font-size": fontSize + "px" });
   getActiveProofTree().fmap(t => t.update());

@@ -1,3 +1,15 @@
+interface IEditor {
+
+}
+
+interface IContextPanel {
+  clear(): void;
+  display(c: PeaCoqContext): void;
+  onFontSizeChanged(size: number): void;
+  onResize(): void;
+  setTheme(theme: string): void;
+}
+
 interface ITabs {
   pretty: ITab;
   foreground: IEditorTab;
@@ -51,6 +63,7 @@ interface IEditArray {
 }
 
 interface ICoqDocument {
+  contextPanel: IContextPanel;
   editor: AceAjax.Editor;
   editorChange$: Rx.Observable<AceAjax.EditorChangeEvent>;
   edits: IEditArray;
@@ -139,6 +152,7 @@ interface IEditorTab extends ITab {
   clearValue(): void;
   getValue(): string;
   resize(): void;
+  setFontSize(size: number): void;
   setTheme(s: string): void;
   setValue(s: string, switchToTab: boolean);
 }

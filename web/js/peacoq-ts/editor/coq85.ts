@@ -4,27 +4,6 @@ import * as Edit from "./edit";
 // TODO: the thing causing this import should go elsewhere
 import { Warning } from "../coq/message-level";
 
-// import { Strictly } from "./strictly";
-
-// let AceAnchor = ace.require("ace/anchor").Anchor;
-// let AceRange = ace.require("ace/range").Range;
-// let AceRangeList = ace.require("ace/range_list").RangeList;
-// let AceSelection = ace.require("ace/selection").Selection;
-
-// let autoLayout = false;
-
-// let maxLength = 2000;
-//
-// function onFeedback(f: IFeedback) {
-//   let current = Global.feedback.getValue().substring(0, maxLength);
-//   let now = new Date();
-//   Global.feedback.setValue(
-//     "[" + now.toString().substring(16, 24) + "] " + f.toString() +
-//     "\n" + current,
-//     false
-//   );
-// }
-
 function isQueryWarning(m: IMessage) {
   return (
     m.level.constructor === Warning && m.content.indexOf(
@@ -69,37 +48,6 @@ export function setupSyntaxHovering() {
 
 let unlockedAnchor;
 let unlockedMarker;
-
-function clearCoqtopTabs(clearFailures: boolean): void {
-  let tabsToClear = [
-    Global.tabs.foreground,
-    Global.tabs.background,
-    Global.tabs.shelved,
-    Global.tabs.givenUp,
-    // Global.tabs.notices,
-    // Global.tabs.warnings,
-    // Global.tabs.errors,
-    // Global.tabs.infos
-  ];
-  // if (clearFailures) { tabsToClear.push(Global.tabs.failures); }
-  _(tabsToClear)
-    .each((et: IEditorTab) => {
-      et.clearValue();
-    });
-  Global.tabs.pretty.div.html("");
-}
-
-// function reportFailure(f: string) { //, switchTab: boolean) {
-//   // Global.tabs.failures.setValue(f, true);
-//   //yif (switchTab) { failures.click(); }
-// }
-
-// function getPreviousEditContext(e: IEdit): Maybe<PeaCoqContext> {
-//   return e.previousEdit.bind((e) => {
-//     let stage = e.stage;
-//     return stage instanceof EditStage.Processed ? just(stage.context) : nothing();
-//   });
-// }
 
 export function onNextReactive(
   doc: ICoqDocument,

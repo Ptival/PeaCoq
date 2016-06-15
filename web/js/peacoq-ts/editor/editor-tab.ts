@@ -30,8 +30,12 @@ export class EditorTab extends Tab {
     this.editor.resize();
   }
 
-  setOption(name: string, value: any): void {
+  private setOption(name: string, value: any): void {
     this.editor.setOption(name, value);
+  }
+
+  setFontSize(size: number): void {
+    this.setOption("fontSize", size);
   }
 
   setTheme(s: string): void { this.editor.setTheme(s); }

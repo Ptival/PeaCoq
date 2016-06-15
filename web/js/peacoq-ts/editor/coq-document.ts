@@ -5,6 +5,7 @@ import { errorUnderlineClass, theme } from "./../theme";
 
 export class CoqDocument implements ICoqDocument {
   beginAnchor: AceAjax.Anchor;
+  contextPanel: IContextPanel;
   editorChange$: Rx.Observable<AceAjax.EditorChangeEvent>;
   edits: IEditArray;
   endAnchor: AceAjax.Anchor;
