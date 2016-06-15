@@ -38,17 +38,6 @@ let print_named_declaration (ident, maybeValue, ttype) =
   in
   print (Names.Id.to_string ident ^ valueStr ^ " : " ^ string_of_constr ttype)
 
-let rec print_notations_aux ((((_, (_, notation_constr), _), rest))) =
-     print (string_of_notation_constr notation_constr);
-     List.iter print_notations_aux rest
-
-let rec print_notations glob_constr = ()
-  (*
-  match find_matching_notations glob_constr with
-  | None -> print "No notation found"
-  | Some(n) -> print_notations_aux n
-   *)
-
 let map_option f = function None -> None | Some(x) -> Some(f x)
 
 let string_of_named_declaration convert (name, maybeTerm, typ) =
@@ -131,4 +120,3 @@ VERNAC COMMAND EXTEND PeaCoqQuery CLASSIFIED AS QUERY
 
    ]
 END;;
-
