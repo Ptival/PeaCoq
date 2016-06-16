@@ -1,7 +1,7 @@
-ab-study/
-dist/
-encryption_key
-peacoq.nix
-peacoq
-.swp
-.vscode
+/.swp
+/.vscode/
+/ab-study/
+/dist/
+/encryption_key
+/peacoq.nix
+/peacoq
