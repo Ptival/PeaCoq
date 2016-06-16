@@ -96,8 +96,9 @@ requirejs(
           "peacoq-js-of-ts/coq/str-token",
           "peacoq-js-of-ts/coq/xml-tree",
           "peacoq-js-of-ts/coq-string-utils",
-          "peacoq-js-of-ts/setup",
+          // "peacoq-js-of-ts/setup",
           "peacoq-js-of-ts/utils",
+          "peacoq-js-of-ts/peacoq/peacoq-app",
           // "peacoq-js-of-ts/ui-container",
           // "peacoq-js-of-ts/ui-widget",
         ]

@@ -3,6 +3,37 @@ import * as Edit from "./edit";
 import * as Global from "../global-variables";
 import * as Theme from "../theme";
 
+@component("progress-bar")
+
+@style(`
+:host {
+  border: 2px solid green;
+}
+`)
+
+@template(`<content></content>`)
+
+export class ProgressBar extends polymer.Base {
+  progressField: number;
+
+  ready(): void {
+    console.log("ProgressBar ready");
+    Polymer.dom(this).appendChild($("<span>").text("hello")[0]);
+  }
+
+  constructor(foo: number) {
+    super();
+    console.log("ProgressBar constructor");
+    this.progressField = foo;
+  }
+
+  attached(): void {
+    console.log("ProgressBar attached");
+  }
+}
+
+ProgressBar.register();
+
 let barItemClass = "progress-bar-item";
 let progressBarId = "progress-bar";
 
