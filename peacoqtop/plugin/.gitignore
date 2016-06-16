@@ -1,6 +1,4 @@
 *.aux
-Makefile.coq
-Makefile.coq.bak
 *.cmo
 *.cmi
 *.cmx
@@ -9,3 +7,5 @@ Makefile.coq.bak
 *.glob
 *.o
 *.vo
+/Makefile.coq
+/Makefile.coq.bak
