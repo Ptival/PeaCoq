@@ -1,9 +1,9 @@
 { nixpkgs ? import <nixpkgs> {}
 , compiler ? "ghc7103"
-, peacoqtop
 }:
+let peacoqtop = (import ../peacoqtop/default.nix { inherit nixpkgs compiler; }); in
 let peacoq-server =
-  nixpkgs.pkgs.haskell.packages.${compiler}.callPackage ./peacoq-server.nix { peacoqtop = peacoqtop; };
+  nixpkgs.pkgs.haskell.packages.${compiler}.callPackage ./peacoq-server.nix { inherit peacoqtop; };
 in
 nixpkgs.lib.overrideDerivation peacoqtop (old:
   { buildInputs = old.buildInputs ++ (with nixpkgs; [
