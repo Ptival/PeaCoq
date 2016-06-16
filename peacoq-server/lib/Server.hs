@@ -180,7 +180,7 @@ peaCoqSnaplet coqtop = makeSnaplet "PeaCoq" "PeaCoq" Nothing $ do
   where
     cookieSessionManager :: SnapletInit PeaCoq SessionManager
     cookieSessionManager =
-      initCookieSessionManager "encryption_key" "peacoq_session" Nothing
+      initCookieSessionManager "encryption_key" "peacoq_session" Nothing Nothing
 
 myDirConfig :: DirectoryConfig (Handler PeaCoq PeaCoq)
 myDirConfig =
