@@ -20,15 +20,6 @@ declare namespace Rx {
   }
 }
 
-// TODO: remove when
-// https://github.com/DefinitelyTyped/DefinitelyTyped/pull/9148
-// gets merged
-declare namespace W2UI {
-  interface W2Event {
-    onComplete: () => void;
-  }
-}
-
 interface JQueryContextMenuBuildOptions {
   selector: string;
   trigger?: string;
