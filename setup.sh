@@ -33,6 +33,23 @@ log "Cleaning up Haskell packages (reverse order)"
 ghc-pkg unregister peacoq-server || true
 ghc-pkg unregister peacoqtop || true
 
+# this should go away when snap 1.0 reaches Hackage
+log "Building Snap (version more ahead than Hackage)"
+mkdir -p snap-framework
+(
+cd snap-framework
+for p in io-streams-haproxy heist snap-core snap-server snap; do
+  if [ ! -d ${p} ]; then
+    git clone https://github.com/Ptival/${p}.git
+  fi
+  (
+  cd ${p}
+  # this is my dirty way of attempting install only if the package does not exist
+  ghc-pkg latest ${p} || cabal install
+  )
+done
+)
+
 log "Building OCaml plugin (needed by peacoqtop's tests)"
 (
 set -euv
@@ -104,4 +121,3 @@ PeaCoqConfig
 , configCoqtop = "coqtop -ideslave -main-channel stdfds -async-proofs on -I ${PEACOQPATH}/peacoqtop/plugin -Q ${PEACOQPATH}/peacoqtop/plugin PeaCoq"
 }
 END
-

@@ -34,6 +34,7 @@ cache:
     - $TRAVIS_BUILD_DIR/coq-$COQVER
     - $TRAVIS_BUILD_DIR/peacoqtop/dist
     - $TRAVIS_BUILD_DIR/peacoq-server/dist
+    - $TRAVIS_BUILD_DIR/snap-framework
     - $TRAVIS_BUILD_DIR/web/js/peacoq-ts/typings
     - $TRAVIS_BUILD_DIR/web/node_modules
 
