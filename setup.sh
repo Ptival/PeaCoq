@@ -44,8 +44,8 @@ for p in io-streams-haproxy heist snap-core snap-server snap; do
   fi
   (
   cd ${p}
-  # this is my dirty way of attempting install only if the package does not exist
-  ghc-pkg latest ${p} || cabal install
+  # if only there was a way of saying "install if more recent than current"
+  cabal install || true
   )
 done
 )
