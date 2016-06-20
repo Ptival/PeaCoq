@@ -18,7 +18,7 @@ pathFromCabalFileDirectoryToPluginFolder = "plugin"
 
 coqtop :: String
 coqtop =
-  "coqtop -ideslave -main-channel stdfds -I "
+  "coqtop -ideslave -main-channel stdfds -async-proofs on -I "
     ++ pathFromCabalFileDirectoryToPluginFolder
     ++ " -Q "
     ++ pathFromCabalFileDirectoryToPluginFolder
