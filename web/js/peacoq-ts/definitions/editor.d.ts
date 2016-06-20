@@ -40,25 +40,25 @@ interface ShortcutsStreams {
   save: Rx.Observable<{}>;
 }
 
-interface IEditArray {
-  editChangedStage$: Rx.Observable<IEdit<IEditStage>>;
-  editProcessed$: Rx.Observable<IEdit<IProcessed>>;
-  editCreated$: Rx.Observable<IEdit<IEditStage>>;
-  editRemoved$: Rx.Observable<IEdit<IEditStage>>;
+interface ISentenceArray {
+  editChangedStage$: Rx.Observable<ISentence<IEditStage>>;
+  editProcessed$: Rx.Observable<ISentence<IProcessed>>;
+  editCreated$: Rx.Observable<ISentence<IEditStage>>;
+  editRemoved$: Rx.Observable<ISentence<IEditStage>>;
   createEdit(
     document: ICoqDocument,
     startPosition: AceAjax.Position,
     stopPosition: AceAjax.Position,
     query: string,
-    previousEdit: Maybe<IEdit<any>>,
+    previousEdit: Maybe<ISentence<any>>,
     stage: IToProcess
-  ): IEdit<IToProcess>;
-  getAll(): IEdit<any>[];
-  getLast(): Maybe<IEdit<any>>;
-  remove(r: IEdit<any>): void;
+  ): ISentence<IToProcess>;
+  getAll(): ISentence<any>[];
+  getLast(): Maybe<ISentence<any>>;
+  remove(r: ISentence<any>): void;
   removeAll(): void;
-  removeEditAndFollowingOnes(e: IEdit<any>): void;
-  removeFollowingEdits(e: IEdit<any>): void;
+  removeEditAndFollowingOnes(e: ISentence<any>): void;
+  removeFollowingEdits(e: ISentence<any>): void;
   // replace(id: number, e: IEdit<any>): void;
 }
 
@@ -66,30 +66,30 @@ interface ICoqDocument {
   contextPanel: IContextPanel;
   editor: AceAjax.Editor;
   editorChange$: Rx.Observable<AceAjax.EditorChangeEvent>;
-  edits: IEditArray;
+  edits: ISentenceArray;
   endAnchor: AceAjax.Anchor;
   session: AceAjax.IEditSession;
-  getAllEdits(): IEdit<any>[];
-  getEditAtPosition(pos: AceAjax.Position): Maybe<IEdit<any>>;
-  getEditsBeingProcessed(): IEdit<IBeingProcessed>[];
-  getEditsToProcess(): IEdit<IToProcess>[];
-  getProcessedEdits(): IEdit<IProcessed>[];
-  getLastEdit(): Maybe<IEdit<IEditStage>>;
+  getAllEdits(): ISentence<any>[];
+  getEditAtPosition(pos: AceAjax.Position): Maybe<ISentence<any>>;
+  getEditsBeingProcessed(): ISentence<IBeingProcessed>[];
+  getEditsToProcess(): ISentence<IToProcess>[];
+  getProcessedEdits(): ISentence<IProcessed>[];
+  getLastEdit(): Maybe<ISentence<IEditStage>>;
   getLastEditStop(): AceAjax.Position;
   markError(range: AceAjax.Range): void;
   moveCursorToPositionAndCenter(pos: AceAjax.Position): void;
   movePositionRight(pos: AceAjax.Position, n: number): AceAjax.Position;
   removeAllEdits(): void;
-  removeEdit(e: IEdit<IEditStage>): void;
-  removeEditAndFollowingOnes(e: IEdit<IEditStage>): void;
-  removeFollowingEdits(e: IEdit<IEditStage>): void;
+  removeEdit(e: ISentence<IEditStage>): void;
+  removeEditAndFollowingOnes(e: ISentence<IEditStage>): void;
+  removeFollowingEdits(e: ISentence<IEditStage>): void;
   resetEditor(s: string): void;
 }
 
-interface IEdit<S extends IEditStage> {
-  array: IEditArray;
+interface ISentence<S extends IEditStage> {
+  array: ISentenceArray;
   id: number;
-  previousEdit: Maybe<IEdit<any>>;
+  previousEdit: Maybe<ISentence<any>>;
   query: string;
   stage: S;
   stage$: Rx.Observable<IEditStage>;
@@ -102,7 +102,7 @@ interface IEdit<S extends IEditStage> {
   getProcessedStage(): Rx.IPromise<IProcessed>;
   getStateId(): Maybe<number>;
   highlight(): void;
-  setStage<T extends IEditStage>(stage: T): IEdit<T>;
+  setStage<T extends IEditStage>(stage: T): ISentence<T>;
   unhighlight(): void;
 }
 
@@ -159,7 +159,7 @@ interface IEditorTab extends ITab {
 
 interface IEditorError {
   error: IValueFail;
-  failedEdit: IEdit<IBeingProcessed>;
+  failedEdit: ISentence<IBeingProcessed>;
   // lastValidStateId: number,
   // message: string;
   range: Maybe<AceAjax.Range>;

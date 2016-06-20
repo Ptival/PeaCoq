@@ -17,10 +17,10 @@ import { Processed } from "../coq/feedback-content";
 */
 
 export function setupTextCursorPositionUpdate(
-  editProcessed$: Rx.Observable<IEdit<IProcessed>>,
+  editProcessed$: Rx.Observable<ISentence<IProcessed>>,
   error$: Rx.Observable<IEditorError>,
-  previousEditToReach$: Rx.Observable<IEdit<IEditStage>>,
-  nextEditToProcess$: Rx.Observable<IEdit<IToProcess>>
+  previousEditToReach$: Rx.Observable<ISentence<IEditStage>>,
+  nextEditToProcess$: Rx.Observable<ISentence<IToProcess>>
 ): void {
 
   const lastEditProcessedStopPosition$ =

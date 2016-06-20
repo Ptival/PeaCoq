@@ -27,19 +27,19 @@ export function setupProgressBar(): void {
     e => $(e.target).css("background-color", `${Theme.theme.highlight}`)
   );
   barMouseOut$.subscribe(e => {
-    let targetEdit: IEdit<any> = d3.select(e.target).data()[0];
+    let targetEdit: ISentence<any> = d3.select(e.target).data()[0];
     $(e.target).css("background-color", `${targetEdit.getColor()}`);
   });
   barMouseOver$.subscribe(e => {
-    let targetEdit: IEdit<any> = d3.select(e.target).data()[0];
+    let targetEdit: ISentence<any> = d3.select(e.target).data()[0];
     targetEdit.highlight();
   });
   barMouseOut$.subscribe(e => {
-    let targetEdit: IEdit<any> = d3.select(e.target).data()[0];
+    let targetEdit: ISentence<any> = d3.select(e.target).data()[0];
     targetEdit.unhighlight();
   });
   barClick$.subscribe(e => {
-    let targetEdit: IEdit<any> = d3.select(e.target).data()[0];
+    let targetEdit: ISentence<any> = d3.select(e.target).data()[0];
     Global.coqDocument.moveCursorToPositionAndCenter(targetEdit.stopPosition);
     Global.coqDocument.editor.focus();
   });
@@ -60,7 +60,7 @@ function updateProgressBar(): void {
   let eltWidth = $(`#${progressBarId}`).width() / allEdits.length;
   selection
     .style("width", `${eltWidth}px`)
-    .style("background-color", (d: IEdit<any>) => d.getColor())
+    .style("background-color", (d: ISentence<any>) => d.getColor())
     .attr("title", d => "StateID: " + d.getStateId().caseOf({
       nothing: () => "unassigned yet",
       just: sid => `${sid}`,

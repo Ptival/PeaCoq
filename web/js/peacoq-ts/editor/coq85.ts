@@ -52,9 +52,9 @@ let unlockedMarker;
 export function onNextReactive(
   doc: ICoqDocument,
   next$: Rx.Observable<{}>
-): Rx.Observable<IEdit<IToProcess>> {
+): Rx.Observable<ISentence<IToProcess>> {
   return next$
-    .concatMap<IEdit<IToProcess>>(() => {
+    .concatMap<ISentence<IToProcess>>(() => {
       let lastEditStopPos = doc.getLastEditStop();
       let endPos = doc.endAnchor.getPosition();
       let unprocessedRange =
@@ -71,7 +71,7 @@ export function onNextReactive(
       let query = unprocessedText.substring(0, nextIndex);
       let previousEdit = Global.coqDocument.edits.getLast();
       let stage = new Edit.ToProcess(Global.coqDocument, lastEditStopPos, newStopPos);
-      let edit: IEdit<IToProcess> =
+      let edit: ISentence<IToProcess> =
         doc.edits.createEdit(Global.coqDocument, lastEditStopPos, newStopPos, query, previousEdit, stage);
       return [edit];
     })
@@ -273,7 +273,7 @@ There are two ways to go:
 */
 
 export function processEditsReactive(
-  edit: Rx.Observable<IEdit<IToProcess>>
+  edit: Rx.Observable<ISentence<IToProcess>>
 ): Rx.Observable<ICoqtopInput> {
   return edit
     // need `concatMap` here to guarantee the commands are processed in

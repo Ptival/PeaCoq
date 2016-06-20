@@ -5,7 +5,7 @@ import { Strictly } from "../strictly";
 
 export function setupUserInteractionForwardGoto(
   forwardGoto$: Rx.Observable<AceAjax.Position>,
-  editCreated$: Rx.Observable<IEdit<IEditStage>>,
+  editCreated$: Rx.Observable<ISentence<IEditStage>>,
   errorMsg$: Rx.Observable<IFeedback<FeedbackContent.IErrorMsg>>
 ): Rx.Observable<{}> {
 

@@ -70,7 +70,7 @@ $(document).ready(() => {
   if (DebugFlags.textCursorPosition) { subscribeAndLog(textCursorPosition$); }
 
   /* nothing() if no edit to display, just(edit) if there is one */
-  const editToBeDisplayed$: Rx.Observable<Maybe<IEdit<IEditStage>>> =
+  const editToBeDisplayed$: Rx.Observable<Maybe<ISentence<IEditStage>>> =
     textCursorPosition$
       .map(pos => {
         // we want to display the last edit whose stopPos is before `pos`
@@ -237,7 +237,7 @@ $(document).ready(() => {
   const editsToProcessStream =
     Coq85.onNextReactive(Global.coqDocument, nextSubject.asObservable());
 
-  const previousEditToReach$: Rx.Observable<IEdit<IProcessed>> =
+  const previousEditToReach$: Rx.Observable<ISentence<IProcessed>> =
     userActionStreams.prev$
       .flatMap(() => listFromMaybe(Global.coqDocument.getLastEdit()))
       .flatMap(e => listFromMaybe(e.previousEdit))
@@ -549,7 +549,7 @@ function mapCursorPositionToContext(
 ): Rx.Observable<PeaCoqContext> {
 
   /* nothing() if no edit to display, just(edit) if there is one */
-  const editToBeDisplayed$: Rx.Observable<Maybe<IEdit<IEditStage>>> =
+  const editToBeDisplayed$: Rx.Observable<Maybe<ISentence<IEditStage>>> =
     pos$
       .map(pos => {
         // we want to display the last edit whose stopPos is before `pos`

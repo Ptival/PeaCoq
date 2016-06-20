@@ -1,15 +1,16 @@
 import * as DebugFlags from "../debug-flags";
 import { Processed } from "./edit";
 import { isBefore } from "./editor-utils";
+import { Sentence } from "./sentence";
 import { Strictly } from "../strictly";
 
-export class EditArray implements IEditArray {
-  private edits: IEdit<IEditStage>[];
+export class SentenceArray implements ISentenceArray {
+  private edits: ISentence<IEditStage>[];
 
-  public editChangedStage$: Rx.Subject<IEdit<IEditStage>>;
-  public editCreated$: Rx.Subject<IEdit<IEditStage>>;
-  public editProcessed$: Rx.Observable<IEdit<IProcessed>>;
-  public editRemoved$: Rx.Subject<IEdit<IEditStage>>;
+  public editChangedStage$: Rx.Subject<ISentence<IEditStage>>;
+  public editCreated$: Rx.Subject<ISentence<IEditStage>>;
+  public editProcessed$: Rx.Observable<ISentence<IProcessed>>;
+  public editRemoved$: Rx.Subject<ISentence<IEditStage>>;
 
   constructor(
     public document: ICoqDocument
@@ -23,7 +24,7 @@ export class EditArray implements IEditArray {
       );
     }
     this.editProcessed$ =
-      <Rx.Observable<IEdit<any>>>
+      <Rx.Observable<ISentence<any>>>
       this.editChangedStage$
         .filter(e => e.stage instanceof Processed);
     this.editCreated$ = new Rx.Subject<any>();
@@ -37,23 +38,23 @@ export class EditArray implements IEditArray {
     startPosition: AceAjax.Position,
     stopPosition: AceAjax.Position,
     query: string,
-    previousEdit: Maybe<IEdit<any>>,
+    previousEdit: Maybe<ISentence<any>>,
     stage: IToProcess
-  ): IEdit<IToProcess> {
-    const edit = new Edit(this, startPosition, stopPosition, query, previousEdit, stage);
+  ): ISentence<IToProcess> {
+    const edit = new Sentence(this, startPosition, stopPosition, query, previousEdit, stage);
     this.edits.push(edit);
     this.editCreated$.onNext(edit);
     edit.stage$.subscribe(_ => this.editChangedStage$.onNext(edit));
     return <any>edit;
   }
 
-  getAll(): IEdit<any>[] { return this.edits; }
+  getAll(): ISentence<any>[] { return this.edits; }
 
-  getLast(): Maybe<IEdit<any>> {
+  getLast(): Maybe<ISentence<any>> {
     return this.edits.length === 0 ? nothing() : just(_(this.edits).last());
   }
 
-  remove(r: IEdit<any>) {
+  remove(r: ISentence<any>) {
     _(this.edits).remove(e => e.id === r.id);
     r.cleanup();
     this.editRemoved$.onNext(r);
@@ -80,98 +81,14 @@ export class EditArray implements IEditArray {
     });
   }
 
-  removeEditAndFollowingOnes(r: IEdit<any>): void {
+  removeEditAndFollowingOnes(r: ISentence<any>): void {
     const editIndex = _(this.edits).findIndex(r);
     this.removeEditsFromIndex(editIndex);
   }
 
-  removeFollowingEdits(r: IEdit<any>): void {
+  removeFollowingEdits(r: ISentence<any>): void {
     const editIndex = _(this.edits).findIndex(r);
     this.removeEditsFromIndex(editIndex + 1);
   }
-
-}
-
-const freshEditId = (() => {
-  let id = 0;
-  return () => { return id++; }
-})();
-
-/*
-`stage$` should follow this success lifecycle:
-onNext(IToProcess)
-onNext(IBeingProcessed)
-onNext(IProcessed)
-onCompleted
-
-As a consequence, `processedStage` should containt an `IProcessed`.
-*/
-class Edit<S extends IEditStage> implements IEdit<S> {
-  private processedStage: Promise<IProcessed>;
-
-  id: number;
-  stage: S;
-  stage$: Rx.Subject<S>;
-
-  constructor(
-    public array: IEditArray,
-    public startPosition: AceAjax.Position,
-    public stopPosition: AceAjax.Position,
-    public query: string,
-    public previousEdit: Maybe<IEdit<any>>,
-    stage: IToProcess
-  ) {
-    this.id = freshEditId();
-    this.stage$ = new Rx.Subject<any>();
-    this.processedStage = <Promise<any>>this.stage$.toPromise();
-    this.setStage(stage); // keep last
-  }
-
-  cleanup(): void {
-    this.stage.marker.remove();
-    this.stage$.onCompleted();
-  }
-
-  containsPosition(p: AceAjax.Position): boolean {
-    // TODO: I think ace handles this
-    /*
-    For our purpose, an edit contains its start position, but does
-    not contain its end position, so that modifications at the end
-    position are allowed.
-    */
-    return (
-      isBefore(Strictly.No, this.startPosition, p)
-      && isBefore(Strictly.Yes, p, this.stopPosition)
-    );
-  }
-
-  getColor(): string { return this.stage.getColor(); };
-
-  getPreviousStateId(): Maybe<number> {
-    return this.previousEdit.caseOf({
-      nothing: () => just(1),
-      just: (e) => e.getStateId(),
-    });
-  }
-
-  getProcessedStage(): Promise<IProcessed> {
-    return new Promise(onF => this.processedStage.then(v => onF(v)));
-  }
-
-  getStateId(): Maybe<number> {
-    return this.stage.getStateId();
-  };
-
-  highlight(): void { this.stage.marker.highlight(); }
-
-  setStage<T extends IEditStage>(stage: T): IEdit<T> {
-    // no strong update, so circumventing the type system
-    this.stage = <any>stage;
-    this.stage$.onNext(this.stage);
-    if (this.stage instanceof Processed) { this.stage$.onCompleted(); }
-    return <any>this;
-  }
-
-  unhighlight(): void { this.stage.marker.unhighlight(); }
 
 }
