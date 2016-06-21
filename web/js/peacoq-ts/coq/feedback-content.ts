@@ -1,57 +1,57 @@
-export function create(f: { tag: string; contents: Object }) {
-  switch (f.tag) {
+export function fromCoqtop(f: { tag: string; contents: any }) {
+  const { tag, contents } = f;
+  switch (tag) {
     case "AddedAxiom":
       return new AddedAxiom();
     case "Custom":
-      console.log("TODO: FeedbackContent for " + f.tag, f);
+      console.log("TODO: FeedbackContent for " + tag, f);
       break;
     case "ErrorMsg":
-      return new ErrorMsg(f.contents);
+      const [[start, stop], message] = contents;
+      return new ErrorMsg([start, stop], replaceNBSPWithSpaces(message));
     case "FileDependency":
-      return new FileDependency(f.contents);
+      const [file, dependsOnFile] = contents;
+      return new FileDependency(file, dependsOnFile);
     case "FileLoaded":
-      return new FileLoaded(f.contents);
+      return new FileLoaded(contents);
     case "GlobDef":
     case "GlobRef":
     case "Goals":
     case "Message":
-      console.log("TODO: FeedbackContent for " + f.tag, f);
+      console.log("TODO: FeedbackContent for " + tag, f);
       break;
     case "Processed":
       return new Processed();
     case "ProcessingIn":
-      return new ProcessingIn(f.contents);
+      return new ProcessingIn(contents);
     case "WorkerStatus":
-      console.log("TODO: FeedbackContent for " + f.tag, f);
+      console.log("TODO: FeedbackContent for " + tag, f);
       break;
     // other tags don't need fields
     default:
-      throw ("Unknown FeedbackContent tag: " + f.tag);
+      throw ("Unknown FeedbackContent tag: " + tag);
   }
+}
+
+export function fromSertop(o): IFeedbackContent {
+  throw "TODO";
 }
 
 export class AddedAxiom implements FeedbackContent.IAddedAxiom { }
 
 export class ErrorMsg implements FeedbackContent.IErrorMsg {
-  message: string;
-  start: number;
-  stop: number;
-  constructor(c) {
-    let [[start, stop], message] = c;
-    this.start = start;
-    this.stop = stop;
-    this.message = replaceNBSPWithSpaces(message);
+  constructor(
+    public location: CoqLocation,
+    public message: string
+  ) {
   }
 }
 
 export class FileDependency implements FeedbackContent.IFileDependency {
-  dependsOnFile: string;
-  file: string;
-  constructor(c) {
-    let [file, dependsOnFile] = c;
-    this.dependsOnFile = dependsOnFile;
-    this.file = file;
-  }
+  constructor(
+    public dependsOnFile: string,
+    public file: string
+  ) { }
 }
 
 export class FileLoaded implements FeedbackContent.IFileLoaded {

@@ -16,6 +16,7 @@ requirejs.config({
     "polymer-ts":         `${nodePath}/polymer-ts/polymer-ts.min`,
     "rect":               `${nodePath}/packery/js/rect`,
     "rx":                 `${nodePath}/rx/dist/rx.all`,
+    "s-expression":       `${nodePath}/s-expression-amd/index`,
     "tsmonad":            `${nodePath}/tsmonad/dist/tsmonad`,
     "w2ui":               `${nodePath}/w2ui/w2ui`,
     "webcomponents":      `${nodePath}/npm-polymer-elements/webcomponentsjs/webcomponents-lite.min`,
@@ -37,9 +38,10 @@ requirejs.config({
 requirejs(
   [
     "ace/ace",
+    "s-expression",
     "jquery",
   ],
-  (ace) => {
+  (ace, sexpParse) => {
     window.ace = ace;
     // not sure how else this is usually done
     aceRequires = [
@@ -47,6 +49,7 @@ requirejs(
       ace.require("ace/range"),
     ];
     window.AceAjax = $.extend({}, ...aceRequires);
+    window.sexpParse = sexpParse;
     requirejs(
       [
         "bootstrap",

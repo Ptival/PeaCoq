@@ -34,4 +34,3 @@ castContent = readUnpack <$> content
 
 sepBy :: String -> [String] -> String
 sepBy sep = concat . intersperse sep
-

@@ -12,7 +12,7 @@ export class EditAt implements CoqtopInput.IEditAt {
     public stateId: number
   ) { }
   getArgs() { return this.stateId; }
-  getCmd() { return "editat"; }
+  getCmd() { return `(Control (StmEditAt ${this.stateId}))`; }
 }
 
 export class Goal implements CoqtopInput.IGoal {

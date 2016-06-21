@@ -19,6 +19,7 @@
     "polymer-ts": "^0.1.26",
     "requirejs": "^2.2.0",
     "rx": "^4.1.0",
+    "s-expression": "^3.0.3",
     "tsmonad": "^0.6.0",
     "typescript": "^1.8.10",
     "typings": "^1.2.0",

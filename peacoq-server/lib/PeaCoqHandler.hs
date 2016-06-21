@@ -3,6 +3,7 @@
 module PeaCoqHandler where
 
 import           Control.Monad.Except
+import           Control.Monad.Loops                 (whileM)
 import           Control.Monad.Representable.Reader  (ask)
 import           Data.Aeson
 import qualified Data.ByteString.UTF8                as BSU
@@ -21,61 +22,17 @@ import           System.IO
 import           System.Process
 import           System.Random
 
-import           CoqIO
 import           PeaCoq
 import           Session
-import           XMLProtocol
-
-lecturePath :: String
-lecturePath = "web/coq/"
 
 type PeaCoqHandler a = Handler PeaCoq PeaCoq a
 
-{-
-Wrap any input-needing 'MonadSnap' into an input-less one, gathering input
-from the HTTP request.
--}
-withParam :: (FromJSON i, MonadSnap m) => (i -> m o) -> m (Maybe o)
-withParam k = do
-  let paramName = "data"
-  mp <- getParam paramName
-  case mp of
-    Nothing -> do
-      liftIO . putStrLn $ "Failed to retrieve parameter: " ++ BSU.toString paramName
-      return Nothing
-    Just bs ->
-      -- 'decode' only succeeds on lists and objects, use an artificial list...
-      case decodeStrict (BSU.fromString ("[" ++ BSU.toString bs ++ "]")) of
-      Just [i] -> Just <$> k i
-      _ -> do
-        liftIO . putStrLn $
-          "Failed to JSON-parse the request parameter: " ++ BSU.toString bs
-        return Nothing
-
-{-
-Run a 'CoqtopIO' as a 'PeaCoqHandler', gathering input from the HTTP request,
-and returning output through the HTTP response.
--}
-liftCoqtopIO :: (FromJSON i, ToJSON o) =>
-               (i -> CoqtopIO o) -> (i -> PeaCoqHandler ())
-liftCoqtopIO io i = do
-  (SessionState _ hs st) <- getSessionState
-  res@(_, st', _) <- liftIO . runCoqtopIO hs st $ io i
-  setCoqState st'
-  writeJSON res
-
-handleCoqtopIO :: (FromJSON i, ToJSON o) =>
-                 (i -> CoqtopIO o) -> PeaCoqHandler ()
-handleCoqtopIO = void . withParam . liftCoqtopIO
-
-startCoqtop :: String -> IO (Handle, Handle, Handle, ProcessHandle)
-startCoqtop coqtop = do
-  (hi, ho, he, ph) <- runInteractiveCommand coqtop
+runCommandWithoutBuffering :: String -> IO (Handle, Handle, Handle, ProcessHandle)
+runCommandWithoutBuffering cmd = do
+  (hi, ho, he, ph) <- runInteractiveCommand cmd
   hSetBuffering hi NoBuffering
   hSetBuffering ho NoBuffering
   hSetBuffering he NoBuffering
-  --hInterp hi "Require Import Unicode.Utf8."
-  --hForceValueResponse ho
   return (hi, ho, he, ph)
 
 getGlobalState :: PeaCoqHandler GlobalState
@@ -94,11 +51,14 @@ modifySessionState f = do
   mapKey <- withSession lSession getSessionKey
   case IM.lookup mapKey m of
     Nothing -> do
-      (hs, st) <- liftIO $ do
-        hs <- startCoqtop coqtop
-        (_, st, _) <- runCoqtopIO hs initialCoqState (init Nothing)
-        return (hs, st)
-      let (s, res) = f (SessionState True hs st)
+      liftIO . putStrLn $ "Starting sertop with command: " ++ coqtop
+      liftIO $ do
+        check <- testSertop coqtop
+        case check of
+          Left err -> putStrLn $ "\n\n\nSOMETHING LOOKGS WRONG WITH SERTOP: " ++ err ++ "\n\n\n"
+          Right () -> return ()
+      hs <- liftIO $ runCommandWithoutBuffering coqtop
+      let (s, res) = f (SessionState True hs)
       modifyGlobalState $ insertSession mapKey s
       --logAction hash $ "NEWSESSION " ++ show sessionIdentity
       return res
@@ -110,10 +70,6 @@ modifySessionState f = do
 
 getSessionState :: PeaCoqHandler SessionState
 getSessionState = modifySessionState (\ s -> (s, s))
-
-setCoqState :: CoqState -> PeaCoqHandler ()
-setCoqState s =
-  modifySessionState (\ (SessionState a b _) -> (SessionState a b s, ()))
 
 insertSession :: Int -> SessionState -> GlobalState -> (GlobalState, ())
 insertSession mapKey s gs@(GlobalState { gNextSession = c, gActiveSessions = m }) =
@@ -150,3 +106,78 @@ getSessionKey = with lSession $ do
     keyField :: T.Text
     keyField = "key"
 
+withParam :: (FromJSON i, MonadSnap m) => (i -> m o) -> m (Maybe o)
+withParam k = do
+  let paramName = "data"
+  mp <- getParam paramName
+  case mp of
+    Nothing -> do
+      liftIO . putStrLn $
+        "Failed to retrieve parameter: " ++ BSU.toString paramName
+      return Nothing
+    Just bs ->
+      -- 'decode' only succeeds on lists and objects, use an artificial list...
+      case decodeStrict (BSU.fromString ("[" ++ BSU.toString bs ++ "]")) of
+      Just [i] -> Just <$> k i
+      _ -> do
+        liftIO . putStrLn $
+          "Failed to JSON-parse the request parameter: " ++ BSU.toString bs
+        return Nothing
+
+hWrite :: Handle -> String -> IO ()
+hWrite hi input = do
+  putStrLn $ "<- " ++ input
+  catchError
+    (hPutStrLn hi input)
+    (\e -> do
+      putStrLn $ "CATCH: Write failed with exception: " ++ show e
+    )
+  return ()
+
+hRead :: Handle -> IO [String]
+hRead ho = do
+  -- flush stderr if anything is there... (should report to user?)
+  -- putStrLn "Trying to flush he"
+  -- whileM_ (hReady he) $ hGetLine he >>= putStrLn
+
+  -- putStrLn "Trying to read ho"
+  ls <- whileM (hReady ho) $ do
+    -- putStrLn "Trying to read a line:"
+    l <- catchError
+      (hGetLine ho)
+      ((\e -> do
+        putStrLn $ "CATCH: Read failed with exception: " ++ show e
+        return ""
+      ))
+    putStrLn $ "-> " ++ l
+    return l
+  -- putStrLn "Done"
+
+  return ls
+
+handlerCoqtop :: PeaCoqHandler ()
+handlerCoqtop = do
+  SessionState _ (hi, ho, _, _) <- getSessionState
+  void . withParam $ \ input -> do
+    res <- liftIO $ do
+      hWrite hi input
+      -- putStrLn "Waiting for output"
+      inputAvailable <- hWaitForInput ho (-1)
+      -- putStrLn $ "Wait is over: " ++ show inputAvailable
+      if inputAvailable then hRead ho else return []
+    writeJSON res
+
+testSertop :: String -> IO (Either String ())
+testSertop sertop = do
+  (hi, ho, _, _) <- runCommandWithoutBuffering sertop
+  hClose hi
+  _ <- hWaitForInput ho 1000
+  rdy <- hReady ho
+  if rdy
+    then do
+    eof <- hGetLine ho
+    return $ if eof == "(Answer EOF Ack)"
+      then Right ()
+      else Left $ "Unexpected answer: " ++ eof
+    else do
+    return $ Left "Expected output to be ready"

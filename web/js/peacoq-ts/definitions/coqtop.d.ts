@@ -10,13 +10,7 @@ interface ICoqtopInput {
 
 interface ICoqtopOutput<I, O> {
   input: I;
-  output: {
-    response: ICoqtopResponse<O>;
-    stateId: number;
-    editId: number;
-    messages: Object[];
-    feedback: Object[];
-  }
+  output: any; //IAnswer;
 }
 
 interface ICoqtopResponse<O> {

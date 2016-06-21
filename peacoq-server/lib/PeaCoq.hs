@@ -7,14 +7,15 @@ import Data.IORef           (IORef)
 import Data.IntMap          (IntMap)
 import Snap                 (Snaplet)
 import Snap.Snaplet.Session (SessionManager)
+import System.IO
+import System.Process       (ProcessHandle)
 
-import CoqIO
+type Handles = (Handle, Handle, Handle, ProcessHandle)
 
 data SessionState
   = SessionState
     Bool                     -- True while the session is alive
     Handles                  -- I/O handles
-    CoqState                 -- the state of the coqtop process
 
 -- Global state must be used in thread-safe way
 data GlobalState
@@ -38,4 +39,3 @@ data PeaCoq
 
 -- Fields are lenses to separate concerns, use "Handler PeaCoq <Lens> a"
 makeLenses ''PeaCoq
-

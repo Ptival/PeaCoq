@@ -1,12 +1,12 @@
 {
   "globalDependencies": {
     "ace": "registry:dt/ace#0.0.0+20160317120654",
-    "d3": "registry:dt/d3#0.0.0+20160614091820",
+    "d3": "registry:dt/d3#0.0.0+20160619032210",
     "es6-shim": "registry:dt/es6-shim#0.31.2+20160602141504",
-    "jquery": "registry:dt/jquery#1.10.0+20160417213236",
+    "jquery": "registry:dt/jquery#1.10.0+20160620094458",
     "jquery.contextmenu": "registry:dt/jquery.contextmenu#1.7.0+20160316155526",
     "jss": "registry:dt/jss#0.6.0+20160315014830",
-    "lodash": "registry:dt/lodash#3.10.0+20160330154726",
+    "lodash": "registry:dt/lodash#3.10.0+20160619033623",
     "mathjax": "registry:dt/mathjax#0.0.0+20160317120654",
     "polymer-ts": "registry:dt/polymer-ts#0.1.25+20160404114553",
     "rx": "registry:dt/rx#0.0.0+20160317120654",

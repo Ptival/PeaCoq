@@ -12,11 +12,11 @@ function log {
 }
 
 cabal --version >/dev/null 2>&1 || missing "cabal-install"
-camlp5 -v       >/dev/null 2>&1 || missing "camlp5"
-coqc -v         >/dev/null 2>&1 || missing "coq"
-if [[ `coqtop -v` != *"version 8.5"* ]]; then missing "coqtop version 8.5"; fi
+#camlp5 -v       >/dev/null 2>&1 || missing "camlp5"
+#coqc -v         >/dev/null 2>&1 || missing "coq"
+#if [[ `coqtop -v` != *"version 8.5"* ]]; then missing "coqtop version 8.5"; fi
 ghc --version   >/dev/null 2>&1 || missing "ghc"
-ocamlc -v       >/dev/null 2>&1 || missing "ocaml"
+#ocamlc -v       >/dev/null 2>&1 || missing "ocaml"
 
 if [ -n "${NIX_LDFLAGS+x}" ] && [ -n "${NIX_CFLAGS_COMPILE+x}" ]; then
   INCLUDEDIR=`echo ${NIX_CFLAGS_COMPILE} | grep -o '/nix/store\S*zlib\S*/include' | head -1`
@@ -34,75 +34,22 @@ ghc-pkg unregister peacoq-server || true
 ghc-pkg unregister peacoqtop || true
 
 # this should go away when snap 1.0 reaches Hackage
-log "Building Snap (version more ahead than Hackage)"
-mkdir -p snap-framework
-(
-cd snap-framework
-for p in io-streams-haproxy heist snap-core snap-server snap; do
-  if [ ! -d ${p} ]; then
-    git clone https://github.com/Ptival/${p}.git
-  fi
-  (
-  cd ${p}
-  # if only there was a way of saying "install if more recent than current"
-  cabal install || true
-  )
-done
-)
+if [ "`ghc-pkg field snap version`" != "version: 1.0.0.0" ]; then
+  log "Building Snap (version more ahead than Hackage)"
+  ./setup-snap.sh
+fi
 
-log "Building OCaml plugin (needed by peacoqtop's tests)"
-(
-set -euv
-cd peacoqtop/plugin
-make -B
-)
+# log "Building OCaml plugin (needed by peacoqtop's tests)"
+# ./setup-peacoq-plugin.sh
 
-log "Building and installing peacoqtop"
-(
-set -euv
-cd peacoqtop
-log "Dependencies"
-cabal install --only-dependencies --enable-tests ${CABALFLAGS}
-log "Configure"
-cabal configure --enable-tests ${CABALFLAGS}
-log "Build"
-cabal build -j2
-log "Copy and register"
-cabal copy
-cabal register
-)
+# log "Building and installing peacoqtop"
+# ./setup-peacoqtop.sh
 
 log "Building and installing peacoq-server"
-(
-set -euv
-cd peacoq-server
-log "Dependencies"
-cabal install --only-dependencies --enable-tests ${CABALFLAGS}
-log "Configure"
-cabal configure --enable-tests ${CABALFLAGS}
-log "Dependencies"
-cabal build -j2
-log "Copy and register"
-cabal copy
-cabal register
-)
+./setup-peacoq-server.sh
 
-# this path is ridiculous!
-log "Symbolically linking peacoq-server to peacoq"
-ln -sf peacoq-server/dist/build/peacoq-server/peacoq-server peacoq
-
-(
-set -euv
-cd web
-log "Installing npm dependencies"
-npm install
-cd js/peacoq-ts/
-log "Installing typings"
-./typings-bin prune
-./typings-bin install
-log "Transpiling front-end"
-./tsc -p .
-)
+log "Installing front-end dependencies"
+./setup-frontend.sh
 
 # TODO: the config file should not go in HOME, it's annoying for everyone
 # TODO: this config should be shared with the Haskell code somehow
@@ -118,6 +65,6 @@ cat <<END > ${FILE}
 PeaCoqConfig
 { configUserId = ""
 , configLogPath = "${LOGPATH}"
-, configCoqtop = "coqtop -ideslave -main-channel stdfds -async-proofs on -I ${PEACOQPATH}/peacoqtop/plugin -Q ${PEACOQPATH}/peacoqtop/plugin PeaCoq"
+, configCoqtop = "/home/ptival/coq-serapi/sertop.native"
 }
 END

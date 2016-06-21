@@ -29,7 +29,6 @@ import           System.Log.Handler.Simple
 import           System.Log.Logger
 import           System.Process
 
-import           Handlers
 import           PeaCoq
 import           PeaCoqHandler
 import           Session
@@ -50,32 +49,8 @@ disableCaching h = do
 
 peacoqRoutes :: [(ByteString, PeaCoqHandler ())]
 peacoqRoutes =
-  -- Coqtop routes
-  [ ("about",      handlerAbout)
-  , ("add",        handlerAdd)
-  , ("annotate",   handlerAnnotate)
-  , ("editat",     handlerEditAt)
-  , ("evars",      handlerEvars)
-  , ("getoptions", handlerGetOptions)
-  , ("goal",       handlerGoal)
-  , ("hints",      handlerHints)
-  --, ("init",       handlerInit)
-  , ("interp",     handlerInterp)
-  , ("mkcases",    handlerMkCases)
-  , ("printast",   handlerPrintAST)
-  , ("query",      handlerQuery)
-  , ("quit",       handlerQuit)
-  , ("search",     handlerSearch)
-  , ("setoptions", handlerSetOptions)
-  , ("status",     handlerStatus)
-  , ("stopworker", handlerStopWorker)
-  ] ++
-  -- Coqtop additional routes
-  [ ("add'",   handlerAdd')
-  , ("query'", handlerQuery')
-  ] ++
-  -- PeaCoq-specific routes
-  [ ("/", disableCaching $ serveDirectoryWith myDirConfig "web/")
+  [ ("coqtop", handlerCoqtop)
+  , ("/", disableCaching $ serveDirectoryWith myDirConfig "web/")
   ]
 
 {- End of configuration -}
@@ -132,7 +107,7 @@ loggingPriority :: Priority
 loggingPriority = INFO
 
 closeSession :: String -> SessionState -> IO ()
-closeSession _hash (SessionState _ (hi, ho, _, ph) _) = do
+closeSession _hash (SessionState _ (hi, ho, _, ph)) = do
   --logAction hash $ "END SESSION " ++ show sessId
   hClose hi
   hClose ho
@@ -186,6 +161,5 @@ myDirConfig :: DirectoryConfig (Handler PeaCoq PeaCoq)
 myDirConfig =
   defaultDirectoryConfig
   { mimeTypes = HM.map (\ m -> append m "; charset=utf-8") defaultMimeTypes
-  , indexFiles = ["lecture.html"]
+  , indexFiles = ["index.html"]
   }
-

@@ -1,25 +1,12 @@
 import * as FeedbackContent from "./feedback-content";
 
 export class Feedback implements IFeedback<IFeedbackContent> {
-  // TODO: give this a less lame type
-  editOrState: string;
-  editOrStateId: number;
-  feedbackContent: IFeedbackContent;
-  routeId: number;
-  constructor(f) {
-    switch (f[0].tag) {
-      case "State":
-        this.editOrState = "state";
-        break;
-      case "Edit":
-        this.editOrState = "edit";
-        break;
-      default:
-        throw "Feedback tag was neither State nor Edit";
-    };
-    this.editOrStateId = f[0].contents;
-    this.feedbackContent = FeedbackContent.create(f[1]);
-    this.routeId = f[2];
+  constructor(
+    public editOrState: EditOrState,
+    public editOrStateId: number,
+    public feedbackContent: IFeedbackContent,
+    public routeId: number
+  ) {
   }
   toString() {
     return (
@@ -27,4 +14,26 @@ export class Feedback implements IFeedback<IFeedbackContent> {
       this.feedbackContent + ", " + this.routeId + ")"
     );
   }
+}
+
+export function fromCoqtop(f) {
+  const [{ tag: es, contents: esid }, fc, rid] = f;
+  let editOrState;
+  switch (es) {
+    case "edit": editOrState = EditOrState.Edit; break;
+    case "state": editOrState = EditOrState.State; break;
+    default: throw "coqtopMkFeedback: neither edit nor state";
+  }
+  return new Feedback(editOrState, esid, FeedbackContent.fromCoqtop(fc), rid);
+}
+
+export function fromSertop(f) {
+  const [, [[, [es, esid]], [, fc], [, rid]]] = f;
+  let editOrState;
+  switch (es) {
+    case "Edit": editOrState = EditOrState.Edit; break;
+    case "State": editOrState = EditOrState.State; break;
+    default: throw "coqtopMkFeedback: neither edit nor state";
+  }
+  return new Feedback(editOrState, esid, FeedbackContent.fromSertop(fc), rid);
 }

@@ -25,6 +25,7 @@
     "editor/*.ts",
     "peacoq/*.ts",
     "prooftree/*.ts",
+    "sertop/*.ts",
     "typings/index.d.ts",
     "!typings/globals/**"
   ],

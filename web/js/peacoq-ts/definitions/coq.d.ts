@@ -14,8 +14,13 @@ interface AddReturn {
 
 interface IConstrExpr { }
 
+declare enum EditOrState {
+  Edit,
+  State,
+}
+
 interface IFeedback<C extends IFeedbackContent> {
-  editOrState: string;
+  editOrState: EditOrState;
   editOrStateId: number;
   feedbackContent: C;
 }

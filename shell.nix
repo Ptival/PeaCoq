@@ -3,11 +3,12 @@ nixpkgs.stdenv.mkDerivation {
   name = "peacoq";
   buildInputs = (with nixpkgs; [
     cabal-install
-    coq_8_5
+    #coq_8_5
     ghc
-    ocaml # need 4.0.1 to work with camlp5
-    ocamlPackages.camlp5_6_strict
+    # ocaml # need 4.0.1 to work with camlp5
+    # ocamlPackages.camlp5_6_strict
     nodejs-5_x
+    opam
     zlib
   ]);
   nativeBuildInputs = (with nixpkgs; [
@@ -15,7 +16,7 @@ nixpkgs.stdenv.mkDerivation {
   ]);
   shellHook = ''
     export NIXSHELL="$NIXSHELL\[PeaCoq\]"
-    export SSL_CERT_FILE="/etc/ssl/certs/ca-bundle.crt"
+    eval `opam config env`
   '';
 }
 

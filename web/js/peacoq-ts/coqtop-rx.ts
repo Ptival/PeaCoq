@@ -5,6 +5,7 @@ import { Message } from "./coq/message";
 import { ValueFail } from "./coq/value-fail";
 import * as CoqtopInput from "./coqtop-input";
 import { processSequentiallyForever } from "./rx";
+import { mkAnswer } from "./sertop/sertop-protocol";
 
 let statusPeriod = 10000; // milliseconds
 
@@ -145,24 +146,19 @@ function wrapAjax(i: JQueryAjaxSettings): Promise<any> {
 function sendCommand<I extends ICoqtopInput>(input: I): Promise<ICoqtopOutput<I, any>> {
   return new Promise((onFulfilled, onRejected) => {
     wrapAjax({
-      type: 'POST',
-      url: input.getCmd(),
-      data: { data: JSON.stringify(input.getArgs()) },
+      type: "POST",
+      url: "coqtop",
+      data: { data: JSON.stringify(input.getCmd()) },
       async: true,
       // error: e => console.log("Server did not respond", e),
       // success: r => console.log("Success", r, r[0].tag),
     })
       .then<ICoqtopOutput<I, any>>(r => ({
         input: input,
-        output: {
-          response: r[0],
-          stateId: r[1][0],
-          editId: r[1][1],
-          messages: r[2][0],
-          feedback: r[2][1],
-        }
+        output: _(r).map(sexpParse).map(mkAnswer).value()
       }))
       .then(r => {
+        debugger;
         if (input.callback !== undefined) {
           input.callback(r);
         }

@@ -1,0 +1,7 @@
+interface IAnswer {
+
+}
+
+interface IAnswerKind {
+
+}

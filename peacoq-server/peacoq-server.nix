@@ -1,7 +1,7 @@
 { mkDerivation, adjunctions, aeson, base, bytestring, containers
-, directory, hslogger, lens, MissingH, mtl, network, peacoqtop
-, process, random, snap, snap-core, snap-server, stdenv, text, time
-, transformers, unordered-containers, utf8-string, zlib
+, directory, hslogger, lens, MissingH, monad-loops, mtl, network
+, peacoqtop, process, random, snap, snap-core, snap-server, stdenv
+, text, time, transformers, unordered-containers, utf8-string, zlib
 }:
 mkDerivation {
   pname = "peacoq-server";
@@ -11,8 +11,9 @@ mkDerivation {
   isExecutable = true;
   libraryHaskellDepends = [
     adjunctions aeson base bytestring containers directory hslogger
-    lens MissingH mtl network peacoqtop process random snap snap-core
-    snap-server text time transformers unordered-containers utf8-string
+    lens MissingH monad-loops mtl network peacoqtop process random snap
+    snap-core snap-server text time transformers unordered-containers
+    utf8-string
   ];
   librarySystemDepends = [ zlib ];
   executableHaskellDepends = [ base ];
