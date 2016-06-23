@@ -16,6 +16,7 @@ nixpkgs.stdenv.mkDerivation {
   ]);
   shellHook = ''
     export NIXSHELL="$NIXSHELL\[PeaCoq\]"
+    export SSL_CERT_FILE="/etc/ssl/certs/ca-bundle.crt"
     eval `opam config env`
   '';
 }
