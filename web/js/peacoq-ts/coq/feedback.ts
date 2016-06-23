@@ -3,7 +3,7 @@ import * as FeedbackContent from "./feedback-content";
 export class Feedback implements IFeedback<IFeedbackContent> {
   constructor(
     public editOrState: EditOrState,
-    public editOrStateId: number,
+    public editOrStateId: EditId | StateId,
     public feedbackContent: IFeedbackContent,
     public routeId: number
   ) {

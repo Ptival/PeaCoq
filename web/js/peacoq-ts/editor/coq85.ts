@@ -49,35 +49,35 @@ export function setupSyntaxHovering() {
 let unlockedAnchor;
 let unlockedMarker;
 
-export function onNextReactive(
-  doc: ICoqDocument,
-  next$: Rx.Observable<{}>
-): Rx.Observable<ISentence<IToProcess>> {
-  return next$
-    .concatMap<ISentence<IToProcess>>(() => {
-      let lastEditStopPos = doc.getLastEditStop();
-      let endPos = doc.endAnchor.getPosition();
-      let unprocessedRange =
-        new AceAjax.Range(
-          lastEditStopPos.row, lastEditStopPos.column,
-          endPos.row, endPos.column
-        );
-      let unprocessedText = doc.session.getTextRange(unprocessedRange);
-      if (CoqStringUtils.coqTrimLeft(unprocessedText) === "") {
-        return [];
-      }
-      let nextIndex = CoqStringUtils.next(unprocessedText);
-      let newStopPos = doc.movePositionRight(lastEditStopPos, nextIndex);
-      let query = unprocessedText.substring(0, nextIndex);
-      let previousEdit = Global.coqDocument.edits.getLast();
-      let stage = new Edit.ToProcess(Global.coqDocument, lastEditStopPos, newStopPos);
-      let edit: ISentence<IToProcess> =
-        doc.edits.createEdit(Global.coqDocument, lastEditStopPos, newStopPos, query, previousEdit, stage);
-      return [edit];
-    })
-    .share()
-    ;
-}
+// export function onNextReactive(
+//   doc: ICoqDocument,
+//   next$: Rx.Observable<{}>
+// ): Rx.Observable<ISentence<IToProcess>> {
+//   return next$
+//     .concatMap<ISentence<IToProcess>>(() => {
+//       let lastEditStopPos = doc.getLastEditStop();
+//       let endPos = doc.endAnchor.getPosition();
+//       let unprocessedRange =
+//         new AceAjax.Range(
+//           lastEditStopPos.row, lastEditStopPos.column,
+//           endPos.row, endPos.column
+//         );
+//       let unprocessedText = doc.session.getTextRange(unprocessedRange);
+//       if (CoqStringUtils.coqTrimLeft(unprocessedText) === "") {
+//         return [];
+//       }
+//       let nextIndex = CoqStringUtils.next(unprocessedText);
+//       let newStopPos = doc.movePositionRight(lastEditStopPos, nextIndex);
+//       let query = unprocessedText.substring(0, nextIndex);
+//       let previousEdit = Global.coqDocument.edits.getLast();
+//       let stage = new Edit.ToProcess(Global.coqDocument, lastEditStopPos, newStopPos);
+//       let edit: ISentence<IToProcess> =
+//         doc.edits.createEdit(Global.coqDocument, lastEditStopPos, newStopPos, query, previousEdit, stage);
+//       return [edit];
+//     })
+//     .share()
+//     ;
+// }
 
 /*
 rejects if the command was rejected (the catch only cleans up, but

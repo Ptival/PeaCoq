@@ -1,10 +1,24 @@
-type CoqLocation = [number, number];
+interface CoqLocation {
+  fName: string;
+  lineNb: number;
+  bolPos: number;
+  lineNbLast: number;
+  bolPosLast: number;
+  bp: number;
+  ep: number;
+}
+type EditId = number;
+type StateId = number;
 type GlobLevel = IGlobSortGen<LevelInfo>;
 type GlobSort = IGlobSortGen<SortInfo>;
 type InstanceExpr = Array<GlobLevel>;
 type LevelInfo = Maybe<string>;
 type Located<T> = [CoqLocation, T];
 type SortInfo = string[];
+
+interface INewTip {}
+interface IFocus {}
+interface IUnfocus {}
 
 interface AddReturn {
   stateId: number;
@@ -14,7 +28,7 @@ interface AddReturn {
 
 interface IConstrExpr { }
 
-declare enum EditOrState {
+declare const enum EditOrState {
   Edit,
   State,
 }
@@ -34,6 +48,7 @@ declare namespace FeedbackContent {
   }
   interface IFileDependency extends IFeedbackContent { }
   interface IFileLoaded extends IFeedbackContent { }
+  interface IMessage extends IFeedbackContent { }
   interface IProcessed extends IFeedbackContent { }
   interface IProcessingIn extends IFeedbackContent { }
   interface IWorkerStatus extends IFeedbackContent { }

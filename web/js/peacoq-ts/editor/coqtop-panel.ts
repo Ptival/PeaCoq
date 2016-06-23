@@ -5,22 +5,18 @@ const maxMessagesOnScreen = 2;
 export class CoqtopPanel {
   constructor(
     private container: JQuery,
-    private feedbackError$: Rx.Observable<IFeedback<FeedbackContent.IErrorMsg>>,
-    private message$: Rx.Observable<IMessage>
+    private message$: Rx.Observable<{ message: string; level: PeaCoqMessageLevel }>
   ) {
-    feedbackError$.subscribe(e => this.addAlert(e.feedbackContent.message, "danger"));
-    message$.groupBy(m => m.level.constructor).subscribe(
-      group => group.subscribe(m => this.addAlert(m.content, classify(m.level)))
-    );
+    message$.subscribe(m => this.addAlert(m.message, peaCoqMessagelevelToString(m.level)));
   }
 
-  addAlert(message, klass) {
+  addAlert(message: string, klass: string) {
     this.container.prepend(makeAlert(message, klass));
     this.container.children().slice(maxMessagesOnScreen).remove();
   }
 }
 
-function makeAlert(message, klass) {
+function makeAlert(message: string, klass: string) {
   return $("<div>")
     .text(message)
     .addClass(`alert alert-${klass}`)
@@ -30,12 +26,22 @@ function makeAlert(message, klass) {
     .css("white-space", "pre");
 }
 
-function classify(level: IMessageLevel) {
+function classify(level: IMessageLevel): PeaCoqMessageLevel {
   switch (level.constructor) {
-    case MessageLevel.Debug: return "default";
-    case MessageLevel.Error: return "danger";
-    case MessageLevel.Info: return "info";
-    case MessageLevel.Notice: return "success";
-    case MessageLevel.Warning: return "warning";
+    case MessageLevel.Debug: return PeaCoqMessageLevel.Default;
+    case MessageLevel.Error: return PeaCoqMessageLevel.Danger;
+    case MessageLevel.Info: return PeaCoqMessageLevel.Info;
+    case MessageLevel.Notice: return PeaCoqMessageLevel.Success;
+    case MessageLevel.Warning: return PeaCoqMessageLevel.Warning;
+  }
+}
+
+function peaCoqMessagelevelToString(level: IMessageLevel): string {
+  switch (level) {
+    case PeaCoqMessageLevel.Default: return "default";
+    case PeaCoqMessageLevel.Danger: return "danger";
+    case PeaCoqMessageLevel.Info: return "info";
+    case PeaCoqMessageLevel.Success: return "success";
+    case PeaCoqMessageLevel.Warning: return "warning";
   }
 }

@@ -71,6 +71,7 @@ requirejs(
           "ace/mode/ocaml",
           "peacoq-js/highlight-coq",
           "peacoq-js/mode-coq",
+          // Unfortunately, at the moment, all these have been written as non-modules
           "peacoq-js-of-ts/coq/binder-kind",
           "peacoq-js-of-ts/coq/case-style",
           "peacoq-js-of-ts/coq/feedback-content",

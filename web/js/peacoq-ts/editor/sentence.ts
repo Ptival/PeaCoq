@@ -14,7 +14,8 @@ As a consequence, `processedStage` should contain an `IProcessed`.
 export class Sentence<S extends IEditStage> implements ISentence<S> {
   private processedStage: Promise<IProcessed>;
 
-  id: number;
+  commandTag: Maybe<string>;
+  sentenceId: number;
   stage: S;
   stage$: Rx.Subject<S>;
 
@@ -26,7 +27,8 @@ export class Sentence<S extends IEditStage> implements ISentence<S> {
     public previousEdit: Maybe<ISentence<any>>,
     stage: IToProcess
   ) {
-    this.id = freshEditId();
+    this.commandTag = nothing(); // filled when Add command is created
+    this.sentenceId = freshSentenceId();
     this.stage$ = new Rx.Subject<any>();
     this.processedStage = <Promise<any>>this.stage$.toPromise();
     this.setStage(stage); // keep last
@@ -81,7 +83,7 @@ export class Sentence<S extends IEditStage> implements ISentence<S> {
 
 }
 
-const freshEditId = (() => {
+const freshSentenceId = (() => {
   let id = 0;
   return () => { return id++; }
 })();

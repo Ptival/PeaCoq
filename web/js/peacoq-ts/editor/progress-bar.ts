@@ -7,6 +7,7 @@ let barItemClass = "progress-bar-item";
 let progressBarId = "progress-bar";
 
 export function setupProgressBar(): void {
+  // TODO: progress bar should update when command ID is assigned
   Rx.Observable.merge(
     Theme.afterChange$,
     Global.coqDocument.edits.editCreated$,
@@ -50,7 +51,7 @@ function updateProgressBar(): void {
   let selection =
     d3.select(`#${progressBarId}`)
       .selectAll("div")
-      .data(allEdits, e => `${e.id}`);
+      .data(allEdits, e => `${e.sentenceId}`);
   // for now we can append, eventually we might need sorting
   selection.enter().append("div")
     .classed(barItemClass, true)
@@ -61,10 +62,18 @@ function updateProgressBar(): void {
   selection
     .style("width", `${eltWidth}px`)
     .style("background-color", (d: ISentence<any>) => d.getColor())
-    .attr("title", d => "StateID: " + d.getStateId().caseOf({
-      nothing: () => "unassigned yet",
-      just: sid => `${sid}`,
-    }))
+    .attr("title", d => {
+      const commandId = d.commandTag.caseOf({
+        nothing: () => "unassigned yet",
+        just: cid => `${cid}`,
+      });
+      const stateId = d.getStateId().caseOf({
+        nothing: () => "unassigned yet",
+        just: sid => `${sid}`,
+      });
+      return `Sentence ID: ${d.sentenceId}, Command ID: ${commandId}, State ID: ${stateId}`;
+    })
+
     ;
   selection.exit().remove();
 }

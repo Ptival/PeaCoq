@@ -31,3 +31,10 @@ interface JQueryStatic {
 }
 
 declare var sexpParse: (o: any) => any;
+
+// adding filter with cast
+declare namespace Rx {
+  export interface Observable<T> extends IObservable<T> {
+    filter<U>(predicate: (value: T, index: number, source: Observable<T>) => boolean, thisArg?: any): Observable<U>;
+  }
+}

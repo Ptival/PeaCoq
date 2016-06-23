@@ -1,3 +1,5 @@
+import * as SertopUtils from "../sertop/utils";
+
 export function fromCoqtop(f: { tag: string; contents: any }) {
   const { tag, contents } = f;
   switch (tag) {
@@ -8,7 +10,8 @@ export function fromCoqtop(f: { tag: string; contents: any }) {
       break;
     case "ErrorMsg":
       const [[start, stop], message] = contents;
-      return new ErrorMsg([start, stop], replaceNBSPWithSpaces(message));
+      debugger; // does Coqtop expose a full location?
+      // return new ErrorMsg([start, stop], replaceNBSPWithSpaces(message));
     case "FileDependency":
       const [file, dependsOnFile] = contents;
       return new FileDependency(file, dependsOnFile);
@@ -34,7 +37,25 @@ export function fromCoqtop(f: { tag: string; contents: any }) {
 }
 
 export function fromSertop(o): IFeedbackContent {
-  throw "TODO";
+  if (typeof o === "string") {
+    switch (o) {
+      case "Processed": return new Processed();
+      default: debugger;
+    }
+  }
+  const [name, ...args] = o;
+  switch (name) {
+    case "ErrorMsg":
+      const [coqLocation, message] = args;
+      return new ErrorMsg(SertopUtils.coqLocationFromSexp(coqLocation), message);
+    case "Message":
+      const [level, ] = args;
+      return new Message(level);
+    case "ProcessingIn":
+      const [branch] = args;
+      return new ProcessingIn(branch);
+    default: debugger;
+  }
 }
 
 export class AddedAxiom implements FeedbackContent.IAddedAxiom { }
@@ -64,17 +85,23 @@ export class FileLoaded implements FeedbackContent.IFileLoaded {
   }
 }
 
+export class Message implements FeedbackContent.IMessage {
+  constructor(
+    public level: string
+  ) { }
+  tostring() { return `Message(${this.level})`; }
+}
+
 export class Processed implements FeedbackContent.IProcessed {
   toString() { return "Processed"; }
 }
 
 export class ProcessingIn implements FeedbackContent.IProcessingIn {
-  s: string;
-  constructor(s) {
-    this.s = s;
-  }
+  constructor(
+    public branch: string
+  ) { }
   toString() {
-    return `ProcessingIn(${this.s})`;
+    return `ProcessingIn(${this.branch})`;
   }
 }
 

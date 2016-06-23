@@ -55,7 +55,7 @@ export class SentenceArray implements ISentenceArray {
   }
 
   remove(r: ISentence<any>) {
-    _(this.edits).remove(e => e.id === r.id);
+    _(this.edits).remove(e => e.sentenceId === r.sentenceId);
     r.cleanup();
     this.editRemoved$.onNext(r);
   }

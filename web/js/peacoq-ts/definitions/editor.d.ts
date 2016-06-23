@@ -79,6 +79,7 @@ interface ICoqDocument {
   markError(range: AceAjax.Range): void;
   moveCursorToPositionAndCenter(pos: AceAjax.Position): void;
   movePositionRight(pos: AceAjax.Position, n: number): AceAjax.Position;
+  nextSentence(next$: Rx.Observable<{}>): Rx.Observable<ISentence<IToProcess>>;
   removeAllEdits(): void;
   removeEdit(e: ISentence<IEditStage>): void;
   removeEditAndFollowingOnes(e: ISentence<IEditStage>): void;
@@ -88,9 +89,10 @@ interface ICoqDocument {
 
 interface ISentence<S extends IEditStage> {
   array: ISentenceArray;
-  id: number;
+  commandTag: Maybe<string>;
   previousEdit: Maybe<ISentence<any>>;
   query: string;
+  sentenceId: number;
   stage: S;
   stage$: Rx.Observable<IEditStage>;
   startPosition: AceAjax.Position;

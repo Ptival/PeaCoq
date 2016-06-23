@@ -159,6 +159,33 @@ export class CoqDocument implements ICoqDocument {
     });
   }
 
+  nextSentence(next$: Rx.Observable<{}>): Rx.Observable<ISentence<IToProcess>> {
+    return next$
+      .concatMap<ISentence<IToProcess>>(() => {
+        let lastEditStopPos = this.getLastEditStop();
+        let endPos = this.endAnchor.getPosition();
+        let unprocessedRange =
+          new AceAjax.Range(
+            lastEditStopPos.row, lastEditStopPos.column,
+            endPos.row, endPos.column
+          );
+        let unprocessedText = this.session.getTextRange(unprocessedRange);
+        if (CoqStringUtils.coqTrimLeft(unprocessedText) === "") {
+          return [];
+        }
+        let nextIndex = CoqStringUtils.next(unprocessedText);
+        let newStopPos = this.movePositionRight(lastEditStopPos, nextIndex);
+        let query = unprocessedText.substring(0, nextIndex);
+        let previousEdit = Global.coqDocument.edits.getLast();
+        let stage = new Edit.ToProcess(Global.coqDocument, lastEditStopPos, newStopPos);
+        let edit: ISentence<IToProcess> =
+          this.edits.createEdit(this, lastEditStopPos, newStopPos, query, previousEdit, stage);
+        return [edit];
+      })
+      .share()
+      ;
+  }
+
   recenterEditor() {
     const pos = this.editor.getCursorPosition();
     this.editor.scrollToLine(pos.row, true, true, () => { });
