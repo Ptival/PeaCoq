@@ -1,17 +1,25 @@
 import * as Answer from "./sertop/answer";
 import * as AnswerKind from "./sertop/answer-kind";
 import * as Command from "./sertop/command";
+import * as ControlCommand from "./sertop/control-command";
 import * as Feedback from "./coq/feedback";
 import * as FeedbackContent from "./coq/feedback-content";
 
 export function setupCommunication(
   cmd$: Rx.Observable<Command.Command>
 ): CoqtopOutputStreams {
-  const output$ = cmd$
+  // we issue a join every time the command stream becomes silent
+  const join$ = cmd$.debounce(1000).map(_ => new Command.Control(new ControlCommand.StmJoin()));
+  const pingOutput$ =
+    Rx.Observable.interval(250)
+      .concatMap(sendPing)
+      .concatMap(a => a)
+      .share();
+  const cmdOutput$ = Rx.Observable.merge(cmd$, join$)
     .concatMap(sendCommand)
     .concatMap(a => a)
     .share();
-  output$.subscribe(_ => {}); // to keep it rolling for now
+  const output$ = Rx.Observable.merge(pingOutput$, cmdOutput$);
   const answer$: Rx.Observable<Sertop.IAnswer<Sertop.IAnswerKind>> =
     <Rx.Observable<any>>
     output$.filter(a => a instanceof Answer.Answer);
@@ -37,16 +45,20 @@ function wrapAjax(i: JQueryAjaxSettings): Promise<any> {
   });
 }
 
+function sendPing(): Promise<Sertop.IAnswer<Sertop.IAnswerKind>[]> {
+  return wrapAjax({
+    type: "POST",
+    url: "ping",
+    data: {},
+    async: true,
+  }).then(r => _(r).map(sexpParse).map(Answer.create).value());
+}
+
 function sendCommand(cmd: Sertop.ICmd): Promise<Sertop.IAnswer<Sertop.IAnswerKind>[]> {
-  return new Promise((onFulfilled, onRejected) =>
-    wrapAjax({
-      type: "POST",
-      url: "coqtop",
-      data: { data: JSON.stringify(`(${cmd.tag} ${cmd.toSexp()})`) },
-      async: true,
-      // error: e => console.log("Server did not respond", e),
-      // success: r => console.log("Success", r, r[0].tag),
-    })
-      .then(r => onFulfilled(_(r).map(sexpParse).map(Answer.create).value()))
-  );
+  return wrapAjax({
+    type: "POST",
+    url: "coqtop",
+    data: { data: JSON.stringify(`(${cmd.tag} ${cmd.toSexp()})`) },
+    async: true,
+  }).then(r => _(r).map(sexpParse).map(Answer.create).value());
 }

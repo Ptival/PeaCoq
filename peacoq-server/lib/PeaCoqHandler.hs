@@ -45,28 +45,46 @@ modifyGlobalState f = do
   globRef <- with lGlobRef ask
   liftIO $ atomicModifyIORef' globRef f
 
+startSertop :: String -> IO Handles
+startSertop cmd = do
+  liftIO . putStrLn $ "Starting sertop with command: " ++ cmd
+  liftIO $ do
+    check <- testSertop cmd
+    case check of
+      Left err ->
+        putStrLn $ "\n\n\nSOMETHING LOOKGS WRONG WITH SERTOP: " ++ err ++ "\n\n\n"
+      Right () -> return ()
+  liftIO $ runCommandWithoutBuffering cmd
+
 modifySessionState :: (SessionState -> (SessionState, a)) -> PeaCoqHandler a
 modifySessionState f = do
   GlobalState { gActiveSessions = m, gCoqtop = coqtop } <- getGlobalState
   mapKey <- withSession lSession getSessionKey
   case IM.lookup mapKey m of
     Nothing -> do
-      liftIO . putStrLn $ "Starting sertop with command: " ++ coqtop
-      liftIO $ do
-        check <- testSertop coqtop
-        case check of
-          Left err -> putStrLn $ "\n\n\nSOMETHING LOOKGS WRONG WITH SERTOP: " ++ err ++ "\n\n\n"
-          Right () -> return ()
-      hs <- liftIO $ runCommandWithoutBuffering coqtop
+      hs <- liftIO $ startSertop coqtop
       let (s, res) = f (SessionState True hs)
       modifyGlobalState $ insertSession mapKey s
       --logAction hash $ "NEWSESSION " ++ show sessionIdentity
       return res
-    Just s -> do
-      -- update the timestamp
-      let (s', res) = f s
-      modifyGlobalState . adjustSession (touchSession . const s') $ mapKey
-      return res
+    Just s@(SessionState _ (hi, ho, he, ph)) -> do
+      exitCode <- liftIO $ getProcessExitCode ph
+      case exitCode of
+        Just _ -> do
+          liftIO $ do
+            putStrLn "sertop Quitted, reinitiliazing"
+            hClose hi
+            hClose ho
+            hClose he
+          hs <- liftIO $ startSertop coqtop
+          let (s', res) = f (SessionState True hs)
+          modifyGlobalState . adjustSession (touchSession . const s') $ mapKey
+          return res
+        Nothing -> do
+          -- update the timestamp
+          let (s', res) = f s
+          modifyGlobalState . adjustSession (touchSession . const s') $ mapKey
+          return res
 
 getSessionState :: PeaCoqHandler SessionState
 getSessionState = modifySessionState (\ s -> (s, s))
@@ -167,6 +185,16 @@ handlerCoqtop = do
       if inputAvailable then hRead ho else return []
     writeJSON res
 
+-- no input, but check for output
+handlerPing :: PeaCoqHandler ()
+handlerPing = do
+  SessionState _ (_, ho, _, _) <- getSessionState
+  void $ do
+    res <- liftIO $ do
+      inputAvailable <- hWaitForInput ho 0
+      if inputAvailable then hRead ho else return []
+    writeJSON res
+
 testSertop :: String -> IO (Either String ())
 testSertop sertop = do
   (hi, ho, _, _) <- runCommandWithoutBuffering sertop
@@ -176,7 +204,7 @@ testSertop sertop = do
   if rdy
     then do
     eof <- hGetLine ho
-    return $ if eof == "(Answer EOF Ack)"
+    return $ if eof == "(Answer EOF Ack)" || eof == "(Feedback((id(State 1))(contents Processed)(route 0)))"
       then Right ()
       else Left $ "Unexpected answer: " ++ eof
     else do

@@ -253,14 +253,15 @@ $(document).ready(() => {
   const forwardGoToSubject = new Rx.Subject<Maybe<AceAjax.Position>>();
   forwardGoTo$.subscribe(o => forwardGoToSubject.onNext(just(o.destinationPos)));
 
-  //sentencesToProcessStream.subscribe(e => Global.coqDocument.pushEdit(e));
-  //sentencesToProcessStream.subscribe(e => Global.coqDocument.moveCursorToPositionAndCenter(e.getStopPosition()));
+  sentencesToProcessStream.subscribe(e => Global.coqDocument.moveCursorToPositionAndCenter(e.stopPosition));
+
   const addsToProcessStream = sentencesToProcessStream
     .map(s => {
       const command = new Command.Control(new ControlCommand.StmAdd(1, nothing(), s.query));
       s.commandTag = just(command.tag);
       return command;
-    });
+    })
+    .share();
 
   // TODO: I don't like how I pass queriesObserver to each edit stage, I should
   // improve on this design
@@ -268,19 +269,20 @@ $(document).ready(() => {
   const queriesObserver = queriesSubject.asObserver();
   const queries$ = queriesSubject.asObservable();
 
-  let inputStatus$: Rx.Observable<Command.Command> =
-    Rx.Observable
-      .interval(10000)
-      .map(() => new Command.Control(new ControlCommand.StmJoin()));
+  // let inputStatus$: Rx.Observable<Command.Command> =
+  //   Rx.Observable
+  //     .interval(250)
+  //     .map(() => new Command.Control(new ControlCommand.StmJoin()));
 
   const coqtopOutput$s = Sertop.setupCommunication(
     Rx.Observable.merge([
-      inputStatus$,
+      // inputStatus$,
       // reset Coqtop when a file is loaded
       userActionStreams.loadedFile$
         .startWith({}) // also do it on loading the page
         .flatMap(() => [
-          new Command.Control(new ControlCommand.StmEditAt(1)),
+          new Command.Control(new ControlCommand.Quit()),
+          // new Command.Control(new ControlCommand.StmEditAt(1)),
           // new CoqtopInput.AddPrime("Require Import PeaCoq.PeaCoq."),
         ]),
       addsToProcessStream,
@@ -550,27 +552,27 @@ function minPos(pos1: AceAjax.Position, pos2: AceAjax.Position): AceAjax.Positio
   return pos2;
 }
 
-function mapCursorPositionToContext(
-  pos$: Rx.Observable<AceAjax.Position>
-): Rx.Observable<PeaCoqContext> {
-
-  /* nothing() if no edit to display, just(edit) if there is one */
-  const editToBeDisplayed$: Rx.Observable<Maybe<ISentence<IEditStage>>> =
-    pos$
-      .map(pos => {
-        // we want to display the last edit whose stopPos is before `pos`
-        const edit = _(Global.coqDocument.getAllEdits())
-          .findLast(s => isBefore(Strictly.No, s.stopPosition, pos));
-        return edit ? just(edit) : nothing();
-      })
-      .distinctUntilChanged();
-
-  if (DebugFlags.editToBeDisplayed) { subscribeAndLog(editToBeDisplayed$); }
-
-  return editToBeDisplayed$
-    .flatMapLatest(edit => edit.caseOf({
-      nothing: () => Promise.resolve(emptyContext),
-      just: e => e.getProcessedStage().then(s => s.getContext()),
-    }));
-
-}
+// function mapCursorPositionToContext(
+//   pos$: Rx.Observable<AceAjax.Position>
+// ): Rx.Observable<PeaCoqContext> {
+//
+//   /* nothing() if no edit to display, just(edit) if there is one */
+//   const editToBeDisplayed$: Rx.Observable<Maybe<ISentence<IEditStage>>> =
+//     pos$
+//       .map(pos => {
+//         // we want to display the last edit whose stopPos is before `pos`
+//         const edit = _(Global.coqDocument.getAllEdits())
+//           .findLast(s => isBefore(Strictly.No, s.stopPosition, pos));
+//         return edit ? just(edit) : nothing();
+//       })
+//       .distinctUntilChanged();
+//
+//   if (DebugFlags.editToBeDisplayed) { subscribeAndLog(editToBeDisplayed$); }
+//
+//   return editToBeDisplayed$
+//     .flatMapLatest(edit => edit.caseOf({
+//       nothing: () => Promise.resolve(emptyContext),
+//       just: e => e.getProcessedStage().then(s => s.getContext()),
+//     }));
+//
+// }

@@ -16,7 +16,8 @@ export function fromCoqtop(f: { tag: string; contents: any }) {
       const [file, dependsOnFile] = contents;
       return new FileDependency(file, dependsOnFile);
     case "FileLoaded":
-      return new FileLoaded(contents);
+      let [qualifiedModuleName, path] = contents;
+      return new FileLoaded(qualifiedModuleName, path);
     case "GlobDef":
     case "GlobRef":
     case "Goals":
@@ -48,6 +49,16 @@ export function fromSertop(o): IFeedbackContent {
     case "ErrorMsg":
       const [coqLocation, message] = args;
       return new ErrorMsg(SertopUtils.coqLocationFromSexp(coqLocation), message);
+    case "FileDependency":
+      const [depends, file] = args;
+      switch (depends.length) {
+        case 0: return new FileDependency(nothing(), file);
+        case 1: return new FileDependency(just(depends[0]), file);
+        default: debugger;
+      }
+    case "FileLoaded":
+      const [qualifiedModuleName, path] = args;
+      return new FileLoaded(qualifiedModuleName, path);
     case "Message":
       const [level, ] = args;
       return new Message(level);
@@ -70,19 +81,16 @@ export class ErrorMsg implements FeedbackContent.IErrorMsg {
 
 export class FileDependency implements FeedbackContent.IFileDependency {
   constructor(
-    public dependsOnFile: string,
+    public dependsOnFile: Maybe<string>,
     public file: string
   ) { }
 }
 
 export class FileLoaded implements FeedbackContent.IFileLoaded {
-  path: string;
-  qualifiedModuleName: string;
-  constructor(c) {
-    let [qualifiedModuleName, path] = c;
-    this.path = path;
-    this.qualifiedModuleName = qualifiedModuleName;
-  }
+  constructor(
+    qualifiedModuleName: string,
+      path: string
+  ) { }
 }
 
 export class Message implements FeedbackContent.IMessage {

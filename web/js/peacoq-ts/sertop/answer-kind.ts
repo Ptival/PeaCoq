@@ -7,6 +7,7 @@ export class Completed implements Sertop.ICompleted { }
 
 export class CoqExn implements Sertop.ICoqExn {
   constructor(
+    public kind: string,
     public name: string,
     public message: string
   ) { }
@@ -50,8 +51,9 @@ export function create(o): Sertop.IAnswerKind {
   switch (kind) {
 
     case "CoqExn":
-      const [[name, message]] = args;
-      return new CoqExn(name, message);
+      // debugger;
+      const [[kind, [name, message]]] = args;
+      return new CoqExn(kind, name, message);
 
     case "StmAdded": { // opening a scope prevents hoisted variable clashes
       const [stateId, coqLocation, tip] = args;

@@ -50,6 +50,7 @@ disableCaching h = do
 peacoqRoutes :: [(ByteString, PeaCoqHandler ())]
 peacoqRoutes =
   [ ("coqtop", handlerCoqtop)
+  , ("ping", handlerPing) -- we need this because we use HTTP
   , ("/", disableCaching $ serveDirectoryWith myDirConfig "web/")
   ]
 
