@@ -4,7 +4,7 @@ import { switchToBright, switchToDark } from "../theme";
 
 let filePickerId = "filepicker";
 
-export function setupToolbar(): ToolbarStreams {
+export function setupToolbar(doc: ICoqDocument): ToolbarStreams {
 
   let toolbar = $("#toolbar").w2toolbar({ name: "w2toolbar" });
   let loadClickStream = addButton(toolbar, { caption: "Load", icon: "floppy-open" });
@@ -22,7 +22,7 @@ export function setupToolbar(): ToolbarStreams {
   ]);
   let fontIncreaseClickStream = addButton(toolbar, { id: "font-increase", icon: "plus" });
   toolbar.add([
-    { type: "button", id: "toolbar-resize", caption: "Resize", onClick: () => onResize() },
+    { type: "button", id: "toolbar-resize", caption: "Resize", onClick: () => onResize(doc) },
     { type: "spacer", id: "toolbar-spacer" },
     { type: "radio", id: "toolbar-bright", group: "1", caption: "Bright", checked: true, onClick: switchToBright },
     { type: "radio", id: "toolbar-dark", group: "1", caption: "Dark", onClick: switchToDark },
@@ -40,7 +40,7 @@ export function setupToolbar(): ToolbarStreams {
 
 }
 
-export function setupLoadFile(): Rx.Observable<string> {
+export function setupLoadFile(doc: ICoqDocument): Rx.Observable<string> {
 
   let input = $("<input>", {
     "id": filePickerId,
@@ -75,8 +75,8 @@ export function setupLoadFile(): Rx.Observable<string> {
 
   // TODO: This belongs somewhere else (document-related)
   loadedFilesStream.subscribe((text) => {
-    Global.coqDocument.removeAllEdits();
-    Global.coqDocument.resetEditor(text);
+    doc.removeAllEdits();
+    doc.resetEditor(text);
   });
 
   return loadedFilesStream;
@@ -121,9 +121,9 @@ export function pickFile(): void {
   $("#" + filePickerId).click();
 }
 
-export function saveFile(): void {
+export function saveFile(doc: ICoqDocument): void {
 debugger;
-  let editor = Global.coqDocument.editor;
+  let editor = doc.editor;
   let text = editor.getValue();
   let blob = new Blob([text], { type: 'text/plain;charset=UTF-8' });
   let url = window.URL.createObjectURL(blob);

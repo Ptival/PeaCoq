@@ -149,13 +149,13 @@ export class CoqDocument implements ICoqDocument {
   // }
 
   markError(range: AceAjax.Range): void {
-    const markerId = Global.coqDocument.session.addMarker(range, errorUnderlineClass, "text", false);
+    const markerId = this.session.addMarker(range, errorUnderlineClass, "text", false);
     this.moveCursorToPositionAndCenter(range.start);
     const markerChangedStream = this.editorChange$
       .filter((e) => range.containsRange(AceAjax.Range.fromPoints(e.start, e.end)))
       .take(1);
     markerChangedStream.subscribe(() => {
-      Global.coqDocument.session.removeMarker(markerId);
+      this.session.removeMarker(markerId);
     });
   }
 
@@ -176,8 +176,8 @@ export class CoqDocument implements ICoqDocument {
         let nextIndex = CoqStringUtils.next(unprocessedText);
         let newStopPos = this.movePositionRight(lastEditStopPos, nextIndex);
         let query = unprocessedText.substring(0, nextIndex);
-        let previousEdit = Global.coqDocument.edits.getLast();
-        let stage = new Edit.ToProcess(Global.coqDocument, lastEditStopPos, newStopPos);
+        let previousEdit = this.edits.getLast();
+        let stage = new Edit.ToProcess(this, lastEditStopPos, newStopPos);
         let edit: ISentence<IToProcess> =
           this.edits.createEdit(this, lastEditStopPos, newStopPos, query, previousEdit, stage);
         return [edit];

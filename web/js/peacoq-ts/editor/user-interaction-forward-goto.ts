@@ -4,6 +4,7 @@ import { isBefore } from "./editor-utils";
 import { Strictly } from "../strictly";
 
 export function setupUserInteractionForwardGoto(
+  doc: ICoqDocument,
   forwardGoto$: Rx.Observable<AceAjax.Position>,
   editCreated$: Rx.Observable<ISentence<IEditStage>>,
   errorMsg$: Rx.Observable<IFeedback<FeedbackContent.IErrorMsg>>
@@ -16,7 +17,7 @@ export function setupUserInteractionForwardGoto(
       // stop if there's no text between the last edit and the destination
       .takeWhile(e => {
         const range = AceAjax.Range.fromPoints(e.stopPosition, dest);
-        const text = Global.coqDocument.session.getDocument().getTextRange(range);
+        const text = doc.session.getDocument().getTextRange(range);
         return CoqStringUtils.coqTrimLeft(text) !== "";
       })
       // if an error occurs, abort

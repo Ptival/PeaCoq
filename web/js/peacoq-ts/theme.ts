@@ -86,16 +86,16 @@ namespace DarkTheme {
 
 export let theme: Theme = BrightTheme;
 
-export function switchTo(t: Theme): void {
+export function switchTo(doc: ICoqDocument, t: Theme): void {
   theme = t;
-  update();
+  update(doc);
 }
 
-export function switchToBright(): void { switchTo(BrightTheme); }
+export function switchToBright(doc: ICoqDocument): void { switchTo(doc, BrightTheme); }
 
-export function switchToDark(): void { switchTo(DarkTheme); }
+export function switchToDark(doc: ICoqDocument): void { switchTo(doc, DarkTheme); }
 
-function update(): void {
+function update(doc: ICoqDocument): void {
 
   jss.set(".w2ui-layout>div .w2ui-resizer", {
     "background-color": "transparent"
@@ -155,8 +155,8 @@ function update(): void {
     "border-bottom": theme.errorUnderlineStyle,
   });
 
-  Global.coqDocument.editor.setTheme(theme.aceTheme);
-  Global.coqDocument.contextPanel.setTheme(theme.aceTheme);
+  doc.editor.setTheme(theme.aceTheme);
+  doc.contextPanel.setTheme(theme.aceTheme);
 
   $.get(theme.css, (response) => {
     $('#theme').text(response);
@@ -168,6 +168,6 @@ function update(): void {
   afterChangeSubject.onNext({});
 }
 
-export function setupTheme(): void {
-  update();
+export function setupTheme(doc: ICoqDocument): void {
+  update(doc);
 }

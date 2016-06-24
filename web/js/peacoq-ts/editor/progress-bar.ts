@@ -6,14 +6,14 @@ import * as Theme from "../theme";
 let barItemClass = "progress-bar-item";
 let progressBarId = "progress-bar";
 
-export function setupProgressBar(): void {
+export function setupProgressBar(doc: ICoqDocument): void {
   // TODO: progress bar should update when command ID is assigned
   Rx.Observable.merge(
     Theme.afterChange$,
-    Global.coqDocument.edits.editCreated$,
-    Global.coqDocument.edits.editChangedStage$,
-    Global.coqDocument.edits.editRemoved$
-  ).subscribe(updateProgressBar);
+    doc.edits.editCreated$,
+    doc.edits.editChangedStage$,
+    doc.edits.editRemoved$
+  ).subscribe(() => updateProgressBar(doc));
   let barClick$: Rx.Observable<Event> =
     Rx.Observable.fromEvent<Event>(document, "click")
       .filter(e => $(e.target).hasClass(barItemClass));
@@ -41,13 +41,13 @@ export function setupProgressBar(): void {
   });
   barClick$.subscribe(e => {
     let targetEdit: ISentence<any> = d3.select(e.target).data()[0];
-    Global.coqDocument.moveCursorToPositionAndCenter(targetEdit.stopPosition);
-    Global.coqDocument.editor.focus();
+    doc.moveCursorToPositionAndCenter(targetEdit.stopPosition);
+    doc.editor.focus();
   });
 }
 
-function updateProgressBar(): void {
-  let allEdits = Global.coqDocument.getAllEdits();
+function updateProgressBar(doc: ICoqDocument): void {
+  let allEdits = doc.getAllEdits();
   let selection =
     d3.select(`#${progressBarId}`)
       .selectAll("div")

@@ -64,6 +64,9 @@ $(document).ready(() => {
   });
 
   const editor = ace.edit("editor");
+
+  const doc = new CoqDocument(editor);
+
   const textCursorChangeEvent$ = Rx.Observable
     .create(observer => {
       editor.selection.on("changeCursor", e => { observer.onNext(e); });
@@ -79,7 +82,7 @@ $(document).ready(() => {
     textCursorPosition$
       .map(pos => {
         // we want to display the last edit whose stopPos is before `pos`
-        const edit = _(Global.coqDocument.getAllEdits())
+        const edit = _(doc.getAllEdits())
           .findLast(s => isBefore(Strictly.No, s.stopPosition, pos));
         return edit ? just(edit) : nothing();
       })
@@ -91,14 +94,12 @@ $(document).ready(() => {
       nothing: () => Promise.resolve(emptyContext),
       just: e => e.getProcessedStage().then(s => s.getContext()),
     }))
-    .subscribe(context => Global.coqDocument.contextPanel.display(context));
-
-  Global.setCoqDocument(new CoqDocument(editor));
+    .subscribe(context => doc.contextPanel.display(context));
 
   const editAtBecauseEditorChange: Rx.Observable<ICoqtopInput> =
-    Global.coqDocument.editorChange$
+    doc.editorChange$
       .flatMap(change => {
-        const maybeEdit = Global.coqDocument.getEditAtPosition(minPos(change.start, change.end));
+        const maybeEdit = doc.getEditAtPosition(minPos(change.start, change.end));
         // debugger;
         return (
           maybeEdit
@@ -142,7 +143,7 @@ $(document).ready(() => {
   const coqtopTabs = w2ui[rightLayoutName + "_bottom_tabs"];
 
   bottomLayout.on({ type: "render", execute: "after" }, () => {
-    setupProgressBar();
+    setupProgressBar(doc);
     bottomLayout.refresh();
   });
 
@@ -161,10 +162,10 @@ $(document).ready(() => {
 
       contextTabs.click("pretty");
 
-      Global.coqDocument.contextPanel = new ContextPanel(Global.coqDocument, rightLayoutName);
+      doc.contextPanel = new ContextPanel(doc, rightLayoutName);
 
       // TODO: stream this
-      updateFontSize(Global.coqDocument);
+      updateFontSize(doc);
 
       onFulfilled();
     });
@@ -183,14 +184,14 @@ $(document).ready(() => {
       // only fire once every <resizeBufferingTime> milliseconds
       .bufferWithTime(resizeBufferingTime).filter(a => !_.isEmpty(a));
 
-  resize$.subscribe(onResize);
-  resize$.subscribe(() => Global.coqDocument.contextPanel.onResize());
+  resize$.subscribe(() => onResize(doc));
+  resize$.subscribe(() => doc.contextPanel.onResize());
 
-  const toolbarStreams = setupToolbar();
-  const shortcutsStreams = setupKeybindings();
-  const userActionStreams = setupUserActions(toolbarStreams, shortcutsStreams);
+  const toolbarStreams = setupToolbar(doc);
+  const shortcutsStreams = setupKeybindings(doc);
+  const userActionStreams = setupUserActions(doc, toolbarStreams, shortcutsStreams);
 
-  userActionStreams.loadedFile$.subscribe(() => Global.coqDocument.contextPanel.clear());
+  userActionStreams.loadedFile$.subscribe(() => doc.contextPanel.clear());
 
   interface GoToPositions {
     destinationPos: AceAjax.Position;
@@ -199,8 +200,8 @@ $(document).ready(() => {
   const [forwardGoTo$, backwardGoTo$] = userActionStreams.goTo$
     // filter out when position is already reached
     .flatMap<GoToPositions>(() => {
-      const lastEditStopPos = Global.coqDocument.getLastEditStop();
-      const destinationPos = Global.coqDocument.editor.getCursorPosition();
+      const lastEditStopPos = doc.getLastEditStop();
+      const destinationPos = doc.editor.getCursorPosition();
       return (
         _.isEqual(lastEditStopPos, destinationPos)
           ? []
@@ -212,7 +213,7 @@ $(document).ready(() => {
 
   const editAtFromBackwardGoTo$ = backwardGoTo$
     .flatMap(o => {
-      const maybeEdit = Global.coqDocument.getEditAtPosition(o.destinationPos);
+      const maybeEdit = doc.getEditAtPosition(o.destinationPos);
       return (
         maybeEdit
           .bind(e => e.getPreviousStateId())
@@ -225,8 +226,8 @@ $(document).ready(() => {
     .share();
 
   Coq85.setupSyntaxHovering();
-  tabsAreReadyPromise.then(Theme.setupTheme);
-  Theme.afterChange$.subscribe(() => onResize());
+  tabsAreReadyPromise.then(() => Theme.setupTheme(doc));
+  Theme.afterChange$.subscribe(() => onResize(doc));
   // These also help with the initial display...
   Theme.afterChange$.subscribe(() => { rightLayout.refresh(); });
   Theme.afterChange$.subscribe(() => { bottomLayout.refresh(); });
@@ -234,11 +235,11 @@ $(document).ready(() => {
   const nextSubject = new Rx.ReplaySubject(1);
   userActionStreams.next$.subscribe(() => nextSubject.onNext({}));
 
-  const sentencesToProcessStream = Global.coqDocument.nextSentence(nextSubject.asObservable());
+  const sentencesToProcessStream = doc.nextSentence(nextSubject.asObservable());
 
   const previousEditToReach$: Rx.Observable<ISentence<IProcessed>> =
     userActionStreams.prev$
-      .flatMap(() => listFromMaybe(Global.coqDocument.getLastEdit()))
+      .flatMap(() => listFromMaybe(doc.getLastEdit()))
       .flatMap(e => listFromMaybe(e.previousEdit))
       .filter(e => e.stage instanceof Edit.Processed);
 
@@ -253,7 +254,7 @@ $(document).ready(() => {
   const forwardGoToSubject = new Rx.Subject<Maybe<AceAjax.Position>>();
   forwardGoTo$.subscribe(o => forwardGoToSubject.onNext(just(o.destinationPos)));
 
-  sentencesToProcessStream.subscribe(e => Global.coqDocument.moveCursorToPositionAndCenter(e.stopPosition));
+  sentencesToProcessStream.subscribe(e => doc.moveCursorToPositionAndCenter(e.stopPosition));
 
   const addsToProcessStream = sentencesToProcessStream
     .map(s => {
@@ -294,7 +295,7 @@ $(document).ready(() => {
   );
 
   coqtopOutput$s.answer$s.stmAdded$.subscribe(a => {
-    const allEdits = Global.coqDocument.getAllEdits();
+    const allEdits = doc.getAllEdits();
     const edit = _(allEdits).find(e => isJust(e.commandTag) && fromJust(e.commandTag) === a.cmdTag);
     if (!edit) { debugger; }
     const newStage = new Edit.BeingProcessed(edit.stage, a.answer.stateId);
@@ -316,7 +317,7 @@ $(document).ready(() => {
       switch (f.editOrState) {
         case EditOrState.State:
           const stateId = f.editOrStateId;
-          const editsBeingProcessed = Global.coqDocument.getEditsBeingProcessed();
+          const editsBeingProcessed = doc.getEditsBeingProcessed();
           const edit = _(editsBeingProcessed).find(e => e.stage.stateId === stateId);
           if (edit) {
             const newStage = new Edit.Processed(edit.stage, queriesObserver);
@@ -335,10 +336,10 @@ $(document).ready(() => {
     });
 
   coqtopOutput$s.answer$s.coqExn$.subscribe(exn => {
-    const allEdits = Global.coqDocument.getAllEdits();
+    const allEdits = doc.getAllEdits();
     const edit = _(allEdits).find(e => isJust(e.commandTag) && fromJust(e.commandTag) === exn.cmdTag);
     if (!edit) { debugger; }
-    Global.coqDocument.removeEditAndFollowingOnes(edit);
+    doc.removeEditAndFollowingOnes(edit);
   });
 
   new CoqtopPanel(
@@ -451,8 +452,8 @@ function updateCoqtopTabs(context: PeaCoqContext) {
   // }
 }
 
-export function onResize(): void {
-  Global.coqDocument.editor.resize();
+export function onResize(doc: ICoqDocument): void {
+  doc.editor.resize();
   getActiveProofTree().fmap(t => {
     const parent = $("#prooftree").parent();
     t.resize(parent.width(), parent.height());
@@ -476,9 +477,9 @@ function hideProofTreePanel(): void {
   bottomLayout.hide("top");
 }
 
-function updateFontSize(d: ICoqDocument): void {
-  d.editor.setOption("fontSize", fontSize);
-  Global.coqDocument.contextPanel.onFontSizeChanged(fontSize);
+function updateFontSize(doc: ICoqDocument): void {
+  doc.editor.setOption("fontSize", fontSize);
+  doc.contextPanel.onFontSizeChanged(fontSize);
   jss.set("#pretty-content", { "font-size": fontSize + "px" });
   jss.set("svg body", { "font-size": fontSize + "px" });
   getActiveProofTree().fmap(t => t.update());
@@ -501,6 +502,7 @@ interface UserActionStreams {
 }
 
 function setupUserActions(
+  doc: ICoqDocument,
   toolbarStreams: ToolbarStreams,
   shortcutsStreams: ShortcutsStreams
 ): UserActionStreams {
@@ -516,7 +518,7 @@ function setupUserActions(
       .share();
   Rx.Observable
     .merge(fontIncreasedStream, fontDecreasedStream)
-    .subscribe(() => { updateFontSize(Global.coqDocument); });
+    .subscribe(() => { updateFontSize(doc); });
   const goTo$ = Rx.Observable
     .merge(toolbarStreams.goToCaret, shortcutsStreams.goToCaret);
   const next$ = Rx.Observable
@@ -529,7 +531,7 @@ function setupUserActions(
   Rx.Observable
     .merge(toolbarStreams.save, shortcutsStreams.save)
     .subscribe(saveFile);
-  const loadedFilesStream = setupLoadFile();
+  const loadedFilesStream = setupLoadFile(doc);
   setupSaveFile();
   return {
     goTo$: goTo$,

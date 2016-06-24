@@ -17,6 +17,7 @@ import { Processed } from "../coq/feedback-content";
 */
 
 export function setupTextCursorPositionUpdate(
+  doc: ICoqDocument,
   editProcessed$: Rx.Observable<ISentence<IProcessed>>,
   error$: Rx.Observable<IEditorError>,
   previousEditToReach$: Rx.Observable<ISentence<IEditStage>>,
@@ -25,8 +26,8 @@ export function setupTextCursorPositionUpdate(
 
   const lastEditProcessedStopPosition$ =
     editProcessed$
-      .filter(f => Global.coqDocument.getEditsBeingProcessed().length === 0)
-      .filter(f => Global.coqDocument.getEditsToProcess().length === 0)
+      .filter(f => doc.getEditsBeingProcessed().length === 0)
+      .filter(f => doc.getEditsToProcess().length === 0)
       .map(e => e.stopPosition);
 
   const errorLocation$ =
@@ -60,7 +61,7 @@ export function setupTextCursorPositionUpdate(
   ]);
 
   positionUpdate$.subscribe(pos =>
-    Global.coqDocument.moveCursorToPositionAndCenter(pos)
+    doc.moveCursorToPositionAndCenter(pos)
   );
 
 }
