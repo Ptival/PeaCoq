@@ -27,7 +27,7 @@ interface JQueryContextMenuBuildOptions {
 }
 
 interface JQueryStatic {
-    contextMenu(options: JQueryContextMenuBuildOptions): JQuery;
+  contextMenu(options: JQueryContextMenuBuildOptions): JQuery;
 }
 
 declare var sexpParse: (o: any) => any;

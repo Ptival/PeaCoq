@@ -258,7 +258,7 @@ $(document).ready(() => {
 
   const addsToProcessStream = sentencesToProcessStream
     .map(s => {
-      const command = new Command.Control(new ControlCommand.StmAdd(1, nothing(), s.query));
+      const command = new Command.Control(new ControlCommand.StmAdd({}, s.query));
       s.commandTag = just(command.tag);
       return command;
     })

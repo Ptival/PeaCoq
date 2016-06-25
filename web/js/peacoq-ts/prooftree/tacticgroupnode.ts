@@ -89,11 +89,10 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
 
   onChildSolvedAndUnfocused(sid: number): void {
     let focusedTactic = fromJust(this.getFocusedTactic());
-    let unsolved = _(focusedTactic.goals)
+    let unsolved = <IGoalNode | undefined>_(focusedTactic.goals)
       .find(function(elt) {
         return !elt.isSolved();
-      })
-      ;
+      });
     if (unsolved === undefined) {
       this.onSolved(sid);
     } else {

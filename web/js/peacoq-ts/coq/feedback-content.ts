@@ -1,6 +1,6 @@
 import * as SertopUtils from "../sertop/utils";
 
-export function fromCoqtop(f: { tag: string; contents: any }) {
+export function fromCoqtop(f: { tag: string; contents: any }): IFeedbackContent {
   const { tag, contents } = f;
   switch (tag) {
     case "AddedAxiom":
@@ -12,6 +12,7 @@ export function fromCoqtop(f: { tag: string; contents: any }) {
       const [[start, stop], message] = contents;
       debugger; // does Coqtop expose a full location?
       // return new ErrorMsg([start, stop], replaceNBSPWithSpaces(message));
+      break;
     case "FileDependency":
       const [file, dependsOnFile] = contents;
       return new FileDependency(file, dependsOnFile);
@@ -22,19 +23,21 @@ export function fromCoqtop(f: { tag: string; contents: any }) {
     case "GlobRef":
     case "Goals":
     case "Message":
-      console.log("TODO: FeedbackContent for " + tag, f);
+      debugger;
       break;
     case "Processed":
       return new Processed();
     case "ProcessingIn":
       return new ProcessingIn(contents);
     case "WorkerStatus":
-      console.log("TODO: FeedbackContent for " + tag, f);
+      debugger;
       break;
     // other tags don't need fields
     default:
       throw ("Unknown FeedbackContent tag: " + tag);
   }
+  debugger;
+  return <any>undefined; // to shut up TypeScript for now
 }
 
 export function fromSertop(o): IFeedbackContent {
@@ -67,6 +70,8 @@ export function fromSertop(o): IFeedbackContent {
       return new ProcessingIn(branch);
     default: debugger;
   }
+  debugger;
+  return <any>undefined; // to shut up TypeScript for now
 }
 
 export class AddedAxiom implements FeedbackContent.IAddedAxiom { }

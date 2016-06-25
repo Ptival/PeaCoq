@@ -10,17 +10,17 @@ export default PeaCoqGoal;
 // printing diffs between lines, as merging messes with this...
 
 export class PeaCoqGoal implements IPeaCoqGoal {
-  private html: JQuery;
+  private html: JQuery | null;
 
   constructor(
     private hyps: PeaCoqHyp[],
     private concl: IConstrExpr
   ) {
-    this.html = undefined; // rendered on-demand and cached
+    this.html = null; // rendered on-demand and cached
   }
 
   getHTML(): JQuery {
-    if (this.html === undefined) {
+    if (this.html === null) {
       this.html = $("<div>");
       // TODO: htmlPrintHypsDiff
       let hypsDiv = $("<div>").html(htmlPrintHyps(this.hyps));

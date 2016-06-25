@@ -28,11 +28,13 @@ export function proofTreeOnEdit(
           // status.statusProofName,
           $("#prooftree")[0],
           $("#prooftree").parent().width(),
-          $("#prooftree").parent().height()
+          $("#prooftree").parent().height(),
+          nothing(),
+          context,
+          0
         );
         Global.proofTrees.unshift(pt);
-        const g = new GoalNode(pt, nothing(), context, 0);
-        assert(pt.rootNode !== undefined, "proofTreeOnGetContext: new GoalNode should set rootNode");
+        const g = pt.rootNode;
         g.stateIds.push(stateId);
         pt.curNode = g;
         pt.update();

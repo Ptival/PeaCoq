@@ -1,17 +1,30 @@
 export type ControlCommand = StmAdd | StmEditAt | StmState | Quit
 
+interface AddOptions {
+  limit?: number;
+  ontop?: StateId;
+  newtip?: StateId;
+  verb?: boolean;
+}
+
+function optionalToSexp<T>(name, option: T | undefined, printer?: (t: T) => string): string {
+  return option === undefined ? "" : `(${name} ${printer ? printer(option) : option})`;
+}
+
 export class StmAdd implements Sertop.IControlCommand {
   constructor(
-    public limit: number,
-    public stateId: Maybe<number>,
+    public addOptions: AddOptions,
     public sentence: string
   ) { }
   toSexp() {
-    const stateId = this.stateId.caseOf({
-      nothing: () => "None",
-      just: (sid) => `(Just ${sid})`,
-    });
-    return `(StmAdd ${this.limit} ${stateId} "${this.sentence}")`
+    const opts = "".concat(
+      optionalToSexp("limit", this.addOptions.limit),
+      optionalToSexp("ontop", this.addOptions.ontop),
+      optionalToSexp("newtip", this.addOptions.newtip),
+      optionalToSexp("verb", this.addOptions.verb, b => b ? "True" : "False")
+    );
+    const o1 = optionalToSexp("limit", this.addOptions.limit);
+    return `(StmAdd (${opts}) "${this.sentence}")`
   }
 }
 

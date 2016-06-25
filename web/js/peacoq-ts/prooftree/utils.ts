@@ -77,16 +77,10 @@ export function byLinkId(d: ProofTreeLink): string { return d.source.id + "," + 
 
 // transposition accessors
 export function nodeX(d: IProofTreeNode): number {
-  if (d === undefined) {
-    throw "nodeX";
-  }
   return d.y;
 }
 
 export function nodeY(d: IProofTreeNode): number {
-  if (d === undefined) {
-    throw "nodeY";
-  }
   return d.x;
 }
 

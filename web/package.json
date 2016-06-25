@@ -21,7 +21,7 @@
     "rx": "^4.1.0",
     "s-expression": "^3.0.3",
     "tsmonad": "^0.6.0",
-    "typescript": "^1.8.10",
+    "typescript": "file:./typescript-1.9.0.tgz",
     "typings": "^1.2.0",
     "w2ui": "^1.4.3"
   }

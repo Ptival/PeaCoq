@@ -1,7 +1,7 @@
 import * as ProofTreeUtils from "./utils";
 
 export abstract class ProofTreeNode implements IProofTreeNode {
-  private body: HTMLElement;
+  private body: HTMLElement | undefined;
   depth: number;
   id: string;
   label: string;
@@ -32,7 +32,7 @@ export abstract class ProofTreeNode implements IProofTreeNode {
 
   getHTMLElement(): HTMLElement {
     if (!this.body) {
-      console.log("BAD: missing this.body", this);
+      throw("BAD: missing this.body", this);
     }
     //assert(this.body !== undefined, "ProofTreeNode.getHTMLElement");
     return this.body;

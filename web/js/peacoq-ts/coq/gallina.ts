@@ -160,9 +160,10 @@ function mkTerm(t: any): Term {
     case "LetParent": return new LetParen(t);
     case "Raw": return new Raw(t);
     default:
-      alert("Unknown tag: " + t.tag + ", see log for more information.");
       console.log("Unknown tag for term: ", t);
+      debugger;
   };
+  throw "mkTerm";
 }
 
 abstract class Term {
@@ -405,7 +406,7 @@ class App extends Term {
     this.right = mkTerm(c.right);
   }
 
-  getPrecedence() {
+  getPrecedence(): number {
     /* fully-applied infix binary operators */
     let binOp = getInfixBinaryOperation(this);
     if (binOp) {
@@ -426,13 +427,14 @@ class App extends Term {
         case "plus": return precPlus;
         case "minus": return precMinus;
         case "mult": return precMult;
-        default: break;
+        default: debugger; break;
       };
     } else if (isNeq(this)) {
       return precNeq;
     } else {
       return precApp;
     }
+    throw "getPrecedence";
   }
 
   toString() {
@@ -708,14 +710,14 @@ function parAssoc(term: Term): string {
 class Match extends Term {
   equations: {}; // TODO
   items: {}; // TODO
-  maybeType: Term;
+  maybeType: Term | undefined;
 
   constructor(t) {
     super();
     let c = t.contents;
     this.equations = c.equations;
     this.items = c.items;
-    this.maybeType = this.maybeType ? mkTerm(this.maybeType) : undefined;
+    this.maybeType = t.maybeType ? mkTerm(this.maybeType) : undefined;
   }
 
   getPrecedence(): number {
@@ -732,7 +734,7 @@ class Let extends Term {
   bindee: Term;
   binders: Binder[];
   body: Term;
-  maybeType: Term;
+  maybeType: Term | undefined;
   names: string[];
 
   constructor(t) {
@@ -742,7 +744,7 @@ class Let extends Term {
     this.binders = c.binders;
     this.body = mkTerm(c.body);
     this.names = c.names;
-    this.maybeType = this.maybeType ? mkTerm(this.maybeType) : undefined;
+    this.maybeType = t.contents.maybeType ? mkTerm(t.contents.maybeType) : undefined;
   }
 
   getPrecedence(): number {
@@ -758,7 +760,7 @@ class Let extends Term {
 class LetParen extends Term {
   bindee: Term;
   body: Term;
-  maybeType: Term;
+  maybeType: Term | undefined;
   names: string[];
 
   constructor(t) {
@@ -795,11 +797,11 @@ class Raw extends Term {
 
 class Binder {
   maybeNames: string[];
-  maybeType: Term;
+  maybeType: Term | undefined;
 
   constructor(t) {
     this.maybeNames = t.maybeNames;
-    this.maybeType = this.maybeType ? mkTerm(this.maybeType) : undefined;
+    this.maybeType = t.maybeType ? mkTerm(this.maybeType) : undefined;
   }
 
   toString(): string {

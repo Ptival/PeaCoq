@@ -10,4 +10,5 @@ export function isBefore(flag: Strictly, pos1: AceAjax.Position, pos2: AceAjax.P
     case Strictly.Yes: return pos1.column < pos2.column;
     case Strictly.No: return pos1.column <= pos2.column;
   };
+  throw "EditorUtils.isBefore";
 }

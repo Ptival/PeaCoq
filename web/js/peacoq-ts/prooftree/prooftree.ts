@@ -50,7 +50,10 @@ export class ProofTree implements IProofTree {
     public name: string,
     anchor: HTMLElement,
     private width: number,
-    private height: number
+    private height: number,
+    parent: Maybe<ITacticGroupNode>,
+    public context: PeaCoqContext,
+    public index: number
   ) {
     let self = this;
 
@@ -67,13 +70,14 @@ export class ProofTree implements IProofTree {
     this.usingKeyboard = true; // true until the user moves their mouse
     this.tacticWaiting = nothing();
 
+    this.rootNode = new GoalNode(this, parent, context, index);
+
     this.tree = d3.layout.tree<IProofTreeNode>()
       .children((node: IProofTreeNode, index: number) => {
         // fake nodes are used to trick the layout engine into spacing
         // childrenless nodes appropriately
         if (node instanceof FakeNode) { return []; }
         let viewChildren = node.getViewChildren();
-        if (viewChildren === undefined) { throw ["children", node]; }
         // in order to trick d3 into displaying tactics better add fake
         // children to tactic nodes that solve their goal
         if (node instanceof TacticGroupNode && viewChildren.length === 0) {
@@ -258,7 +262,7 @@ export class ProofTree implements IProofTree {
   }
 
   findOrCreateGroup(goalNode: IGoalNode, groupName: string): ITacticGroupNode {
-    let found = _(goalNode.tacticGroups)
+    let found = <ITacticGroupNode | undefined>_(goalNode.tacticGroups)
       .find(function(tacticGroup) {
         return tacticGroup.name === groupName;
       })
@@ -330,6 +334,7 @@ export class ProofTree implements IProofTree {
       case Strictly.Yes: return commonAncestorIsNode && !this.isCurNode(n);
       case Strictly.No: return commonAncestorIsNode;
     };
+    throw "ProofTree.isCurNodeAncestor";
   }
 
   isCurNodeChild(n: IProofTreeNode): boolean {
@@ -344,6 +349,7 @@ export class ProofTree implements IProofTree {
       case Strictly.Yes: return commonAncestorIsCurNode && !this.isCurNode(n);
       case Strictly.No: return commonAncestorIsCurNode;
     };
+    throw "ProofTree.isCurNodeDescendant";
   }
 
   isCurNodeGrandChild(n: IProofTreeNode): boolean {
@@ -650,11 +656,11 @@ export class ProofTree implements IProofTree {
        the tactic to the current node
     */
 
-    if (_(this.tacticsWorklist).isEmpty()) {
+    let promiseSpark = this.tacticsWorklist.shift();
+
+    if (promiseSpark === undefined) {
       return Promise.resolve();
     }
-
-    let promiseSpark = this.tacticsWorklist.shift();
 
     return promiseSpark()
       // delay for testing purposes

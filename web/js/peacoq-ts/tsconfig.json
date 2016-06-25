@@ -12,6 +12,7 @@
     "preserveConstEnums": true,
     "removeComments": true,
     "rootDir": ".",
+    "strictNullChecks": false,
     "suppressImplicitAnyIndexErrors": true,
     "target": "es5"
   },

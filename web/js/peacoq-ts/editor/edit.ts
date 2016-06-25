@@ -66,7 +66,7 @@ export class BeingProcessed implements IBeingProcessed {
 */
 
 export class Processed implements IProcessed {
-  private context: Promise<PeaCoqContext>;
+  private context: Promise<PeaCoqContext> | null;
   marker: IEditMarker;
   stateId: number;
 
@@ -75,6 +75,7 @@ export class Processed implements IProcessed {
     // this is needed so that the edit can query for its context on-demand
     private inputObserver: Rx.Observer<ICoqtopInput>
   ) {
+    this.context = null; // created later
     this.marker = e.nextStageMarker();
     this.stateId = e.stateId;
   }
@@ -82,7 +83,7 @@ export class Processed implements IProcessed {
   getColor() { return Theme.theme.processed; }
 
   getContext(): Promise<PeaCoqContext> {
-    if (this.context === undefined) {
+    if (this.context === null) {
       this.context = new Promise(onFulfilled => {
         const query = new CoqtopInput.Query("PeaCoqGetContext.", this.stateId);
         query["callback"] = (r: ICoqtopOutput<ICoqtopInput, any>) => {

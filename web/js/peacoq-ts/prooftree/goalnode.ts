@@ -30,10 +30,6 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
     this.stateIds = [];
     this.tacticGroups = [];
     this.tacticIndex = 0;
-
-    if (proofTree.rootNode === undefined) {
-      proofTree.rootNode = this;
-    }
   }
 
   click(): void { return; }

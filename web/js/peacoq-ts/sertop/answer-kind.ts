@@ -78,4 +78,6 @@ export function create(o): Sertop.IAnswerKind {
 
     default: debugger;
   }
+
+  throw "AnswerKind.create";
 }

@@ -7,7 +7,7 @@ export class CoqtopPanel {
     private container: JQuery,
     private message$: Rx.Observable<{ message: string; level: PeaCoqMessageLevel }>
   ) {
-    message$.subscribe(m => this.addAlert(m.message, peaCoqMessagelevelToString(m.level)));
+    message$.subscribe(m => this.addAlert(m.message, peaCoqMessageLevelToString(m.level)));
   }
 
   addAlert(message: string, klass: string) {
@@ -34,9 +34,10 @@ function classify(level: IMessageLevel): PeaCoqMessageLevel {
     case MessageLevel.Notice: return PeaCoqMessageLevel.Success;
     case MessageLevel.Warning: return PeaCoqMessageLevel.Warning;
   }
+  throw "CoqtopPanel.classigy";
 }
 
-function peaCoqMessagelevelToString(level: IMessageLevel): string {
+function peaCoqMessageLevelToString(level: IMessageLevel): string {
   switch (level) {
     case PeaCoqMessageLevel.Default: return "default";
     case PeaCoqMessageLevel.Danger: return "danger";
@@ -44,4 +45,5 @@ function peaCoqMessagelevelToString(level: IMessageLevel): string {
     case PeaCoqMessageLevel.Success: return "success";
     case PeaCoqMessageLevel.Warning: return "warning";
   }
+  throw "CoqtopPanel.peaCoqMessageLevelToString";
 }

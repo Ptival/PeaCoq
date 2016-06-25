@@ -27,8 +27,8 @@ let nothing = TsMonad.Maybe.nothing;
 let just = TsMonad.Maybe.just;
 
 function fromJust<T>(m: Maybe<T>): T {
-  return m.caseOf<T>({
-    nothing: () => undefined,
+  return m.caseOf({
+    nothing: () => { debugger; return <any>undefined; /* shut up TypeScript! */ },
     just: x => x,
   })
 }
@@ -67,11 +67,20 @@ function avg(n1: number, n2: number): number { return (n1 + n2) / 2; }
 function parseSVGTransform(a: string): any {
   let b = {};
   let m = a.match(/(\w+\((\-?\d+\.?\d*,? ?)+\))+/g);
-  for (let i in m) {
-    let c = m[i].match(/[\w\.\-]+/g);
-    b[c.shift()] = c;
+  if (m !== null) {
+    for (let i in m) {
+      let c = m[i].match(/[\w\.\-]+/g);
+      if (c !== null) {
+        const next = c.shift();
+        if (next !== undefined) {
+          b[next] = c;
+        }
+      }
+    }
+    return b;
+  } else {
+    debugger;
   }
-  return b;
 }
 
 function MatchFailure(fn: string, o: Object) {
@@ -103,7 +112,7 @@ function showDot(d: XY): string { return `${d.x} ${d.y}`; }
   h_____g     f_____e
 
 */
-function connectRects(r1: ClientRect, r2: ClientRect, rightsLeft: number) {
+function connectRects(r1: ClientRect, r2: ClientRect, rightsLeft?: number) {
   //console.log("rect1", r1, "rect2", r2);
   if (rightsLeft === undefined) { rightsLeft = r2.left; }
   let a = mkDot(r1.left, r1.top);
@@ -131,9 +140,9 @@ function connectRects(r1: ClientRect, r2: ClientRect, rightsLeft: number) {
 
 function byDiffId(d: Diff): string {
   let res = "{";
-  if (d.oldHyp !== undefined) { res += d.oldHyp.hName; }
+  if (d.oldHyp !== null) { res += d.oldHyp.hName; }
   res += "-";
-  if (d.newHyp !== undefined) { res += d.newHyp.hName; }
+  if (d.newHyp !== null) { res += d.newHyp.hName; }
   return res + "}";
 }
 
@@ -142,8 +151,8 @@ function sameNameAs(a: Hypothesis): (b: Hypothesis) => boolean {
 }
 
 interface Diff {
-  oldHyp: Hypothesis;
-  newHyp: Hypothesis;
+  oldHyp: Hypothesis | null;
+  newHyp: Hypothesis | null;
   isJump: boolean;
 }
 
@@ -164,17 +173,19 @@ function computeDiffList(oldHypsOriginal: Hypothesis[], newHypsOriginal: Hypothe
       newHyps.shift();
       continue;
     }
-    let matchesOld = _(newHyps).find(sameNameAs(oldHyp));
+    // Note: <Hypothesis | undefined> is to allow === under strictNullChecks
+    // until TypeScript#843aa6c1effe8365bb461a4a953d55eeb5dfa7cf gets to npm
+    let matchesOld = <Hypothesis | undefined>_(newHyps).find(sameNameAs(oldHyp));
     // or the first old has disappeared
     if (matchesOld === undefined) {
-      diffList.push({ "oldHyp": oldHyp, "newHyp": undefined, "isJump": false });
+      diffList.push({ "oldHyp": oldHyp, "newHyp": null, "isJump": false });
       oldHyps.shift();
       continue;
     }
     // or the first old has moved, but the first new has appeared
-    let matchesNew = _(oldHyps).find(sameNameAs(newHyp));
+    let matchesNew = <Hypothesis | undefined>_(oldHyps).find(sameNameAs(newHyp));
     if (matchesNew === undefined) {
-      diffList.push({ "oldHyp": undefined, "newHyp": newHyp, "isJump": false });
+      diffList.push({ "oldHyp": null, "newHyp": newHyp, "isJump": false });
       newHyps.shift();
       continue;
     }
@@ -186,12 +197,12 @@ function computeDiffList(oldHypsOriginal: Hypothesis[], newHypsOriginal: Hypothe
 
   // now register the remaining disappearing
   _(oldHyps).each(function(oldHyp) {
-    diffList.push({ "oldHyp": oldHyp, "newHyp": undefined, "isJump": false });
+    diffList.push({ "oldHyp": oldHyp, "newHyp": null, "isJump": false });
   });
 
   // now register the remaining appearing
   _(newHyps).each(function(newHyp) {
-    diffList.push({ "oldHyp": undefined, "newHyp": newHyp, "isJump": false });
+    diffList.push({ "oldHyp": null, "newHyp": newHyp, "isJump": false });
   });
 
   return diffList;
@@ -205,8 +216,8 @@ function prefixes<T>(a: T[]): T[][] {
   return _(a).reduce(
     (acc, elt) =>
       acc.length === 0
-       ? [[elt]]
-       : [].concat(acc, [[].concat(_(acc).last(), elt)]),
+        ? [[elt]]
+        : [].concat(acc, [[].concat(_(acc).last(), elt)]),
     []
   );
 }

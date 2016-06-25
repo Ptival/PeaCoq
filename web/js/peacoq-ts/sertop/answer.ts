@@ -16,5 +16,8 @@ export function create(o): Answer | Feedback.Feedback {
       return new Answer(cmdTag, AnswerKind.create(answerKind));
     case "Feedback":
       return Feedback.fromSertop(o);
+    default:
+      debugger;
   }
+  throw "Answer.create";
 }
