@@ -41,7 +41,7 @@ interface IFeedback<C extends IFeedbackContent> {
 
 interface IFeedbackContent { }
 
-declare namespace FeedbackContent {
+declare namespace IFeedbackContent {
   interface IAddedAxiom extends IFeedbackContent { }
   interface IErrorMsg extends IFeedbackContent {
     message: string;

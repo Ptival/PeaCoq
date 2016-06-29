@@ -9,6 +9,7 @@ export class CoqDocument implements ICoqDocument {
   editorChange$: Rx.Observable<AceAjax.EditorChangeEvent>;
   edits: ISentenceArray;
   endAnchor: AceAjax.Anchor;
+  sentencesChanged$: Rx.Observable<{}>;
   session: AceAjax.IEditSession;
 
   constructor(
@@ -22,48 +23,61 @@ export class CoqDocument implements ICoqDocument {
     this.endAnchor = mkAnchor(this, 0, 0, "end-marker", false);
     this.editorChange$ =
       Rx.Observable
-        .create<AceAjax.EditorChangeEvent>((observer) => {
+        .create<AceAjax.EditorChangeEvent>(observer => {
           self.session.on("change", (e) => observer.onNext(e));
         })
         .share();
+    this.sentencesChanged$ = Rx.Observable.merge(
+      this.edits.editCreated$,
+      this.edits.editChangedStage$,
+      this.edits.editRemoved$
+    );
     // this.editsChange$ = this.editsChangeSubject.asObservable();
     const newEditSubject = new Rx.Subject<ISentence<IToProcess>>();
   }
 
-  getAllEdits(): ISentence<any>[] { return this.edits.getAll(); }
+  getAllSentences(): ISentence<any>[] { return this.edits.getAll(); }
 
-  getEditAtPosition(pos: AceAjax.Position): Maybe<ISentence<any>> {
-    const edit = _(this.getAllEdits()).find(e => e.containsPosition(pos));
+  getSentenceAtPosition(pos: AceAjax.Position): Maybe<ISentence<any>> {
+    const edit = _(this.getAllSentences()).find(e => e.containsPosition(pos));
     return edit ? just(edit) : nothing();
   }
 
-  private getEditsByStage(stage): ISentence<any>[] {
-    return _(this.getAllEdits())
+  getSentenceAtStateId(id: StateId): Maybe<ISentence<any>> {
+    const edit = _(this.getAllSentences()).find(e => e.getStateId().caseOf({
+      nothing: () => false,
+      just: s => s === id,
+    }));
+    return edit ? just(edit) : nothing();
+  }
+
+  private getSentencesByStage(stage): ISentence<any>[] {
+    return _(this.getAllSentences())
       .filter(e => { return e.stage instanceof stage; })
       .value();
   }
 
-  getEditsBeingProcessed(): ISentence<IBeingProcessed>[] {
-    return this.getEditsByStage(Edit.BeingProcessed);
+  getSentencesBeingProcessed(): ISentence<IBeingProcessed>[] {
+    return this.getSentencesByStage(Edit.BeingProcessed);
   }
 
-  getEditsToProcess(): ISentence<IToProcess>[] {
-    return this.getEditsByStage(Edit.ToProcess);
+  getSentencesToProcess(): ISentence<IToProcess>[] {
+    return this.getSentencesByStage(Edit.ToProcess);
   }
 
-  getProcessedEdits(): ISentence<IProcessed>[] {
-    return this.getEditsByStage(Edit.Processed);
+  getProcessedSentences(): ISentence<IProcessed>[] {
+    return this.getSentencesByStage(Edit.Processed);
   }
 
   // getStopPositions(): AceAjax.Position[] {
   //   return _(this.editsProcessed).map(function(e) { return e.getStopPosition(); }).value();
   // }
 
-  getLastEdit(): Maybe<ISentence<IEditStage>> {
-    return this.edits.getLast();
-  }
+  // getLastSentence(): Maybe<ISentence<IEditStage>> {
+  //   return this.edits.getLast();
+  // }
 
-  getLastEditStop(): AceAjax.Position {
+  getLastSentenceStop(): AceAjax.Position {
     return this.edits.getLast().caseOf({
       nothing: () => this.beginAnchor.getPosition(),
       just: last => last.stopPosition,
@@ -162,7 +176,7 @@ export class CoqDocument implements ICoqDocument {
   nextSentence(next$: Rx.Observable<{}>): Rx.Observable<ISentence<IToProcess>> {
     return next$
       .concatMap<ISentence<IToProcess>>(() => {
-        let lastEditStopPos = this.getLastEditStop();
+        let lastEditStopPos = this.getLastSentenceStop();
         let endPos = this.endAnchor.getPosition();
         let unprocessedRange =
           new AceAjax.Range(
@@ -180,6 +194,7 @@ export class CoqDocument implements ICoqDocument {
         let stage = new Edit.ToProcess(this, lastEditStopPos, newStopPos);
         let edit: ISentence<IToProcess> =
           this.edits.createEdit(this, lastEditStopPos, newStopPos, query, previousEdit, stage);
+        // debugger;
         return [edit];
       })
       .share()
@@ -201,12 +216,23 @@ export class CoqDocument implements ICoqDocument {
 
   removeEdit(e: ISentence<any>): void { this.edits.remove(e); }
 
-  removeEditAndFollowingOnes(e: ISentence<any>): void {
-    this.edits.removeEditAndFollowingOnes(e);
+  // removeEditAndFollowingOnes(e: ISentence<any>): void {
+  //   this.edits.removeEditAndFollowingOnes(e);
+  // }
+
+  removeEdits(pred: (e: ISentence<any>) => boolean): void {
+    this.edits.removeEdits(pred);
   }
 
-  removeFollowingEdits(e: ISentence<any>): void {
-    this.edits.removeFollowingEdits(e);
+  // removeFollowingEdits(e: ISentence<any>): void {
+  //   this.edits.removeFollowingEdits(e);
+  // }
+
+  removeEditsByStateIds(ids: StateId[]): void {
+    this.edits.removeEdits(e => e.getStateId().caseOf({
+      nothing: () => false,
+      just: id => _(ids).includes(id),
+    }));
   }
 
   // removeEdits(

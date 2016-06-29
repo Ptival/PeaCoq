@@ -28,15 +28,32 @@ export class StmAdd implements Sertop.IControlCommand {
   }
 }
 
+export class StmCancel implements Sertop.IControlCommand {
+  constructor(
+    public stateIds: StateId[]
+  ) { }
+  toSexp() {
+    const ids = this.stateIds.join(" ");
+    return `(StmCancel (${ids}))`;
+  }
+}
+
 export class StmEditAt implements Sertop.IControlCommand {
   constructor(
-    public stateId: number
+    public stateId: StateId
   ) { }
   toSexp() { return `(StmEditAt ${this.stateId})`; }
 }
 
-export class StmJoin implements Sertop.IControlCommand {
-  toSexp() { return "StmJoin"; }
+// export class StmJoin implements Sertop.IControlCommand {
+//   toSexp() { return "StmJoin"; }
+// }
+
+export class StmObserve implements Sertop.IControlCommand {
+  constructor(
+    public stateId: StateId
+  ) { }
+  toSexp() { return `(StmObserve ${this.stateId})`; }
 }
 
 export class StmState implements Sertop.IControlCommand {

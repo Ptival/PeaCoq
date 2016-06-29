@@ -55,40 +55,45 @@ export class SentenceArray implements ISentenceArray {
   }
 
   remove(r: ISentence<any>) {
-    _(this.edits).remove(e => e.sentenceId === r.sentenceId);
-    r.cleanup();
-    this.editRemoved$.onNext(r);
+    this.removeEdits(e => e.sentenceId === r.sentenceId);
   }
 
   removeAll(): void {
-    const edits = this.edits;
-    this.edits = [];
-    // trying to be a little efficient here, so not calling `remove`
-    _(edits).each(e => {
+    this.removeEdits(_ => true);
+  }
+
+  // private removeEditsFromIndex(i: number): void {
+  //   if (i < 0) { debugger; }
+  //   const editsToKeep = _(this.edits).slice(0, i).value();
+  //   const editsToRemove = _(this.edits).slice(i, this.edits.length).value();
+  //   this.edits = editsToKeep;
+  //   _(editsToRemove).each(e => {
+  //     e.cleanup();
+  //     this.editRemoved$.onNext(e);
+  //   });
+  // }
+  //
+  // removeEditAndFollowingOnes(r: ISentence<any>): void {
+  //   const editIndex = _(this.edits).findIndex(r);
+  //   this.removeEditsFromIndex(editIndex);
+  // }
+  //
+  // removeFollowingEdits(r: ISentence<any>): void {
+  //   const editIndex = _(this.edits).findIndex(r);
+  //   this.removeEditsFromIndex(editIndex + 1);
+  // }
+
+  removeEdits(pred: (e: ISentence<any>) => boolean): void {
+    const removedEdits = [];
+    _.remove(this.edits, e => {
+      const cond = pred(e);
+      if (cond) { removedEdits.push(e); }
+      return cond;
+    });
+    _(removedEdits).each(e => {
       e.cleanup();
       this.editRemoved$.onNext(e);
-    });
-  }
-
-  private removeEditsFromIndex(i: number): void {
-    if (i < 0) { debugger; }
-    const editsToKeep = _(this.edits).slice(0, i).value();
-    const editsToRemove = _(this.edits).slice(i, this.edits.length).value();
-    this.edits = editsToKeep;
-    _(editsToRemove).each(e => {
-      e.cleanup();
-      this.editRemoved$.onNext(e);
-    });
-  }
-
-  removeEditAndFollowingOnes(r: ISentence<any>): void {
-    const editIndex = _(this.edits).findIndex(r);
-    this.removeEditsFromIndex(editIndex);
-  }
-
-  removeFollowingEdits(r: ISentence<any>): void {
-    const editIndex = _(this.edits).findIndex(r);
-    this.removeEditsFromIndex(editIndex + 1);
+    })
   }
 
 }

@@ -31,13 +31,14 @@ interface CoqtopOutputStreams {
   answer$s: {
     coqExn$:  Rx.Observable<Sertop.IAnswer<Sertop.ICoqExn>>;
     stmAdded$: Rx.Observable<Sertop.IAnswer<Sertop.IStmAdded>>;
+    stmCanceled$: Rx.Observable<Sertop.IAnswer<Sertop.IStmCanceled>>;
   }
   feedback$s: {
   //   addedAxiom$: Rx.Observable<IFeedback<FeedbackContent.IAddedAxiom>>;
-  //   errorMsg$: Rx.Observable<IFeedback<FeedbackContent.IErrorMsg>>;
+    errorMsg$: Rx.Observable<IFeedback<IFeedbackContent.IErrorMsg>>;
   //   fileDependency$: Rx.Observable<IFeedback<FeedbackContent.IFileDependency>>;
   //   fileLoaded$: Rx.Observable<IFeedback<FeedbackContent.IFileLoaded>>;
-    processed$: Rx.Observable<IFeedback<FeedbackContent.IProcessed>>;
+    processed$: Rx.Observable<IFeedback<IFeedbackContent.IProcessed>>;
   //   processingIn$: Rx.Observable<IFeedback<FeedbackContent.IProcessingIn>>;
   };
   // feedback$: Rx.Observable<IFeedback<IFeedbackContent>>;

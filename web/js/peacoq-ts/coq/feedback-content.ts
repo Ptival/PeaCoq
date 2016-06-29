@@ -74,9 +74,9 @@ export function fromSertop(o): IFeedbackContent {
   return <any>undefined; // to shut up TypeScript for now
 }
 
-export class AddedAxiom implements FeedbackContent.IAddedAxiom { }
+export class AddedAxiom implements IFeedbackContent.IAddedAxiom { }
 
-export class ErrorMsg implements FeedbackContent.IErrorMsg {
+export class ErrorMsg implements IFeedbackContent.IErrorMsg {
   constructor(
     public location: CoqLocation,
     public message: string
@@ -84,32 +84,32 @@ export class ErrorMsg implements FeedbackContent.IErrorMsg {
   }
 }
 
-export class FileDependency implements FeedbackContent.IFileDependency {
+export class FileDependency implements IFeedbackContent.IFileDependency {
   constructor(
     public dependsOnFile: Maybe<string>,
     public file: string
   ) { }
 }
 
-export class FileLoaded implements FeedbackContent.IFileLoaded {
+export class FileLoaded implements IFeedbackContent.IFileLoaded {
   constructor(
     qualifiedModuleName: string,
       path: string
   ) { }
 }
 
-export class Message implements FeedbackContent.IMessage {
+export class Message implements IFeedbackContent.IMessage {
   constructor(
     public level: string
   ) { }
   tostring() { return `Message(${this.level})`; }
 }
 
-export class Processed implements FeedbackContent.IProcessed {
+export class Processed implements IFeedbackContent.IProcessed {
   toString() { return "Processed"; }
 }
 
-export class ProcessingIn implements FeedbackContent.IProcessingIn {
+export class ProcessingIn implements IFeedbackContent.IProcessingIn {
   constructor(
     public branch: string
   ) { }
@@ -118,7 +118,7 @@ export class ProcessingIn implements FeedbackContent.IProcessingIn {
   }
 }
 
-export class WorkerStatus implements FeedbackContent.IWorkerStatus {
+export class WorkerStatus implements IFeedbackContent.IWorkerStatus {
   id: string;
   status: string;
   constructor(c) {

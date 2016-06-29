@@ -26,8 +26,8 @@ export function setupTextCursorPositionUpdate(
 
   const lastEditProcessedStopPosition$ =
     editProcessed$
-      .filter(f => doc.getEditsBeingProcessed().length === 0)
-      .filter(f => doc.getEditsToProcess().length === 0)
+      .filter(f => doc.getSentencesBeingProcessed().length === 0)
+      .filter(f => doc.getSentencesToProcess().length === 0)
       .map(e => e.stopPosition);
 
   const errorLocation$ =

@@ -57,8 +57,9 @@ interface ISentenceArray {
   getLast(): Maybe<ISentence<any>>;
   remove(r: ISentence<any>): void;
   removeAll(): void;
-  removeEditAndFollowingOnes(e: ISentence<any>): void;
-  removeFollowingEdits(e: ISentence<any>): void;
+  // removeEditAndFollowingOnes(e: ISentence<any>): void;
+  removeEdits(pred: (e: ISentence<any>) => boolean): void;
+  // removeFollowingEdits(e: ISentence<any>): void;
   // replace(id: number, e: IEdit<any>): void;
 }
 
@@ -68,28 +69,32 @@ interface ICoqDocument {
   editorChange$: Rx.Observable<AceAjax.EditorChangeEvent>;
   edits: ISentenceArray;
   endAnchor: AceAjax.Anchor;
+  sentencesChanged$: Rx.Observable<{}>;
   session: AceAjax.IEditSession;
-  getAllEdits(): ISentence<any>[];
-  getEditAtPosition(pos: AceAjax.Position): Maybe<ISentence<any>>;
-  getEditsBeingProcessed(): ISentence<IBeingProcessed>[];
-  getEditsToProcess(): ISentence<IToProcess>[];
-  getProcessedEdits(): ISentence<IProcessed>[];
-  getLastEdit(): Maybe<ISentence<IEditStage>>;
-  getLastEditStop(): AceAjax.Position;
+  getAllSentences(): ISentence<any>[];
+  getSentenceAtStateId(s: StateId): Maybe<ISentence<any>>;
+  getSentenceAtPosition(pos: AceAjax.Position): Maybe<ISentence<any>>;
+  getSentencesBeingProcessed(): ISentence<IBeingProcessed>[];
+  getSentencesToProcess(): ISentence<IToProcess>[];
+  getProcessedSentences(): ISentence<IProcessed>[];
+  // getLastSentence(): Maybe<ISentence<IEditStage>>;
+  getLastSentenceStop(): AceAjax.Position;
   markError(range: AceAjax.Range): void;
   moveCursorToPositionAndCenter(pos: AceAjax.Position): void;
   movePositionRight(pos: AceAjax.Position, n: number): AceAjax.Position;
   nextSentence(next$: Rx.Observable<{}>): Rx.Observable<ISentence<IToProcess>>;
   removeAllEdits(): void;
   removeEdit(e: ISentence<IEditStage>): void;
-  removeEditAndFollowingOnes(e: ISentence<IEditStage>): void;
-  removeFollowingEdits(e: ISentence<IEditStage>): void;
+  // removeEditAndFollowingOnes(e: ISentence<IEditStage>): void;
+  removeEdits(pred: (e: ISentence<IEditStage>) => boolean): void;
+  removeEditsByStateIds(ids: StateId[]): void;
+  // removeFollowingEdits(e: ISentence<IEditStage>): void;
   resetEditor(s: string): void;
 }
 
 interface ISentence<S extends IEditStage> {
   array: ISentenceArray;
-  commandTag: Maybe<string>;
+  commandTag: Maybe<number>;
   previousEdit: Maybe<ISentence<any>>;
   query: string;
   sentenceId: number;
@@ -101,7 +106,8 @@ interface ISentence<S extends IEditStage> {
   containsPosition(p: AceAjax.Position): boolean;
   getColor(): string;
   getPreviousStateId(): Maybe<number>;
-  getProcessedStage(): Rx.IPromise<IProcessed>;
+  getBeingProcessed$(): Rx.Observable<IBeingProcessed>;
+  getProcessedStage(): Promise<IProcessed>;
   getStateId(): Maybe<number>;
   highlight(): void;
   setStage<T extends IEditStage>(stage: T): ISentence<T>;

@@ -1,4 +1,4 @@
-import { Processed } from "./edit";
+import * as Edit from "./edit";
 import { isBefore } from "./editor-utils";
 import { Strictly } from "../strictly";
 
@@ -12,9 +12,10 @@ onCompleted
 As a consequence, `processedStage` should contain an `IProcessed`.
 */
 export class Sentence<S extends IEditStage> implements ISentence<S> {
-  private processedStage: Promise<IProcessed>;
+  private beingProcessed$: Rx.Observable<IBeingProcessed>;
+  private processed$: Rx.Observable<IProcessed>;
 
-  commandTag: Maybe<string>;
+  commandTag: Maybe<number>;
   sentenceId: number;
   stage: S;
   stage$: Rx.Subject<S>;
@@ -29,14 +30,18 @@ export class Sentence<S extends IEditStage> implements ISentence<S> {
   ) {
     this.commandTag = nothing(); // filled when Add command is created
     this.sentenceId = freshSentenceId();
-    this.stage$ = new Rx.Subject<any>();
-    this.processedStage = <Promise<any>>this.stage$.toPromise();
+    // we use a replay subject so that the observables behave like promises
+    this.stage$ = new Rx.ReplaySubject<any>();
+    this.beingProcessed$ = this.stage$.filter<IBeingProcessed>(s => s instanceof Edit.BeingProcessed);
+    this.processed$ = this.stage$.filter<IProcessed>(s => s instanceof Edit.Processed);
     this.setStage(stage); // keep last
   }
 
   cleanup(): void {
     this.stage.marker.remove();
-    this.stage$.onCompleted();
+    if (!(this.stage instanceof Edit.Processed)) {
+      this.stage$.onCompleted();
+    } // otherwise, it should have already completed!
   }
 
   containsPosition(p: AceAjax.Position): boolean {
@@ -61,8 +66,13 @@ export class Sentence<S extends IEditStage> implements ISentence<S> {
     });
   }
 
+  getBeingProcessed$(): Rx.Observable<IBeingProcessed> {
+    console.log("get being processed");
+    return this.beingProcessed$;
+  }
+
   getProcessedStage(): Promise<IProcessed> {
-    return new Promise(onF => this.processedStage.then(v => onF(v)));
+    return this.processed$.toPromise();
   }
 
   getStateId(): Maybe<number> {
@@ -75,7 +85,7 @@ export class Sentence<S extends IEditStage> implements ISentence<S> {
     // no strong update, so circumventing the type system
     this.stage = <any>stage;
     this.stage$.onNext(this.stage);
-    if (this.stage instanceof Processed) { this.stage$.onCompleted(); }
+    if (this.stage instanceof Edit.Processed) { this.stage$.onCompleted(); }
     return <any>this;
   }
 

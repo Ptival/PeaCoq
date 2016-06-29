@@ -1,3 +1,4 @@
+import * as Exception from "./exception";
 import * as Tip from "../coq/tip";
 import * as SertopUtils from "./utils";
 
@@ -7,10 +8,9 @@ export class Completed implements Sertop.ICompleted { }
 
 export class CoqExn implements Sertop.ICoqExn {
   constructor(
-    public kind: string,
-    public name: string,
-    public message: string
+    public exn: IException
   ) { }
+  getMessage(): string { return this.exn.getMessage(); }
 }
 
 export class StmAdded implements Sertop.IStmAdded {
@@ -51,9 +51,8 @@ export function create(o): Sertop.IAnswerKind {
   switch (kind) {
 
     case "CoqExn":
-      // debugger;
-      const [[kind, [name, message]]] = args;
-      return new CoqExn(kind, name, message);
+      const [[kind, ...payload]] = args;
+      return new CoqExn(Exception.create(kind, payload));
 
     case "StmAdded": { // opening a scope prevents hoisted variable clashes
       const [stateId, coqLocation, tip] = args;

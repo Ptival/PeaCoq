@@ -9,13 +9,13 @@ export function setupCommunication(
   cmd$: Rx.Observable<Command.Command>
 ): CoqtopOutputStreams {
   // we issue a join every time the command stream becomes silent
-  const join$ = cmd$.debounce(1000).map(_ => new Command.Control(new ControlCommand.StmJoin()));
+  // const join$ = cmd$.debounce(1000).map(_ => new Command.Control(new ControlCommand.StmObserve()));
   const pingOutput$ =
     Rx.Observable.interval(250)
       .concatMap(sendPing)
       .concatMap(a => a)
       .share();
-  const cmdOutput$ = Rx.Observable.merge(cmd$, join$)
+  const cmdOutput$ = Rx.Observable.merge(cmd$) //, join$)
     .concatMap(sendCommand)
     .concatMap(a => a)
     .share();
@@ -30,8 +30,10 @@ export function setupCommunication(
     answer$s: {
       coqExn$: answer$.filter<Sertop.IAnswer<Sertop.ICoqExn>>(a => a.answer instanceof AnswerKind.CoqExn),
       stmAdded$: answer$.filter<Sertop.IAnswer<Sertop.IStmAdded>>(a => a.answer instanceof AnswerKind.StmAdded),
+      stmCanceled$: answer$.filter<Sertop.IAnswer<Sertop.IStmCanceled>>(a => a.answer instanceof AnswerKind.StmCanceled),
     },
     feedback$s: {
+      errorMsg$: feedback$.filter<IFeedback<IFeedbackContent.IErrorMsg>>(f => f.feedbackContent instanceof FeedbackContent.ErrorMsg),
       processed$: feedback$.filter(f => f.feedbackContent instanceof FeedbackContent.Processed),
     },
   };

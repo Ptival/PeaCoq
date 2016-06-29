@@ -65,7 +65,7 @@ $(document).ready(() => {
 
   const editor = ace.edit("editor");
 
-  const doc = new CoqDocument(editor);
+  const doc: ICoqDocument = new CoqDocument(editor);
 
   const textCursorChangeEvent$ = Rx.Observable
     .create(observer => {
@@ -77,41 +77,63 @@ $(document).ready(() => {
     .map(() => editor.selection.getCursor());
   if (DebugFlags.textCursorPosition) { subscribeAndLog(textCursorPosition$); }
 
-  /* nothing() if no edit to display, just(edit) if there is one */
-  const editToBeDisplayed$: Rx.Observable<Maybe<ISentence<IEditStage>>> =
+  const editToBeDisplayed$: Rx.Observable<ISentence<IEditStage>> =
     textCursorPosition$
-      .map(pos => {
+      .debounce(250)
+      .flatMap(pos => {
         // we want to display the last edit whose stopPos is before `pos`
-        const edit = _(doc.getAllEdits())
+        const edit = _(doc.getAllSentences())
           .findLast(s => isBefore(Strictly.No, s.stopPosition, pos));
-        return edit ? just(edit) : nothing();
+        return edit ? [edit] : [];
       })
       .distinctUntilChanged();
   if (DebugFlags.editToBeDisplayed) { subscribeAndLog(editToBeDisplayed$); }
 
-  editToBeDisplayed$
-    .flatMapLatest(edit => edit.caseOf({
-      nothing: () => Promise.resolve(emptyContext),
-      just: e => e.getProcessedStage().then(s => s.getContext()),
-    }))
-    .subscribe(context => doc.contextPanel.display(context));
+  const stmObserve$ = editToBeDisplayed$
+    .flatMap(s => s.getBeingProcessed$())
+    .map(bp => new Command.Control(new ControlCommand.StmObserve(bp.stateId)));
 
-  const editAtBecauseEditorChange: Rx.Observable<ICoqtopInput> =
+  stmObserve$.subscribe(cmd => console.log(cmd));
+
+  // editToBeDisplayed$
+  //   .map(mSentence => mSentence.fmap(s => s.getProcessedStage()))
+  //   .flatMapLatest(mStage => mStage.caseOf({
+  //     nothing: () => Promise.resolve(emptyContext),
+  //     just: p => p.then(s => s.getContext()),
+  //   }))
+  //   .catch(Rx.Observable.empty<PeaCoqContext>())
+  //   .subscribe(context => doc.contextPanel.display(context));
+
+  doc.editorChange$.subscribe(change => console.log("change", change));
+
+  const cancelBecauseEditorChange$: Rx.Observable<Command.Control> =
     doc.editorChange$
-      .flatMap(change => {
-        const maybeEdit = doc.getEditAtPosition(minPos(change.start, change.end));
-        // debugger;
-        return (
-          maybeEdit
-            .bind(e => e.getPreviousStateId())
-            .fmap(s => new CoqtopInput.EditAt(s))
-            .caseOf({
-              nothing: () => [],
-              just: i => [i],
-            })
-        );
-      })
+      .flatMap(change =>
+        doc.getSentenceAtPosition(minPos(change.start, change.end))
+          .bind(s => s.getStateId())
+          .caseOf({
+            nothing: () => [],
+            just: sid => [new Command.Control(new ControlCommand.StmCancel([sid]))],
+          })
+      )
       .share();
+
+  // const editAtBecauseEditorChange: Rx.Observable<Command.Control> =
+  //   doc.editorChange$
+  //     .flatMap(change => {
+  //       const maybeEdit = doc.getSentenceAtPosition(minPos(change.start, change.end));
+  //       // debugger;
+  //       return (
+  //         maybeEdit
+  //           .bind(e => e.getPreviousStateId())
+  //           .fmap(s => new Command.Control(new ControlCommand.StmEditAt(s)))
+  //           .caseOf({
+  //             nothing: () => [],
+  //             just: i => [i],
+  //           })
+  //       );
+  //     })
+  //     .share();
 
   setupEditor(editor);
   editor.focus();
@@ -200,7 +222,7 @@ $(document).ready(() => {
   const [forwardGoTo$, backwardGoTo$] = userActionStreams.goTo$
     // filter out when position is already reached
     .flatMap<GoToPositions>(() => {
-      const lastEditStopPos = doc.getLastEditStop();
+      const lastEditStopPos = doc.getLastSentenceStop();
       const destinationPos = doc.editor.getCursorPosition();
       return (
         _.isEqual(lastEditStopPos, destinationPos)
@@ -213,7 +235,7 @@ $(document).ready(() => {
 
   const editAtFromBackwardGoTo$ = backwardGoTo$
     .flatMap(o => {
-      const maybeEdit = doc.getEditAtPosition(o.destinationPos);
+      const maybeEdit = doc.getSentenceAtPosition(o.destinationPos);
       return (
         maybeEdit
           .bind(e => e.getPreviousStateId())
@@ -237,15 +259,15 @@ $(document).ready(() => {
 
   const sentencesToProcessStream = doc.nextSentence(nextSubject.asObservable());
 
-  const previousEditToReach$: Rx.Observable<ISentence<IProcessed>> =
-    userActionStreams.prev$
-      .flatMap(() => listFromMaybe(doc.getLastEdit()))
-      .flatMap(e => listFromMaybe(e.previousEdit))
-      .filter(e => e.stage instanceof Edit.Processed);
+  // const previousEditToReach$: Rx.Observable<ISentence<IProcessed>> =
+  //   userActionStreams.prev$
+  //     .flatMap(() => listFromMaybe(doc.getLastSentence()))
+  //     .flatMap(e => listFromMaybe(e.previousEdit))
+  //     .filter(e => e.stage instanceof Edit.Processed);
 
-  const editAtBecausePrev$ =
-    previousEditToReach$
-      .map(e => new CoqtopInput.EditAt(e.stage.stateId));
+  // const editAtBecausePrev$ =
+  //   previousEditToReach$
+  //     .map(e => new CoqtopInput.EditAt(e.stage.stateId));
 
   /*
   Will have just(pos) when we are trying to reach some position, and
@@ -275,8 +297,11 @@ $(document).ready(() => {
   //     .interval(250)
   //     .map(() => new Command.Control(new ControlCommand.StmJoin()));
 
+  // Here are subjects for observables that react to coqtop output
+  const cancelBecauseErrorMsg$ = new Rx.Subject<Command.Command>();
+
   const coqtopOutput$s = Sertop.setupCommunication(
-    Rx.Observable.merge([
+    Rx.Observable.merge<Command.Control>([
       // inputStatus$,
       // reset Coqtop when a file is loaded
       userActionStreams.loadedFile$
@@ -287,16 +312,19 @@ $(document).ready(() => {
           // new CoqtopInput.AddPrime("Require Import PeaCoq.PeaCoq."),
         ]),
       addsToProcessStream,
+      cancelBecauseEditorChange$,
       // editAtBecauseEditorChange,
       // editAtFromBackwardGoTo$,
       // queries$,
       // editAtBecausePrev$,
+      stmObserve$,
+      cancelBecauseErrorMsg$,
     ])
   );
 
   coqtopOutput$s.answer$s.stmAdded$.subscribe(a => {
-    const allEdits = doc.getAllEdits();
-    const edit = _(allEdits).find(e => isJust(e.commandTag) && fromJust(e.commandTag) === a.cmdTag);
+    const allEdits = doc.getAllSentences();
+    const edit = _(allEdits).find(e => isJust(e.commandTag) && fromJust(e.commandTag) === +a.cmdTag);
     if (!edit) { debugger; }
     const newStage = new Edit.BeingProcessed(edit.stage, a.answer.stateId);
     edit.setStage(newStage);
@@ -317,7 +345,7 @@ $(document).ready(() => {
       switch (f.editOrState) {
         case EditOrState.State:
           const stateId = f.editOrStateId;
-          const editsBeingProcessed = doc.getEditsBeingProcessed();
+          const editsBeingProcessed = doc.getSentencesBeingProcessed();
           const edit = _(editsBeingProcessed).find(e => e.stage.stateId === stateId);
           if (edit) {
             const newStage = new Edit.Processed(edit.stage, queriesObserver);
@@ -328,6 +356,11 @@ $(document).ready(() => {
             // ) {
             //   Global.coqDocument.moveCursorToPositionAndCenter(edit.stopPosition);
             // }
+          } else {
+            // this can happen for two reasons:
+            // - when reloading
+            // - when some sentence fails, we sometimes get processed messages for later sentences
+            // debugger;
           }
           break;
         default:
@@ -335,17 +368,40 @@ $(document).ready(() => {
       }
     });
 
-  coqtopOutput$s.answer$s.coqExn$.subscribe(exn => {
-    const allEdits = doc.getAllEdits();
-    const edit = _(allEdits).find(e => isJust(e.commandTag) && fromJust(e.commandTag) === exn.cmdTag);
-    if (!edit) { debugger; }
-    doc.removeEditAndFollowingOnes(edit);
+  coqtopOutput$s.answer$s.stmCanceled$.subscribe(a => {
+    doc.removeEditsByStateIds(a.answer.stateIds);
+  });
+
+  // NOTE: CoqExn is pretty useless in indicating which command failed
+  // Feedback.ErrorMsg gives the failed state ID
+  coqtopOutput$s.feedback$s.errorMsg$.subscribe(e => {
+    switch (e.editOrState) {
+      case EditOrState.State:
+        const cancel = new Command.Control(new ControlCommand.StmCancel([e.editOrStateId]));
+        cancelBecauseErrorMsg$.onNext(cancel);
+        break;
+      default: debugger;
+    }
+  });
+
+  coqtopOutput$s.feedback$s.errorMsg$.subscribe(e => {
+    switch (e.editOrState) {
+      case EditOrState.State:
+        const failedStateId = e.editOrStateId;
+        const failedSentence = doc.getSentenceAtStateId(failedStateId);
+        failedSentence.caseOf({
+          nothing: () => { debugger; },
+          just: s => doc.removeEdits(e => e.sentenceId >= s.sentenceId),
+        });
+        break;
+      default: debugger;
+    }
   });
 
   new CoqtopPanel(
     $(w2ui[rightLayoutName].get("bottom").content),
     coqtopOutput$s.answer$s.coqExn$.map(e => ({
-      message: e.answer.message,
+      message: e.answer.getMessage(),
       level: PeaCoqMessageLevel.Danger,
     }))
   );

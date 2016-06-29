@@ -7,7 +7,7 @@ export function setupUserInteractionForwardGoto(
   doc: ICoqDocument,
   forwardGoto$: Rx.Observable<AceAjax.Position>,
   editCreated$: Rx.Observable<ISentence<IEditStage>>,
-  errorMsg$: Rx.Observable<IFeedback<FeedbackContent.IErrorMsg>>
+  errorMsg$: Rx.Observable<IFeedback<IFeedbackContent.IErrorMsg>>
 ): Rx.Observable<{}> {
 
   return forwardGoto$.flatMap(dest => {

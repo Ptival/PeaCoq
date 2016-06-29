@@ -10,10 +10,10 @@ export function setupProgressBar(doc: ICoqDocument): void {
   // TODO: progress bar should update when command ID is assigned
   Rx.Observable.merge(
     Theme.afterChange$,
-    doc.edits.editCreated$,
-    doc.edits.editChangedStage$,
-    doc.edits.editRemoved$
-  ).subscribe(() => updateProgressBar(doc));
+    doc.sentencesChanged$
+  )
+  .debounce(250)
+  .subscribe(() => updateProgressBar(doc));
   let barClick$: Rx.Observable<Event> =
     Rx.Observable.fromEvent<Event>(document, "click")
       .filter(e => $(e.target).hasClass(barItemClass));
@@ -47,7 +47,8 @@ export function setupProgressBar(doc: ICoqDocument): void {
 }
 
 function updateProgressBar(doc: ICoqDocument): void {
-  let allEdits = doc.getAllEdits();
+  console.log("PROGRESS");
+  let allEdits = doc.getAllSentences();
   let selection =
     d3.select(`#${progressBarId}`)
       .selectAll("div")
