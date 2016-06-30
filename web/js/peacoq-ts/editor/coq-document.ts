@@ -162,15 +162,19 @@ export class CoqDocument implements ICoqDocument {
   //   );
   // }
 
-  markError(range: AceAjax.Range): void {
+  markError(
+    range: AceAjax.Range,
+    clear$: Rx.Observable<{}>
+  ): void {
     const markerId = this.session.addMarker(range, errorUnderlineClass, "text", false);
     this.moveCursorToPositionAndCenter(range.start);
-    const markerChangedStream = this.editorChange$
-      .filter((e) => range.containsRange(AceAjax.Range.fromPoints(e.start, e.end)))
+    const markerChanged$ = this.editorChange$
+      .filter(e => range.contains(e.start.row, e.start.column) || range.contains(e.end.row, e.end.column))
       .take(1);
-    markerChangedStream.subscribe(() => {
-      this.session.removeMarker(markerId);
-    });
+    Rx.Observable.merge(
+      markerChanged$,
+      clear$
+    ).subscribe(() => this.session.removeMarker(markerId));
   }
 
   nextSentence(next$: Rx.Observable<{}>): Rx.Observable<ISentence<IToProcess>> {

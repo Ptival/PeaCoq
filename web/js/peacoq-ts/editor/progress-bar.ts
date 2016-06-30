@@ -47,7 +47,6 @@ export function setupProgressBar(doc: ICoqDocument): void {
 }
 
 function updateProgressBar(doc: ICoqDocument): void {
-  console.log("PROGRESS");
   let allEdits = doc.getAllSentences();
   let selection =
     d3.select(`#${progressBarId}`)

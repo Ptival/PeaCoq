@@ -67,7 +67,6 @@ export class Sentence<S extends IEditStage> implements ISentence<S> {
   }
 
   getBeingProcessed$(): Rx.Observable<IBeingProcessed> {
-    console.log("get being processed");
     return this.beingProcessed$;
   }
 

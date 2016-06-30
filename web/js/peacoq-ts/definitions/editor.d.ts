@@ -79,7 +79,7 @@ interface ICoqDocument {
   getProcessedSentences(): ISentence<IProcessed>[];
   // getLastSentence(): Maybe<ISentence<IEditStage>>;
   getLastSentenceStop(): AceAjax.Position;
-  markError(range: AceAjax.Range): void;
+  markError(range: AceAjax.Range, clear$: Rx.Observable<{}>): void;
   moveCursorToPositionAndCenter(pos: AceAjax.Position): void;
   movePositionRight(pos: AceAjax.Position, n: number): AceAjax.Position;
   nextSentence(next$: Rx.Observable<{}>): Rx.Observable<ISentence<IToProcess>>;

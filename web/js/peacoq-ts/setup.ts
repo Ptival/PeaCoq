@@ -41,6 +41,8 @@ import { PeaCoqGoal } from "./peacoq-goal";
 import { Strictly } from "./strictly";
 import * as Theme from "./theme";
 
+import * as UnderlineError from "./editor/underline-errors";
+
 let fontSize = 16; // pixels
 const resizeBufferingTime = 250; // milliseconds
 
@@ -93,8 +95,6 @@ $(document).ready(() => {
     .flatMap(s => s.getBeingProcessed$())
     .map(bp => new Command.Control(new ControlCommand.StmObserve(bp.stateId)));
 
-  stmObserve$.subscribe(cmd => console.log(cmd));
-
   // editToBeDisplayed$
   //   .map(mSentence => mSentence.fmap(s => s.getProcessedStage()))
   //   .flatMapLatest(mStage => mStage.caseOf({
@@ -103,8 +103,6 @@ $(document).ready(() => {
   //   }))
   //   .catch(Rx.Observable.empty<PeaCoqContext>())
   //   .subscribe(context => doc.contextPanel.display(context));
-
-  doc.editorChange$.subscribe(change => console.log("change", change));
 
   const cancelBecauseEditorChange$: Rx.Observable<Command.Control> =
     doc.editorChange$
@@ -384,6 +382,13 @@ $(document).ready(() => {
     }
   });
 
+  // keep this above the subscription that removes edits
+  UnderlineError.setup(
+    doc,
+    coqtopOutput$s.feedback$s.errorMsg$,
+    Rx.Observable.empty()
+  );
+
   coqtopOutput$s.feedback$s.errorMsg$.subscribe(e => {
     switch (e.editOrState) {
       case EditOrState.State:
@@ -400,11 +405,14 @@ $(document).ready(() => {
 
   new CoqtopPanel(
     $(w2ui[rightLayoutName].get("bottom").content),
-    coqtopOutput$s.answer$s.coqExn$.map(e => ({
-      message: e.answer.getMessage(),
-      level: PeaCoqMessageLevel.Danger,
-    }))
+    Rx.Observable.merge(
+      coqtopOutput$s.feedback$s.errorMsg$.map(e => ({
+        message: e.feedbackContent.message,
+        level: PeaCoqMessageLevel.Danger,
+      }))
+    )
   );
+
 
   // const editorError$: Rx.Observable<IEditorError> =
   //   coqtopOutput$s.valueFail$

@@ -44,6 +44,7 @@ interface IFeedbackContent { }
 declare namespace IFeedbackContent {
   interface IAddedAxiom extends IFeedbackContent { }
   interface IErrorMsg extends IFeedbackContent {
+    location: CoqLocation;
     message: string;
   }
   interface IFileDependency extends IFeedbackContent { }
