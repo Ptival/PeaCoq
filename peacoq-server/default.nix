@@ -7,7 +7,13 @@ let peacoq-server =
 in
 nixpkgs.lib.overrideDerivation peacoqtop (old:
   { buildInputs = old.buildInputs ++ (with nixpkgs; [
+      haskellPackages.zlib
+      zlib
       # doesn't need anything?
+    ]);
+    nativeBuildInputs = old.nativeBuildInputs ++ (with nixpkgs; [
+      haskellPackages.zlib
+      zlib
     ]);
     shellHook = '' export NIXSHELL="$NIXSHELL\[peacoq-server\]" '';
   }

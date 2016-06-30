@@ -11,11 +11,11 @@ function log {
   echo -e "\n\nPEACOQ: $1\n\n"
 }
 
-cabal --version >/dev/null 2>&1 || missing "cabal-install"
+#cabal --version >/dev/null 2>&1 || missing "cabal-install"
 #camlp5 -v       >/dev/null 2>&1 || missing "camlp5"
 #coqc -v         >/dev/null 2>&1 || missing "coq"
 #if [[ `coqtop -v` != *"version 8.5"* ]]; then missing "coqtop version 8.5"; fi
-ghc --version   >/dev/null 2>&1 || missing "ghc"
+#ghc --version   >/dev/null 2>&1 || missing "ghc"
 #ocamlc -v       >/dev/null 2>&1 || missing "ocaml"
 
 if [ -n "${NIX_LDFLAGS+x}" ] && [ -n "${NIX_CFLAGS_COMPILE+x}" ]; then
