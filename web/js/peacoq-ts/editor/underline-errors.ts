@@ -6,7 +6,6 @@ export function setup(
   errorMsg$.subscribe(e => {
     switch (e.editOrState) {
       case EditOrState.State:
-        debugger;
         const failedEdit = doc.getSentenceAtStateId(e.editOrStateId);
         failedEdit.caseOf({
           nothing: () => { return; },
