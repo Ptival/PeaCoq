@@ -298,27 +298,32 @@ $(document).ready(() => {
   // Here are subjects for observables that react to coqtop output
   const cancelBecauseErrorMsg$ = new Rx.Subject<Command.Command>();
 
-  const coqtopOutput$s = Sertop.setupCommunication(
-    Rx.Observable.merge<Command.Control>([
-      // inputStatus$,
-      // reset Coqtop when a file is loaded
-      userActionStreams.loadedFile$
-        .startWith({}) // also do it on loading the page
-        .flatMap(() => [
-          new Command.Control(new ControlCommand.Quit()),
-          // new Command.Control(new ControlCommand.StmEditAt(1)),
-          // new CoqtopInput.AddPrime("Require Import PeaCoq.PeaCoq."),
-        ]),
-      addsToProcessStream,
-      cancelBecauseEditorChange$,
-      // editAtBecauseEditorChange,
-      // editAtFromBackwardGoTo$,
-      // queries$,
-      // editAtBecausePrev$,
-      stmObserve$,
-      cancelBecauseErrorMsg$,
+  const quitBecauseFileLoaded$ = userActionStreams.loadedFile$
+    .startWith({}) // also do it on loading the page
+    .flatMap(() => [
+      new Command.Control(new ControlCommand.Quit()),
+      // new Command.Control(new ControlCommand.StmEditAt(1)),
+      // new CoqtopInput.AddPrime("Require Import PeaCoq.PeaCoq."),
     ])
-  );
+    .share();
+
+  const inputsThatChangeErrorState$ = Rx.Observable.merge([
+    quitBecauseFileLoaded$,
+    addsToProcessStream,
+    cancelBecauseEditorChange$,
+    // editAtBecauseEditorChange,
+    // editAtFromBackwardGoTo$,
+    // queries$,
+    // editAtBecausePrev$,
+  ]);
+
+  const coqtopInputs$ = Rx.Observable.merge([
+    inputsThatChangeErrorState$,
+    cancelBecauseErrorMsg$,
+    stmObserve$,
+  ]);
+
+  const coqtopOutput$s = Sertop.setupCommunication(coqtopInputs$);
 
   coqtopOutput$s.answer$s.stmAdded$.subscribe(a => {
     const allEdits = doc.getAllSentences();
@@ -386,9 +391,12 @@ $(document).ready(() => {
   UnderlineError.setup(
     doc,
     coqtopOutput$s.feedback$s.message$s.error$,
-    Rx.Observable.empty()
+    Rx.Observable.merge([
+      inputsThatChangeErrorState$
+    ])
   );
 
+  // keep this under subscribers who need the edit to exist
   coqtopOutput$s.feedback$s.message$s.error$.subscribe(e => {
     switch (e.editOrState) {
       case EditOrState.State:
