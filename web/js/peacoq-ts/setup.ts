@@ -372,7 +372,7 @@ $(document).ready(() => {
 
   // NOTE: CoqExn is pretty useless in indicating which command failed
   // Feedback.ErrorMsg gives the failed state ID
-  coqtopOutput$s.feedback$s.errorMsg$.subscribe(e => {
+  coqtopOutput$s.feedback$s.message$s.error$.subscribe(e => {
     switch (e.editOrState) {
       case EditOrState.State:
         const cancel = new Command.Control(new ControlCommand.StmCancel([e.editOrStateId]));
@@ -385,11 +385,11 @@ $(document).ready(() => {
   // keep this above the subscription that removes edits
   UnderlineError.setup(
     doc,
-    coqtopOutput$s.feedback$s.errorMsg$,
+    coqtopOutput$s.feedback$s.message$s.error$,
     Rx.Observable.empty()
   );
 
-  coqtopOutput$s.feedback$s.errorMsg$.subscribe(e => {
+  coqtopOutput$s.feedback$s.message$s.error$.subscribe(e => {
     switch (e.editOrState) {
       case EditOrState.State:
         const failedStateId = e.editOrStateId;
@@ -406,7 +406,7 @@ $(document).ready(() => {
   new CoqtopPanel(
     $(w2ui[rightLayoutName].get("bottom").content),
     Rx.Observable.merge(
-      coqtopOutput$s.feedback$s.errorMsg$.map(e => ({
+      coqtopOutput$s.feedback$s.message$s.error$.map(e => ({
         message: e.feedbackContent.message,
         level: PeaCoqMessageLevel.Danger,
       }))

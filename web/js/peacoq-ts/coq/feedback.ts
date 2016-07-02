@@ -16,16 +16,16 @@ export class Feedback implements IFeedback<IFeedbackContent> {
   }
 }
 
-export function fromCoqtop(f) {
-  const [{ tag: es, contents: esid }, fc, rid] = f;
-  let editOrState;
-  switch (es) {
-    case "edit": editOrState = EditOrState.Edit; break;
-    case "state": editOrState = EditOrState.State; break;
-    default: throw "coqtopMkFeedback: neither edit nor state";
-  }
-  return new Feedback(editOrState, esid, FeedbackContent.fromCoqtop(fc), rid);
-}
+// export function fromCoqtop(f) {
+//   const [{ tag: es, contents: esid }, fc, rid] = f;
+//   let editOrState;
+//   switch (es) {
+//     case "edit": editOrState = EditOrState.Edit; break;
+//     case "state": editOrState = EditOrState.State; break;
+//     default: throw "coqtopMkFeedback: neither edit nor state";
+//   }
+//   return new Feedback(editOrState, esid, FeedbackContent.fromCoqtop(fc), rid);
+// }
 
 export function fromSertop(f) {
   const [, [[, [es, esid]], [, fc], [, rid]]] = f;

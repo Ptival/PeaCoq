@@ -4,6 +4,7 @@ import * as Command from "./sertop/command";
 import * as ControlCommand from "./sertop/control-command";
 import * as Feedback from "./coq/feedback";
 import * as FeedbackContent from "./coq/feedback-content";
+import * as MessageLevel from "./coq/message-level";
 
 export function setupCommunication(
   cmd$: Rx.Observable<Command.Command>
@@ -33,7 +34,11 @@ export function setupCommunication(
       stmCanceled$: answer$.filter<Sertop.IAnswer<Sertop.IStmCanceled>>(a => a.answer instanceof AnswerKind.StmCanceled),
     },
     feedback$s: {
-      errorMsg$: feedback$.filter<IFeedback<IFeedbackContent.IErrorMsg>>(f => f.feedbackContent instanceof FeedbackContent.ErrorMsg),
+      message$s: {
+        error$: feedback$
+          .filter<MessageFeedback<IMessageLevel>>(f => f.feedbackContent instanceof FeedbackContent.Message)
+          .filter<ErrorMessageFeedback>(f => f.feedbackContent.level instanceof MessageLevel.Error),
+      },
       processed$: feedback$.filter(f => f.feedbackContent instanceof FeedbackContent.Processed),
     },
   };

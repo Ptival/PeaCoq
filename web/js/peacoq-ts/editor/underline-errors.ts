@@ -1,25 +1,24 @@
 export function setup(
   doc: ICoqDocument,
-  errorMsg$: Rx.Observable<IFeedback<IFeedbackContent.IErrorMsg>>,
+  errorMsg$: Rx.Observable<ErrorMessageFeedback>,
   clear$: Rx.Observable<{}>
 ): void {
   errorMsg$.subscribe(e => {
     switch (e.editOrState) {
       case EditOrState.State:
         const failedEdit = doc.getSentenceAtStateId(e.editOrStateId);
-        failedEdit.caseOf({
-          nothing: () => { return; },
-          just: failedEdit => {
-            const errorStartIndex = e.feedbackContent.location.bp;
-            const errorStopIndex = e.feedbackContent.location.ep;
+        failedEdit.fmap(failedEdit => {
+          e.feedbackContent.location.fmap(location => {
+            const errorStartIndex = location.bp;
+            const errorStopIndex = location.ep;
             // to compute the document location, we must map the location (nb of characters)
             // to the on-screen position (by virtually moving the cursor right)
             const errorStart = doc.movePositionRight(failedEdit.startPosition, errorStartIndex);
             const errorStop = doc.movePositionRight(failedEdit.startPosition, errorStopIndex);
             const range = new AceAjax.Range(errorStart.row, errorStart.column, errorStop.row, errorStop.column);
             doc.markError(range, clear$);
-          }
-        })
+          });
+        });
         break;
       default: debugger;
     }

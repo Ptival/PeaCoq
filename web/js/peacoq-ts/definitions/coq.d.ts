@@ -43,17 +43,30 @@ interface IFeedbackContent { }
 
 declare namespace IFeedbackContent {
   interface IAddedAxiom extends IFeedbackContent { }
-  interface IErrorMsg extends IFeedbackContent {
-    location: CoqLocation;
-    message: string;
-  }
   interface IFileDependency extends IFeedbackContent { }
   interface IFileLoaded extends IFeedbackContent { }
-  interface IMessage extends IFeedbackContent { }
+  interface IMessage<L extends IMessageLevel> extends IFeedbackContent {
+    level: L;
+    location: Maybe<CoqLocation>;
+    message: string;
+  }
   interface IProcessed extends IFeedbackContent { }
   interface IProcessingIn extends IFeedbackContent { }
   interface IWorkerStatus extends IFeedbackContent { }
 }
+
+interface IMessageLevel { }
+
+declare namespace IMessageLevel {
+  interface IDebug extends IMessageLevel { }
+  interface IError extends IMessageLevel { }
+  interface IInfo extends IMessageLevel { }
+  interface INotice extends IMessageLevel { }
+  interface IWarning extends IMessageLevel { }
+}
+
+type MessageFeedback<L> = IFeedback<IFeedbackContent.IMessage<L>>;
+type ErrorMessageFeedback = MessageFeedback<IMessageLevel.IError>;
 
 interface IGlobSortGen<T> { }
 

@@ -34,8 +34,10 @@ interface CoqtopOutputStreams {
     stmCanceled$: Rx.Observable<Sertop.IAnswer<Sertop.IStmCanceled>>;
   }
   feedback$s: {
+    message$s: {
+      error$: Rx.Observable<ErrorMessageFeedback>;
+    },
   //   addedAxiom$: Rx.Observable<IFeedback<FeedbackContent.IAddedAxiom>>;
-    errorMsg$: Rx.Observable<IFeedback<IFeedbackContent.IErrorMsg>>;
   //   fileDependency$: Rx.Observable<IFeedback<FeedbackContent.IFileDependency>>;
   //   fileLoaded$: Rx.Observable<IFeedback<FeedbackContent.IFileLoaded>>;
     processed$: Rx.Observable<IFeedback<IFeedbackContent.IProcessed>>;

@@ -1,41 +1,22 @@
 import * as Global from "./../global-variables";
 
-export class Debug implements IMessageLevel  {
-  constructor(
-    public debug: string
-  ) { }
-  toString() { return "Debug(" + this.debug + ")"; }
-}
+export class Debug implements IMessageLevel.IDebug { }
 
-export class Error implements IMessageLevel {
-  toString() { return "Error"; }
-}
+export class Error implements IMessageLevel.IError { }
 
-export class Info implements IMessageLevel {
-  toString() { return "Info"; }
-}
+export class Info implements IMessageLevel.IInfo { }
 
-export class Notice implements IMessageLevel {
-  toString() { return "Notice"; }
-}
+export class Notice implements IMessageLevel.INotice { }
 
-export class Warning implements IMessageLevel {
-  toString() { return "Warning"; }
-}
+export class Warning implements IMessageLevel.IWarning { }
 
-export function mkMessageLevel(m): IMessageLevel {
-  switch (m.tag) {
-    case "Debug":
-      return new Debug(m.contents);
-    case "Error":
-      return new Error();
-    case "Info":
-      return new Info();
-    case "Notice":
-      return new Notice();
-    case "Warning":
-      return new Warning();
-    default:
-      throw `Unknown message level: ${m.tag}`;
+export function create(s: string): IMessageLevel {
+  switch (s) {
+    case "Debug": return new Debug();
+    case "Error": return new Error();
+    case "Info": return new Info();
+    case "Notice": return new Notice();
+    case "Warning": return new Warning();
+    default: debugger;
   };
 }
