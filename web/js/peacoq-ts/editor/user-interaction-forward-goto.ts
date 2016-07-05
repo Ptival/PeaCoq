@@ -6,12 +6,11 @@ import { Strictly } from "../strictly";
 export function setupUserInteractionForwardGoto(
   doc: ICoqDocument,
   forwardGoto$: Rx.Observable<AceAjax.Position>,
-  editCreated$: Rx.Observable<ISentence<IEditStage>>,
   errorMsg$: Rx.Observable<ErrorMessageFeedback>
 ): Rx.Observable<{}> {
 
   return forwardGoto$.flatMap(dest => {
-    return editCreated$
+    return doc.edits.editCreated$
       // stop if the edit created ends after the destination position
       .takeWhile(e => isBefore(Strictly.Yes, e.stopPosition, dest))
       // stop if there's no text between the last edit and the destination

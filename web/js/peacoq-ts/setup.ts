@@ -257,17 +257,26 @@ $(document).ready(() => {
 
   const sentencesToProcessStream = doc.nextSentence(nextSubject.asObservable());
 
-  const cancelBecausePrev$: Rx.Observable<Command.Command> =
+  const sentenceToCancelBecausePrev$: Rx.Observable<ISentence<IEditStage>> =
     userActionStreams.prev$
       .flatMap(({}) => {
         if (doc.getSentencesToProcess().length > 0) { return []; }
-        const lastSentence = _.maxBy(doc.getAllSentences(), s => s.sentenceId);
-        return lastSentence.getStateId().caseOf({
+        return [_.maxBy(doc.getAllSentences(), s => s.sentenceId)];
+      })
+      .share();
+
+  sentenceToCancelBecausePrev$.subscribe(s => {
+    doc.moveCursorToPositionAndCenter(s.startPosition);
+  });
+
+  const cancelBecausePrev$: Rx.Observable<Command.Command> =
+    sentenceToCancelBecausePrev$
+      .flatMap(s => {
+        return s.getStateId().caseOf({
           nothing: () => [],
           just: sid => [new Command.Control(new ControlCommand.StmCancel([sid]))],
         });
-      })
-      .share();
+      });
 
   /*
   Will have just(pos) when we are trying to reach some position, and
@@ -275,7 +284,6 @@ $(document).ready(() => {
   */
   const forwardGoToSubject = new Rx.Subject<Maybe<AceAjax.Position>>();
   forwardGoTo$.subscribe(o => forwardGoToSubject.onNext(just(o.destinationPos)));
-  forwardGoToSubject.subscribe(pos => console.log("GOTO", fromJust(pos)));
 
   sentencesToProcessStream.subscribe(e => doc.moveCursorToPositionAndCenter(e.stopPosition));
 
@@ -337,15 +345,15 @@ $(document).ready(() => {
     edit.setStage(newStage);
   });
 
-  // const nextBecauseGoTo$ = setupUserInteractionForwardGoto(
-  //   forwardGoTo$.map(goto => goto.destinationPos),
-  //   Global.coqDocument.edits.editCreated$,
-  //   coqtopOutput$s.feedback$s.errorMsg$
-  // );
+  const nextBecauseGoTo$ = setupUserInteractionForwardGoto(
+    doc,
+    forwardGoTo$.map(goto => goto.destinationPos),
+    coqtopOutput$s.feedback$s.message$s.error$
+  );
 
-  // nextBecauseGoTo$
-  //   .delay(0) // this is needed to set up the feedback loop properly
-  //   .subscribe(() => nextSubject.onNext({}));
+  nextBecauseGoTo$
+    .delay(0) // this is needed to set up the feedback loop properly
+    .subscribe(() => nextSubject.onNext({}));
 
   coqtopOutput$s.feedback$s.processed$
     .subscribe(f => {
