@@ -41,3 +41,13 @@ declare namespace Rx {
     filter<U>(predicate: (value: T, index: number, source: Observable<T>) => boolean, thisArg?: any): Observable<U>;
   }
 }
+
+declare module _ {
+  interface LoDashStatic {
+    maxBy<T>(
+      collection: List<T>,
+      iteratee?: ListIterator<T, number>,
+      thisArg?: any
+    ): T;
+  }
+}

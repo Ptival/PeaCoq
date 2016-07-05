@@ -257,15 +257,17 @@ $(document).ready(() => {
 
   const sentencesToProcessStream = doc.nextSentence(nextSubject.asObservable());
 
-  // const previousEditToReach$: Rx.Observable<ISentence<IProcessed>> =
-  //   userActionStreams.prev$
-  //     .flatMap(() => listFromMaybe(doc.getLastSentence()))
-  //     .flatMap(e => listFromMaybe(e.previousEdit))
-  //     .filter(e => e.stage instanceof Edit.Processed);
-
-  // const editAtBecausePrev$ =
-  //   previousEditToReach$
-  //     .map(e => new CoqtopInput.EditAt(e.stage.stateId));
+  const cancelBecausePrev$: Rx.Observable<Command.Command> =
+    userActionStreams.prev$
+      .flatMap(({}) => {
+        if (doc.getSentencesToProcess().length > 0) { return []; }
+        const lastSentence = _.maxBy(doc.getAllSentences(), s => s.sentenceId);
+        return lastSentence.getStateId().caseOf({
+          nothing: () => [],
+          just: sid => [new Command.Control(new ControlCommand.StmCancel([sid]))],
+        });
+      })
+      .share();
 
   /*
   Will have just(pos) when we are trying to reach some position, and
@@ -273,6 +275,7 @@ $(document).ready(() => {
   */
   const forwardGoToSubject = new Rx.Subject<Maybe<AceAjax.Position>>();
   forwardGoTo$.subscribe(o => forwardGoToSubject.onNext(just(o.destinationPos)));
+  forwardGoToSubject.subscribe(pos => console.log("GOTO", fromJust(pos)));
 
   sentencesToProcessStream.subscribe(e => doc.moveCursorToPositionAndCenter(e.stopPosition));
 
@@ -307,17 +310,18 @@ $(document).ready(() => {
     ])
     .share();
 
-  const inputsThatChangeErrorState$ = Rx.Observable.merge([
+  const inputsThatChangeErrorState$: Rx.Observable<Command.Command> = Rx.Observable.merge<Command.Command>([
     quitBecauseFileLoaded$,
     addsToProcessStream,
     cancelBecauseEditorChange$,
+    cancelBecausePrev$,
     // editAtBecauseEditorChange,
     // editAtFromBackwardGoTo$,
     // queries$,
     // editAtBecausePrev$,
   ]);
 
-  const coqtopInputs$ = Rx.Observable.merge([
+  const coqtopInputs$: Rx.Observable<Command.Command> = Rx.Observable.merge([
     inputsThatChangeErrorState$,
     cancelBecauseErrorMsg$,
     stmObserve$,
