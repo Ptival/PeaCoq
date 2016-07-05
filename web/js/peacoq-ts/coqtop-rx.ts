@@ -1,7 +1,6 @@
 import * as DebugFlags from "./debug-flags";
 import { Feedback } from "./coq/feedback";
 import * as FeedbackContent from "./coq/feedback-content";
-import { Message } from "./coq/message";
 import { ValueFail } from "./coq/value-fail";
 import * as CoqtopInput from "./coqtop-input";
 import { processSequentiallyForever } from "./rx";
