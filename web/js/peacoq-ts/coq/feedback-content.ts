@@ -26,7 +26,7 @@ export function fromSertop(o): IFeedbackContent {
       return new Message(
         MessageLevel.create(level),
         just(SertopUtils.coqLocationFromSexp(maybeLocation)),
-        message
+        collectPCData(message)
       );
     case "ProcessingIn":
       const [branch] = args;
@@ -85,6 +85,17 @@ export class WorkerStatus implements IFeedbackContent.IWorkerStatus {
   toString() {
     return `WorkerStatus(${this.id}, ${this.status})`;
   }
+}
+
+function collectPCData(o: any): string {
+  if (typeof o === "string") { return ""; }
+  if (
+    typeof o === "object" && o.length === 2
+    && typeof o[0] === "string" && o[0] === "PCData"
+  ) {
+    return o[1];
+  }
+  return _.reduce(o, (acc, elt) => `${acc}${collectPCData(elt)}`, "");
 }
 
 // Obsolete:
