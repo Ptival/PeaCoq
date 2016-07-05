@@ -22,7 +22,6 @@ export function fromSertop(o): IFeedbackContent {
       return new FileLoaded(qualifiedModuleName, path);
     case "Message":
       const [level, [maybeLocation], message] = args;
-      debugger;
       return new Message(
         MessageLevel.create(level),
         just(SertopUtils.coqLocationFromSexp(maybeLocation)),
