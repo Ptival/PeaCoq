@@ -24,8 +24,8 @@ export function setupToolbar(doc: ICoqDocument): ToolbarStreams {
   toolbar.add([
     { type: "button", id: "toolbar-resize", caption: "Resize", onClick: () => onResize(doc) },
     { type: "spacer", id: "toolbar-spacer" },
-    { type: "radio", id: "toolbar-bright", group: "1", caption: "Bright", checked: true, onClick: switchToBright },
-    { type: "radio", id: "toolbar-dark", group: "1", caption: "Dark", onClick: switchToDark },
+    { type: "radio", id: "toolbar-bright", group: "1", caption: "Bright", checked: true, onClick: () => switchToBright(doc) },
+    { type: "radio", id: "toolbar-dark", group: "1", caption: "Dark", onClick: () => switchToDark(doc) },
   ]);
 
   return {
