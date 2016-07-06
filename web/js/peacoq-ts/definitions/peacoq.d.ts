@@ -35,7 +35,11 @@ interface CoqtopOutputStreams {
   }
   feedback$s: {
     message$s: {
+      debug$: Rx.Observable<DebugMessageFeedback>;
       error$: Rx.Observable<ErrorMessageFeedback>;
+      info$: Rx.Observable<InfoMessageFeedback>;
+      notice$: Rx.Observable<NoticeMessageFeedback>;
+      warning$: Rx.Observable<WarningMessageFeedback>;
     },
   //   addedAxiom$: Rx.Observable<IFeedback<FeedbackContent.IAddedAxiom>>;
   //   fileDependency$: Rx.Observable<IFeedback<FeedbackContent.IFileDependency>>;

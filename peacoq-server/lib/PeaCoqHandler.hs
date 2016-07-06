@@ -48,13 +48,17 @@ modifyGlobalState f = do
 startSertop :: String -> IO Handles
 startSertop cmd = do
   liftIO . putStrLn $ "Starting sertop with command: " ++ cmd
+  --liftIO $ do
+  --  check <- testSertop cmd
+  --  case check of
+  --    Left err ->
+  --      putStrLn $ "\n\n\nSOMETHING LOOKGS WRONG WITH SERTOP: " ++ err ++ "\n\n\n"
+  --    Right () -> return ()
   liftIO $ do
-    check <- testSertop cmd
-    case check of
-      Left err ->
-        putStrLn $ "\n\n\nSOMETHING LOOKGS WRONG WITH SERTOP: " ++ err ++ "\n\n\n"
-      Right () -> return ()
-  liftIO $ runCommandWithoutBuffering cmd
+    handles@(hi, _, _, _) <- runCommandWithoutBuffering cmd
+    hWrite hi "(Control (LibAdd (\"PeaCoq\") \"../PeaCoq/peacoqtop/plugin\" True))"
+    hWrite hi "(Control (StmAdd () \"From PeaCoq Require Import PeaCoq.\"))"
+    return handles
 
 modifySessionState :: (SessionState -> (SessionState, a)) -> PeaCoqHandler a
 modifySessionState f = do

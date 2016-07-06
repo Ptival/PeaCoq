@@ -42,6 +42,13 @@ declare namespace Rx {
   }
 }
 
+// adding delay with selector
+declare namespace Rx {
+  export interface Observable<T> {
+    delay(subscriptionDelay: Observable<any>, delayDurationSelector: (t: T) => Rx.Observable<any>): Observable<T>;
+  }
+}
+
 declare module _ {
   interface LoDashStatic {
     maxBy<T>(

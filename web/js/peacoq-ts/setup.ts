@@ -311,12 +311,8 @@ $(document).ready(() => {
   const cancelBecauseErrorMsg$ = new Rx.Subject<Command.Command>();
 
   const quitBecauseFileLoaded$ = userActionStreams.loadedFile$
-    .startWith({}) // also do it on loading the page
-    .flatMap(() => [
-      new Command.Control(new ControlCommand.Quit()),
-      // new Command.Control(new ControlCommand.StmEditAt(1)),
-      // new CoqtopInput.AddPrime("Require Import PeaCoq.PeaCoq."),
-    ])
+    .startWith({})
+    .map(({}) => new Command.Control(new ControlCommand.Quit()))
     .share();
 
   const inputsThatChangeErrorState$: Rx.Observable<Command.Command> = Rx.Observable.merge<Command.Command>([
@@ -339,7 +335,14 @@ $(document).ready(() => {
   coqtopOutput$s.answer$s.stmAdded$.subscribe(a => {
     const allEdits = doc.getAllSentences();
     const edit = _(allEdits).find(e => isJust(e.commandTag) && fromJust(e.commandTag) === +a.cmdTag);
-    if (!edit) { debugger; }
+    if (!edit) {
+      // this is probably normal, as PeaCoq does fancy things before the UI
+      if (allEdits.length === 0) {
+        return;
+      }
+      // this is probably abnormal (edits are mentioned that the UI is unaware of)
+      debugger;
+    }
     const newStage = new Edit.BeingProcessed(edit.stage, a.answer.stateId);
     edit.setStage(newStage);
   });
@@ -428,6 +431,10 @@ $(document).ready(() => {
       coqtopOutput$s.feedback$s.message$s.error$.map(e => ({
         message: e.feedbackContent.message,
         level: PeaCoqMessageLevel.Danger,
+      })),
+      coqtopOutput$s.feedback$s.message$s.notice$.map(e => ({
+        message: e.feedbackContent.message,
+        level: PeaCoqMessageLevel.Success,
       }))
     )
   );

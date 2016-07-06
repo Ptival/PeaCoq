@@ -21,12 +21,12 @@ export function setupCommunication(
     .concatMap(a => a)
     .share();
   const output$ = Rx.Observable.merge(pingOutput$, cmdOutput$);
-  const answer$: Rx.Observable<Sertop.IAnswer<Sertop.IAnswerKind>> =
-    <Rx.Observable<any>>
-    output$.filter(a => a instanceof Answer.Answer);
-  const feedback$: Rx.Observable<IFeedback<IFeedbackContent>> =
-    <Rx.Observable<any>>
-    output$.filter(a => a instanceof Feedback.Feedback);
+  const answer$ =
+    output$.filter<Sertop.IAnswer<Sertop.IAnswerKind>>(a => a instanceof Answer.Answer);
+  const feedback$ =
+    output$.filter<IFeedback<IFeedbackContent>>(a => a instanceof Feedback.Feedback);
+  const messageFeedback$ =
+    feedback$.filter<MessageFeedback<IMessageLevel>>(a => a.feedbackContent instanceof FeedbackContent.Message);
   return {
     answer$s: {
       coqExn$: answer$.filter<Sertop.IAnswer<Sertop.ICoqExn>>(a => a.answer instanceof AnswerKind.CoqExn),
@@ -35,9 +35,11 @@ export function setupCommunication(
     },
     feedback$s: {
       message$s: {
-        error$: feedback$
-          .filter<MessageFeedback<IMessageLevel>>(f => f.feedbackContent instanceof FeedbackContent.Message)
-          .filter<ErrorMessageFeedback>(f => f.feedbackContent.level instanceof MessageLevel.Error),
+        debug$: messageFeedback$.filter<DebugMessageFeedback>(f => f.feedbackContent.level instanceof MessageLevel.Debug),
+        error$: messageFeedback$.filter<ErrorMessageFeedback>(f => f.feedbackContent.level instanceof MessageLevel.Error),
+        info$: messageFeedback$.filter<InfoMessageFeedback>(f => f.feedbackContent.level instanceof MessageLevel.Info),
+        notice$: messageFeedback$.filter<NoticeMessageFeedback>(f => f.feedbackContent.level instanceof MessageLevel.Notice),
+        warning$: messageFeedback$.filter<WarningMessageFeedback>(f => f.feedbackContent.level instanceof MessageLevel.Warning),
       },
       processed$: feedback$.filter(f => f.feedbackContent instanceof FeedbackContent.Processed),
     },
@@ -62,6 +64,7 @@ function sendPing(): Promise<Sertop.IAnswer<Sertop.IAnswerKind>[]> {
 }
 
 function sendCommand(cmd: Sertop.ICmd): Promise<Sertop.IAnswer<Sertop.IAnswerKind>[]> {
+  console.log(cmd);
   return wrapAjax({
     type: "POST",
     url: "coqtop",
