@@ -7,8 +7,24 @@ interface AddOptions {
   verb?: boolean;
 }
 
+function boolToSexp(b: boolean): string {
+  return b ? "True" : "False";
+}
+
 function optionalToSexp<T>(name, option: T | undefined, printer?: (t: T) => string): string {
   return option === undefined ? "" : `(${name} ${printer ? printer(option) : option})`;
+}
+
+export class LibAdd implements Sertop.IControlCommand {
+  constructor(
+    public qualifiedPath: string[],
+    public physicalPath: string,
+    public containsML: boolean
+  ) { }
+  toSexp() {
+    const qPath = `"${this.qualifiedPath.join(`" "`)}"`;
+    return `(LibAdd (${qPath}) "${this.physicalPath}" ${boolToSexp(this.containsML)})`;
+  }
 }
 
 export class StmAdd implements Sertop.IControlCommand {
