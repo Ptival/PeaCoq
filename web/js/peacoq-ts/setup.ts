@@ -34,7 +34,7 @@ import * as Command from "./sertop/command";
 import * as ControlCommand from "./sertop/control-command";
 
 import * as Coqtop from "./coqtop-rx";
-import * as CoqtopInput from "./coqtop-input";
+// import * as CoqtopInput from "./coqtop-input";
 import * as DebugFlags from "./debug-flags";
 import * as Global from "./global-variables";
 import { PeaCoqGoal } from "./peacoq-goal";
@@ -231,13 +231,14 @@ $(document).ready(() => {
     // partition on the direction of the goTo
     .partition(o => isBefore(Strictly.Yes, o.lastEditStopPos, o.destinationPos));
 
-  const editAtFromBackwardGoTo$ = backwardGoTo$
+  const cancelFromBackwardGoTo$ = backwardGoTo$
     .flatMap(o => {
-      const maybeEdit = doc.getSentenceAtPosition(o.destinationPos);
+      const maybeSentence = doc.getSentenceAtPosition(o.destinationPos);
       return (
-        maybeEdit
-          .bind(e => e.getPreviousStateId())
-          .fmap(s => new CoqtopInput.EditAt(s)).caseOf({
+        maybeSentence
+          .bind(e => e.getStateId())
+          .fmap(s => new Command.Control(new ControlCommand.StmCancel([s])))
+          .caseOf({
             nothing: () => [],
             just: i => [i],
           })
@@ -323,10 +324,8 @@ $(document).ready(() => {
     addsToProcessStream,
     cancelBecauseEditorChange$,
     cancelBecausePrev$,
-    // editAtBecauseEditorChange,
-    // editAtFromBackwardGoTo$,
+    cancelFromBackwardGoTo$,
     // queries$,
-    // editAtBecausePrev$,
   ]);
 
   const coqtopInputs$: Rx.Observable<Command.Command> = Rx.Observable.merge([

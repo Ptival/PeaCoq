@@ -1,4 +1,4 @@
-import * as CoqtopInput from "./../coqtop-input";
+// import * as CoqtopInput from "./../coqtop-input";
 import * as Global from "./../global-variables";
 import * as Edit from "./edit";
 // TODO: the thing causing this import should go elsewhere
@@ -272,27 +272,27 @@ There are two ways to go:
   response, unchanged, this might need a type case
 */
 
-export function processEditsReactive(
-  edit: Rx.Observable<ISentence<IToProcess>>
-): Rx.Observable<ICoqtopInput> {
-  return edit
-    // need `concatMap` here to guarantee the commands are processed in
-    // the correct order: add, goal, context, add, goal, context, add, ...
-    .map(e => {
-      let add = new CoqtopInput.AddPrime(e.query);
-      add["callback"] = (io: ICoqtopOutput<ICoqtopInput, any>) => {
-        const response = io.output.response;
-        if (response.tag === "ValueGood") {
-          const stateId = io.output.response.contents[0];
-          const newStage = new Edit.BeingProcessed(e.stage, stateId);
-          e.setStage(newStage);
-        } else if (response.tag === "ValueFail") {
-          // TODO?
-        } else {
-          debugger;
-        }
-      };
-      return add;
-    })
-    .share();
-}
+// export function processEditsReactive(
+//   edit: Rx.Observable<ISentence<IToProcess>>
+// ): Rx.Observable<ICoqtopInput> {
+//   return edit
+//     // need `concatMap` here to guarantee the commands are processed in
+//     // the correct order: add, goal, context, add, goal, context, add, ...
+//     .map(e => {
+//       let add = new CoqtopInput.AddPrime(e.query);
+//       add["callback"] = (io: ICoqtopOutput<ICoqtopInput, any>) => {
+//         const response = io.output.response;
+//         if (response.tag === "ValueGood") {
+//           const stateId = io.output.response.contents[0];
+//           const newStage = new Edit.BeingProcessed(e.stage, stateId);
+//           e.setStage(newStage);
+//         } else if (response.tag === "ValueFail") {
+//           // TODO?
+//         } else {
+//           debugger;
+//         }
+//       };
+//       return add;
+//     })
+//     .share();
+// }

@@ -1,4 +1,4 @@
-import * as CoqtopInput from "../coqtop-input";
+// import * as CoqtopInput from "../coqtop-input";
 import * as DebugFlags from "../debug-flags";
 import { EditMarker } from "./edit-marker";
 import * as Global from "../global-variables";
@@ -83,38 +83,39 @@ export class Processed implements IProcessed {
   getColor() { return Theme.theme.processed; }
 
   getContext(): Promise<PeaCoqContext> {
-    if (this.context === null) {
-      this.context = new Promise(onFulfilled => {
-        const query = new CoqtopInput.Query("PeaCoqGetContext.", this.stateId);
-        query["callback"] = (r: ICoqtopOutput<ICoqtopInput, any>) => {
-          const contents = r.output.response.contents;
-          if (DebugFlags.rawPeaCoqContext) { console.log(contents); }
-          if (contents.length === 0) {
-            onFulfilled(emptyContext);
-          } else {
-            // Escaping because JSON.parse sucks :(
-            const safeContents = contents
-              .replace(/\n/g, "\\n")
-              .replace(/\r/g, "\\r")
-              .replace(/\t/g, "\\t")
-              .replace(/\f/g, "\\f");
-            const c: IGoals<any> = JSON.parse(safeContents);
-            const processed: PeaCoqContext = Goals.apply(
-              c => {
-                const pp: any = walkJSON(c.ppgoal);
-                return {
-                  goal: new Goal.Goal(c.goal),
-                  ppgoal: new PeaCoqGoal(pp.hyps, pp.concl),
-                };
-              },
-              c
-            );
-            onFulfilled(processed);
-          }
-        }
-        this.inputObserver.onNext(query);
-      });
-    }
+    debugger;
+    // if (this.context === null) {
+    //   this.context = new Promise(onFulfilled => {
+    //     const query = new CoqtopInput.Query("PeaCoqGetContext.", this.stateId);
+    //     query["callback"] = (r: ICoqtopOutput<ICoqtopInput, any>) => {
+    //       const contents = r.output.response.contents;
+    //       if (DebugFlags.rawPeaCoqContext) { console.log(contents); }
+    //       if (contents.length === 0) {
+    //         onFulfilled(emptyContext);
+    //       } else {
+    //         // Escaping because JSON.parse sucks :(
+    //         const safeContents = contents
+    //           .replace(/\n/g, "\\n")
+    //           .replace(/\r/g, "\\r")
+    //           .replace(/\t/g, "\\t")
+    //           .replace(/\f/g, "\\f");
+    //         const c: IGoals<any> = JSON.parse(safeContents);
+    //         const processed: PeaCoqContext = Goals.apply(
+    //           c => {
+    //             const pp: any = walkJSON(c.ppgoal);
+    //             return {
+    //               goal: new Goal.Goal(c.goal),
+    //               ppgoal: new PeaCoqGoal(pp.hyps, pp.concl),
+    //             };
+    //           },
+    //           c
+    //         );
+    //         onFulfilled(processed);
+    //       }
+    //     }
+    //     this.inputObserver.onNext(query);
+    //   });
+    // }
     return this.context;
   }
 

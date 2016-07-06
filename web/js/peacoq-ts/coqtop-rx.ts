@@ -2,7 +2,7 @@ import * as DebugFlags from "./debug-flags";
 import { Feedback } from "./coq/feedback";
 import * as FeedbackContent from "./coq/feedback-content";
 import { ValueFail } from "./coq/value-fail";
-import * as CoqtopInput from "./coqtop-input";
+// import * as CoqtopInput from "./coqtop-input";
 import { processSequentiallyForever } from "./rx";
 
 let statusPeriod = 10000; // milliseconds
