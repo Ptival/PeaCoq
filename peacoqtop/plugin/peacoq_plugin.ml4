@@ -5,12 +5,13 @@ let contrib_name = "peacoq_plugin"
 
 DECLARE PLUGIN "peacoq_plugin"
 
+open Feedback
 open Peacoq_utils
 open Pp
 open Printer
 open Util
 
-let print s = Pp.msg (Pp.str s)
+let print s = Feedback.msg_notice (Pp.str s)
 
 (* don't want Pp.quote *)
 let quote = Peacoq_utils.quote
@@ -40,7 +41,18 @@ let print_named_declaration (ident, maybeValue, ttype) =
 
 let map_option f = function None -> None | Some(x) -> Some(f x)
 
-let string_of_named_declaration convert (name, maybeTerm, typ) =
+let string_of_named_declaration convert decl =
+  (*
+(* I don't know how to: *)
+let open Context.Named.Declaration in
+(* in .ml4 files... *)
+   *)
+  let (name, maybeTerm, typ) = (
+    Context.Named.Declaration.get_id decl,
+    Context.Named.Declaration.get_value decl,
+    Context.Named.Declaration.get_type decl
+    )
+  in
   string_of_object
     [ ("name", string_of_id name)
     ; ("maybeTerm", string_of_option
@@ -74,12 +86,17 @@ let process_goal sigma g =
     let norm_constr = Reductionops.nf_evar sigma (Goal.V82.concl sigma g) in
     string_of_ppcmds (pr_goal_concl_style_env env sigma norm_constr) in
   let process_hyp d (env,l) =
-    let d = Context.map_named_list_declaration (Reductionops.nf_evar sigma) d in
-    let d' = List.map (fun x -> (x, pi2 d, pi3 d)) (pi1 d) in
+    let d = Context.NamedList.Declaration.map_constr (Reductionops.nf_evar sigma) d in
+    let d' = List.map
+               (fun name ->
+                 match pi2 d with
+                 | None -> Context.Named.Declaration.LocalAssum (name, pi3 d)
+                 | Some value -> Context.Named.Declaration.LocalDef (name, value, pi3 d))
+               (pi1 d) in
       (List.fold_right Environ.push_named d' env,
        (string_of_ppcmds (pr_var_list_decl env sigma d)) :: l) in
   let (_env, hyps) =
-    Context.fold_named_list_context process_hyp
+    Context.NamedList.fold process_hyp
       (Termops.compact_named_context (Environ.named_context env)) ~init:(min_env,[]) in
   { Interface.goal_hyp = List.rev hyps; Interface.goal_ccl = ccl; Interface.goal_id = id; }
 

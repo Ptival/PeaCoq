@@ -305,7 +305,7 @@ let rec string_of_cases_pattern_expr e =
          ("CPatCstr",
           [ string_of_location loc
           ; string_of_reference r
-          ; string_of_list string_of_cases_pattern_expr cl1
+          ; string_of_option (string_of_list string_of_cases_pattern_expr) cl1
           ; string_of_list string_of_cases_pattern_expr cl2
           ])
       | CPatAtom(loc, ro) ->
@@ -346,6 +346,7 @@ let rec string_of_cases_pattern_expr e =
           ; quote s
           ; string_of_cases_pattern_expr cases
           ])
+      | CPatCast(_) -> ("TODO_CPatCast", [])
     )
 
 let string_of_constructor (ind, i) =
@@ -520,9 +521,11 @@ and string_of_local_binder lb =
             ; s ce
             ])
 
+      | LocalPattern(_, _, _) -> ("LocalPattern", ["TODO"])
+
     )
 
-and string_of_case_expr (ce, (nlo, cpeo)) =
+and string_of_case_expr (ce, nlo, cpeo) =
   string_of_string_list
     [ string_of_constr_expr ce
     ; string_of_string_list
