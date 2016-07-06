@@ -21,10 +21,15 @@ export function fromSertop(o): IFeedbackContent {
       const [qualifiedModuleName, path] = args;
       return new FileLoaded(qualifiedModuleName, path);
     case "Message":
-      const [level, [maybeLocation], message] = args;
+      const [level, maybeLocation, message] = args;
+      const location = (
+        maybeLocation.length === 0
+        ? nothing()
+        : just(SertopUtils.coqLocationFromSexp(maybeLocation[0]))
+      );
       return new Message(
         MessageLevel.create(level),
-        just(SertopUtils.coqLocationFromSexp(maybeLocation)),
+        location,
         collectPCData(message)
       );
     case "ProcessingIn":
