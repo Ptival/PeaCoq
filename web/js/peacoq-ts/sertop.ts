@@ -22,16 +22,17 @@ export function setupCommunication(
     .share();
   const output$ = Rx.Observable.merge(pingOutput$, cmdOutput$);
   const answer$ =
-    output$.filter<Sertop.IAnswer<Sertop.IAnswerKind>>(a => a instanceof Answer.Answer);
+    output$.filter<ISertop.IAnswer<ISertop.IAnswerKind>>(a => a instanceof Answer.Answer);
+  answer$.subscribe(a => console.log(a));
   const feedback$ =
     output$.filter<IFeedback<IFeedbackContent>>(a => a instanceof Feedback.Feedback);
   const messageFeedback$ =
     feedback$.filter<MessageFeedback<IMessageLevel>>(a => a.feedbackContent instanceof FeedbackContent.Message);
   return {
     answer$s: {
-      coqExn$: answer$.filter<Sertop.IAnswer<Sertop.ICoqExn>>(a => a.answer instanceof AnswerKind.CoqExn),
-      stmAdded$: answer$.filter<Sertop.IAnswer<Sertop.IStmAdded>>(a => a.answer instanceof AnswerKind.StmAdded),
-      stmCanceled$: answer$.filter<Sertop.IAnswer<Sertop.IStmCanceled>>(a => a.answer instanceof AnswerKind.StmCanceled),
+      coqExn$: answer$.filter<ISertop.IAnswer<ISertop.ICoqExn>>(a => a.answer instanceof AnswerKind.CoqExn),
+      stmAdded$: answer$.filter<ISertop.IAnswer<ISertop.IStmAdded>>(a => a.answer instanceof AnswerKind.StmAdded),
+      stmCanceled$: answer$.filter<ISertop.IAnswer<ISertop.IStmCanceled>>(a => a.answer instanceof AnswerKind.StmCanceled),
     },
     feedback$s: {
       message$s: {
@@ -54,7 +55,7 @@ function wrapAjax(i: JQueryAjaxSettings): Promise<any> {
   });
 }
 
-function sendPing(): Promise<Sertop.IAnswer<Sertop.IAnswerKind>[]> {
+function sendPing(): Promise<ISertop.IAnswer<ISertop.IAnswerKind>[]> {
   return wrapAjax({
     type: "POST",
     url: "ping",
@@ -63,7 +64,7 @@ function sendPing(): Promise<Sertop.IAnswer<Sertop.IAnswerKind>[]> {
   }).then(r => _(r).map(sexpParse).map(Answer.create).value());
 }
 
-function sendCommand(cmd: Sertop.ICmd): Promise<Sertop.IAnswer<Sertop.IAnswerKind>[]> {
+function sendCommand(cmd: ISertop.ICmd): Promise<ISertop.IAnswer<ISertop.IAnswerKind>[]> {
   console.log(cmd);
   return wrapAjax({
     type: "POST",

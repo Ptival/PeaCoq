@@ -148,7 +148,7 @@ withParam k = do
 
 hWrite :: Handle -> String -> IO ()
 hWrite hi input = do
-  putStrLn $ "<- " ++ input
+  putStrLn $ input
   catchError
     (hPutStrLn hi input)
     (\e -> do
@@ -171,7 +171,7 @@ hRead ho = do
         putStrLn $ "CATCH: Read failed with exception: " ++ show e
         return ""
       ))
-    putStrLn $ "-> " ++ l
+    putStrLn $ "OUTPUT: " ++ l
     return l
   -- putStrLn "Done"
 

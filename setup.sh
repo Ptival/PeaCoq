@@ -63,7 +63,7 @@ LOGPATH="/tmp"
 
 cat <<END > ${FILE}
 PeaCoqConfig
-{ configUserId = ""
+{ configUserId = "peacoq"
 , configLogPath = "${LOGPATH}"
 , configCoqtop = "/home/ptival/coq-serapi/sertop.native --prelude /home/ptival/coq-for-coq-serapi"
 }

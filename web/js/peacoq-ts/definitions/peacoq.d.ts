@@ -29,9 +29,9 @@ interface CoqtopOutputStreams {
   // io$: Rx.Observable<ICoqtopOutput<ICoqtopInput, any>>;
   // error$: Rx.Observable<ValueFail>;
   answer$s: {
-    coqExn$:  Rx.Observable<Sertop.IAnswer<Sertop.ICoqExn>>;
-    stmAdded$: Rx.Observable<Sertop.IAnswer<Sertop.IStmAdded>>;
-    stmCanceled$: Rx.Observable<Sertop.IAnswer<Sertop.IStmCanceled>>;
+    coqExn$:  Rx.Observable<ISertop.IAnswer<ISertop.ICoqExn>>;
+    stmAdded$: Rx.Observable<ISertop.IAnswer<ISertop.IStmAdded>>;
+    stmCanceled$: Rx.Observable<ISertop.IAnswer<ISertop.IStmCanceled>>;
   }
   feedback$s: {
     message$s: {

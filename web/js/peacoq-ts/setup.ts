@@ -88,12 +88,19 @@ $(document).ready(() => {
           .findLast(s => isBefore(Strictly.No, s.stopPosition, pos));
         return edit ? [edit] : [];
       })
-      .distinctUntilChanged();
+      .distinctUntilChanged()
+      .share();
   if (DebugFlags.editToBeDisplayed) { subscribeAndLog(editToBeDisplayed$); }
 
-  const stmObserve$ = editToBeDisplayed$
+  const stmObserve$: Rx.Observable<Command.Control<ISertop.IStmQuery>> = editToBeDisplayed$
     .flatMap(s => s.getBeingProcessed$())
-    .map(bp => new Command.Control(new ControlCommand.StmObserve(bp.stateId)));
+    .map(bp => new Command.Control(new ControlCommand.StmObserve(bp.stateId)))
+    .share();
+
+  // Right now this does not work!
+  // const peaCoqGetContext$ = stmObserve$
+  //   .map(cmd => new Command.Control(new ControlCommand.StmQuery(cmd.controlCommand.stateId, "PeaCoqGetContext.")))
+  //   .share();
 
   // editToBeDisplayed$
   //   .map(mSentence => mSentence.fmap(s => s.getProcessedStage()))
@@ -104,7 +111,7 @@ $(document).ready(() => {
   //   .catch(Rx.Observable.empty<PeaCoqContext>())
   //   .subscribe(context => doc.contextPanel.display(context));
 
-  const cancelBecauseEditorChange$: Rx.Observable<Command.Control> =
+  const cancelBecauseEditorChange$: Rx.Observable<Command.Control<ISertop.IStmCancel>> =
     doc.editorChange$
       .flatMap(change =>
         doc.getSentenceAtPosition(minPos(change.start, change.end))
@@ -328,6 +335,7 @@ $(document).ready(() => {
     inputsThatChangeErrorState$,
     cancelBecauseErrorMsg$,
     stmObserve$,
+    // peaCoqGetContext$,
   ]);
 
   const coqtopOutput$s = Sertop.setupCommunication(coqtopInputs$);

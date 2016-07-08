@@ -1,10 +1,10 @@
 import * as AnswerKind from "./answer-kind";
 import * as Feedback from "../coq/feedback";
 
-export class Answer implements Sertop.IAnswer<Sertop.IAnswerKind> {
+export class Answer implements ISertop.IAnswer<ISertop.IAnswerKind> {
   constructor(
     public cmdTag: string,
-    public answer: Sertop.IAnswerKind
+    public answer: ISertop.IAnswerKind
   ) { }
 }
 

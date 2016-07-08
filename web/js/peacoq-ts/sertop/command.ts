@@ -1,18 +1,18 @@
 import * as ControlCommand from "./control-command";
 
-export type Command = Control
+export type Command = Control<ISertop.IControlCommand>
 
 let cmdTagCounter = 0;
 
-abstract class Cmd implements Sertop.ICmd {
+abstract class Cmd implements ISertop.ICmd {
   public tag: number;
   constructor() { this.tag = cmdTagCounter++; }
   abstract toSexp(): string;
 }
 
-export class Control extends Cmd implements Sertop.ICmd {
+export class Control<C extends ISertop.IControlCommand> extends Cmd implements ISertop.ICmd {
   constructor(
-    public controlCommand: ControlCommand.ControlCommand
+    public controlCommand: C
   ) { super(); }
   toSexp() { return `(Control ${this.controlCommand.toSexp()})`; }
 }

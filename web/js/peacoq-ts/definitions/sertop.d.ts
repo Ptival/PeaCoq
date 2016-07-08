@@ -1,4 +1,4 @@
-declare namespace Sertop {
+declare namespace ISertop {
   interface ICmd {
     tag: number;
     toSexp(): string;
@@ -6,6 +6,14 @@ declare namespace Sertop {
 
   interface IControlCommand {
     toSexp(): string;
+  }
+
+  interface IStmCancel extends IControlCommand {
+    
+  }
+
+  interface IStmQuery extends IControlCommand {
+    stateId: StateId;
   }
 
   interface IAnswer<K extends IAnswerKind> {

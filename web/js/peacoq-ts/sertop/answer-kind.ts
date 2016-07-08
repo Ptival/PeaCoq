@@ -2,18 +2,18 @@ import * as Exception from "./exception";
 import * as Tip from "../coq/tip";
 import * as SertopUtils from "./utils";
 
-export class Ack implements Sertop.IAck { }
+export class Ack implements ISertop.IAck { }
 
-export class Completed implements Sertop.ICompleted { }
+export class Completed implements ISertop.ICompleted { }
 
-export class CoqExn implements Sertop.ICoqExn {
+export class CoqExn implements ISertop.ICoqExn {
   constructor(
     public exn: IException
   ) { }
   getMessage(): string { return this.exn.getMessage(); }
 }
 
-export class StmAdded implements Sertop.IStmAdded {
+export class StmAdded implements ISertop.IStmAdded {
   constructor(
     public stateId: StateId,
     public location: CoqLocation,
@@ -21,25 +21,25 @@ export class StmAdded implements Sertop.IStmAdded {
   ) { }
 }
 
-export class StmCanceled implements Sertop.IStmCanceled {
+export class StmCanceled implements ISertop.IStmCanceled {
   constructor(
     public stateIds: number[]
   ) { }
 }
 
-export class StmCurId implements Sertop.IStmCurId {
+export class StmCurId implements ISertop.IStmCurId {
   constructor(
     public curId: number
   ) { }
 }
 
-export class StmEdited implements Sertop.IStmEdited {
+export class StmEdited implements ISertop.IStmEdited {
   constructor(
     public tip: Tip.NewTip // | Focus
   ) { }
 }
 
-export function create(o): Sertop.IAnswerKind {
+export function create(o): ISertop.IAnswerKind {
   if (typeof o === "string") {
     switch (o) {
       case "Ack": return new Ack();

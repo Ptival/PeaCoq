@@ -15,7 +15,7 @@ function optionalToSexp<T>(name, option: T | undefined, printer?: (t: T) => stri
   return option === undefined ? "" : `(${name} ${printer ? printer(option) : option})`;
 }
 
-export class LibAdd implements Sertop.IControlCommand {
+export class LibAdd implements ISertop.IControlCommand {
   constructor(
     public qualifiedPath: string[],
     public physicalPath: string,
@@ -27,7 +27,7 @@ export class LibAdd implements Sertop.IControlCommand {
   }
 }
 
-export class StmAdd implements Sertop.IControlCommand {
+export class StmAdd implements ISertop.IControlCommand {
   constructor(
     public addOptions: AddOptions,
     public sentence: string
@@ -44,7 +44,7 @@ export class StmAdd implements Sertop.IControlCommand {
   }
 }
 
-export class StmCancel implements Sertop.IControlCommand {
+export class StmCancel implements ISertop.IControlCommand {
   constructor(
     public stateIds: StateId[]
   ) { }
@@ -54,7 +54,7 @@ export class StmCancel implements Sertop.IControlCommand {
   }
 }
 
-export class StmEditAt implements Sertop.IControlCommand {
+export class StmEditAt implements ISertop.IControlCommand {
   constructor(
     public stateId: StateId
   ) { }
@@ -65,17 +65,25 @@ export class StmEditAt implements Sertop.IControlCommand {
 //   toSexp() { return "StmJoin"; }
 // }
 
-export class StmObserve implements Sertop.IControlCommand {
+export class StmObserve implements ISertop.IControlCommand {
   constructor(
     public stateId: StateId
   ) { }
   toSexp() { return `(StmObserve ${this.stateId})`; }
 }
 
-export class StmState implements Sertop.IControlCommand {
+export class StmQuery implements ISertop.IControlCommand {
+  constructor(
+    public stateId: StateId,
+    public query: string
+  ) { }
+  toSexp() { return `(StmQuery ${this.stateId} "${this.query}"`; }
+}
+
+export class StmState implements ISertop.IControlCommand {
   toSexp() { return "StmState"; }
 }
 
-export class Quit implements Sertop.IControlCommand {
+export class Quit implements ISertop.IControlCommand {
   toSexp() { return "Quit"; }
 }
