@@ -66,7 +66,8 @@ export class BeingProcessed implements IBeingProcessed {
 */
 
 export class Processed implements IProcessed {
-  private context: Promise<PeaCoqContext> | null;
+  public context: PeaCoqContext | null;
+  // private context: Promise<PeaCoqContext> | null;
   marker: IEditMarker;
   stateId: number;
 
@@ -82,8 +83,8 @@ export class Processed implements IProcessed {
 
   getColor() { return Theme.theme.processed; }
 
-  getContext(): Promise<PeaCoqContext> {
-    debugger;
+  // getContext(): Promise<PeaCoqContext> {
+  //   debugger;
     // if (this.context === null) {
     //   this.context = new Promise(onFulfilled => {
     //     const query = new CoqtopInput.Query("PeaCoqGetContext.", this.stateId);
@@ -116,8 +117,8 @@ export class Processed implements IProcessed {
     //     this.inputObserver.onNext(query);
     //   });
     // }
-    return this.context;
-  }
+  //   return this.context;
+  // }
 
   getStateId() { return just(this.stateId); }
 

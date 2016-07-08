@@ -1,3 +1,7 @@
+import * as Goal from "./goal";
+import * as Goals from "./goals";
+import { walkJSON } from "./peacoq/json";
+
 import * as Feedback from "./coq/feedback";
 import * as FeedbackContent from "./coq/feedback-content";
 
@@ -347,6 +351,55 @@ $(document).ready(() => {
 
   const coqtopOutput$s = Sertop.setupCommunication(coqtopInputs$);
 
+  /*
+  Feedback comes back untagged, so need the zip to keep track of the relationship
+  between input PeaCoqGetContext and the output context...
+  */
+  const contextToDisplay$ = Rx.Observable.zip(
+    peaCoqGetContext$,
+    coqtopOutput$s.feedback$s.message$s.notice$.filter(m => m.editOrStateId === 0)
+  ).concatMap(([cmd, fbk]) => {
+    const stateId = cmd.controlCommand.stateId;
+    const rawContext = fbk.feedbackContent.message;
+    const sentence = doc.getSentenceAtStateId(stateId);
+    return sentence.caseOf({
+      nothing: () => [],
+      just: sentence => {
+
+        if (DebugFlags.rawPeaCoqContext) { console.log(rawContext); }
+        if (rawContext.length === 0) {
+          sentence.stage.context = emptyContext;
+        } else {
+          // Escaping because JSON.parse sucks :\
+          const safeContents = rawContext
+            .replace(/\n/g, "\\n")
+            .replace(/\r/g, "\\r")
+            .replace(/\t/g, "\\t")
+            .replace(/\f/g, "\\f");
+          const c: IGoals<any> = JSON.parse(safeContents);
+          const processed: PeaCoqContext = Goals.apply(
+            c => {
+              const pp: any = walkJSON(c.ppgoal);
+              return {
+                goal: new Goal.Goal(c.goal),
+                ppgoal: new PeaCoqGoal(pp.hyps, pp.concl),
+              };
+            },
+            c
+          );
+          sentence.stage.context = processed;
+        }
+        return [sentence.stage.context];
+
+      }
+    })
+  })
+  .share();
+
+  contextToDisplay$.subscribe(c => {
+    doc.contextPanel.display(c);
+  });
+
   coqtopOutput$s.answer$s.stmAdded$.subscribe(a => {
     const allEdits = doc.getAllSentences();
     const edit = _(allEdits).find(e => isJust(e.commandTag) && fromJust(e.commandTag) === +a.cmdTag);
@@ -406,6 +459,8 @@ $(document).ready(() => {
 
   // NOTE: CoqExn is pretty useless in indicating which command failed
   // Feedback.ErrorMsg gives the failed state ID
+  // NOTE2: Except when the command fails wihtout a state ID! For instance
+  // if you "Require Import Nonsense." So need both?
   coqtopOutput$s.feedback$s.message$s.error$.subscribe(e => {
     switch (e.editOrState) {
       case EditOrState.State:
@@ -414,6 +469,13 @@ $(document).ready(() => {
         break;
       default: debugger;
     }
+  });
+
+  coqtopOutput$s.answer$s.coqExn$.subscribe(e => {
+    doc.removeEdits(ed => ed.commandTag.caseOf({
+      nothing: () => false,
+      just: t => t === + e.cmdTag,
+    }));
   });
 
   // keep this above the subscription that removes edits
@@ -432,7 +494,9 @@ $(document).ready(() => {
         const failedStateId = e.editOrStateId;
         const failedSentence = doc.getSentenceAtStateId(failedStateId);
         failedSentence.caseOf({
-          nothing: () => { debugger; },
+          nothing: () => {
+            // This happens when commands fail before producing a state
+          },
           just: s => doc.removeEdits(e => e.sentenceId >= s.sentenceId),
         });
         break;
@@ -448,12 +512,12 @@ $(document).ready(() => {
         level: PeaCoqMessageLevel.Danger,
       })),
       coqtopOutput$s.feedback$s.message$s.notice$
-      // PeaCoqGetContext produces messages with state id 0
-      .filter(e => e.editOrStateId !== 0)
-      .map(e => ({
-        message: e.feedbackContent.message,
-        level: PeaCoqMessageLevel.Success,
-      }))
+        // PeaCoqGetContext produces messages with state id 0
+        .filter(e => e.editOrStateId !== 0)
+        .map(e => ({
+          message: e.feedbackContent.message,
+          level: PeaCoqMessageLevel.Success,
+        }))
     )
   );
 
