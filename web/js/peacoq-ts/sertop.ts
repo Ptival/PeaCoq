@@ -7,7 +7,7 @@ import * as FeedbackContent from "./coq/feedback-content";
 import * as MessageLevel from "./coq/message-level";
 
 export function setupCommunication(
-  cmd$: Rx.Observable<Command.Command>
+  cmd$: Rx.Observable<ISertop.ICommand>
 ): CoqtopOutputStreams {
   // we issue a join every time the command stream becomes silent
   // const join$ = cmd$.debounce(1000).map(_ => new Command.Control(new ControlCommand.StmObserve()));
@@ -23,7 +23,6 @@ export function setupCommunication(
   const output$ = Rx.Observable.merge(pingOutput$, cmdOutput$);
   const answer$ =
     output$.filter<ISertop.IAnswer<ISertop.IAnswerKind>>(a => a instanceof Answer.Answer);
-  answer$.subscribe(a => console.log(a));
   const feedback$ =
     output$.filter<IFeedback<IFeedbackContent>>(a => a instanceof Feedback.Feedback);
   const messageFeedback$ =
@@ -64,8 +63,7 @@ function sendPing(): Promise<ISertop.IAnswer<ISertop.IAnswerKind>[]> {
   }).then(r => _(r).map(sexpParse).map(Answer.create).value());
 }
 
-function sendCommand(cmd: ISertop.ICmd): Promise<ISertop.IAnswer<ISertop.IAnswerKind>[]> {
-  console.log(cmd);
+function sendCommand(cmd: ISertop.ICommand): Promise<ISertop.IAnswer<ISertop.IAnswerKind>[]> {
   return wrapAjax({
     type: "POST",
     url: "coqtop",

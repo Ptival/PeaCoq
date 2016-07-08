@@ -1,18 +1,10 @@
-export type ControlCommand = StmAdd | StmEditAt | StmState | Quit
+import * as Sexp from "./sexp";
 
 interface AddOptions {
   limit?: number;
   ontop?: StateId;
   newtip?: StateId;
   verb?: boolean;
-}
-
-function boolToSexp(b: boolean): string {
-  return b ? "True" : "False";
-}
-
-function optionalToSexp<T>(name, option: T | undefined, printer?: (t: T) => string): string {
-  return option === undefined ? "" : `(${name} ${printer ? printer(option) : option})`;
 }
 
 export class LibAdd implements ISertop.IControlCommand {
@@ -23,7 +15,7 @@ export class LibAdd implements ISertop.IControlCommand {
   ) { }
   toSexp() {
     const qPath = `"${this.qualifiedPath.join(`" "`)}"`;
-    return `(LibAdd (${qPath}) "${this.physicalPath}" ${boolToSexp(this.containsML)})`;
+    return `(LibAdd (${qPath}) "${this.physicalPath}" ${Sexp.boolToSexp(this.containsML)})`;
   }
 }
 
@@ -34,12 +26,12 @@ export class StmAdd implements ISertop.IControlCommand {
   ) { }
   toSexp() {
     const opts = "".concat(
-      optionalToSexp("limit", this.addOptions.limit),
-      optionalToSexp("ontop", this.addOptions.ontop),
-      optionalToSexp("newtip", this.addOptions.newtip),
-      optionalToSexp("verb", this.addOptions.verb, b => b ? "True" : "False")
+      Sexp.optionalToSexp("limit", this.addOptions.limit),
+      Sexp.optionalToSexp("ontop", this.addOptions.ontop),
+      Sexp.optionalToSexp("newtip", this.addOptions.newtip),
+      Sexp.optionalToSexp("verb", this.addOptions.verb, b => b ? "True" : "False")
     );
-    const o1 = optionalToSexp("limit", this.addOptions.limit);
+    const o1 = Sexp.optionalToSexp("limit", this.addOptions.limit);
     return `(StmAdd (${opts}) "${this.sentence}")`
   }
 }
@@ -77,7 +69,7 @@ export class StmQuery implements ISertop.IControlCommand {
     public stateId: StateId,
     public query: string
   ) { }
-  toSexp() { return `(StmQuery ${this.stateId} "${this.query}"`; }
+  toSexp() { return `(StmQuery ${this.stateId} "${this.query}")`; }
 }
 
 export class StmState implements ISertop.IControlCommand {

@@ -55,8 +55,8 @@ export function create(o): ISertop.IAnswerKind {
       return new CoqExn(Exception.create(kind, payload));
 
     case "StmAdded": { // opening a scope prevents hoisted variable clashes
-      const [stateId, coqLocation, tip] = args;
-      return new StmAdded(stateId, SertopUtils.coqLocationFromSexp(coqLocation), tip);
+      const [stateId, coqLocation, tip]: [string, string, string] = args;
+      return new StmAdded(+ stateId, SertopUtils.coqLocationFromSexp(coqLocation), tip);
     }
 
     case "StmCurId":

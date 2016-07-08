@@ -35,5 +35,5 @@ export function fromSertop(f) {
     case "State": editOrState = EditOrState.State; break;
     default: throw "coqtopMkFeedback: neither edit nor state";
   }
-  return new Feedback(editOrState, esid, FeedbackContent.fromSertop(fc), rid);
+  return new Feedback(editOrState, +esid, FeedbackContent.fromSertop(fc), rid);
 }

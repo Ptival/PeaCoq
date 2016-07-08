@@ -32,6 +32,7 @@ import { proofTreeOnEdit, proofTreeOnEditAt } from "./prooftree/prooftree-handle
 import * as Sertop from "./sertop";
 import * as Command from "./sertop/command";
 import * as ControlCommand from "./sertop/control-command";
+import * as QueryCommand from "./sertop/query-command";
 
 import * as Coqtop from "./coqtop-rx";
 // import * as CoqtopInput from "./coqtop-input";
@@ -92,15 +93,19 @@ $(document).ready(() => {
       .share();
   if (DebugFlags.editToBeDisplayed) { subscribeAndLog(editToBeDisplayed$); }
 
-  const stmObserve$: Rx.Observable<Command.Control<ISertop.IStmQuery>> = editToBeDisplayed$
+  const stmObserve$: Rx.Observable<Command.Control<ISertop.IControlCommand.IStmQuery>> = editToBeDisplayed$
     .flatMap(s => s.getBeingProcessed$())
     .map(bp => new Command.Control(new ControlCommand.StmObserve(bp.stateId)))
     .share();
 
-  // Right now this does not work!
-  // const peaCoqGetContext$ = stmObserve$
-  //   .map(cmd => new Command.Control(new ControlCommand.StmQuery(cmd.controlCommand.stateId, "PeaCoqGetContext.")))
-  //   .share();
+  const stmGoals$ = editToBeDisplayed$
+    .flatMap(s => s.getBeingProcessed$())
+    .map(bp => new Command.Query({}, new QueryCommand.Goals(bp.stateId)))
+    .share();
+
+  const peaCoqGetContext$ = stmObserve$
+    .map(cmd => new Command.Control(new ControlCommand.StmQuery(cmd.controlCommand.stateId, "PeaCoqGetContext.")))
+    .share();
 
   // editToBeDisplayed$
   //   .map(mSentence => mSentence.fmap(s => s.getProcessedStage()))
@@ -111,7 +116,7 @@ $(document).ready(() => {
   //   .catch(Rx.Observable.empty<PeaCoqContext>())
   //   .subscribe(context => doc.contextPanel.display(context));
 
-  const cancelBecauseEditorChange$: Rx.Observable<Command.Control<ISertop.IStmCancel>> =
+  const cancelBecauseEditorChange$: Rx.Observable<Command.Control<ISertop.IControlCommand.IStmCancel>> =
     doc.editorChange$
       .flatMap(change =>
         doc.getSentenceAtPosition(minPos(change.start, change.end))
@@ -277,7 +282,7 @@ $(document).ready(() => {
     doc.moveCursorToPositionAndCenter(s.startPosition);
   });
 
-  const cancelBecausePrev$: Rx.Observable<Command.Command> =
+  const cancelBecausePrev$: Rx.Observable<ISertop.ICommand> =
     sentenceToCancelBecausePrev$
       .flatMap(s => {
         return s.getStateId().caseOf({
@@ -315,27 +320,29 @@ $(document).ready(() => {
   //     .map(() => new Command.Control(new ControlCommand.StmJoin()));
 
   // Here are subjects for observables that react to coqtop output
-  const cancelBecauseErrorMsg$ = new Rx.Subject<Command.Command>();
+  const cancelBecauseErrorMsg$ = new Rx.Subject<ISertop.ICommand>();
 
   const quitBecauseFileLoaded$ = userActionStreams.loadedFile$
     .startWith({})
     .map(({}) => new Command.Control(new ControlCommand.Quit()))
     .share();
 
-  const inputsThatChangeErrorState$: Rx.Observable<Command.Command> = Rx.Observable.merge<Command.Command>([
-    quitBecauseFileLoaded$,
-    addsToProcessStream,
-    cancelBecauseEditorChange$,
-    cancelBecausePrev$,
-    cancelFromBackwardGoTo$,
-    // queries$,
-  ]);
+  const inputsThatChangeErrorState$ =
+    Rx.Observable.merge<ISertop.ICommand>([
+      quitBecauseFileLoaded$,
+      addsToProcessStream,
+      cancelBecauseEditorChange$,
+      cancelBecausePrev$,
+      cancelFromBackwardGoTo$,
+      // queries$,
+    ]);
 
-  const coqtopInputs$: Rx.Observable<Command.Command> = Rx.Observable.merge([
+  const coqtopInputs$: Rx.Observable<ISertop.ICommand> = Rx.Observable.merge([
     inputsThatChangeErrorState$,
     cancelBecauseErrorMsg$,
     stmObserve$,
-    // peaCoqGetContext$,
+    // stmGoals$,
+    peaCoqGetContext$,
   ]);
 
   const coqtopOutput$s = Sertop.setupCommunication(coqtopInputs$);
@@ -440,13 +447,15 @@ $(document).ready(() => {
         message: e.feedbackContent.message,
         level: PeaCoqMessageLevel.Danger,
       })),
-      coqtopOutput$s.feedback$s.message$s.notice$.map(e => ({
+      coqtopOutput$s.feedback$s.message$s.notice$
+      // PeaCoqGetContext produces messages with state id 0
+      .filter(e => e.editOrStateId !== 0)
+      .map(e => ({
         message: e.feedbackContent.message,
         level: PeaCoqMessageLevel.Success,
       }))
     )
   );
-
 
   // const editorError$: Rx.Observable<IEditorError> =
   //   coqtopOutput$s.valueFail$
