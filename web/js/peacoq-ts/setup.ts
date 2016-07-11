@@ -701,7 +701,7 @@ function setupUserActions(
     .subscribe(pickFile);
   Rx.Observable
     .merge(toolbarStreams.save, shortcutsStreams.save)
-    .subscribe(saveFile);
+    .subscribe(({}) => saveFile(doc));
   const loadedFilesStream = setupLoadFile(doc);
   setupSaveFile();
   return {
