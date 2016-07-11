@@ -1,4 +1,4 @@
-Require Import ZArith.
+From Coq Require Import ZArith.
 
 Open Scope Z.
 
