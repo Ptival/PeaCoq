@@ -51,8 +51,7 @@ export function create(o): ISertop.IAnswerKind {
   switch (kind) {
 
     case "CoqExn":
-      const [[kind, ...payload]] = args;
-      return new CoqExn(Exception.create(kind, payload));
+      return new CoqExn(Exception.create(args));
 
     case "StmAdded": { // opening a scope prevents hoisted variable clashes
       const [stateId, coqLocation, tip]: [string, string, string] = args;

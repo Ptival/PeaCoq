@@ -15,7 +15,7 @@ export class Sentence<S extends IEditStage> implements ISentence<S> {
   private beingProcessed$: Rx.Observable<IBeingProcessed>;
   private processed$: Rx.Observable<IProcessed>;
 
-  commandTag: Maybe<number>;
+  commandTag: Maybe<string>;
   sentenceId: number;
   stage: S;
   stage$: Rx.Subject<S>;

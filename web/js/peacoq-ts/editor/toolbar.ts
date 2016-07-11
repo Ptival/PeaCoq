@@ -75,7 +75,7 @@ export function setupLoadFile(doc: ICoqDocument): Rx.Observable<string> {
 
   // TODO: This belongs somewhere else (document-related)
   loadedFilesStream.subscribe((text) => {
-    doc.removeAllEdits();
+    doc.removeAllSentences();
     doc.resetEditor(text);
   });
 

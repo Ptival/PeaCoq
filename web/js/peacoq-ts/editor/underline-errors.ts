@@ -6,7 +6,7 @@ export function setup(
   errorMsg$.subscribe(e => {
     switch (e.editOrState) {
       case EditOrState.State:
-        const failedEdit = doc.getSentenceAtStateId(e.editOrStateId);
+        const failedEdit = doc.getSentenceByStateId(e.editOrStateId);
         failedEdit.fmap(failedEdit => {
           e.feedbackContent.location.fmap(location => {
             const errorStartIndex = location.bp;

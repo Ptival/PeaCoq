@@ -3,9 +3,7 @@ class Exception implements IException {
   constructor(
     public message: string
   ) { }
-  getMessage() {
-    return this.message;
-  }
+  getMessage() { return this.message; }
 }
 
 class EvaluatedError implements IException {
@@ -13,9 +11,11 @@ class EvaluatedError implements IException {
     public message: any,
     public exception: Maybe<any>
   ) { }
-  getMessage() {
-    return this.message;
-  }
+  getMessage() { return this.message; }
+}
+
+class NoCurrentProof implements IException {
+  getMessage() { return "No current proof."; }
 }
 
 class UserError implements IException {
@@ -23,12 +23,17 @@ class UserError implements IException {
     public e: any,
     public message: any
   ) { }
-  getMessage() {
-    return "TODO: UserError";
-  }
+  getMessage() { return "TODO: UserError"; }
 }
 
-export function create(kind: string, o: any[]): IException {
+export function create(args: any): IException {
+  if (typeof args === "string") {
+    switch (args) {
+      case "NoCurrentProof": return new NoCurrentProof();
+      default: debugger;
+    }
+  }
+  const [kind, ...o] = args;
   switch (kind) {
     case "Cerrors.EvaluatedError":
       switch (o.length) {

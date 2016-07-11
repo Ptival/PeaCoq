@@ -16,11 +16,32 @@ export function setupCommunication(
       .concatMap(sendPing)
       .concatMap(a => a)
       .share();
-  const cmdOutput$ = Rx.Observable.merge(cmd$) //, join$)
-    .concatMap(sendCommand)
-    .concatMap(a => a)
-    .share();
+
+  const cmdOutputSubject = new Rx.Subject<number>();
+
+  const cmdOutput$ =
+    Rx.Observable.zip(
+      cmd$,
+      cmdOutputSubject.startWith(-1)
+    )
+      .concatMap(([cmd, nb]) => {
+        // console.log("ACK", nb);
+        // console.log("SND", cmd.tag);
+        return sendCommand(cmd);
+      })
+      .concatMap(a => a)
+      .publish();
+
   const output$ = Rx.Observable.merge(pingOutput$, cmdOutput$);
+
+  output$
+    .filter(o => o instanceof Answer.Answer)
+    .filter(o => o.answer instanceof AnswerKind.Ack)
+    .filter(o => + o.cmdTag >= Command.cmdTagMinimum)
+    .subscribe(o => { cmdOutputSubject.onNext(+ o.cmdTag); });
+
+  cmdOutput$.connect();
+
   const answer$ =
     output$.filter<ISertop.IAnswer<ISertop.IAnswerKind>>(a => a instanceof Answer.Answer);
   const feedback$ =
@@ -55,6 +76,7 @@ function wrapAjax(i: JQueryAjaxSettings): Promise<any> {
 }
 
 function sendPing(): Promise<ISertop.IAnswer<ISertop.IAnswerKind>[]> {
+  // console.log("PING");
   return wrapAjax({
     type: "POST",
     url: "ping",
@@ -64,6 +86,7 @@ function sendPing(): Promise<ISertop.IAnswer<ISertop.IAnswerKind>[]> {
 }
 
 function sendCommand(cmd: ISertop.ICommand): Promise<ISertop.IAnswer<ISertop.IAnswerKind>[]> {
+  // console.log("SEND", cmd);
   return wrapAjax({
     type: "POST",
     url: "coqtop",

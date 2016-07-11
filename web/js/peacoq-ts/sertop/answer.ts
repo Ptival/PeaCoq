@@ -12,6 +12,7 @@ export function create(o): Answer | Feedback.Feedback {
   const [name, ...args] = o;
   switch (o[0]) {
     case "Answer":
+      // console.log("RECV ANSWER: ", o);
       const [cmdTag, answerKind] = args;
       return new Answer(cmdTag, AnswerKind.create(answerKind));
     case "Feedback":

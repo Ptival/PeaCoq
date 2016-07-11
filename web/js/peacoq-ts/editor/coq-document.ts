@@ -43,10 +43,18 @@ export class CoqDocument implements ICoqDocument {
     return edit ? just(edit) : nothing();
   }
 
-  getSentenceAtStateId(id: StateId): Maybe<ISentence<any>> {
+  getSentenceByStateId(id: StateId): Maybe<ISentence<any>> {
     const edit = _(this.getAllSentences()).find(e => e.getStateId().caseOf({
       nothing: () => false,
       just: s => s === id,
+    }));
+    return edit ? just(edit) : nothing();
+  }
+
+  getSentenceByTag(tag: CommandTag): Maybe<ISentence<any>> {
+    const edit = _(this.getAllSentences()).find(e => e.commandTag.caseOf({
+      nothing: () => false,
+      just: s => s === tag,
     }));
     return edit ? just(edit) : nothing();
   }
@@ -216,15 +224,15 @@ export class CoqDocument implements ICoqDocument {
     this.editor.scrollToLine(0, true, true, () => { });
   }
 
-  removeAllEdits(): void { this.edits.removeAll(); }
+  removeAllSentences(): void { this.edits.removeAll(); }
 
-  removeEdit(e: ISentence<any>): void { this.edits.remove(e); }
+  removeSentence(e: ISentence<any>): void { this.edits.remove(e); }
 
   // removeEditAndFollowingOnes(e: ISentence<any>): void {
   //   this.edits.removeEditAndFollowingOnes(e);
   // }
 
-  removeEdits(pred: (e: ISentence<any>) => boolean): void {
+  removeSentences(pred: (e: ISentence<any>) => boolean): void {
     this.edits.removeEdits(pred);
   }
 
@@ -232,7 +240,7 @@ export class CoqDocument implements ICoqDocument {
   //   this.edits.removeFollowingEdits(e);
   // }
 
-  removeEditsByStateIds(ids: StateId[]): void {
+  removeSentencesByStateIds(ids: StateId[]): void {
     this.edits.removeEdits(e => e.getStateId().caseOf({
       nothing: () => false,
       just: id => _(ids).includes(id),

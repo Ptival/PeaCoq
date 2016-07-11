@@ -1,6 +1,6 @@
 import * as MessageLevel from "../coq/message-level";
 
-const maxMessagesOnScreen = 2;
+const maxMessagesOnScreen = 10;
 
 export class CoqtopPanel {
   constructor(

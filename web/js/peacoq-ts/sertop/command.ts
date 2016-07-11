@@ -1,7 +1,8 @@
 import * as ControlCommand from "./control-command";
 import * as Sexp from "./sexp";
 
-let cmdTagCounter = 0;
+export const cmdTagMinimum = 2;
+let cmdTagCounter = cmdTagMinimum;
 
 interface QueryOptions {
   // preds?: QueryPred[];
@@ -11,8 +12,8 @@ interface QueryOptions {
 }
 
 abstract class Command implements ISertop.ICommand {
-  public tag: number;
-  constructor() { this.tag = cmdTagCounter++; }
+  public tag: CommandTag;
+  constructor() { this.tag = (cmdTagCounter++).toString(); }
   abstract toSexp(): string;
 }
 

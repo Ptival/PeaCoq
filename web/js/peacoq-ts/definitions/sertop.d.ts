@@ -1,3 +1,5 @@
+type CommandTag = string
+
 interface ToSexp {
   toSexp(): string;
 }
@@ -5,7 +7,7 @@ interface ToSexp {
 declare namespace ISertop {
 
   interface ICommand extends ToSexp {
-    tag: number;
+    tag: CommandTag;
   }
 
   interface IControl extends ICommand { }
@@ -26,7 +28,7 @@ declare namespace ISertop {
   }
 
   interface IAnswer<K extends IAnswerKind> {
-    cmdTag: string;
+    cmdTag: CommandTag;
     answer: K;
   }
 

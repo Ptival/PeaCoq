@@ -359,9 +359,10 @@ $(document).ready(() => {
     peaCoqGetContext$,
     coqtopOutput$s.feedback$s.message$s.notice$.filter(m => m.editOrStateId === 0)
   ).concatMap(([cmd, fbk]) => {
+    // console.log(cmd, fbk);
     const stateId = cmd.controlCommand.stateId;
     const rawContext = fbk.feedbackContent.message;
-    const sentence = doc.getSentenceAtStateId(stateId);
+    const sentence = doc.getSentenceByStateId(stateId);
     return sentence.caseOf({
       nothing: () => [],
       just: sentence => {
@@ -394,7 +395,7 @@ $(document).ready(() => {
       }
     })
   })
-  .share();
+    .share();
 
   contextToDisplay$.subscribe(c => {
     doc.contextPanel.display(c);
@@ -402,15 +403,8 @@ $(document).ready(() => {
 
   coqtopOutput$s.answer$s.stmAdded$.subscribe(a => {
     const allEdits = doc.getAllSentences();
-    const edit = _(allEdits).find(e => isJust(e.commandTag) && fromJust(e.commandTag) === +a.cmdTag);
-    if (!edit) {
-      // this is probably normal, as PeaCoq does fancy things before the UI
-      if (allEdits.length === 0) {
-        return;
-      }
-      // this is probably abnormal (edits are mentioned that the UI is unaware of)
-      debugger;
-    }
+    const edit = _(allEdits).find(e => isJust(e.commandTag) && fromJust(e.commandTag) === a.cmdTag);
+    if (!edit) { return; } // this happens for a number of reasons...
     const newStage = new Edit.BeingProcessed(edit.stage, a.answer.stateId);
     edit.setStage(newStage);
   });
@@ -454,7 +448,8 @@ $(document).ready(() => {
     });
 
   coqtopOutput$s.answer$s.stmCanceled$.subscribe(a => {
-    doc.removeEditsByStateIds(a.answer.stateIds);
+    console.log("REMOVING EDITS WITH STATE IDS: ", a.answer.stateIds);
+    doc.removeSentencesByStateIds(a.answer.stateIds);
   });
 
   // NOTE: CoqExn is pretty useless in indicating which command failed
@@ -472,9 +467,9 @@ $(document).ready(() => {
   });
 
   coqtopOutput$s.answer$s.coqExn$.subscribe(e => {
-    doc.removeEdits(ed => ed.commandTag.caseOf({
+    doc.removeSentences(s => s.commandTag.caseOf({
       nothing: () => false,
-      just: t => t === + e.cmdTag,
+      just: t => t === e.cmdTag,
     }));
   });
 
@@ -487,30 +482,18 @@ $(document).ready(() => {
     ])
   );
 
-  // keep this under subscribers who need the edit to exist
-  coqtopOutput$s.feedback$s.message$s.error$.subscribe(e => {
-    switch (e.editOrState) {
-      case EditOrState.State:
-        const failedStateId = e.editOrStateId;
-        const failedSentence = doc.getSentenceAtStateId(failedStateId);
-        failedSentence.caseOf({
-          nothing: () => {
-            // This happens when commands fail before producing a state
-          },
-          just: s => doc.removeEdits(e => e.sentenceId >= s.sentenceId),
-        });
-        break;
-      default: debugger;
-    }
-  });
-
+  // keep this above the subscription that removes edits
   new CoqtopPanel(
     $(w2ui[rightLayoutName].get("bottom").content),
     Rx.Observable.merge(
-      coqtopOutput$s.feedback$s.message$s.error$.map(e => ({
-        message: e.feedbackContent.message,
-        level: PeaCoqMessageLevel.Danger,
-      })),
+      coqtopOutput$s.feedback$s.message$s.error$
+        // due to sending sentences fast, we receive errors for states beyond
+        // another failed state. reporting those looks spurious to the user.
+        .filter(e => isJust(doc.getSentenceByStateId(e.editOrStateId)))
+        .map(e => ({
+          message: e.feedbackContent.message,
+          level: PeaCoqMessageLevel.Danger,
+        })),
       coqtopOutput$s.feedback$s.message$s.notice$
         // PeaCoqGetContext produces messages with state id 0
         .filter(e => e.editOrStateId !== 0)
@@ -520,6 +503,23 @@ $(document).ready(() => {
         }))
     )
   );
+
+  // keep this under subscribers who need the edit to exist
+  coqtopOutput$s.feedback$s.message$s.error$.subscribe(e => {
+    switch (e.editOrState) {
+      case EditOrState.State:
+        const failedStateId = e.editOrStateId;
+        const failedSentence = doc.getSentenceByStateId(failedStateId);
+        failedSentence.caseOf({
+          nothing: () => {
+            // This happens when commands fail before producing a state
+          },
+          just: s => doc.removeSentences(e => e.sentenceId >= s.sentenceId),
+        });
+        break;
+      default: debugger;
+    }
+  });
 
   // const editorError$: Rx.Observable<IEditorError> =
   //   coqtopOutput$s.valueFail$
