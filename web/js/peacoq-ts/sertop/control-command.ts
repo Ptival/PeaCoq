@@ -32,7 +32,7 @@ export class StmAdd implements ISertop.IControlCommand {
       Sexp.optionalToSexp("verb", this.addOptions.verb, b => b ? "True" : "False")
     );
     const o1 = Sexp.optionalToSexp("limit", this.addOptions.limit);
-    return `(StmAdd (${opts}) "${this.sentence}")`
+    return `(StmAdd (${opts}) "${this.sentence.replace(/\"/g, `\\"`)}")`
   }
 }
 
