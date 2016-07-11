@@ -4,6 +4,7 @@ import * as SertopUtils from "../sertop/utils";
 export function fromSertop(o): IFeedbackContent {
   if (typeof o === "string") {
     switch (o) {
+      case "AddedAxiom": return new AddedAxiom();
       case "Processed": return new Processed();
       default: debugger;
     }
