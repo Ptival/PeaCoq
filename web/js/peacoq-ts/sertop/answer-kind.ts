@@ -23,7 +23,7 @@ export class StmAdded implements ISertop.IStmAdded {
 
 export class StmCanceled implements ISertop.IStmCanceled {
   constructor(
-    public stateIds: number[]
+    public stateIds: StateId[]
   ) { }
 }
 
@@ -72,8 +72,8 @@ export function create(o): ISertop.IAnswerKind {
       }
 
     case "StmCanceled":
-      const [stateIds] = args;
-      return new StmCanceled(stateIds);
+      const [stateIds]: string[][] = args;
+      return new StmCanceled(_(stateIds).map(s => + s).value());
 
     default: debugger;
   }
