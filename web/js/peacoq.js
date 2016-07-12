@@ -68,6 +68,7 @@ requirejs(
       ],
       () => require(
         [
+          "ace/ext/language_tools",
           "ace/mode/ocaml",
           "peacoq-js/highlight-coq",
           "peacoq-js/mode-coq",

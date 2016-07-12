@@ -10,7 +10,7 @@ import { CoqDocument } from "./editor/coq-document";
 import { CoqtopPanel } from "./editor/coqtop-panel";
 import { ContextPanel } from "./editor/context-panel";
 import * as Edit from "./editor/edit";
-import { setupEditor } from "./editor/editor";
+import * as Editor from "./editor/editor";
 
 import { isBefore } from "./editor/editor-utils";
 // import { pimpMyError } from "./editor/error";
@@ -149,7 +149,7 @@ $(document).ready(() => {
   //     })
   //     .share();
 
-  setupEditor(editor);
+  Editor.setupMainEditor(editor);
   editor.focus();
 
   const rightLayoutName = "right-layout";
