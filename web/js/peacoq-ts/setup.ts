@@ -448,7 +448,6 @@ $(document).ready(() => {
     });
 
   coqtopOutput$s.answer$s.stmCanceled$.subscribe(a => {
-    console.log("REMOVING EDITS WITH STATE IDS: ", a.answer.stateIds);
     doc.removeSentencesByStateIds(a.answer.stateIds);
   });
 
