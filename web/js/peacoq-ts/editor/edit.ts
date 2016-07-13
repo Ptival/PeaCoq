@@ -83,8 +83,10 @@ export class Processed implements IProcessed {
 
   getColor() { return Theme.theme.processed; }
 
-  // getContext(): Promise<PeaCoqContext> {
-  //   debugger;
+  getContext(): Promise<PeaCoqContext> {
+    debugger;
+    return Promise.reject<any>("TODO");
+  }
     // if (this.context === null) {
     //   this.context = new Promise(onFulfilled => {
     //     const query = new CoqtopInput.Query("PeaCoqGetContext.", this.stateId);

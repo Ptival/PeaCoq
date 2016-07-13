@@ -7,6 +7,7 @@ import { TacticGroupNode } from "./tacticgroupnode";
 import { getActiveProofTree } from "./utils";
 
 export function proofTreeOnEdit(
+  doc: ICoqDocument,
   showProofTreePanel: () => Promise<{}>,
   hideProofTreePanel: () => void,
   query: string,
@@ -33,7 +34,7 @@ export function proofTreeOnEdit(
           context,
           0
         );
-        Global.proofTrees.unshift(pt);
+        doc.proofTrees.unshift(pt);
         const g = pt.rootNode;
         g.stateIds.push(stateId);
         pt.curNode = g;
@@ -43,24 +44,24 @@ export function proofTreeOnEdit(
   } else {
     // multiple trees might have been finished at once?
     if (_(["Qed.", "Defined.", "Abort."]).includes(trimmed)) {
-      Global.proofTrees.shift();
-      if (Global.proofTrees.length === 0) {
+      doc.proofTrees.shift();
+      if (doc.proofTrees.length === 0) {
         $("#prooftree").empty();
         hideProofTreePanel();
       }
     }
-    // while (Global.proofTrees.length > status.statusAllProofs.length) {
-    //   Global.proofTrees.shift();
-    //   if (Global.proofTrees.length === 0) {
+    // while (doc.proofTrees.length > status.statusAllProofs.length) {
+    //   doc.proofTrees.shift();
+    //   if (doc.proofTrees.length === 0) {
     //     $("#prooftree").empty();
     //     hideProofTreePanel();
     //   }
     // }
   }
 
-  if (Global.proofTrees.length === 0) { return; }
+  if (doc.proofTrees.length === 0) { return; }
 
-  const activeProofTree = Global.proofTrees[0];
+  const activeProofTree = doc.proofTrees[0];
   const curNode = activeProofTree.curNode;
 
   if (isUpperCase(trimmed[0]) || CoqStringUtils.isBullet(trimmed)) {
@@ -126,16 +127,17 @@ export function proofTreeOnEdit(
 }
 
 /*
-  For now, let"s just rewind within the tree or give up. Eventually,
+  For now, let's just rewind within the tree or give up. Eventually,
   we could rewind into old trees.
  */
-export function proofTreeOnEditAt(
+export function onStmCanceled(
+  doc: ICoqDocument,
   hideProofTreePanel: () => void,
   sid: number
 ): void {
 
-  if (Global.proofTrees.length === 0) { return; }
-  const activeProofTree = Global.proofTrees[0];
+  if (doc.proofTrees.length === 0) { return; }
+  const activeProofTree = doc.proofTrees[0];
   //lastStateId = sid;
   const curNode = activeProofTree.curNode;
 
@@ -158,7 +160,7 @@ export function proofTreeOnEditAt(
     activeProofTree.curNode = target;
     activeProofTree.update();
   } else {
-    Global.proofTrees.length = 0;
+    doc.proofTrees.length = 0;
     hideProofTreePanel();
     $("#prooftree").empty();
   }

@@ -31,7 +31,7 @@ import { ProofTree } from "./prooftree/prooftree";
 import { Tactic } from "./prooftree/tactic";
 import { TacticGroupNode } from "./prooftree/tacticgroupnode";
 import { getActiveProofTree } from "./prooftree/utils";
-import { proofTreeOnEdit, proofTreeOnEditAt } from "./prooftree/prooftree-handlers";
+import { proofTreeOnEdit, onStmCanceled } from "./prooftree/prooftree-handlers";
 
 import * as Sertop from "./sertop";
 import * as Command from "./sertop/command";
@@ -117,15 +117,9 @@ $(document).ready(() => {
     }, "PeaCoqGetContext.")))
     .share();
 
-  // editToBeDisplayed$
-  //   .map(mSentence => mSentence.fmap(s => s.getProcessedStage()))
-  //   .flatMapLatest(mStage => mStage.caseOf({
-  //     nothing: () => Promise.resolve(emptyContext),
-  //     just: p => p.then(s => s.getContext()),
-  //   }))
-  //   .catch(Rx.Observable.empty<PeaCoqContext>())
-  //   .subscribe(context => doc.contextPanel.display(context));
-
+  // Minor bug: this sends two Cancel commands when the user hits Enter
+  // and Ace proceeds to insert a tabulation (these count as two changes)
+  // The second Cancel is acknowledged by coqtop with no further action.
   const cancelBecauseEditorChange$: Rx.Observable<Command.Control<ISertop.IControlCommand.IStmCancel>> =
     doc.editorChange$
       .flatMap(change =>
@@ -138,24 +132,8 @@ $(document).ready(() => {
       )
       .share();
 
-  // const editAtBecauseEditorChange: Rx.Observable<Command.Control> =
-  //   doc.editorChange$
-  //     .flatMap(change => {
-  //       const maybeEdit = doc.getSentenceAtPosition(minPos(change.start, change.end));
-  //       // debugger;
-  //       return (
-  //         maybeEdit
-  //           .bind(e => e.getPreviousStateId())
-  //           .fmap(s => new Command.Control(new ControlCommand.StmEditAt(s)))
-  //           .caseOf({
-  //             nothing: () => [],
-  //             just: i => [i],
-  //           })
-  //       );
-  //     })
-  //     .share();
-
   Editor.setupMainEditor(doc, editor);
+
   editor.focus();
 
   const rightLayoutName = "right-layout";
@@ -577,8 +555,8 @@ $(document).ready(() => {
   //     if (io.output.response.contents.hasOwnProperty("Right")) { throw io; }
   //   });
 
-  // outputFromEditAt$
-  //   .subscribe(r => proofTreeOnEditAt(
+  // Rx.Observable.empty() // stmCanceled
+  //   .subscribe(r => onStmCanceled(
   //     hideProofTreePanel,
   //     r.input.getArgs()
   //   ));

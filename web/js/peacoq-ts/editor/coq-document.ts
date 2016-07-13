@@ -9,6 +9,7 @@ export class CoqDocument implements ICoqDocument {
   editorChange$: Rx.Observable<AceAjax.EditorChangeEvent>;
   edits: ISentenceArray;
   endAnchor: AceAjax.Anchor;
+  proofTrees: IProofTree[];
   sentencesChanged$: Rx.Observable<{}>;
   session: AceAjax.IEditSession;
 
@@ -34,6 +35,7 @@ export class CoqDocument implements ICoqDocument {
     );
     // this.editsChange$ = this.editsChangeSubject.asObservable();
     const newEditSubject = new Rx.Subject<ISentence<IToProcess>>();
+    this.proofTrees = [];
   }
 
   getAllSentences(): ISentence<any>[] { return this.edits.getAll(); }

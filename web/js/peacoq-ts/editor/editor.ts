@@ -27,11 +27,11 @@ export function setupEditor(e: AceAjax.Editor) {
   e.$blockScrolling = Infinity; // pestering warning
 }
 
-export function setupMainEditor(e: AceAjax.Editor) {
+export function setupMainEditor(doc: ICoqDocument, e: AceAjax.Editor) {
 
   setupEditor(e);
 
-  e.completers = [{ getCompletions: Completion.getCompletions }];
+  e.completers = [{ getCompletions: Completion.createGetCompletions(doc) }];
 
   // const addCompletion = (n: string) => {
   //   const row = e.completer ? e.completer.popup.getRow() : 0;

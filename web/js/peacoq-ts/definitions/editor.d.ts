@@ -69,6 +69,7 @@ interface ICoqDocument {
   editorChange$: Rx.Observable<AceAjax.EditorChangeEvent>;
   edits: ISentenceArray;
   endAnchor: AceAjax.Anchor;
+  proofTrees: IProofTree[];
   sentencesChanged$: Rx.Observable<{}>;
   session: AceAjax.IEditSession;
   getAllSentences(): ISentence<any>[];
@@ -134,11 +135,11 @@ interface IBeingProcessed extends IEditStage, WithStateId {
 }
 
 interface IProcessed extends IEditStage, WithStateId {
-  context: PeaCoqContext | null;
+  // context: PeaCoqContext | null;
   // editId: number;
   // goals: Maybe<IGoals>;
   //status: IStatus;
-  // getContext(): Promise<PeaCoqContext>;
+  getContext(): Promise<PeaCoqContext>;
 }
 
 interface IEditMarker {
