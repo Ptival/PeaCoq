@@ -1,10 +1,19 @@
 type CommandTag = string
+type RouteId = number
 
 interface ToSexp {
   toSexp(): string;
 }
 
 declare namespace ISertop {
+
+  interface QueryOptions {
+    // preds?: QueryPred[];
+    // limit?: Maybe<number>;
+    sid?: StateId;
+    // pp?: PrintOptions;
+    route?: RouteId;
+  }
 
   interface ICommand extends ToSexp {
     tag: CommandTag;
@@ -18,8 +27,11 @@ declare namespace ISertop {
 
   namespace IControlCommand {
     interface IStmCancel extends IControlCommand { }
-    interface IStmQuery extends IControlCommand {
+    interface IStmObserve extends IControlCommand {
       stateId: StateId;
+    }
+    interface IStmQuery extends IControlCommand {
+      queryOptions: QueryOptions;
     }
   }
 

@@ -37,6 +37,7 @@ interface IFeedback<C extends IFeedbackContent> {
   editOrState: EditOrState;
   editOrStateId: number;
   feedbackContent: C;
+  routeId: RouteId;
 }
 
 interface IFeedbackContent { }

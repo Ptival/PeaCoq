@@ -4,13 +4,6 @@ import * as Sexp from "./sexp";
 export const cmdTagMinimum = 2;
 let cmdTagCounter = cmdTagMinimum;
 
-interface QueryOptions {
-  // preds?: QueryPred[];
-  // limit?: Maybe<number>;
-  // sid?: StateId;
-  // pp?: PrintOptions;
-}
-
 abstract class Command implements ISertop.ICommand {
   public tag: CommandTag;
   constructor() { this.tag = (cmdTagCounter++).toString(); }
@@ -26,7 +19,7 @@ export class Control<C extends ISertop.IControlCommand> extends Command implemen
 
 export class Query<Q extends ISertop.IQueryCommand> extends Command implements ISertop.ICommand {
   constructor(
-    public queryOptions: QueryOptions,
+    public queryOptions: ISertop.QueryOptions,
     public queryCommand: Q
   ) { super(); }
   toSexp() {

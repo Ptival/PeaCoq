@@ -58,6 +58,8 @@ let bottomLayout: W2UI.W2Layout;
 // const contextTabs: W2UI.W2Tabs;
 // const coqtopTabs: W2UI.W2Tabs;
 
+const peaCoqGetContextRouteId = 1;
+
 $(document).ready(() => {
 
   $("#interface").w2layout({
@@ -97,10 +99,11 @@ $(document).ready(() => {
       .share();
   if (DebugFlags.editToBeDisplayed) { subscribeAndLog(editToBeDisplayed$); }
 
-  const stmObserve$: Rx.Observable<Command.Control<ISertop.IControlCommand.IStmQuery>> = editToBeDisplayed$
-    .flatMap(s => s.getBeingProcessed$())
-    .map(bp => new Command.Control(new ControlCommand.StmObserve(bp.stateId)))
-    .share();
+  const stmObserve$: Rx.Observable<Command.Control<ISertop.IControlCommand.IStmObserve>> =
+    editToBeDisplayed$
+      .flatMap(s => s.getBeingProcessed$())
+      .map(bp => new Command.Control(new ControlCommand.StmObserve(bp.stateId)))
+      .share();
 
   const stmGoals$ = editToBeDisplayed$
     .flatMap(s => s.getBeingProcessed$())
@@ -108,7 +111,10 @@ $(document).ready(() => {
     .share();
 
   const peaCoqGetContext$ = stmObserve$
-    .map(cmd => new Command.Control(new ControlCommand.StmQuery(cmd.controlCommand.stateId, "PeaCoqGetContext.")))
+    .map(cmd => new Command.Control(new ControlCommand.StmQuery({
+      route: peaCoqGetContextRouteId,
+      sid: cmd.controlCommand.stateId,
+    }, "PeaCoqGetContext.")))
     .share();
 
   // editToBeDisplayed$
@@ -149,7 +155,7 @@ $(document).ready(() => {
   //     })
   //     .share();
 
-  Editor.setupMainEditor(editor);
+  Editor.setupMainEditor(doc, editor);
   editor.focus();
 
   const rightLayoutName = "right-layout";
@@ -357,10 +363,10 @@ $(document).ready(() => {
   */
   const contextToDisplay$ = Rx.Observable.zip(
     peaCoqGetContext$,
-    coqtopOutput$s.feedback$s.message$s.notice$.filter(m => m.editOrStateId === 0)
+    coqtopOutput$s.feedback$s.message$s.notice$.filter(m => m.routeId === peaCoqGetContextRouteId)
   ).concatMap(([cmd, fbk]) => {
     // console.log(cmd, fbk);
-    const stateId = cmd.controlCommand.stateId;
+    const stateId = cmd.controlCommand.queryOptions.sid;
     const rawContext = fbk.feedbackContent.message;
     const sentence = doc.getSentenceByStateId(stateId);
     return sentence.caseOf({
@@ -494,8 +500,7 @@ $(document).ready(() => {
           level: PeaCoqMessageLevel.Danger,
         })),
       coqtopOutput$s.feedback$s.message$s.notice$
-        // PeaCoqGetContext produces messages with state id 0
-        .filter(e => e.editOrStateId !== 0)
+        .filter(e => e.routeId !== peaCoqGetContextRouteId)
         .map(e => ({
           message: e.feedbackContent.message,
           level: PeaCoqMessageLevel.Success,

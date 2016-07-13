@@ -36,7 +36,7 @@ export class StmAdd implements ISertop.IControlCommand {
   }
 }
 
-export class StmCancel implements ISertop.IControlCommand {
+export class StmCancel implements ISertop.IControlCommand.IStmCancel {
   constructor(
     public stateIds: StateId[]
   ) { }
@@ -57,19 +57,25 @@ export class StmEditAt implements ISertop.IControlCommand {
 //   toSexp() { return "StmJoin"; }
 // }
 
-export class StmObserve implements ISertop.IControlCommand {
+export class StmObserve implements ISertop.IControlCommand.IStmObserve {
   constructor(
     public stateId: StateId
   ) { }
   toSexp() { return `(StmObserve ${this.stateId})`; }
 }
 
-export class StmQuery implements ISertop.IControlCommand {
+export class StmQuery implements ISertop.IControlCommand.IStmQuery {
   constructor(
-    public stateId: StateId,
+    public queryOptions: ISertop.QueryOptions,
     public query: string
   ) { }
-  toSexp() { return `(StmQuery ${this.stateId} "${this.query}")`; }
+  toSexp() {
+    const opts = "".concat(
+      Sexp.optionalToSexp("route", this.queryOptions.route, (r: RouteId) => r.toString()),
+      Sexp.optionalToSexp("sid", this.queryOptions.sid, (s: StateId) => s.toString())
+    );
+    return `(StmQuery (${opts}) "${this.query}")`;
+  }
 }
 
 export class StmState implements ISertop.IControlCommand {

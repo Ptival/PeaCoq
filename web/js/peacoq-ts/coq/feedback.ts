@@ -5,7 +5,7 @@ export class Feedback implements IFeedback<IFeedbackContent> {
     public editOrState: EditOrState,
     public editOrStateId: EditId | StateId,
     public feedbackContent: IFeedbackContent,
-    public routeId: number
+    public routeId: RouteId
   ) {
   }
   toString() {
@@ -28,12 +28,13 @@ export class Feedback implements IFeedback<IFeedbackContent> {
 // }
 
 export function fromSertop(f) {
-  const [, [[, [es, esid]], [, fc], [, rid]]] = f;
+  const [   , [[   , [es,       esid]], [   ,     fc], [   ,    rid]]]
+  :     [any, [[any, [string, string]], [any, string], [any, string]]] = f;
   let editOrState;
   switch (es) {
     case "Edit": editOrState = EditOrState.Edit; break;
     case "State": editOrState = EditOrState.State; break;
     default: throw "coqtopMkFeedback: neither edit nor state";
   }
-  return new Feedback(editOrState, +esid, FeedbackContent.fromSertop(fc), rid);
+  return new Feedback(editOrState, +esid, FeedbackContent.fromSertop(fc), +rid);
 }
