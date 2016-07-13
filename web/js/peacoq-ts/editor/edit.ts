@@ -1,4 +1,6 @@
 // import * as CoqtopInput from "../coqtop-input";
+import * as Command from "../sertop/command";
+import * as ControlCommand from "../sertop/control-command";
 import * as DebugFlags from "../debug-flags";
 import { EditMarker } from "./edit-marker";
 import * as Global from "../global-variables";
@@ -8,6 +10,8 @@ import { walkJSON } from "../peacoq/json";
 import { emptyContext } from "../peacoq/peacoq";
 import { PeaCoqGoal } from "../peacoq-goal";
 import * as Theme from "../theme";
+
+const peaCoqGetContextRouteId = 1;
 
 export class ToProcess implements IToProcess {
   marker: IEditMarker;
@@ -66,17 +70,18 @@ export class BeingProcessed implements IBeingProcessed {
 */
 
 export class Processed implements IProcessed {
-  public context: PeaCoqContext | null;
-  // private context: Promise<PeaCoqContext> | null;
+  private context: Promise<PeaCoqContext> | null;
+  private onFulfilled: (c: PeaCoqContext) => void | null;
   marker: IEditMarker;
   stateId: number;
 
   constructor(
     e: IBeingProcessed,
     // this is needed so that the edit can query for its context on-demand
-    private inputObserver: Rx.Observer<ICoqtopInput>
+    private inputObserver: Rx.Observer<ISertop.ICommand>
   ) {
     this.context = null; // created later
+    this.onFulfilled = null;
     this.marker = e.nextStageMarker();
     this.stateId = e.stateId;
   }
@@ -84,44 +89,27 @@ export class Processed implements IProcessed {
   getColor() { return Theme.theme.processed; }
 
   getContext(): Promise<PeaCoqContext> {
-    debugger;
-    return Promise.reject<any>("TODO");
+    if (this.context === null) {
+      this.context = new Promise(onFulfilled => {
+        const query = new Command.Control(new ControlCommand.StmQuery({
+          route: peaCoqGetContextRouteId,
+          sid: this.stateId,
+        }, "PeaCoqGetContext."));
+        this.onFulfilled = onFulfilled;
+        this.inputObserver.onNext(query);
+      });
+    }
+    return this.context;
   }
-    // if (this.context === null) {
-    //   this.context = new Promise(onFulfilled => {
-    //     const query = new CoqtopInput.Query("PeaCoqGetContext.", this.stateId);
-    //     query["callback"] = (r: ICoqtopOutput<ICoqtopInput, any>) => {
-    //       const contents = r.output.response.contents;
-    //       if (DebugFlags.rawPeaCoqContext) { console.log(contents); }
-    //       if (contents.length === 0) {
-    //         onFulfilled(emptyContext);
-    //       } else {
-    //         // Escaping because JSON.parse sucks :(
-    //         const safeContents = contents
-    //           .replace(/\n/g, "\\n")
-    //           .replace(/\r/g, "\\r")
-    //           .replace(/\t/g, "\\t")
-    //           .replace(/\f/g, "\\f");
-    //         const c: IGoals<any> = JSON.parse(safeContents);
-    //         const processed: PeaCoqContext = Goals.apply(
-    //           c => {
-    //             const pp: any = walkJSON(c.ppgoal);
-    //             return {
-    //               goal: new Goal.Goal(c.goal),
-    //               ppgoal: new PeaCoqGoal(pp.hyps, pp.concl),
-    //             };
-    //           },
-    //           c
-    //         );
-    //         onFulfilled(processed);
-    //       }
-    //     }
-    //     this.inputObserver.onNext(query);
-    //   });
-    // }
-  //   return this.context;
-  // }
 
   getStateId() { return just(this.stateId); }
+
+  setContext(c: PeaCoqContext) {
+    if (this.onFulfilled === null) {
+      // someone else than getContext must have called PeaCoqGetContext
+      debugger;
+    }
+    this.onFulfilled(c);
+  }
 
 }

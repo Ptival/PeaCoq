@@ -7,17 +7,18 @@ export class CoqDocument implements ICoqDocument {
   beginAnchor: AceAjax.Anchor;
   contextPanel: IContextPanel;
   editorChange$: Rx.Observable<AceAjax.EditorChangeEvent>;
-  edits: ISentenceArray;
+  sentences: ISentenceArray;
   endAnchor: AceAjax.Anchor;
   proofTrees: IProofTree[];
   sentencesChanged$: Rx.Observable<{}>;
+  sentenceProcessed$: Rx.Observable<ISentence<IProcessed>>;
   session: AceAjax.IEditSession;
 
   constructor(
     public editor: AceAjax.Editor
   ) {
     const self = this;
-    this.edits = new SentenceArray(this);
+    this.sentences = new SentenceArray(this);
     // WARNING: This line must stay over calls to mkAnchor
     this.session = editor.getSession();
     this.beginAnchor = mkAnchor(this, 0, 0, "begin-marker", true);
@@ -29,16 +30,17 @@ export class CoqDocument implements ICoqDocument {
         })
         .share();
     this.sentencesChanged$ = Rx.Observable.merge(
-      this.edits.editCreated$,
-      this.edits.editChangedStage$,
-      this.edits.editRemoved$
+      this.sentences.sentenceCreated$,
+      this.sentences.sentenceChangedStage$,
+      this.sentences.sentenceRemoved$
     );
     // this.editsChange$ = this.editsChangeSubject.asObservable();
     const newEditSubject = new Rx.Subject<ISentence<IToProcess>>();
     this.proofTrees = [];
+    this.sentenceProcessed$ = this.sentences.sentenceProcessed$;
   }
 
-  getAllSentences(): ISentence<any>[] { return this.edits.getAll(); }
+  getAllSentences(): ISentence<any>[] { return this.sentences.getAll(); }
 
   getSentenceAtPosition(pos: AceAjax.Position): Maybe<ISentence<any>> {
     const edit = _(this.getAllSentences()).find(e => e.containsPosition(pos));
@@ -88,7 +90,7 @@ export class CoqDocument implements ICoqDocument {
   // }
 
   getLastSentenceStop(): AceAjax.Position {
-    return this.edits.getLast().caseOf({
+    return this.sentences.getLast().caseOf({
       nothing: () => this.beginAnchor.getPosition(),
       just: last => last.stopPosition,
     });
@@ -204,10 +206,10 @@ export class CoqDocument implements ICoqDocument {
         let nextIndex = CoqStringUtils.next(unprocessedText);
         let newStopPos = this.movePositionRight(lastEditStopPos, nextIndex);
         let query = unprocessedText.substring(0, nextIndex);
-        let previousEdit = this.edits.getLast();
+        let previousEdit = this.sentences.getLast();
         let stage = new Edit.ToProcess(this, lastEditStopPos, newStopPos);
         let edit: ISentence<IToProcess> =
-          this.edits.createEdit(this, lastEditStopPos, newStopPos, query, previousEdit, stage);
+          this.sentences.createSentence(this, lastEditStopPos, newStopPos, query, previousEdit, stage);
         // debugger;
         return [edit];
       })
@@ -226,16 +228,16 @@ export class CoqDocument implements ICoqDocument {
     this.editor.scrollToLine(0, true, true, () => { });
   }
 
-  removeAllSentences(): void { this.edits.removeAll(); }
+  removeAllSentences(): void { this.sentences.removeAll(); }
 
-  removeSentence(e: ISentence<any>): void { this.edits.remove(e); }
+  removeSentence(e: ISentence<any>): void { this.sentences.remove(e); }
 
   // removeEditAndFollowingOnes(e: ISentence<any>): void {
   //   this.edits.removeEditAndFollowingOnes(e);
   // }
 
   removeSentences(pred: (e: ISentence<any>) => boolean): void {
-    this.edits.removeEdits(pred);
+    this.sentences.removeSentences(pred);
   }
 
   // removeFollowingEdits(e: ISentence<any>): void {
@@ -243,7 +245,7 @@ export class CoqDocument implements ICoqDocument {
   // }
 
   removeSentencesByStateIds(ids: StateId[]): void {
-    this.edits.removeEdits(e => e.getStateId().caseOf({
+    this.sentences.removeSentences(e => e.getStateId().caseOf({
       nothing: () => false,
       just: id => _(ids).includes(id),
     }));

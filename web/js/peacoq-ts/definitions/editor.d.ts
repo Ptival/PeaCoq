@@ -41,16 +41,16 @@ interface ShortcutsStreams {
 }
 
 interface ISentenceArray {
-  editChangedStage$: Rx.Observable<ISentence<IEditStage>>;
-  editProcessed$: Rx.Observable<ISentence<IProcessed>>;
-  editCreated$: Rx.Observable<ISentence<IEditStage>>;
-  editRemoved$: Rx.Observable<ISentence<IEditStage>>;
-  createEdit(
+  sentenceChangedStage$: Rx.Observable<ISentence<IStage>>;
+  sentenceProcessed$: Rx.Observable<ISentence<IProcessed>>;
+  sentenceCreated$: Rx.Observable<ISentence<IStage>>;
+  sentenceRemoved$: Rx.Observable<ISentence<IStage>>;
+  createSentence(
     document: ICoqDocument,
     startPosition: AceAjax.Position,
     stopPosition: AceAjax.Position,
     query: string,
-    previousEdit: Maybe<ISentence<any>>,
+    previousSentence: Maybe<ISentence<any>>,
     stage: IToProcess
   ): ISentence<IToProcess>;
   getAll(): ISentence<any>[];
@@ -58,7 +58,7 @@ interface ISentenceArray {
   remove(r: ISentence<any>): void;
   removeAll(): void;
   // removeEditAndFollowingOnes(e: ISentence<any>): void;
-  removeEdits(pred: (e: ISentence<any>) => boolean): void;
+  removeSentences(pred: (e: ISentence<any>) => boolean): void;
   // removeFollowingEdits(e: ISentence<any>): void;
   // replace(id: number, e: IEdit<any>): void;
 }
@@ -67,15 +67,16 @@ interface ICoqDocument {
   contextPanel: IContextPanel;
   editor: AceAjax.Editor;
   editorChange$: Rx.Observable<AceAjax.EditorChangeEvent>;
-  edits: ISentenceArray;
+  sentences: ISentenceArray;
   endAnchor: AceAjax.Anchor;
   proofTrees: IProofTree[];
   sentencesChanged$: Rx.Observable<{}>;
+  sentenceProcessed$: Rx.Observable<ISentence<IProcessed>>;
   session: AceAjax.IEditSession;
-  getAllSentences(): ISentence<any>[];
-  getSentenceByStateId(s: StateId): Maybe<ISentence<any>>;
-  getSentenceByTag(tag: CommandTag): Maybe<ISentence<any>>;
-  getSentenceAtPosition(pos: AceAjax.Position): Maybe<ISentence<any>>;
+  getAllSentences(): ISentence<IStage>[];
+  getSentenceByStateId(s: StateId): Maybe<ISentence<IStage>>;
+  getSentenceByTag(tag: CommandTag): Maybe<ISentence<IStage>>;
+  getSentenceAtPosition(pos: AceAjax.Position): Maybe<ISentence<IStage>>;
   getSentencesBeingProcessed(): ISentence<IBeingProcessed>[];
   getSentencesToProcess(): ISentence<IToProcess>[];
   getProcessedSentences(): ISentence<IProcessed>[];
@@ -86,22 +87,22 @@ interface ICoqDocument {
   movePositionRight(pos: AceAjax.Position, n: number): AceAjax.Position;
   nextSentence(next$: Rx.Observable<{}>): Rx.Observable<ISentence<IToProcess>>;
   removeAllSentences(): void;
-  removeSentence(e: ISentence<IEditStage>): void;
+  removeSentence(e: ISentence<IStage>): void;
   // removeEditAndFollowingOnes(e: ISentence<IEditStage>): void;
-  removeSentences(pred: (e: ISentence<IEditStage>) => boolean): void;
+  removeSentences(pred: (e: ISentence<IStage>) => boolean): void;
   removeSentencesByStateIds(ids: StateId[]): void;
   // removeFollowingEdits(e: ISentence<IEditStage>): void;
   resetEditor(s: string): void;
 }
 
-interface ISentence<S extends IEditStage> {
+interface ISentence<S extends IStage> {
   array: ISentenceArray;
   commandTag: Maybe<CommandTag>;
   previousEdit: Maybe<ISentence<any>>;
   query: string;
   sentenceId: number;
   stage: S;
-  stage$: Rx.Observable<IEditStage>;
+  stage$: Rx.Observable<IStage>;
   startPosition: AceAjax.Position;
   stopPosition: AceAjax.Position;
   cleanup(): void;
@@ -112,17 +113,17 @@ interface ISentence<S extends IEditStage> {
   getProcessedStage(): Promise<IProcessed>;
   getStateId(): Maybe<number>;
   highlight(): void;
-  setStage<T extends IEditStage>(stage: T): ISentence<T>;
+  setStage<T extends IStage>(stage: T): ISentence<T>;
   unhighlight(): void;
 }
 
-interface IEditStage {
+interface IStage {
   marker: IEditMarker;
   getColor(): string;
   getStateId(): Maybe<number>;
 }
 
-interface IToProcess extends IEditStage {
+interface IToProcess extends IStage {
   nextStageMarker(): IEditMarker;
 }
 
@@ -130,16 +131,17 @@ interface WithStateId {
   stateId: number;
 }
 
-interface IBeingProcessed extends IEditStage, WithStateId {
+interface IBeingProcessed extends IStage, WithStateId {
   nextStageMarker(): IEditMarker;
 }
 
-interface IProcessed extends IEditStage, WithStateId {
+interface IProcessed extends IStage, WithStateId {
   // context: PeaCoqContext | null;
   // editId: number;
   // goals: Maybe<IGoals>;
   //status: IStatus;
   getContext(): Promise<PeaCoqContext>;
+  setContext(c: PeaCoqContext): void;
 }
 
 interface IEditMarker {

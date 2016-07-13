@@ -20,7 +20,7 @@ export function setupTextCursorPositionUpdate(
   doc: ICoqDocument,
   editProcessed$: Rx.Observable<ISentence<IProcessed>>,
   error$: Rx.Observable<IEditorError>,
-  previousEditToReach$: Rx.Observable<ISentence<IEditStage>>,
+  previousEditToReach$: Rx.Observable<ISentence<IStage>>,
   nextEditToProcess$: Rx.Observable<ISentence<IToProcess>>
 ): void {
 

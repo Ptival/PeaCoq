@@ -19,8 +19,12 @@ declare namespace ISertop {
     tag: CommandTag;
   }
 
-  interface IControl extends ICommand { }
-  interface IQuery extends ICommand { }
+  interface IControl<C extends IControlCommand> extends ICommand {
+    controlCommand: C
+  }
+  interface IQuery<Q extends IQueryCommand> extends ICommand {
+    queryCommand: Q
+  }
 
   interface IControlCommand extends ToSexp { }
   interface IQueryCommand extends ToSexp { }

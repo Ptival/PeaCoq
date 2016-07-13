@@ -10,7 +10,7 @@ export function setupUserInteractionForwardGoto(
 ): Rx.Observable<{}> {
 
   return forwardGoto$.flatMap(dest => {
-    return doc.edits.editCreated$
+    return doc.sentences.sentenceCreated$
       // stop if the edit created ends after the destination position
       .takeWhile(e => isBefore(Strictly.Yes, e.stopPosition, dest))
       // stop if there's no text between the last edit and the destination

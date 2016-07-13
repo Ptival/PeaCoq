@@ -11,7 +11,7 @@ onCompleted
 
 As a consequence, `processedStage` should contain an `IProcessed`.
 */
-export class Sentence<S extends IEditStage> implements ISentence<S> {
+export class Sentence<S extends IStage> implements ISentence<S> {
   private beingProcessed$: Rx.Observable<IBeingProcessed>;
   private processed$: Rx.Observable<IProcessed>;
 
@@ -80,7 +80,7 @@ export class Sentence<S extends IEditStage> implements ISentence<S> {
 
   highlight(): void { this.stage.marker.highlight(); }
 
-  setStage<T extends IEditStage>(stage: T): ISentence<T> {
+  setStage<T extends IStage>(stage: T): ISentence<T> {
     // no strong update, so circumventing the type system
     this.stage = <any>stage;
     this.stage$.onNext(this.stage);

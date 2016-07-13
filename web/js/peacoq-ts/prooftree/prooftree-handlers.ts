@@ -133,7 +133,7 @@ export function proofTreeOnEdit(
 export function onStmCanceled(
   doc: ICoqDocument,
   hideProofTreePanel: () => void,
-  sid: number
+  sids: StateId[]
 ): void {
 
   if (doc.proofTrees.length === 0) { return; }
@@ -148,14 +148,13 @@ export function onStmCanceled(
   // and mark their children tactic groups unprocessed
   const allGoals = activeProofTree.rootNode.getAllGoalDescendants();
   _(allGoals).each(g => {
-    if (_(g.stateIds).some(s => s >= sid)) {
+    if (_(g.stateIds).some(s => _(sids).includes(s))) {
       _(g.tacticGroups).each(g => { g.isProcessed = false; });
     }
-    g.stateIds = _(g.stateIds).filter(s => s <= sid).value();
+    g.stateIds = _(g.stateIds).filter(s => _(sids).includes(s)).value();
   });
-  const target = _(allGoals).find(g => {
-    return _(g.stateIds).some(s => s === sid);
-  });
+  // TODO: Not sure if this is always correct
+  const target = _.maxBy(allGoals, g => _.max(g.stateIds));
   if (target) {
     activeProofTree.curNode = target;
     activeProofTree.update();

@@ -5,35 +5,35 @@ import { Sentence } from "./sentence";
 import { Strictly } from "../strictly";
 
 export class SentenceArray implements ISentenceArray {
-  private edits: ISentence<IEditStage>[];
+  private edits: ISentence<IStage>[];
 
-  public editChangedStage$: Rx.Subject<ISentence<IEditStage>>;
-  public editCreated$: Rx.Subject<ISentence<IEditStage>>;
-  public editProcessed$: Rx.Observable<ISentence<IProcessed>>;
-  public editRemoved$: Rx.Subject<ISentence<IEditStage>>;
+  public sentenceChangedStage$: Rx.Subject<ISentence<IStage>>;
+  public sentenceCreated$: Rx.Subject<ISentence<IStage>>;
+  public sentenceProcessed$: Rx.Observable<ISentence<IProcessed>>;
+  public sentenceRemoved$: Rx.Subject<ISentence<IStage>>;
 
   constructor(
     public document: ICoqDocument
   ) {
     this.edits = [];
 
-    this.editChangedStage$ = new Rx.Subject<any>();
+    this.sentenceChangedStage$ = new Rx.Subject<any>();
     if (DebugFlags.editChangedStage) {
-      this.editChangedStage$.subscribe(e =>
+      this.sentenceChangedStage$.subscribe(e =>
         console.log("edit changed stage", e.stage, e)
       );
     }
-    this.editProcessed$ =
+    this.sentenceProcessed$ =
       <Rx.Observable<ISentence<any>>>
-      this.editChangedStage$
+      this.sentenceChangedStage$
         .filter(e => e.stage instanceof Processed);
-    this.editCreated$ = new Rx.Subject<any>();
-    if (DebugFlags.editCreated) { subscribeAndLog(this.editCreated$, "edit created"); }
-    this.editRemoved$ = new Rx.Subject<any>();
-    if (DebugFlags.editRemoved) { subscribeAndLog(this.editRemoved$, "edit removed"); }
+    this.sentenceCreated$ = new Rx.Subject<any>();
+    if (DebugFlags.editCreated) { subscribeAndLog(this.sentenceCreated$, "edit created"); }
+    this.sentenceRemoved$ = new Rx.Subject<any>();
+    if (DebugFlags.editRemoved) { subscribeAndLog(this.sentenceRemoved$, "edit removed"); }
   }
 
-  createEdit(
+  createSentence(
     document: ICoqDocument,
     startPosition: AceAjax.Position,
     stopPosition: AceAjax.Position,
@@ -43,8 +43,8 @@ export class SentenceArray implements ISentenceArray {
   ): ISentence<IToProcess> {
     const edit = new Sentence(this, startPosition, stopPosition, query, previousEdit, stage);
     this.edits.push(edit);
-    this.editCreated$.onNext(edit);
-    edit.stage$.subscribe(_ => this.editChangedStage$.onNext(edit));
+    this.sentenceCreated$.onNext(edit);
+    edit.stage$.subscribe(_ => this.sentenceChangedStage$.onNext(edit));
     return <any>edit;
   }
 
@@ -55,11 +55,11 @@ export class SentenceArray implements ISentenceArray {
   }
 
   remove(r: ISentence<any>) {
-    this.removeEdits(e => e.sentenceId === r.sentenceId);
+    this.removeSentences(e => e.sentenceId === r.sentenceId);
   }
 
   removeAll(): void {
-    this.removeEdits(_ => true);
+    this.removeSentences(_ => true);
   }
 
   // private removeEditsFromIndex(i: number): void {
@@ -83,7 +83,7 @@ export class SentenceArray implements ISentenceArray {
   //   this.removeEditsFromIndex(editIndex + 1);
   // }
 
-  removeEdits(pred: (e: ISentence<any>) => boolean): void {
+  removeSentences(pred: (e: ISentence<any>) => boolean): void {
     const removedEdits = [];
     _.remove(this.edits, e => {
       const cond = pred(e);
@@ -92,7 +92,7 @@ export class SentenceArray implements ISentenceArray {
     });
     _(removedEdits).each(e => {
       e.cleanup();
-      this.editRemoved$.onNext(e);
+      this.sentenceRemoved$.onNext(e);
     })
   }
 

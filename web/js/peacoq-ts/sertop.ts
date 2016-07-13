@@ -9,21 +9,28 @@ import * as MessageLevel from "./coq/message-level";
 export function setupCommunication(
   cmd$: Rx.Observable<ISertop.ICommand>
 ): CoqtopOutputStreams {
-  // we issue a join every time the command stream becomes silent
-  // const join$ = cmd$.debounce(1000).map(_ => new Command.Control(new ControlCommand.StmObserve()));
+
+  // Need to use something like websockets to avoid having to poll like this
   const pingOutput$ =
     Rx.Observable.interval(250)
       .concatMap(sendPing)
       .concatMap(a => a)
       .share();
 
+  // This will contain a value every time we receive a response
   const cmdOutputSubject = new Rx.Subject<number>();
 
-  const cmdOutput$ =
+  // We must slow down cmd$ because server handlers are run in parallel
+  // and writes to coqtop are not atomic, so burst of messages become
+  // intertwined!...
+  const slowedCmd$ =
     Rx.Observable.zip(
       cmd$,
       cmdOutputSubject.startWith(-1)
-    )
+    );
+
+  const cmdOutput$ =
+    slowedCmd$
       .concatMap(([cmd, nb]) => {
         // console.log("ACK", nb);
         // console.log("SND", cmd.tag);

@@ -10,14 +10,14 @@ abstract class Command implements ISertop.ICommand {
   abstract toSexp(): string;
 }
 
-export class Control<C extends ISertop.IControlCommand> extends Command implements ISertop.ICommand {
+export class Control<C extends ISertop.IControlCommand> extends Command implements ISertop.IControl<C> {
   constructor(
     public controlCommand: C
   ) { super(); }
   toSexp() { return `(Control ${this.controlCommand.toSexp()})`; }
 }
 
-export class Query<Q extends ISertop.IQueryCommand> extends Command implements ISertop.ICommand {
+export class Query<Q extends ISertop.IQueryCommand> extends Command implements ISertop.IQuery<Q> {
   constructor(
     public queryOptions: ISertop.QueryOptions,
     public queryCommand: Q

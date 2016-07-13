@@ -32,6 +32,7 @@ import { Tactic } from "./prooftree/tactic";
 import { TacticGroupNode } from "./prooftree/tacticgroupnode";
 import { getActiveProofTree } from "./prooftree/utils";
 import { proofTreeOnEdit, onStmCanceled } from "./prooftree/prooftree-handlers";
+import * as ProofTreeSetup from "./prooftree/setup";
 
 import * as Sertop from "./sertop";
 import * as Command from "./sertop/command";
@@ -86,7 +87,7 @@ $(document).ready(() => {
     .map(() => editor.selection.getCursor());
   if (DebugFlags.textCursorPosition) { subscribeAndLog(textCursorPosition$); }
 
-  const editToBeDisplayed$: Rx.Observable<ISentence<IEditStage>> =
+  const editToBeDisplayed$: Rx.Observable<ISentence<IStage>> =
     textCursorPosition$
       .debounce(250)
       .flatMap(pos => {
@@ -110,12 +111,12 @@ $(document).ready(() => {
     .map(bp => new Command.Query({}, new QueryCommand.Goals(bp.stateId)))
     .share();
 
-  const peaCoqGetContext$ = stmObserve$
-    .map(cmd => new Command.Control(new ControlCommand.StmQuery({
-      route: peaCoqGetContextRouteId,
-      sid: cmd.controlCommand.stateId,
-    }, "PeaCoqGetContext.")))
-    .share();
+  // const peaCoqGetContext$ = stmObserve$
+  //   .map(cmd => new Command.Control(new ControlCommand.StmQuery({
+  //     route: peaCoqGetContextRouteId,
+  //     sid: cmd.controlCommand.stateId,
+  //   }, "PeaCoqGetContext.")))
+  //   .share();
 
   // Minor bug: this sends two Cancel commands when the user hits Enter
   // and Ace proceeds to insert a tabulation (these count as two changes)
@@ -258,7 +259,7 @@ $(document).ready(() => {
 
   const sentencesToProcessStream = doc.nextSentence(nextSubject.asObservable());
 
-  const sentenceToCancelBecausePrev$: Rx.Observable<ISentence<IEditStage>> =
+  const sentenceToCancelBecausePrev$: Rx.Observable<ISentence<IStage>> =
     userActionStreams.prev$
       .flatMap(({}) => {
         if (doc.getSentencesToProcess().length > 0) { return []; }
@@ -298,14 +299,7 @@ $(document).ready(() => {
 
   // TODO: I don't like how I pass queriesObserver to each edit stage, I should
   // improve on this design
-  const queriesSubject = new Rx.Subject<ICoqtopInput>();
-  const queriesObserver = queriesSubject.asObserver();
-  const queries$ = queriesSubject.asObservable();
-
-  // let inputStatus$: Rx.Observable<Command.Command> =
-  //   Rx.Observable
-  //     .interval(250)
-  //     .map(() => new Command.Control(new ControlCommand.StmJoin()));
+  const peaCoqGetContext$ = new Rx.Subject<ISertop.IControl<ISertop.IControlCommand.IStmQuery>>();
 
   // Here are subjects for observables that react to coqtop output
   const cancelBecauseErrorMsg$ = new Rx.Subject<ISertop.ICommand>();
@@ -330,7 +324,7 @@ $(document).ready(() => {
     cancelBecauseErrorMsg$,
     stmObserve$,
     // stmGoals$,
-    peaCoqGetContext$,
+    peaCoqGetContext$.asObservable(),
   ]);
 
   const coqtopOutput$s = Sertop.setupCommunication(coqtopInputs$);
@@ -347,13 +341,18 @@ $(document).ready(() => {
     const stateId = cmd.controlCommand.queryOptions.sid;
     const rawContext = fbk.feedbackContent.message;
     const sentence = doc.getSentenceByStateId(stateId);
+
     return sentence.caseOf({
       nothing: () => [],
       just: sentence => {
 
+        if (!(sentence.stage instanceof Edit.Processed)) { debugger; }
+        const stage: IProcessed = <any>sentence.stage;
+
         if (DebugFlags.rawPeaCoqContext) { console.log(rawContext); }
         if (rawContext.length === 0) {
-          sentence.stage.context = emptyContext;
+          stage.setContext(emptyContext);
+          return [emptyContext];
         } else {
           // Escaping because JSON.parse sucks :\
           const safeContents = rawContext
@@ -372,9 +371,9 @@ $(document).ready(() => {
             },
             c
           );
-          sentence.stage.context = processed;
+          stage.setContext(processed);
+          return [processed];
         }
-        return [sentence.stage.context];
 
       }
     })
@@ -386,7 +385,7 @@ $(document).ready(() => {
   });
 
   coqtopOutput$s.answer$s.stmAdded$.subscribe(a => {
-    const allEdits = doc.getAllSentences();
+    const allEdits = doc.getSentencesToProcess();
     const edit = _(allEdits).find(e => isJust(e.commandTag) && fromJust(e.commandTag) === a.cmdTag);
     if (!edit) { return; } // this happens for a number of reasons...
     const newStage = new Edit.BeingProcessed(edit.stage, a.answer.stateId);
@@ -411,7 +410,7 @@ $(document).ready(() => {
           const editsBeingProcessed = doc.getSentencesBeingProcessed();
           const edit = _(editsBeingProcessed).find(e => e.stage.stateId === stateId);
           if (edit) {
-            const newStage = new Edit.Processed(edit.stage, queriesObserver);
+            const newStage = new Edit.Processed(edit.stage, peaCoqGetContext$);
             edit.setStage(newStage);
             // if (
             //   Global.coqDocument.getEditsToProcess().length === 0
@@ -560,6 +559,14 @@ $(document).ready(() => {
   //     hideProofTreePanel,
   //     r.input.getArgs()
   //   ));
+
+  ProofTreeSetup.setup({
+    doc,
+    hideProofTreePanel,
+    sentenceProcessed$: doc.sentenceProcessed$,
+    showProofTreePanel,
+    stmCanceled$: coqtopOutput$s.answer$s.stmCanceled$,
+  });
 
   // Global.coqDocument.edits.editProcessed$
   //   .flatMap(e =>
