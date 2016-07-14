@@ -111,13 +111,6 @@ $(document).ready(() => {
     .map(bp => new Command.Query({}, new QueryCommand.Goals(bp.stateId)))
     .share();
 
-  // const peaCoqGetContext$ = stmObserve$
-  //   .map(cmd => new Command.Control(new ControlCommand.StmQuery({
-  //     route: peaCoqGetContextRouteId,
-  //     sid: cmd.controlCommand.stateId,
-  //   }, "PeaCoqGetContext.")))
-  //   .share();
-
   // Minor bug: this sends two Cancel commands when the user hits Enter
   // and Ace proceeds to insert a tabulation (these count as two changes)
   // The second Cancel is acknowledged by coqtop with no further action.
@@ -568,40 +561,7 @@ $(document).ready(() => {
     stmCanceled$: coqtopOutput$s.answer$s.stmCanceled$,
   });
 
-  // Global.coqDocument.edits.editProcessed$
-  //   .flatMap(e =>
-  //     e.stage.getContext()
-  //       .then(c => ({
-  //         edit: e,
-  //         context: c,
-  //       }))
-  //   )
-  // .subscribe(({ edit, context }) => {
-  //   // TODO: gotta find a way to know how status length evolved
-  //   proofTreeOnEdit(
-  //     showProofTreePanel,
-  //     hideProofTreePanel,
-  //     edit.query,
-  //     edit.stage.stateId,
-  //     context
-  //   );
-  // });
-
 });
-
-// const lastStatus: IStatus;
-
-// function editorOnEditAt(sid: number) {
-//   const edit = _(Global.coqDocument.editsProcessed).find(e => e.stateId === sid);
-//   if (edit) {
-//     killEditsAfterPosition(Global.coqDocument, edit.getStopPosition());
-//     updateCoqtopTabs(edit.goals, edit.context);
-//   }
-// }
-
-// function proofTreeOnStatus(s) {
-//   lastStatus = s;
-// }
 
 function updateCoqtopTabs(context: PeaCoqContext) {
   console.log("TODO: updateCoqtopTabs");
@@ -713,28 +673,3 @@ function minPos(pos1: AceAjax.Position, pos2: AceAjax.Position): AceAjax.Positio
   }
   return pos2;
 }
-
-// function mapCursorPositionToContext(
-//   pos$: Rx.Observable<AceAjax.Position>
-// ): Rx.Observable<PeaCoqContext> {
-//
-//   /* nothing() if no edit to display, just(edit) if there is one */
-//   const editToBeDisplayed$: Rx.Observable<Maybe<ISentence<IEditStage>>> =
-//     pos$
-//       .map(pos => {
-//         // we want to display the last edit whose stopPos is before `pos`
-//         const edit = _(Global.coqDocument.getAllEdits())
-//           .findLast(s => isBefore(Strictly.No, s.stopPosition, pos));
-//         return edit ? just(edit) : nothing();
-//       })
-//       .distinctUntilChanged();
-//
-//   if (DebugFlags.editToBeDisplayed) { subscribeAndLog(editToBeDisplayed$); }
-//
-//   return editToBeDisplayed$
-//     .flatMapLatest(edit => edit.caseOf({
-//       nothing: () => Promise.resolve(emptyContext),
-//       just: e => e.getProcessedStage().then(s => s.getContext()),
-//     }));
-//
-// }
