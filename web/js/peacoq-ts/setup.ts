@@ -528,7 +528,7 @@ $(document).ready(() => {
           level: PeaCoqMessageLevel.Danger,
         })),
       coqtopOutput$s.feedback$s.message$s.notice$
-        .filter(e => e.routeId !== peaCoqGetContextRouteId)
+        .filter(e => e.routeId === 0) // other routes are used by PeaCoq
         .map(e => ({
           message: e.feedbackContent.message,
           level: PeaCoqMessageLevel.Success,
