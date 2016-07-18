@@ -89,7 +89,7 @@ requirejs(
           "peacoq-js-of-ts/coq/value-fail",
           "peacoq-js-of-ts/coq/block-type",
           "peacoq-js-of-ts/coq/gallina",
-          "peacoq-js-of-ts/coq/message",
+          // "peacoq-js-of-ts/coq/message",
           "peacoq-js-of-ts/coq/ppcmd-token",
           "peacoq-js-of-ts/coq/status",
           "peacoq-js-of-ts/coq/xml-tag",
