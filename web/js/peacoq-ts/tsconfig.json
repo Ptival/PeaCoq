@@ -6,6 +6,7 @@
     "declaration": false,
     "experimentalDecorators": true,
     "module": "amd",
+    "moduleResolution": "Node",
     "noImplicitAny": false,
     "noLib": false,
     "outDir": "../peacoq-js-of-ts",
