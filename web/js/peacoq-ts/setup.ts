@@ -419,7 +419,6 @@ $(document).ready(() => {
             .filter(n => n.editOrStateId === a.answer.stateId)
             .takeUntil(coqtopOutput$s.feedback$s.message$s.error$.filter(e => e.editOrStateId === a.answer.stateId))
             .take(1)
-            .doOnCompleted(() => console.log("DONE PICKING UP", a.answer.stateId))
         })
         .subscribe(n => {
           const context = Context.create(n.feedbackContent.message);
