@@ -349,19 +349,19 @@ $(document).ready(() => {
         return Rx.Observable.fromPromise(sentence.stage.getContext())
           // grab tactics to try until another sentence is processed
           .flatMap(context => {
-            if (context.fgGoals.length === 0) { return Rx.Observable.empty<TacticGroup>(); }
+            if (context.fgGoals.length === 0) { return Rx.Observable.empty(); }
             const tacticsToTry = ProofTreeAutomation.tacticsToTry(context, 0);
             return Rx.Observable.fromArray(tacticsToTry)
-              .takeUntil(doc.sentenceProcessed$);
+              .takeUntil(doc.sentenceProcessed$)
+              .flatMap(group => {
+                return group.tactics.map(tactic => ({ context, group: group.name, tactic, sentence }));
+              });
           })
-          .flatMap(group => {
-            return group.tactics.map(tactic => ({ tactic, group: group.name, sentence }));
-          });
       })
       .share();
 
   tacticToTry$
-    .map(({ tactic, group, sentence }) => {
+    .map(({ context: previousContext, group, tactic, sentence }) => {
       const stateId = sentence.stage.stateId;
       const add = new Command.Control(new ControlCommand.StmAdd({ ontop: stateId }, tactic));
       // listen for the STM added answer (there should be 0 if failed otherwise 1)
@@ -385,7 +385,10 @@ $(document).ready(() => {
         })
         .subscribe(n => {
           const context = Context.create(n.feedbackContent.message);
-          sentence.addCompletion(tactic, group, context);
+          // we only add tactics that change something
+          if (!_.isEqual(context, previousContext)) {
+            sentence.addCompletion(tactic, group, context);
+          }
         })
       const editAt = new Command.Control(new ControlCommand.StmEditAt(stateId));
       return Rx.Observable.concat<ISertop.ICommand>([
