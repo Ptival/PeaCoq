@@ -1,6 +1,6 @@
 type ProofTreeLink = d3.svg.diagonal.Link<IProofTreeNode>;
 
-declare type TacticGroup = {
+interface TacticGroup {
   name: string;
   tactics: string[];
 }
@@ -63,6 +63,7 @@ interface IGoalNode extends IProofTreeNode {
   //   IProofTree: IProofTree, parent: Maybe<ITacticGroupNode>, goals: IGoals, goal: IPeaCoqGoal
   // );
   context: PeaCoqContext;
+  fgIndex: number;
   html: JQuery;
   stateIds: number[];
   tacticGroups: ITacticGroupNode[];

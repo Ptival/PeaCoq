@@ -14,6 +14,8 @@ interface PeaCoqContextElement {
 type PeaCoqContext = IGoals<PeaCoqContextElement>
 
 interface IPeaCoqGoal {
+  hyps: PeaCoqHyp[];
+  concl: IConstrExpr;
   getHTML(): JQuery;
 }
 
@@ -29,7 +31,8 @@ interface CoqtopOutputStreams {
   // io$: Rx.Observable<ICoqtopOutput<ICoqtopInput, any>>;
   // error$: Rx.Observable<ValueFail>;
   answer$s: {
-    coqExn$:  Rx.Observable<ISertop.IAnswer<ISertop.ICoqExn>>;
+    completed$: Rx.Observable<ISertop.IAnswer<ISertop.ICompleted>>;
+    coqExn$: Rx.Observable<ISertop.IAnswer<ISertop.ICoqExn>>;
     stmAdded$: Rx.Observable<ISertop.IAnswer<ISertop.IStmAdded>>;
     stmCanceled$: Rx.Observable<ISertop.IAnswer<ISertop.IStmCanceled>>;
   }

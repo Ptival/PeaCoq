@@ -671,67 +671,64 @@ export class ProofTree implements IProofTree {
   }
 
   refreshTactics(): void {
+    //if (focusedOnEditor) { return; }
 
-    return;
-    //
-    // //if (focusedOnEditor) { return; }
-    //
-    // let self = this;
-    // let curNode = this.curNode;
-    //
-    // let tacticsAndGroups = this.tactics();
-    //
-    // /*
-    //   _(this.tactics())
-    //     .groupBy(function(elt) {
-    //     if ($.type(elt) === "string") {
-    //       return "tactics";
-    //     } else {
-    //       return "groups";
-    //     }
-    //   })
-    //     .value()
-    //   ;
-    //
-    //   // TODO: there should be no tactics!
-    //   let groups = tacticsAndGroups.groups;
-    //   */
-    //
-    // /*
-    //     let groupSparks = _(tacticsAndGroups)
-    //       .map(function(group) {
-    //       let groupNode: TacticGroupNode = self.findOrCreateGroup(curNode, group.name);
-    //       return (
-    //         _(group.tactics)
-    //           .filter(
-    //           tactic => {
-    //             return (
-    //               !_(groupNode.tactics)
-    //                 .some(function(node) {
-    //                 return (node.tactic === tactic);
-    //               })
-    //               );
-    //           })
-    //           .map(
-    //           tactic => {
-    //             return function() {
-    //               return self.runTactic(tactic, groupNode);
-    //             }
-    //           })
-    //           .flatten(true)
-    //           .value()
-    //         );
-    //     })
-    //       .flatten<() => Promise<any>>(true)
-    //       .value()
-    //       ;
-    //
-    //     // flushes the worklist and add the new sparks
-    //     this.tacticsWorklist = groupSparks;
-    // */
-    // //console.log("REPOPULATING TACTICS WORKLIST", this.tacticsWorklist);
-    //
-    // this.processTactics();
+    let self = this;
+    let curNode = this.curNode;
+
+    let tacticsAndGroups = this.tactics();
+
+    /*
+      _(this.tactics())
+        .groupBy(function(elt) {
+        if ($.type(elt) === "string") {
+          return "tactics";
+        } else {
+          return "groups";
+        }
+      })
+        .value()
+      ;
+
+      // TODO: there should be no tactics!
+      let groups = tacticsAndGroups.groups;
+      */
+
+    /*
+        let groupSparks = _(tacticsAndGroups)
+          .map(function(group) {
+          let groupNode: TacticGroupNode = self.findOrCreateGroup(curNode, group.name);
+          return (
+            _(group.tactics)
+              .filter(
+              tactic => {
+                return (
+                  !_(groupNode.tactics)
+                    .some(function(node) {
+                    return (node.tactic === tactic);
+                  })
+                  );
+              })
+              .map(
+              tactic => {
+                return function() {
+                  return self.runTactic(tactic, groupNode);
+                }
+              })
+              .flatten(true)
+              .value()
+            );
+        })
+          .flatten<() => Promise<any>>(true)
+          .value()
+          ;
+
+        // flushes the worklist and add the new sparks
+        this.tacticsWorklist = groupSparks;
+    */
+    //console.log("REPOPULATING TACTICS WORKLIST", this.tacticsWorklist);
+
+    this.processTactics();
   }
 
   resize(width: number, height: number) {

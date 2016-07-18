@@ -13,8 +13,8 @@ export class PeaCoqGoal implements IPeaCoqGoal {
   private html: JQuery | null;
 
   constructor(
-    private hyps: PeaCoqHyp[],
-    private concl: IConstrExpr
+    public hyps: PeaCoqHyp[],
+    public concl: IConstrExpr
   ) {
     this.html = null; // rendered on-demand and cached
   }

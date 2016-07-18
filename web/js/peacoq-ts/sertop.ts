@@ -57,6 +57,7 @@ export function setupCommunication(
     feedback$.filter<MessageFeedback<IMessageLevel>>(a => a.feedbackContent instanceof FeedbackContent.Message);
   return {
     answer$s: {
+      completed$: answer$.filter<ISertop.IAnswer<ISertop.ICoqExn>>(a => a.answer instanceof AnswerKind.Completed),
       coqExn$: answer$.filter<ISertop.IAnswer<ISertop.ICoqExn>>(a => a.answer instanceof AnswerKind.CoqExn),
       stmAdded$: answer$.filter<ISertop.IAnswer<ISertop.IStmAdded>>(a => a.answer instanceof AnswerKind.StmAdded),
       stmCanceled$: answer$.filter<ISertop.IAnswer<ISertop.IStmCanceled>>(a => a.answer instanceof AnswerKind.StmCanceled),

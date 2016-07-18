@@ -1,3 +1,4 @@
+import * as Context from "./editor/context";
 import * as Goal from "./goal";
 import * as Goals from "./goals";
 import { walkJSON } from "./peacoq/json";
@@ -33,6 +34,7 @@ import { TacticGroupNode } from "./prooftree/tacticgroupnode";
 import { getActiveProofTree } from "./prooftree/utils";
 import { proofTreeOnEdit, onStmCanceled } from "./prooftree/prooftree-handlers";
 import * as ProofTreeSetup from "./prooftree/setup";
+import * as ProofTreeAutomation from "./prooftree/automation";
 
 import * as Sertop from "./sertop";
 import * as Command from "./sertop/command";
@@ -49,6 +51,9 @@ import * as Theme from "./theme";
 
 import * as UnderlineError from "./editor/underline-errors";
 
+type CommandStreamItem = Rx.Observable<ISertop.ICommand>
+type CommandStream = Rx.Observable<CommandStreamItem>
+
 let fontSize = 16; // pixels
 const resizeBufferingTime = 250; // milliseconds
 
@@ -60,6 +65,7 @@ let bottomLayout: W2UI.W2Layout;
 // const coqtopTabs: W2UI.W2Tabs;
 
 const peaCoqGetContextRouteId = 1;
+const tacticAutomationRouteId = 2;
 
 $(document).ready(() => {
 
@@ -100,10 +106,10 @@ $(document).ready(() => {
       .share();
   if (DebugFlags.editToBeDisplayed) { subscribeAndLog(editToBeDisplayed$); }
 
-  const stmObserve$: Rx.Observable<Command.Control<ISertop.IControlCommand.IStmObserve>> =
+  const stmObserve$: Rx.Observable<Rx.Observable<Command.Control<ISertop.IControlCommand.IStmObserve>>> =
     editToBeDisplayed$
       .flatMap(s => s.getBeingProcessed$())
-      .map(bp => new Command.Control(new ControlCommand.StmObserve(bp.stateId)))
+      .map(bp => Rx.Observable.just(new Command.Control(new ControlCommand.StmObserve(bp.stateId))))
       .share();
 
   const stmGoals$ = editToBeDisplayed$
@@ -114,14 +120,14 @@ $(document).ready(() => {
   // Minor bug: this sends two Cancel commands when the user hits Enter
   // and Ace proceeds to insert a tabulation (these count as two changes)
   // The second Cancel is acknowledged by coqtop with no further action.
-  const cancelBecauseEditorChange$: Rx.Observable<Command.Control<ISertop.IControlCommand.IStmCancel>> =
+  const cancelBecauseEditorChange$: Rx.Observable<Rx.Observable<Command.Control<ISertop.IControlCommand.IStmCancel>>> =
     doc.editorChange$
       .flatMap(change =>
         doc.getSentenceAtPosition(minPos(change.start, change.end))
           .bind(s => s.getStateId())
           .caseOf({
             nothing: () => [],
-            just: sid => [new Command.Control(new ControlCommand.StmCancel([sid]))],
+            just: sid => [Rx.Observable.just(new Command.Control(new ControlCommand.StmCancel([sid])))],
           })
       )
       .share();
@@ -225,20 +231,21 @@ $(document).ready(() => {
     // partition on the direction of the goTo
     .partition(o => isBefore(Strictly.Yes, o.lastEditStopPos, o.destinationPos));
 
-  const cancelFromBackwardGoTo$ = backwardGoTo$
-    .flatMap(o => {
-      const maybeSentence = doc.getSentenceAtPosition(o.destinationPos);
-      return (
-        maybeSentence
-          .bind(e => e.getStateId())
-          .fmap(s => new Command.Control(new ControlCommand.StmCancel([s])))
-          .caseOf({
-            nothing: () => [],
-            just: i => [i],
-          })
-      );
-    })
-    .share();
+  const cancelFromBackwardGoTo$: CommandStream =
+    backwardGoTo$
+      .flatMap(o => {
+        const maybeSentence = doc.getSentenceAtPosition(o.destinationPos);
+        return (
+          maybeSentence
+            .bind(e => e.getStateId())
+            .fmap(s => new Command.Control(new ControlCommand.StmCancel([s])))
+            .caseOf({
+              nothing: () => [],
+              just: cmd => [Rx.Observable.just(cmd)],
+            })
+        );
+      })
+      .share();
 
   Coq85.setupSyntaxHovering();
   tabsAreReadyPromise.then(() => Theme.setupTheme(doc));
@@ -264,14 +271,15 @@ $(document).ready(() => {
     doc.moveCursorToPositionAndCenter(s.startPosition);
   });
 
-  const cancelBecausePrev$: Rx.Observable<ISertop.ICommand> =
+  const cancelBecausePrev$: CommandStream =
     sentenceToCancelBecausePrev$
       .flatMap(s => {
         return s.getStateId().caseOf({
           nothing: () => [],
-          just: sid => [new Command.Control(new ControlCommand.StmCancel([sid]))],
+          just: sid => [Rx.Observable.just(new Command.Control(new ControlCommand.StmCancel([sid])))],
         });
-      });
+      })
+      .share();
 
   /*
   Will have just(pos) when we are trying to reach some position, and
@@ -282,45 +290,54 @@ $(document).ready(() => {
 
   sentencesToProcessStream.subscribe(e => doc.moveCursorToPositionAndCenter(e.stopPosition));
 
-  const addsToProcessStream = sentencesToProcessStream
-    .map(s => {
-      const command = new Command.Control(new ControlCommand.StmAdd({}, s.query));
-      s.commandTag = just(command.tag);
-      return command;
-    })
-    .share();
+  const addsToProcess$: CommandStream =
+    sentencesToProcessStream
+      .map(s => {
+        const command = new Command.Control(new ControlCommand.StmAdd({}, s.query));
+        s.commandTag = just(command.tag);
+        return Rx.Observable.just(command);
+      })
+      .share();
 
   // TODO: I don't like how I pass queriesObserver to each edit stage, I should
   // improve on this design
   const peaCoqGetContext$ = new Rx.Subject<ISertop.IControl<ISertop.IControlCommand.IStmQuery>>();
 
   // Here are subjects for observables that react to coqtop output
-  const cancelBecauseErrorMsg$ = new Rx.Subject<ISertop.ICommand>();
+  const cancelBecauseErrorMsg$ = new Rx.Subject<CommandStreamItem>();
+  const queryForTacticToTry$ = new Rx.Subject<CommandStreamItem>();
 
-  const quitBecauseFileLoaded$ = userActionStreams.loadedFile$
-    .startWith({})
-    .map(({}) => new Command.Control(new ControlCommand.Quit()))
-    .share();
+  const quitBecauseFileLoaded$: CommandStream =
+    userActionStreams.loadedFile$
+      .startWith({})
+      .map(({}) => Rx.Observable.just(new Command.Control(new ControlCommand.Quit())))
+      .share();
 
-  const inputsThatChangeErrorState$ =
-    Rx.Observable.merge<ISertop.ICommand>([
+  const inputsThatChangeErrorState$: CommandStream =
+    Rx.Observable.merge<CommandStreamItem>([
       quitBecauseFileLoaded$,
-      addsToProcessStream,
+      addsToProcess$,
       cancelBecauseEditorChange$,
       cancelBecausePrev$,
       cancelFromBackwardGoTo$,
-      // queries$,
     ]);
 
-  const coqtopInputs$: Rx.Observable<ISertop.ICommand> = Rx.Observable.merge([
-    inputsThatChangeErrorState$,
-    cancelBecauseErrorMsg$,
-    stmObserve$,
-    // stmGoals$,
-    peaCoqGetContext$.asObservable(),
-  ]);
+  const coqtopInputs$: CommandStream =
+    Rx.Observable.merge<CommandStreamItem>([
+      inputsThatChangeErrorState$,
+      cancelBecauseErrorMsg$,
+      stmObserve$,
+      peaCoqGetContext$.map(i => Rx.Observable.just(i)),
+      queryForTacticToTry$,
+    ]);
 
-  const coqtopOutput$s = Sertop.setupCommunication(coqtopInputs$);
+  const flatCoqtopInputs$: Rx.Observable<ISertop.ICommand> =
+    coqtopInputs$
+      // merge sequence of groups of commands into one sequence of commands
+      .concatMap(cmds => cmds)
+      .share();
+
+  const coqtopOutput$s = Sertop.setupCommunication(flatCoqtopInputs$);
 
   /*
   Feedback comes back untagged, so need the zip to keep track of the relationship
@@ -347,25 +364,9 @@ $(document).ready(() => {
           stage.setContext(emptyContext);
           return [emptyContext];
         } else {
-          // Escaping because JSON.parse sucks :\
-          const safeContents = rawContext
-            .replace(/\n/g, "\\n")
-            .replace(/\r/g, "\\r")
-            .replace(/\t/g, "\\t")
-            .replace(/\f/g, "\\f");
-          const c: IGoals<any> = JSON.parse(safeContents);
-          const processed: PeaCoqContext = Goals.apply(
-            c => {
-              const pp: any = walkJSON(c.ppgoal);
-              return {
-                goal: new Goal.Goal(c.goal),
-                ppgoal: new PeaCoqGoal(pp.hyps, pp.concl),
-              };
-            },
-            c
-          );
-          stage.setContext(processed);
-          return [processed];
+          const context = Context.create(rawContext);
+          stage.setContext(context);
+          return [context];
         }
 
       }
@@ -376,6 +377,64 @@ $(document).ready(() => {
   contextToDisplay$.subscribe(c => {
     doc.contextPanel.display(c);
   });
+
+  const tacticToTry$ =
+    // every time a sentence is processed
+    doc.sentenceProcessed$
+      .flatMap(sentence => {
+        const stateId = sentence.stage.stateId;
+        // when its context is ready
+        return Rx.Observable.fromPromise(sentence.stage.getContext())
+          // grab tactics to try until another sentence is processed
+          .flatMap(context => {
+            if (context.fgGoals.length === 0) { return Rx.Observable.empty<TacticGroup>(); }
+            const tacticsToTry = ProofTreeAutomation.tacticsToTry(context, 0);
+            return Rx.Observable.fromArray(tacticsToTry)
+              .takeUntil(doc.sentenceProcessed$);
+          })
+          .flatMap(group => {
+            return group.tactics.map(tactic => ({ tactic, group: group.name, sentence }));
+          });
+      });
+
+  tacticToTry$
+    .map(({ tactic, group, sentence }) => {
+      const stateId = sentence.stage.stateId;
+      const add = new Command.Control(new ControlCommand.StmAdd({ ontop: stateId }, tactic));
+      // listen for the STM added answer (there should be 0 if failed otherwise 1)
+      const stmAdded$ = coqtopOutput$s.answer$s.stmAdded$.filter(a => a.cmdTag === add.tag)
+        .takeUntil(coqtopOutput$s.answer$s.completed$.filter(a => a.cmdTag === add.tag));
+      const getContext$ =
+        stmAdded$
+          .map(a => new Command.Control(new ControlCommand.StmQuery({
+            sid: a.answer.stateId,
+            // route is used so that the rest of PeaCoq can safely ignore those feedback messages
+            route: peaCoqGetContextRouteId
+          }, "PeaCoqGetContext.")))
+          .share();
+      // now, try to pick up the notice feedback for that state id
+      stmAdded$
+        .flatMap(a => {
+          return coqtopOutput$s.feedback$s.message$s.notice$
+            .filter(n => n.editOrStateId === a.answer.stateId)
+            .takeUntil(coqtopOutput$s.feedback$s.message$s.error$.filter(e => e.editOrStateId === a.answer.stateId))
+            .take(1)
+            .doOnCompleted(() => console.log("DONE PICKING UP", a.answer.stateId))
+        })
+        .subscribe(n => {
+          const context = Context.create(n.feedbackContent.message);
+          sentence.addCompletion(tactic, group, context);
+        })
+      const editAt = new Command.Control(new ControlCommand.StmEditAt(stateId));
+      return Rx.Observable.concat<ISertop.ICommand>([
+        Rx.Observable.just(add),
+        getContext$,
+        Rx.Observable.just(editAt)
+      ]).share();
+    })
+    .subscribe(query => {
+      queryForTacticToTry$.onNext(query);
+    });
 
   coqtopOutput$s.answer$s.stmAdded$.subscribe(a => {
     const allEdits = doc.getSentencesToProcess();
@@ -435,7 +494,7 @@ $(document).ready(() => {
     switch (e.editOrState) {
       case EditOrState.State:
         const cancel = new Command.Control(new ControlCommand.StmCancel([e.editOrStateId]));
-        cancelBecauseErrorMsg$.onNext(cancel);
+        cancelBecauseErrorMsg$.onNext(Rx.Observable.just(cancel));
         break;
       default: debugger;
     }
@@ -553,13 +612,13 @@ $(document).ready(() => {
   //     r.input.getArgs()
   //   ));
 
-  ProofTreeSetup.setup({
-    doc,
-    hideProofTreePanel,
-    sentenceProcessed$: doc.sentenceProcessed$,
-    showProofTreePanel,
-    stmCanceled$: coqtopOutput$s.answer$s.stmCanceled$,
-  });
+  // ProofTreeSetup.setup({
+  //   doc,
+  //   hideProofTreePanel,
+  //   sentenceProcessed$: doc.sentenceProcessed$,
+  //   showProofTreePanel,
+  //   stmCanceled$: coqtopOutput$s.answer$s.stmCanceled$,
+  // });
 
 });
 

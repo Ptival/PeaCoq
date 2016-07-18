@@ -76,7 +76,11 @@ type WarningMessageFeedback = MessageFeedback<IMessageLevel.IWarning>;
 
 interface IGlobSortGen<T> { }
 
-interface IGoal { }
+interface IGoal {
+  goalId: number;
+  goalHyp: string[];
+  goalCcl: string;
+}
 
 interface BeforeAfter<T> {
   before: T[];

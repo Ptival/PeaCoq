@@ -3,6 +3,8 @@ export class Goal implements IGoal {
   goalHyp: string[];
   goalCcl: string;
 
+  // TODO: make the fields parameters of constructor and move this logic
+  // in the callees
   constructor(o: any) {
     this.goalId = + o.goal_id;
     this.goalHyp = _(o.goal_hyp).map(unbsp).value();

@@ -16,6 +16,8 @@ export class Sentence<S extends IStage> implements ISentence<S> {
   private processed$: Rx.Observable<IProcessed>;
 
   commandTag: Maybe<string>;
+  completionAdded$: Rx.Subject<{}>;
+  completions: { [group: string]: { [tactic: string]: PeaCoqContext } };
   sentenceId: number;
   stage: S;
   stage$: Rx.Subject<S>;
@@ -35,6 +37,14 @@ export class Sentence<S extends IStage> implements ISentence<S> {
     this.beingProcessed$ = this.stage$.filter<IBeingProcessed>(s => s instanceof Edit.BeingProcessed);
     this.processed$ = this.stage$.filter<IProcessed>(s => s instanceof Edit.Processed);
     this.setStage(stage); // keep last
+    this.completions = {};
+    this.completionAdded$ = new Rx.Subject();
+  }
+
+  addCompletion(tactic: string, group: string, context: PeaCoqContext): void {
+    if (!(group in this.completions)) { this.completions[group] = {}; }
+    this.completions[group][tactic] = context;
+    this.completionAdded$.onNext({});
   }
 
   cleanup(): void {

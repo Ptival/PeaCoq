@@ -98,6 +98,8 @@ interface ICoqDocument {
 interface ISentence<S extends IStage> {
   array: ISentenceArray;
   commandTag: Maybe<CommandTag>;
+  completionAdded$: Rx.Observable<{}>;
+  completions: { [group: string]: { [tactic: string]: PeaCoqContext } };
   previousEdit: Maybe<ISentence<any>>;
   query: string;
   sentenceId: number;
@@ -105,6 +107,7 @@ interface ISentence<S extends IStage> {
   stage$: Rx.Observable<IStage>;
   startPosition: AceAjax.Position;
   stopPosition: AceAjax.Position;
+  addCompletion(tactic: string, group: string, context: PeaCoqContext): void
   cleanup(): void;
   containsPosition(p: AceAjax.Position): boolean;
   getColor(): string;
