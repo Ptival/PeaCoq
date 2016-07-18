@@ -93,7 +93,7 @@ $(document).ready(() => {
     .map(() => editor.selection.getCursor());
   if (DebugFlags.textCursorPosition) { subscribeAndLog(textCursorPosition$); }
 
-  const editToBeDisplayed$: Rx.Observable<ISentence<IStage>> =
+  const sentenceToBeDisplayed$: Rx.Observable<ISentence<IStage>> =
     textCursorPosition$
       .debounce(250)
       .flatMap(pos => {
@@ -104,18 +104,18 @@ $(document).ready(() => {
       })
       .distinctUntilChanged()
       .share();
-  if (DebugFlags.editToBeDisplayed) { subscribeAndLog(editToBeDisplayed$); }
+  if (DebugFlags.sentenceToBeDisplayed) { subscribeAndLog(sentenceToBeDisplayed$); }
 
   const stmObserve$: Rx.Observable<Rx.Observable<Command.Control<ISertop.IControlCommand.IStmObserve>>> =
-    editToBeDisplayed$
+    sentenceToBeDisplayed$
       .flatMap(s => s.getBeingProcessed$())
       .map(bp => Rx.Observable.just(new Command.Control(new ControlCommand.StmObserve(bp.stateId))))
       .share();
 
-  const stmGoals$ = editToBeDisplayed$
-    .flatMap(s => s.getBeingProcessed$())
-    .map(bp => new Command.Query({}, new QueryCommand.Goals(bp.stateId)))
-    .share();
+  // const stmGoals$ = sentenceToBeDisplayed$
+  //   .flatMap(s => s.getBeingProcessed$())
+  //   .map(bp => new Command.Query({}, new QueryCommand.Goals(bp.stateId)))
+  //   .share();
 
   // Minor bug: this sends two Cancel commands when the user hits Enter
   // and Ace proceeds to insert a tabulation (these count as two changes)
@@ -395,7 +395,8 @@ $(document).ready(() => {
           .flatMap(group => {
             return group.tactics.map(tactic => ({ tactic, group: group.name, sentence }));
           });
-      });
+      })
+      .share();
 
   tacticToTry$
     .map(({ tactic, group, sentence }) => {

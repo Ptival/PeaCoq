@@ -17,6 +17,6 @@ export const rawPeaCoqContext = false;
 export const editChangedStage = false;
 export const editCreated = false;
 export const editRemoved = false;
-export const editToBeDisplayed = false;
+export const sentenceToBeDisplayed = false;
 export const progressBarClick = false;
 export const textCursorPosition = false;
