@@ -49,6 +49,7 @@ import { PeaCoqGoal } from "./peacoq-goal";
 import { Strictly } from "./strictly";
 import * as Theme from "./theme";
 
+import * as DisplayContext from "./editor/display-context";
 import * as UnderlineError from "./editor/underline-errors";
 
 type CommandStreamItem = Rx.Observable<ISertop.ICommand>
@@ -83,39 +84,7 @@ $(document).ready(() => {
 
   const doc: ICoqDocument = new CoqDocument(editor);
 
-  const textCursorChangeEvent$ = Rx.Observable
-    .create(observer => {
-      editor.selection.on("changeCursor", e => { observer.onNext(e); });
-    })
-    .share();
-
-  const textCursorPosition$ = textCursorChangeEvent$
-    .map(() => editor.selection.getCursor());
-  if (DebugFlags.textCursorPosition) { subscribeAndLog(textCursorPosition$); }
-
-  const sentenceToBeDisplayed$: Rx.Observable<ISentence<IStage>> =
-    textCursorPosition$
-      .debounce(250)
-      .flatMap(pos => {
-        // we want to display the last edit whose stopPos is before `pos`
-        const edit = _(doc.getAllSentences())
-          .findLast(s => isBefore(Strictly.No, s.stopPosition, pos));
-        return edit ? [edit] : [];
-      })
-      .distinctUntilChanged()
-      .share();
-  if (DebugFlags.sentenceToBeDisplayed) { subscribeAndLog(sentenceToBeDisplayed$); }
-
-  const stmObserve$: Rx.Observable<Rx.Observable<Command.Control<ISertop.IControlCommand.IStmObserve>>> =
-    sentenceToBeDisplayed$
-      .flatMap(s => s.getBeingProcessed$())
-      .map(bp => Rx.Observable.just(new Command.Control(new ControlCommand.StmObserve(bp.stateId))))
-      .share();
-
-  // const stmGoals$ = sentenceToBeDisplayed$
-  //   .flatMap(s => s.getBeingProcessed$())
-  //   .map(bp => new Command.Query({}, new QueryCommand.Goals(bp.stateId)))
-  //   .share();
+  const stmObserve$ = DisplayContext.setup(doc);
 
   // Minor bug: this sends two Cancel commands when the user hits Enter
   // and Ace proceeds to insert a tabulation (these count as two changes)
@@ -343,17 +312,17 @@ $(document).ready(() => {
   Feedback comes back untagged, so need the zip to keep track of the relationship
   between input PeaCoqGetContext and the output context...
   */
-  const contextToDisplay$ = Rx.Observable.zip(
+  Rx.Observable.zip(
     peaCoqGetContext$,
     coqtopOutput$s.feedback$s.message$s.notice$.filter(m => m.routeId === peaCoqGetContextRouteId)
-  ).concatMap(([cmd, fbk]) => {
+  ).subscribe(([cmd, fbk]) => {
     // console.log(cmd, fbk);
     const stateId = cmd.controlCommand.queryOptions.sid;
     const rawContext = fbk.feedbackContent.message;
     const sentence = doc.getSentenceByStateId(stateId);
 
-    return sentence.caseOf({
-      nothing: () => [],
+    sentence.caseOf<void>({
+      nothing: () => { },
       just: sentence => {
 
         if (!(sentence.stage instanceof Edit.Processed)) { debugger; }
@@ -362,20 +331,13 @@ $(document).ready(() => {
         if (DebugFlags.rawPeaCoqContext) { console.log(rawContext); }
         if (rawContext.length === 0) {
           stage.setContext(emptyContext);
-          return [emptyContext];
         } else {
           const context = Context.create(rawContext);
           stage.setContext(context);
-          return [context];
         }
 
       }
     })
-  })
-    .share();
-
-  contextToDisplay$.subscribe(c => {
-    doc.contextPanel.display(c);
   });
 
   const tacticToTry$ =
