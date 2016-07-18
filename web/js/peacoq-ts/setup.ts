@@ -409,7 +409,7 @@ $(document).ready(() => {
           .map(a => new Command.Control(new ControlCommand.StmQuery({
             sid: a.answer.stateId,
             // route is used so that the rest of PeaCoq can safely ignore those feedback messages
-            route: peaCoqGetContextRouteId
+            route: tacticAutomationRouteId
           }, "PeaCoqGetContext.")))
           .share();
       // now, try to pick up the notice feedback for that state id
