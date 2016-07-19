@@ -5,12 +5,6 @@ import { theme } from "../theme";
 
 const CoqMode = ace.require("peacoq-js/mode-coq").Mode;
 
-class Editor implements IEditor {
-  constructor(
-    public document: ICoqDocument
-  ) { }
-}
-
 export function setupEditor(e: AceAjax.Editor) {
   e.setTheme(theme.aceTheme);
   //const OCamlMode = ace.require("ace/mode/ocaml").Mode;

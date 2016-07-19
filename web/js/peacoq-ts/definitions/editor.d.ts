@@ -1,6 +1,5 @@
-interface IEditor {
-
-}
+type CommandStreamItem = Rx.Observable<ISertop.ICommand>
+type CommandStream = Rx.Observable<CommandStreamItem>
 
 interface IContextPanel {
   clear(): void;

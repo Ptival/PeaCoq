@@ -53,9 +53,6 @@ import * as DisplayContext from "./editor/display-context";
 import * as SentenceToDisplay from "./editor/sentence-to-display";
 import * as UnderlineError from "./editor/underline-errors";
 
-type CommandStreamItem = Rx.Observable<ISertop.ICommand>
-type CommandStream = Rx.Observable<CommandStreamItem>
-
 let fontSize = 16; // pixels
 const resizeBufferingTime = 250; // milliseconds
 
@@ -67,7 +64,6 @@ let bottomLayout: W2UI.W2Layout;
 // const coqtopTabs: W2UI.W2Tabs;
 
 const peaCoqGetContextRouteId = 1;
-const tacticAutomationRouteId = 2;
 
 $(document).ready(() => {
 
@@ -342,70 +338,15 @@ $(document).ready(() => {
     })
   });
 
-  const tacticToTry$ =
-    // every time a sentence is to be displayed
-    sentenceToDisplay$
-      .concatMap(sentence => sentence.waitUntilProcessed())
-      .concatMap(sentence => {
-        const stateId = sentence.stage.stateId;
-        // when its context is ready
-        return Rx.Observable.fromPromise(sentence.stage.getContext())
-          // grab tactics to try until another sentence is processed
-          .flatMap(context => {
-            if (context.fgGoals.length === 0) {
-              // The type system is being annoying if we don't put any here...
-              return Rx.Observable.empty<any>();
-            }
-            const tacticsToTry = ProofTreeAutomation.tacticsToTry(context, 0);
-            return Rx.Observable.fromArray(tacticsToTry)
-              .takeUntil(doc.sentenceProcessed$)
-              .flatMap(group => {
-                return group.tactics.map(tactic => ({ context, group: group.name, tactic, sentence }));
-              });
-          });
-      })
-      .share();
-
-  tacticToTry$
-    .map(({ context: previousContext, group, tactic, sentence }) => {
-      const stateId = sentence.stage.stateId;
-      const add = new Command.Control(new ControlCommand.StmAdd({ ontop: stateId }, tactic));
-      // listen for the STM added answer (there should be 0 if failed otherwise 1)
-      const stmAdded$ = coqtopOutput$s.answer$s.stmAdded$.filter(a => a.cmdTag === add.tag)
-        .takeUntil(coqtopOutput$s.answer$s.completed$.filter(a => a.cmdTag === add.tag));
-      const getContext$ =
-        stmAdded$
-          .map(a => new Command.Control(new ControlCommand.StmQuery({
-            sid: a.answer.stateId,
-            // route is used so that the rest of PeaCoq can safely ignore those feedback messages
-            route: tacticAutomationRouteId
-          }, "PeaCoqGetContext.")))
-          .share();
-      // now, try to pick up the notice feedback for that state id
-      stmAdded$
-        .flatMap(a => {
-          return coqtopOutput$s.feedback$s.message$s.notice$
-            .filter(n => n.editOrStateId === a.answer.stateId)
-            .takeUntil(coqtopOutput$s.feedback$s.message$s.error$.filter(e => e.editOrStateId === a.answer.stateId))
-            .take(1)
-        })
-        .subscribe(n => {
-          const context = Context.create(n.feedbackContent.message);
-          // we only add tactics that change something
-          if (!_.isEqual(context, previousContext)) {
-            sentence.addCompletion(tactic, group, context);
-          }
-        })
-      const editAt = new Command.Control(new ControlCommand.StmEditAt(stateId));
-      return Rx.Observable.concat<ISertop.ICommand>([
-        Rx.Observable.just(add),
-        getContext$,
-        Rx.Observable.just(editAt)
-      ]).share();
-    })
-    .subscribe(query => {
-      queryForTacticToTry$.onNext(query);
-    });
+  ProofTreeAutomation.setup({
+    completed$: coqtopOutput$s.answer$s.completed$,
+    doc,
+    error$: coqtopOutput$s.feedback$s.message$s.error$,
+    notice$: coqtopOutput$s.feedback$s.message$s.notice$,
+    queryForTacticToTry$,
+    sentenceToDisplay$,
+    stmAdded$: coqtopOutput$s.answer$s.stmAdded$,
+  });
 
   coqtopOutput$s.answer$s.stmAdded$.subscribe(a => {
     const allEdits = doc.getSentencesToProcess();
