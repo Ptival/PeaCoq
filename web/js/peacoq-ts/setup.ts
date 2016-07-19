@@ -50,6 +50,7 @@ import { Strictly } from "./strictly";
 import * as Theme from "./theme";
 
 import * as DisplayContext from "./editor/display-context";
+import * as SentenceToDisplay from "./editor/sentence-to-display";
 import * as UnderlineError from "./editor/underline-errors";
 
 type CommandStreamItem = Rx.Observable<ISertop.ICommand>
@@ -84,7 +85,8 @@ $(document).ready(() => {
 
   const doc: ICoqDocument = new CoqDocument(editor);
 
-  const stmObserve$ = DisplayContext.setup(doc);
+  const sentenceToDisplay$ = SentenceToDisplay.setup(doc);
+  const stmObserve$ = DisplayContext.setup(doc, sentenceToDisplay$);
 
   // Minor bug: this sends two Cancel commands when the user hits Enter
   // and Ace proceeds to insert a tabulation (these count as two changes)
@@ -341,9 +343,10 @@ $(document).ready(() => {
   });
 
   const tacticToTry$ =
-    // every time a sentence is processed
-    doc.sentenceProcessed$
-      .flatMap(sentence => {
+    // every time a sentence is to be displayed
+    sentenceToDisplay$
+      .concatMap(sentence => sentence.waitUntilProcessed())
+      .concatMap(sentence => {
         const stateId = sentence.stage.stateId;
         // when its context is ready
         return Rx.Observable.fromPromise(sentence.stage.getContext())

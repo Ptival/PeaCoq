@@ -17,7 +17,7 @@ export function setupProgressBar(doc: ICoqDocument): void {
   let barClick$: Rx.Observable<Event> =
     Rx.Observable.fromEvent<Event>(document, "click")
       .filter(e => $(e.target).hasClass(barItemClass));
-  if (DebugFlags.progressBarClick) { subscribeAndLog(barClick$); }
+  if (DebugFlags.progressBarClick) { barClick$.subscribe(c => console.log(c)); }
   let barMouseOver$: Rx.Observable<Event> =
     Rx.Observable.fromEvent<Event>(document, "mouseover")
       .filter(e => $(e.target).hasClass(barItemClass));

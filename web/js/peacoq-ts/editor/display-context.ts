@@ -5,39 +5,23 @@ import * as DebugFlags from "../debug-flags";
 import { Strictly } from "../strictly";
 
 export function setup(
-  doc: ICoqDocument
+  doc: ICoqDocument,
+  sentenceToDisplay$: Rx.Observable<ISentence<IStage>>
 ): Rx.Observable<Rx.Observable<Command.Control<ISertop.IControlCommand.IStmObserve>>> {
+
   const editor = doc.editor;
 
-  const textCursorChangeEvent$ = Rx.Observable
-    .create(observer => editor.selection.on("changeCursor", e => observer.onNext(e)))
-    .share();
+  // For each sentence we intend to display we must:
 
-  const textCursorPosition$ = textCursorChangeEvent$
-    .map(() => editor.selection.getCursor())
-    .share();
-  if (DebugFlags.textCursorPosition) { subscribeAndLog(textCursorPosition$); }
-
-  const sentenceToBeDisplayed$: Rx.Observable<ISentence<IStage>> =
-    textCursorPosition$
-      .debounce(250)
-      .flatMap(pos => {
-        // we want to display the last sentence whose stopPos is before `pos`
-        const sentence = _(doc.getAllSentences())
-          .findLast(s => isBefore(Strictly.No, s.stopPosition, pos));
-        return sentence ? [sentence] : [];
-      })
-      .distinctUntilChanged()
-      .share();
-  if (DebugFlags.sentenceToBeDisplayed) { subscribeAndLog(sentenceToBeDisplayed$); }
-
-  sentenceToBeDisplayed$
-    .flatMap(sentence => sentence.getProcessedStage())
-    .flatMap(stage => stage.getContext())
+  // 1. listen to its context being ready, and display it when it is
+  sentenceToDisplay$
+    .concatMap(sentence => sentence.getProcessedStage())
+    .concatMap(stage => stage.getContext())
     .subscribe(context => doc.contextPanel.display(context));
 
+  // 2. send an Observe command to coqtop so that the context gets evaluated
   const stmObserve$: Rx.Observable<Rx.Observable<Command.Control<ISertop.IControlCommand.IStmObserve>>> =
-    sentenceToBeDisplayed$
+    sentenceToDisplay$
       .flatMap(s => s.getBeingProcessed$())
       .map(bp => Rx.Observable.just(new Command.Control(new ControlCommand.StmObserve(bp.stateId))))
       .share();

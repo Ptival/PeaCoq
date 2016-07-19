@@ -11,6 +11,7 @@ export class CoqDocument implements ICoqDocument {
   endAnchor: AceAjax.Anchor;
   proofTrees: IProofTree[];
   sentencesChanged$: Rx.Observable<{}>;
+  sentenceBeingProcessed$: Rx.Observable<ISentence<IBeingProcessed>>;
   sentenceProcessed$: Rx.Observable<ISentence<IProcessed>>;
   session: AceAjax.IEditSession;
 
@@ -37,6 +38,7 @@ export class CoqDocument implements ICoqDocument {
     // this.editsChange$ = this.editsChangeSubject.asObservable();
     const newEditSubject = new Rx.Subject<ISentence<IToProcess>>();
     this.proofTrees = [];
+    this.sentenceBeingProcessed$ = this.sentences.sentenceBeingProcessed$;
     this.sentenceProcessed$ = this.sentences.sentenceProcessed$;
   }
 

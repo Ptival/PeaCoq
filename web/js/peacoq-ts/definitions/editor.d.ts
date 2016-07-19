@@ -42,6 +42,7 @@ interface ShortcutsStreams {
 
 interface ISentenceArray {
   sentenceChangedStage$: Rx.Observable<ISentence<IStage>>;
+  sentenceBeingProcessed$: Rx.Observable<ISentence<IBeingProcessed>>;
   sentenceProcessed$: Rx.Observable<ISentence<IProcessed>>;
   sentenceCreated$: Rx.Observable<ISentence<IStage>>;
   sentenceRemoved$: Rx.Observable<ISentence<IStage>>;
@@ -71,6 +72,7 @@ interface ICoqDocument {
   endAnchor: AceAjax.Anchor;
   proofTrees: IProofTree[];
   sentencesChanged$: Rx.Observable<{}>;
+  sentenceBeingProcessed$: Rx.Observable<ISentence<IBeingProcessed>>;
   sentenceProcessed$: Rx.Observable<ISentence<IProcessed>>;
   session: AceAjax.IEditSession;
   getAllSentences(): ISentence<IStage>[];
@@ -102,7 +104,7 @@ interface ISentence<S extends IStage> {
   // completionAdded$: Rx.Observable<{}>;
   // but TypeScript compiler is super slow with that (see https://github.com/Microsoft/TypeScript/issues/9791 for information)
   completions: { [group: string]: { [tactic: string]: PeaCoqContext } };
-  previousEdit: Maybe<ISentence<any>>;
+  previousSentence: Maybe<ISentence<any>>;
   query: string;
   sentenceId: number;
   stage: S;
@@ -120,6 +122,7 @@ interface ISentence<S extends IStage> {
   highlight(): void;
   setStage<T extends IStage>(stage: T): ISentence<T>;
   unhighlight(): void;
+  waitUntilProcessed(): Promise<ISentence<IProcessed>>;
 }
 
 interface IStage {

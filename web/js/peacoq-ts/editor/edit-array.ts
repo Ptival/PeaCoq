@@ -1,5 +1,5 @@
 import * as DebugFlags from "../debug-flags";
-import { Processed } from "./edit";
+import { BeingProcessed, Processed } from "./edit";
 import { isBefore } from "./editor-utils";
 import { Sentence } from "./sentence";
 import { Strictly } from "../strictly";
@@ -9,6 +9,7 @@ export class SentenceArray implements ISentenceArray {
 
   public sentenceChangedStage$: Rx.Subject<ISentence<IStage>>;
   public sentenceCreated$: Rx.Subject<ISentence<IStage>>;
+  public sentenceBeingProcessed$: Rx.Observable<ISentence<IBeingProcessed>>;
   public sentenceProcessed$: Rx.Observable<ISentence<IProcessed>>;
   public sentenceRemoved$: Rx.Subject<ISentence<IStage>>;
 
@@ -23,14 +24,14 @@ export class SentenceArray implements ISentenceArray {
         console.log("edit changed stage", e.stage, e)
       );
     }
+    this.sentenceBeingProcessed$ =
+      this.sentenceChangedStage$.filter<ISentence<IBeingProcessed>>(e => e.stage instanceof BeingProcessed);
     this.sentenceProcessed$ =
-      <Rx.Observable<ISentence<any>>>
-      this.sentenceChangedStage$
-        .filter(e => e.stage instanceof Processed);
+      this.sentenceChangedStage$.filter<ISentence<IProcessed>>(e => e.stage instanceof Processed);
     this.sentenceCreated$ = new Rx.Subject<any>();
-    if (DebugFlags.editCreated) { subscribeAndLog(this.sentenceCreated$, "edit created"); }
+    if (DebugFlags.editCreated) { this.sentenceCreated$.subscribe(s => console.log("edit created", s)); }
     this.sentenceRemoved$ = new Rx.Subject<any>();
-    if (DebugFlags.editRemoved) { subscribeAndLog(this.sentenceRemoved$, "edit removed"); }
+    if (DebugFlags.editRemoved) { this.sentenceRemoved$.subscribe(s => console.log("edit removed", s)); }
   }
 
   createSentence(
@@ -38,10 +39,10 @@ export class SentenceArray implements ISentenceArray {
     startPosition: AceAjax.Position,
     stopPosition: AceAjax.Position,
     query: string,
-    previousEdit: Maybe<ISentence<any>>,
+    previousSentence: Maybe<ISentence<any>>,
     stage: IToProcess
   ): ISentence<IToProcess> {
-    const edit = new Sentence(this, startPosition, stopPosition, query, previousEdit, stage);
+    const edit = new Sentence(this, startPosition, stopPosition, query, previousSentence, stage);
     this.edits.push(edit);
     this.sentenceCreated$.onNext(edit);
     edit.stage$.subscribe(_ => this.sentenceChangedStage$.onNext(edit));

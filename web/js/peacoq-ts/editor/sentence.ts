@@ -27,7 +27,7 @@ export class Sentence<S extends IStage> implements ISentence<S> {
     public startPosition: AceAjax.Position,
     public stopPosition: AceAjax.Position,
     public query: string,
-    public previousEdit: Maybe<ISentence<any>>,
+    public previousSentence: Maybe<ISentence<any>>,
     stage: IToProcess
   ) {
     this.commandTag = nothing(); // filled when Add command is created
@@ -70,7 +70,7 @@ export class Sentence<S extends IStage> implements ISentence<S> {
   getColor(): string { return this.stage.getColor(); };
 
   getPreviousStateId(): Maybe<number> {
-    return this.previousEdit.caseOf({
+    return this.previousSentence.caseOf({
       nothing: () => just(1),
       just: (e) => e.getStateId(),
     });
@@ -99,6 +99,10 @@ export class Sentence<S extends IStage> implements ISentence<S> {
   }
 
   unhighlight(): void { this.stage.marker.unhighlight(); }
+
+  waitUntilProcessed(): Promise<ISentence<IProcessed>> {
+    return this.getProcessedStage().then(_ => <ISentence<IProcessed>><any>this);
+  }
 
 }
 
