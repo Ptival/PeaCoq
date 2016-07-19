@@ -352,14 +352,17 @@ $(document).ready(() => {
         return Rx.Observable.fromPromise(sentence.stage.getContext())
           // grab tactics to try until another sentence is processed
           .flatMap(context => {
-            if (context.fgGoals.length === 0) { return Rx.Observable.empty(); }
+            if (context.fgGoals.length === 0) {
+              // The type system is being annoying if we don't put any here...
+              return Rx.Observable.empty<any>();
+            }
             const tacticsToTry = ProofTreeAutomation.tacticsToTry(context, 0);
             return Rx.Observable.fromArray(tacticsToTry)
               .takeUntil(doc.sentenceProcessed$)
               .flatMap(group => {
                 return group.tactics.map(tactic => ({ context, group: group.name, tactic, sentence }));
               });
-          })
+          });
       })
       .share();
 
