@@ -34,8 +34,8 @@ export class Sentence<S extends IStage> implements ISentence<S> {
     this.sentenceId = freshSentenceId();
     // we use a replay subject so that the observables behave like promises
     this.stage$ = new Rx.ReplaySubject<any>();
-    this.beingProcessed$ = this.stage$.filter<IBeingProcessed>(s => s instanceof Edit.BeingProcessed);
-    this.processed$ = this.stage$.filter<IProcessed>(s => s instanceof Edit.Processed);
+    this.beingProcessed$ = this.stage$.filter<IBeingProcessed>(s => s instanceof Edit.BeingProcessed).take(1);
+    this.processed$ = this.stage$.filter<IProcessed>(s => s instanceof Edit.Processed).take(1);
     this.setStage(stage); // keep last
     this.completions = {};
     this.completionAdded$ = new Rx.Subject();
@@ -80,8 +80,15 @@ export class Sentence<S extends IStage> implements ISentence<S> {
     return this.beingProcessed$;
   }
 
-  getProcessedStage(): Promise<IProcessed> {
-    return this.processed$.toPromise();
+  // this is too dangerous, I'd rather use the stream version
+  // getProcessedStage(): Promise<IProcessed> {
+  //   // .last() transforms a completed $ into an error
+  //   // otherwise, the Promise resolves with undefined!
+  //   return this.processed$.last().toPromise();
+  // }
+
+  getProcessed$(): Rx.Observable<IProcessed> {
+    return this.processed$;
   }
 
   getStateId(): Maybe<number> {
@@ -100,8 +107,8 @@ export class Sentence<S extends IStage> implements ISentence<S> {
 
   unhighlight(): void { this.stage.marker.unhighlight(); }
 
-  waitUntilProcessed(): Promise<ISentence<IProcessed>> {
-    return this.getProcessedStage().then(_ => <ISentence<IProcessed>><any>this);
+  waitUntilProcessed(): Rx.Observable<ISentence<IProcessed>> {
+    return this.getProcessed$().map(_ => <ISentence<IProcessed>><any>this);
   }
 
 }

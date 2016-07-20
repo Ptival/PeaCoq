@@ -116,12 +116,13 @@ interface ISentence<S extends IStage> {
   getColor(): string;
   getPreviousStateId(): Maybe<number>;
   getBeingProcessed$(): Rx.Observable<IBeingProcessed>;
-  getProcessedStage(): Promise<IProcessed>;
+  // getProcessedStage(): Promise<IProcessed>;
+  getProcessed$(): Rx.Observable<IProcessed>;
   getStateId(): Maybe<number>;
   highlight(): void;
   setStage<T extends IStage>(stage: T): ISentence<T>;
   unhighlight(): void;
-  waitUntilProcessed(): Promise<ISentence<IProcessed>>;
+  waitUntilProcessed(): Rx.Observable<ISentence<IProcessed>>;
 }
 
 interface IStage {
