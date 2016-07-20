@@ -46,9 +46,13 @@ export function setup(doc: ICoqDocument): Rx.Observable<ISentence<IStage>> {
       })
       .share();
 
-  return Rx.Observable.merge([
-    sentenceToBeDisplayedBecauseUnderCursor$,
-    sentenceToBeDisplayedBecauseLastBeingProcessed$,
-  ]);
+  return Rx.Observable
+    .merge([
+      sentenceToBeDisplayedBecauseUnderCursor$,
+      sentenceToBeDisplayedBecauseLastBeingProcessed$,
+    ])
+    // prevents the same sentence from triggering because under cursor and last processed
+    // this might turn problematic if the user wants to redisplay it, maybe debounce would be better?
+    .distinctUntilChanged();
 
 }
