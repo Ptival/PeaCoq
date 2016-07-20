@@ -9,7 +9,8 @@ interface ProofTreeAutomationInput {
   notice$: Rx.Observable<NoticeMessageFeedback>;
   queryForTacticToTry$: Rx.Observer<CommandStreamItem>;
   sentenceToDisplay$: Rx.Observable<ISentence<IStage>>;
-  stmAdded$;
+  stmAdded$: Rx.Observable<ISertop.IAnswer<ISertop.IStmAdded>>;
+  stopAutomationRound$: Rx.Observable<{}>;
 }
 
 const tacticAutomationRouteId = 2;
@@ -24,6 +25,7 @@ export function setup(i: ProofTreeAutomationInput): void {
     queryForTacticToTry$,
     sentenceToDisplay$,
     stmAdded$,
+    stopAutomationRound$,
   } = i;
 
   const processedSentenceToDisplay$ =
@@ -32,87 +34,85 @@ export function setup(i: ProofTreeAutomationInput): void {
   const contextToDisplay$ =
     processedSentenceToDisplay$
       .concatMap(
-        sentence => sentence.stage.getContext(),
-        (sentence, context) => ({ context, sentence })
+      sentence => sentence.stage.getContext(),
+      (sentence, context) => ({ context, sentence })
       );
 
-  const tacticToTry$ =
+  const setOfTacticsToTry$ =
     contextToDisplay$
-      .flatMap(({ context, sentence }) => {
-        if (context.fgGoals.length === 0) { return []; }
-        const tactics = tacticsToTry(context, 0);
-        return _(tactics).flatMap(group =>
-          group.tactics.map(tactic =>
-            ({ context, group: group.name, tactic, sentence })
-          )
-        ).value();
-      })
-      .share();
+      .map(({ context, sentence }) => ({
+        context, sentence,
+        tactics: (
+          context.fgGoals.length === 0
+            ? []
+            : _(tacticsToTry(context.fgGoals[0])).flatMap(group =>
+              group.tactics.map(tactic =>
+                ({ context, group: group.name, tactic, sentence })
+              )
+            ).value()
+        ),
+      }));
 
-  // TODO
-  // const readyToSendNextCandidate$ = new Rx.Subject<{}>();
+  // every time there is a set of tactics to try, we go through them one by one
+  setOfTacticsToTry$
+    .subscribe(({ context, sentence, tactics }) => {
+      const readyToSendNextCandidate$ = new Rx.Subject<{}>();
 
-  const queries$ =
-    tacticToTry$
-      .map(({ context: previousContext, group, tactic, sentence }) => {
-        const stateId = sentence.stage.stateId;
-        const add = new Command.Control(new ControlCommand.StmAdd({ ontop: stateId }, tactic));
-        // listen for the STM added answer (there should be 0 if failed otherwise 1)
-        const filteredStmAdded$ = stmAdded$.filter(a => a.cmdTag === add.tag)
-          .takeUntil(completed$.filter(a => a.cmdTag === add.tag));
-        const getContext$ =
-          filteredStmAdded$
-            .map(a => new Command.Control(new ControlCommand.StmQuery({
-              sid: a.answer.stateId,
-              // route is used so that the rest of PeaCoq can safely ignore those feedback messages
-              route: tacticAutomationRouteId
-            }, "PeaCoqGetContext.")))
-            .share();
-        // now, try to pick up the notice feedback for that state id
-        filteredStmAdded$
-          .flatMap(a => {
-            return notice$
-              .filter(n => n.editOrStateId === a.answer.stateId)
-              .takeUntil(error$.filter(e => e.editOrStateId === a.answer.stateId))
-              .take(1)
-          })
-          .subscribe(n => {
-            const context = Context.create(n.feedbackContent.message);
-            // we only add tactics that change something
-            if (!_.isEqual(context, previousContext)) {
-              sentence.addCompletion(tactic, group, context);
-            }
-          })
-        const editAt = new Command.Control(new ControlCommand.StmEditAt(stateId));
-        return Rx.Observable.concat<ISertop.ICommand>([
-          Rx.Observable.just(add),
-          getContext$,
-          Rx.Observable.just(editAt)
-        ]).share();
-      });
+      Rx.Observable
+        .zip(
+        Rx.Observable.fromArray(tactics),
+        readyToSendNextCandidate$
+        )
+        .takeUntil(stopAutomationRound$)
+        .subscribe(([{ context: previousContext, group, tactic, sentence }, {}]) => {
 
-  const readyToSendNextCandidate$: Rx.ConnectableObservable<{}> =
-    Rx.Observable.merge([
-      notice$.filter(f => f.routeId === tacticAutomationRouteId),
+          const stateId = sentence.stage.stateId;
+          const add = new Command.Control(new ControlCommand.StmAdd({ ontop: stateId }, tactic));
+          // listen for the STM added answer (there should be 0 if failed otherwise 1)
+          const filteredStmAdded$ = stmAdded$.filter(a => a.cmdTag === add.tag)
+            .takeUntil(completed$.filter(a => a.cmdTag === add.tag));
+          const getContext$ =
+            filteredStmAdded$
+              .map(a => new Command.Control(new ControlCommand.StmQuery({
+                sid: a.answer.stateId,
+                // route is used so that the rest of PeaCoq can safely ignore those feedback messages
+                route: tacticAutomationRouteId
+              }, "PeaCoqGetContext.")))
+              .share();
+          const stmAddErrored$ = filteredStmAdded$.flatMap(a => error$.filter(e => e.editOrStateId === a.answer.stateId));
+          // now, try to pick up the notice feedback for that state id
+          const addNotice$ =
+            filteredStmAdded$
+              .flatMap(a => {
+                return notice$
+                  .filter(n => n.editOrStateId === a.answer.stateId)
+                  .takeUntil(stmAddErrored$)
+                  .take(1)
+              });
+          // we can send the next candidate when we receive either the error or
+          // the notice, unless we need to stop.
+          stmAddErrored$.subscribe(_ => readyToSendNextCandidate$.onNext({}));
+          addNotice$.subscribe(_ => readyToSendNextCandidate$.onNext({}));
+          addNotice$
+            .subscribe(n => {
+              const context = Context.create(n.feedbackContent.message);
+              // we only add tactics that change something
+              if (!_.isEqual(context, previousContext)) {
+                sentence.addCompletion(tactic, group, context);
+              }
+            });
+          const editAt = new Command.Control(new ControlCommand.StmEditAt(stateId));
+          const commandStreamItem = Rx.Observable.concat<ISertop.ICommand>([
+            Rx.Observable.just(add),
+            getContext$,
+            Rx.Observable.just(editAt)
+          ]).share();
+          queryForTacticToTry$.onNext(commandStreamItem);
 
-    ])
-      .map(_ => ({}))
-      .startWith({})
-      .publish();
+        });
 
-  readyToSendNextCandidate$.subscribe(_ => "Seen message, enabling one more query!");
-
-  // Now we only want to produce queries one-by-one, and wait for the
-  // previous to finish before sending the next one. This way, at any
-  // point, we get to abort if the state changes.
-  Rx.Observable.zip(queries$, readyToSendNextCandidate$)
-    .subscribe(([query, {}]) => {
-      console.log("issuing a query");
-      queryForTacticToTry$.onNext(query);
+      readyToSendNextCandidate$.onNext({});
     });
-
-  console.log("Connecting regulator");
-  readyToSendNextCandidate$.connect();
 
 }
 
@@ -126,9 +126,9 @@ function makeGroup(name: string, tactics: string[]): TacticGroup {
 /*
   This strategy tries many tactics, not trying to be smart.
 */
-function tacticsToTry(context: PeaCoqContext, fgIndex: number): TacticGroup[] {
+function tacticsToTry(e: PeaCoqContextElement): TacticGroup[] {
 
-  const hyps = context.fgGoals[fgIndex].ppgoal.hyps;
+  const hyps = e.ppgoal.hyps;
   const curHypsFull = _(hyps).clone().reverse();
   const curHyps = _(curHypsFull).map(function(h) { return h.name; });
   // TODO: there is a better way to do this

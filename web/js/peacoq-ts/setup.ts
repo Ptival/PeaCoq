@@ -298,6 +298,16 @@ $(document).ready(() => {
       queryForTacticToTry$,
     ]);
 
+  // Automated tasks need to stop whenever the user changes the current state
+  const stopAutomationRound$: Rx.Observable<{}> =
+    Rx.Observable.merge([
+      quitBecauseFileLoaded$.map(_ => ({})),
+      addsToProcess$.map(_ => ({})),
+      cancelBecauseEditorChange$,
+      cancelBecausePrev$,
+      cancelFromBackwardGoTo$,
+    ]);
+
   const flatCoqtopInputs$: Rx.Observable<ISertop.ICommand> =
     coqtopInputs$
       // merge sequence of groups of commands into one sequence of commands
@@ -346,6 +356,7 @@ $(document).ready(() => {
     queryForTacticToTry$,
     sentenceToDisplay$,
     stmAdded$: coqtopOutput$s.answer$s.stmAdded$,
+    stopAutomationRound$,
   });
 
   coqtopOutput$s.answer$s.stmAdded$.subscribe(a => {
