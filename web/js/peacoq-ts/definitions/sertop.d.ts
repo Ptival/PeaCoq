@@ -30,6 +30,10 @@ declare namespace ISertop {
   interface IQueryCommand extends ToSexp { }
 
   namespace IControlCommand {
+    interface IStmAdd extends IControlCommand {
+      // addOptions: AddOptions;
+      sentence: string;
+    }
     interface IStmCancel extends IControlCommand { }
     interface IStmObserve extends IControlCommand {
       stateId: StateId;

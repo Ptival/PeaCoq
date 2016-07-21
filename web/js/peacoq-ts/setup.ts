@@ -52,6 +52,7 @@ import * as Theme from "./theme";
 import * as DisplayContext from "./editor/display-context";
 import * as SentenceToDisplay from "./editor/sentence-to-display";
 import * as UnderlineError from "./editor/underline-errors";
+import * as Completion from "./editor/completion";
 
 let fontSize = 16; // pixels
 const resizeBufferingTime = 250; // milliseconds
@@ -198,7 +199,7 @@ $(document).ready(() => {
     // partition on the direction of the goTo
     .partition(o => isBefore(Strictly.Yes, o.lastEditStopPos, o.destinationPos));
 
-  const cancelFromBackwardGoTo$: CommandStream =
+  const cancelFromBackwardGoTo$: CommandStream<any> =
     backwardGoTo$
       .flatMap(o => {
         const maybeSentence = doc.getSentenceAtPosition(o.destinationPos);
@@ -238,7 +239,7 @@ $(document).ready(() => {
     doc.moveCursorToPositionAndCenter(s.startPosition);
   });
 
-  const cancelBecausePrev$: CommandStream =
+  const cancelBecausePrev$: CommandStream<any> =
     sentenceToCancelBecausePrev$
       .flatMap(s => {
         return s.getStateId().caseOf({
@@ -257,7 +258,7 @@ $(document).ready(() => {
 
   sentencesToProcessStream.subscribe(e => doc.moveCursorToPositionAndCenter(e.stopPosition));
 
-  const addsToProcess$: CommandStream =
+  const addsToProcess$: CommandStream<ISertop.IControl<ISertop.IControlCommand.IStmAdd>> =
     sentencesToProcessStream
       .map(s => {
         const command = new Command.Control(new ControlCommand.StmAdd({}, s.query));
@@ -271,17 +272,17 @@ $(document).ready(() => {
   const peaCoqGetContext$ = new Rx.Subject<ISertop.IControl<ISertop.IControlCommand.IStmQuery>>();
 
   // Here are subjects for observables that react to coqtop output
-  const cancelBecauseErrorMsg$ = new Rx.Subject<CommandStreamItem>();
-  const queryForTacticToTry$ = new Rx.Subject<CommandStreamItem>();
+  const cancelBecauseErrorMsg$ = new Rx.Subject<CommandStreamItem<any>>();
+  const queryForTacticToTry$ = new Rx.Subject<CommandStreamItem<any>>();
 
-  const quitBecauseFileLoaded$: CommandStream =
+  const quitBecauseFileLoaded$: CommandStream<any> =
     userActionStreams.loadedFile$
       .startWith({})
       .map(({}) => Rx.Observable.just(new Command.Control(new ControlCommand.Quit())))
       .share();
 
-  const inputsThatChangeErrorState$: CommandStream =
-    Rx.Observable.merge<CommandStreamItem>([
+  const inputsThatChangeErrorState$: CommandStream<any> =
+    Rx.Observable.merge<CommandStreamItem<any>>([
       quitBecauseFileLoaded$,
       addsToProcess$,
       cancelBecauseEditorChange$,
@@ -289,14 +290,20 @@ $(document).ready(() => {
       cancelFromBackwardGoTo$,
     ]);
 
-  const coqtopInputs$: CommandStream =
-    Rx.Observable.merge<CommandStreamItem>([
+  const coqtopInputs$: CommandStream<any> =
+    Rx.Observable.merge<CommandStreamItem<any>>([
       inputsThatChangeErrorState$,
       cancelBecauseErrorMsg$,
       stmObserve$,
       peaCoqGetContext$.map(i => Rx.Observable.just(i)),
       queryForTacticToTry$,
     ]);
+
+  addsToProcess$
+    .flatMap(a => a)
+    .subscribe(add =>
+      console.log("ADD TO PROCESS SHOULD STOP AUTOMATION ROUND", add.controlCommand.sentence)
+    );
 
   // Automated tasks need to stop whenever the user changes the current state
   const stopAutomationRound$: Rx.Observable<{}> =
@@ -307,6 +314,8 @@ $(document).ready(() => {
       cancelBecausePrev$,
       cancelFromBackwardGoTo$,
     ]);
+
+  doc.editor.completers = [{ getCompletions: Completion.createGetCompletions(doc, stopAutomationRound$) }];
 
   const flatCoqtopInputs$: Rx.Observable<ISertop.ICommand> =
     coqtopInputs$
@@ -354,9 +363,9 @@ $(document).ready(() => {
     error$: coqtopOutput$s.feedback$s.message$s.error$,
     notice$: coqtopOutput$s.feedback$s.message$s.notice$,
     queryForTacticToTry$,
-    sentenceToDisplay$,
     stmAdded$: coqtopOutput$s.answer$s.stmAdded$,
     stopAutomationRound$,
+    tip$: doc.tip$,
   });
 
   coqtopOutput$s.answer$s.stmAdded$.subscribe(a => {
@@ -407,6 +416,8 @@ $(document).ready(() => {
 
   coqtopOutput$s.answer$s.stmCanceled$.subscribe(a => {
     doc.removeSentencesByStateIds(a.answer.stateIds);
+    const tip = _.maxBy(doc.getAllSentences(), s => s.sentenceId);
+    if (tip) { doc.setTip(tip); }
   });
 
   // NOTE: CoqExn is pretty useless in indicating which command failed

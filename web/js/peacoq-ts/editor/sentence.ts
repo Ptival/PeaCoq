@@ -42,6 +42,7 @@ export class Sentence<S extends IStage> implements ISentence<S> {
   }
 
   addCompletion(tactic: string, group: string, context: PeaCoqContext): void {
+    // console.log("Adding completion for", tactic);
     if (!(group in this.completions)) { this.completions[group] = {}; }
     this.completions[group][tactic] = context;
     this.completionAdded$.onNext({});

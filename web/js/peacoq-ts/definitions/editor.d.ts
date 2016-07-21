@@ -1,5 +1,5 @@
-type CommandStreamItem = Rx.Observable<ISertop.ICommand>
-type CommandStream = Rx.Observable<CommandStreamItem>
+type CommandStream<T extends ISertop.ICommand> = Rx.Observable<CommandStreamItem<T>>
+type CommandStreamItem<T extends ISertop.ICommand> = Rx.Observable<T>
 
 interface IContextPanel {
   clear(): void;
@@ -74,6 +74,7 @@ interface ICoqDocument {
   sentenceBeingProcessed$: Rx.Observable<ISentence<IBeingProcessed>>;
   sentenceProcessed$: Rx.Observable<ISentence<IProcessed>>;
   session: AceAjax.IEditSession;
+  tip$: Rx.Observable<ISentence<IStage>>;
   getAllSentences(): ISentence<IStage>[];
   getSentenceByStateId(s: StateId): Maybe<ISentence<IStage>>;
   getSentenceByTag(tag: CommandTag): Maybe<ISentence<IStage>>;
@@ -94,6 +95,7 @@ interface ICoqDocument {
   removeSentencesByStateIds(ids: StateId[]): void;
   // removeFollowingEdits(e: ISentence<IEditStage>): void;
   resetEditor(s: string): void;
+  setTip(tip: ISentence<IStage>): void;
 }
 
 interface ISentence<S extends IStage> {

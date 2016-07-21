@@ -15,6 +15,7 @@ export function setup(
 
   // 1. listen to its context being ready, and display it when it is
   sentenceToDisplay$
+    // .do(s => console.log("Sentence to display", s))
     .concatMap(sentence => sentence.getProcessed$())
     .concatMap(stage => stage.getContext())
     .subscribe(context => doc.contextPanel.display(context));

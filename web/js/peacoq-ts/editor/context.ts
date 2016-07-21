@@ -22,3 +22,18 @@ export function create(rawContext): PeaCoqContext {
   );
   return context;
 }
+
+export function getAllGoals(c: PeaCoqContext): IGoal[] {
+  return [].concat(
+    c.fgGoals,
+    c.bgGoals.map(e => e.before),
+    c.bgGoals.map(e => e.after),
+    c.shelvedGoals,
+    c.givenUpGoals,
+  ).map(e => e.goal);
+}
+
+export function isEqual(context1: PeaCoqContext, context2: PeaCoqContext): boolean {
+  // we compare only the goal field, because the ppgoal field gets injected with HTML and stuff...
+  return _.isEqual(getAllGoals(context1), getAllGoals(context2));
+}

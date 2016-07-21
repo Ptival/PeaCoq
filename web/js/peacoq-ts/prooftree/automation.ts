@@ -7,10 +7,10 @@ interface ProofTreeAutomationInput {
   doc: ICoqDocument;
   error$: Rx.Observable<ErrorMessageFeedback>;
   notice$: Rx.Observable<NoticeMessageFeedback>;
-  queryForTacticToTry$: Rx.Observer<CommandStreamItem>;
-  sentenceToDisplay$: Rx.Observable<ISentence<IStage>>;
+  queryForTacticToTry$: Rx.Observer<CommandStreamItem<any>>;
   stmAdded$: Rx.Observable<ISertop.IAnswer<ISertop.IStmAdded>>;
   stopAutomationRound$: Rx.Observable<{}>;
+  tip$: Rx.Observable<ISentence<IStage>>;
 }
 
 const tacticAutomationRouteId = 2;
@@ -23,13 +23,13 @@ export function setup(i: ProofTreeAutomationInput): void {
     error$,
     notice$,
     queryForTacticToTry$,
-    sentenceToDisplay$,
     stmAdded$,
     stopAutomationRound$,
+    tip$,
   } = i;
 
   const processedSentenceToDisplay$ =
-    sentenceToDisplay$.concatMap(s => s.waitUntilProcessed());
+    tip$.concatMap(s => s.waitUntilProcessed());
 
   const contextToDisplay$ =
     processedSentenceToDisplay$
@@ -53,20 +53,35 @@ export function setup(i: ProofTreeAutomationInput): void {
         ),
       }));
 
+  tip$.subscribe(s => console.log("tip", s.query, s.stage));
+
   // every time there is a set of tactics to try, we go through them one by one
   setOfTacticsToTry$
     .subscribe(({ context, sentence, tactics }) => {
       const readyToSendNextCandidate$ = new Rx.Subject<{}>();
-
+      console.log("PREPARING FOR", sentence);
       Rx.Observable
         .zip(
         Rx.Observable.fromArray(tactics),
         readyToSendNextCandidate$
         )
         .takeUntil(stopAutomationRound$)
+        .takeUntil(tip$)
         .subscribe(([{ context: previousContext, group, tactic, sentence }, {}]) => {
-
+          console.log("PROCESSING", sentence);
           const stateId = sentence.stage.stateId;
+
+          // FIXME: not sure how to better do this, but we do not want to send
+          // any command if the tip has moved. Somehow, takeUntil(tip$) does not
+          // necessarily do a good job, so double-checking here:
+          const curSid = _.max(doc.getAllSentences().map(s => s.getStateId().caseOf({ nothing: () => 0, just: sid => sid })));
+          if (stateId !== curSid) {
+            console.log("Was expecting", stateId, "but we are at", curSid, "aborting");
+            return;
+          } else {
+            console.log("Was expecting", stateId, "and we are at", curSid, "proceeding");
+          }
+
           const add = new Command.Control(new ControlCommand.StmAdd({ ontop: stateId }, tactic));
           // listen for the STM added answer (there should be 0 if failed otherwise 1)
           const filteredStmAdded$ = stmAdded$.filter(a => a.cmdTag === add.tag)
@@ -97,7 +112,7 @@ export function setup(i: ProofTreeAutomationInput): void {
             .subscribe(n => {
               const context = Context.create(n.feedbackContent.message);
               // we only add tactics that change something
-              if (!_.isEqual(context, previousContext)) {
+              if (!Context.isEqual(context, previousContext)) {
                 sentence.addCompletion(tactic, group, context);
               }
             });
@@ -107,6 +122,7 @@ export function setup(i: ProofTreeAutomationInput): void {
             getContext$,
             Rx.Observable.just(editAt)
           ]).share();
+          console.log("SENDING ADD ONTOP OF", add.controlCommand.addOptions.ontop);
           queryForTacticToTry$.onNext(commandStreamItem);
 
         });

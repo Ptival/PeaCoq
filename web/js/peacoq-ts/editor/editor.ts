@@ -21,17 +21,10 @@ export function setupEditor(e: AceAjax.Editor) {
   e.$blockScrolling = Infinity; // pestering warning
 }
 
-export function setupMainEditor(doc: ICoqDocument, e: AceAjax.Editor) {
-
+export function setupMainEditor(
+  doc: ICoqDocument,
+  e: AceAjax.Editor
+) {
   setupEditor(e);
-
-  e.completers = [{ getCompletions: Completion.createGetCompletions(doc) }];
-
-  // const addCompletion = (n: string) => {
-  //   const row = e.completer ? e.completer.popup.getRow() : 0;
-  //   names.push(n);
-  //   e.execCommand("startAutocomplete");
-  //   e.completer.popup.setRow(row);
-  // };
-
+  // used to set completion here, but would rather make that a separate concern
 }

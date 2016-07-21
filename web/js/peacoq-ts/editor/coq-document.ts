@@ -14,6 +14,8 @@ export class CoqDocument implements ICoqDocument {
   sentenceBeingProcessed$: Rx.Observable<ISentence<IBeingProcessed>>;
   sentenceProcessed$: Rx.Observable<ISentence<IProcessed>>;
   session: AceAjax.IEditSession;
+  private tipSubject: Rx.Subject<ISentence<IStage>>;
+  tip$: Rx.Observable<ISentence<IStage>>;
 
   constructor(
     public editor: AceAjax.Editor
@@ -40,6 +42,9 @@ export class CoqDocument implements ICoqDocument {
     this.proofTrees = [];
     this.sentenceBeingProcessed$ = this.sentences.sentenceBeingProcessed$;
     this.sentenceProcessed$ = this.sentences.sentenceProcessed$;
+    this.tipSubject = new Rx.Subject<ISentence<IStage>>();
+    this.tip$ = this.tipSubject.distinctUntilChanged();
+    this.sentenceBeingProcessed$.subscribe(s => this.setTip(s));
   }
 
   getAllSentences(): ISentence<any>[] { return this.sentences.getAll(); }
@@ -266,6 +271,10 @@ export class CoqDocument implements ICoqDocument {
   //     return toBeRemoved;
   //   });
   // }
+
+  setTip(tip: ISentence<IStage>): void {
+    this.tipSubject.onNext(tip);
+  }
 
 }
 

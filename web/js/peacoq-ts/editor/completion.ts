@@ -1,5 +1,8 @@
 
-export function createGetCompletions(doc: ICoqDocument) {
+export function createGetCompletions(
+  doc: ICoqDocument,
+  stopAutomationRound$
+) {
   return function getCompletions(
     editor: AceAjax.Editor,
     session: AceAjax.IEditSession,
@@ -38,13 +41,14 @@ export function createGetCompletions(doc: ICoqDocument) {
     );
 
     sentenceToComplete.completionAdded$
-    // Memory leak: need a .takeUntil
-    .take(1)
-    .subscribe(({}) => {
-        const row = (editor.completer && editor.completer.popup) ? editor.completer.popup.getRow() : 0;
-        editor.execCommand("startAutocomplete");
-        editor.completer.popup.setRow(row);
-    })
+      .takeUntil(stopAutomationRound$)
+      .subscribe(({}) => {
+        if (editor.completer && editor.completer.popup) {
+          const row = editor.completer.popup.getRow();
+          editor.execCommand("startAutocomplete");
+          editor.completer.popup.setRow(row);
+        }
+      })
 
   }
 }
