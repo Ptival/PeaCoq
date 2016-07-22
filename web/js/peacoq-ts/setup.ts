@@ -346,7 +346,32 @@ $(document).ready(() => {
     ])
       .scan((acc, elt) => acc + elt, 1);
 
+  const stmCancelEditAtCanceledCounter$ =
+    Rx.Observable.merge([
+      flatCoqtopInputs$
+        .filter<Command.Control<any>>(i => i instanceof Command.Control)
+        .filter(i => i.controlCommand instanceof ControlCommand.StmCancel)
+        .map(_ => 1),
+      flatCoqtopInputs$
+        .filter<Command.Control<any>>(i => i instanceof Command.Control)
+        .filter(i => i.controlCommand instanceof ControlCommand.StmEditAt)
+        .map(_ => 1),
+      coqtopOutput$s.answer$s.stmCanceled$
+        .map(_ => -1),
+    ])
+      .scan((acc, elt) => acc + elt, 0);
+
   // stmAddAddedCounter$.subscribe(c => console.log("COUNT", c));
+  // stmCancelEditAtCanceledCounter$.subscribe(c => console.log("COUNT", c));
+
+  const stmActionsInFlightCounter$: Rx.Observable<number> =
+    Rx.Observable.combineLatest(
+      stmAddAddedCounter$,
+      stmCancelEditAtCanceledCounter$,
+      (x, y) => x+y
+    );
+
+  // stmActionsInFlightCounter$.subscribe(c => console.log("COUNT", c));
 
   /*
   Feedback comes back untagged, so need the zip to keep track of the relationship
@@ -381,7 +406,7 @@ $(document).ready(() => {
   });
 
   ProofTreeAutomation.setup({
-    stmAddAddedCounter$,
+    stmActionsInFlightCounter$,
     completed$: coqtopOutput$s.answer$s.completed$,
     doc,
     error$: coqtopOutput$s.feedback$s.message$s.error$,

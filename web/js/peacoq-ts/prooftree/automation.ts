@@ -3,7 +3,7 @@ import * as Command from "../sertop/command";
 import * as ControlCommand from "../sertop/control-command";
 
 interface ProofTreeAutomationInput {
-  stmAddAddedCounter$: Rx.Observable<number>;
+  stmActionsInFlightCounter$: Rx.Observable<number>;
   completed$;
   doc: ICoqDocument;
   error$: Rx.Observable<ErrorMessageFeedback>;
@@ -19,7 +19,7 @@ const tacticAutomationRouteId = 2;
 export function setup(i: ProofTreeAutomationInput): void {
 
   const {
-    stmAddAddedCounter$,
+    stmActionsInFlightCounter$,
     completed$,
     doc,
     error$,
@@ -70,7 +70,7 @@ export function setup(i: ProofTreeAutomationInput): void {
   */
 
   const pause$ =
-    stmAddAddedCounter$
+    stmActionsInFlightCounter$
       .map(n => n === 0)
       .startWith(true)
       .distinctUntilChanged()
@@ -188,34 +188,40 @@ function tacticsToTry(e: PeaCoqContextElement): TacticGroup[] {
 
   const hyps = e.ppgoal.hyps;
   const curHypsFull = _(hyps).clone().reverse();
-  const curHyps = _(curHypsFull).map(function(h) { return h.name; });
+  const curHyps = curHypsFull.map(h => h.name);
   // TODO: there is a better way to do this
   const curNames = []; // _(curHyps).union(namesPossiblyInScope.reverse());
 
   const res = [
 
-    // makeGroup(
-    //     "terminators",
-    //     (pt.goalIsReflexive() ? ["reflexivity"] : [])
-    //         .concat([
-    //             "discriminate",
-    //             "assumption",
-    //             "eassumption",
-    //         ])
-    // ),
-
     makeGroup(
-      "autos",
-      ["auto", "eauto"]
+      "terminators",
+      [].concat(
+        // (pt.goalIsReflexive() ? ["reflexivity"] : [])
+        ["reflexivity"],
+        [
+          "discriminate",
+          "assumption",
+          "eassumption",
+        ]
+      )
     ),
 
     makeGroup(
-      "introductions",
+      "automation",
+      [
+        // "auto",
+        // "eauto",
+      ]
+    ),
+
+    makeGroup(
+      "introduction",
       ["intros", "intro"]
     ),
 
     makeGroup(
-      "break_if, f_equal, subst",
+      "destructuring",
       [
         "break_if",
         "f_equal",
@@ -224,15 +230,15 @@ function tacticsToTry(e: PeaCoqContextElement): TacticGroup[] {
       ]
     ),
 
-    // makeGroup(
-    //     "simplifications",
-    //     ["simpl"].concat(
-    //         _(curHyps).map(function(h) { return "simpl in " + h; }).value()
-    //     ).concat(
-    //         (pt.curNode.hyps.length > 0 ? ["simpl in *"] : [])
-    //     )
-    // ),
-    //
+    makeGroup(
+      "simplification",
+      [].concat(
+        ["simpl"],
+        curHyps.map(h => `simpl in ${h}`),
+        curHyps.length > 0 ? ["simpl in *"] : []
+      )
+    ),
+
     // makeGroup(
     //     "constructors",
     //     (pt.goalIsDisjunction() ? ["left", "right"] : [])
@@ -263,17 +269,21 @@ function tacticsToTry(e: PeaCoqContextElement): TacticGroup[] {
     // ),
 
     makeGroup(
-      "inversions",
+      "inversion",
       _(curHyps).map(function(h) { return "inversion " + h; }).value()
     ),
 
     makeGroup(
-      "solvers",
-      ["congruence", "omega", "firstorder"]
+      "solver",
+      [
+        // "congruence",
+        // "omega",
+        // "firstorder"
+      ]
     ),
 
     makeGroup(
-      "applications",
+      "application",
       _(curNames).map(function(n) { return "apply " + n; }).value()
         .concat(
         _(curNames).map(function(n) { return "eapply " + n; }).value()
@@ -321,7 +331,7 @@ function tacticsToTry(e: PeaCoqContextElement): TacticGroup[] {
     // ),
 
     makeGroup(
-      "reverts",
+      "revert",
       _(curHyps).map(function(h) { return "revert " + h; }).value()
     ),
 
