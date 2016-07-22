@@ -3,6 +3,7 @@ import * as Command from "../sertop/command";
 import * as ControlCommand from "../sertop/control-command";
 
 interface ProofTreeAutomationInput {
+  stmAddAddedCounter$: Rx.Observable<number>;
   completed$;
   doc: ICoqDocument;
   error$: Rx.Observable<ErrorMessageFeedback>;
@@ -18,6 +19,7 @@ const tacticAutomationRouteId = 2;
 export function setup(i: ProofTreeAutomationInput): void {
 
   const {
+    stmAddAddedCounter$,
     completed$,
     doc,
     error$,
@@ -29,7 +31,9 @@ export function setup(i: ProofTreeAutomationInput): void {
   } = i;
 
   const processedSentenceToDisplay$ =
-    tip$.concatMap(s => s.waitUntilProcessed());
+    tip$
+      // .do(tip => console.log("START TIP", tip.query, tip.stage))
+      .concatMap(s => s.waitUntilProcessed());
 
   const contextToDisplay$ =
     processedSentenceToDisplay$
@@ -53,22 +57,60 @@ export function setup(i: ProofTreeAutomationInput): void {
         ),
       }));
 
-  tip$.subscribe(s => console.log("tip", s.query, s.stage));
+  // tip$.subscribe(s => console.log("TIP", s.query, s.stage));
+
+  /* Due to the asynchronicity of interactions with coqtop, we may have
+     bad races. For instance, we don't want to send a tactic if we sent a StmAdd
+     and are about to change state. We cannot rely on tip$ or stmAdded$ because
+     we might receive their acknowledgment later. The only reliable way is to
+     track pairs of StmAdd-StmAdded and pairs of StmCancel-StmCanceled, and to
+     only allow the emission of a tactic-to-try when pairs are matched.
+     We also regulate the tactic-to-try flow so that only one tactic is being
+     tried at a time, so that we can interrupt the flow between any two attempts.
+  */
+
+  const pause$ =
+    stmAddAddedCounter$
+      .map(n => n === 0)
+      .startWith(true)
+      .distinctUntilChanged()
+      /* We need replay because the paused stream will subscribe to pause$
+         later, and it needs to know the last value of pause$ upon subscription.
+         Otherwise, when calling pausableBuffered, the stream will assume false
+         and pause, even though the last value of pause$ was true.
+      */
+      .replay();
+
+  pause$.connect(); // make pause$ start running immediately
+
+  // pause$.subscribe(b => console.log(b ? "RESUME" : "PAUSE"));
 
   // every time there is a set of tactics to try, we go through them one by one
   setOfTacticsToTry$
     .subscribe(({ context, sentence, tactics }) => {
       const readyToSendNextCandidate$ = new Rx.Subject<{}>();
-      console.log("PREPARING FOR", sentence);
-      Rx.Observable
-        .zip(
-        Rx.Observable.fromArray(tactics),
-        readyToSendNextCandidate$
-        )
-        .takeUntil(stopAutomationRound$)
-        .takeUntil(tip$)
+
+      // console.log("PREPARING FOR", sentence);
+      // readyToSendNextCandidate$.subscribe(() => console.log("Ready for next candidate"));
+
+      const tactic$ =
+        Rx.Observable
+          .zip(
+          Rx.Observable.fromArray(tactics),
+          readyToSendNextCandidate$
+          )
+          .share(); // make it hot!
+
+      // tactic$.subscribe(t => console.log("WAITING", t[0]));
+      // tactic$.pausableBuffered(pause$).subscribe(t => console.log("PASSED", t[0]));
+
+      tactic$
+        // .takeUntil(stopAutomationRound$)
+        .pausableBuffered(pause$)
+        .takeUntil(tip$ /*.do(tip => console.log("TIP", tip.query, tip.stage))*/)
+        // .doOnCompleted(() => console.log("completed"))
         .subscribe(([{ context: previousContext, group, tactic, sentence }, {}]) => {
-          console.log("PROCESSING", sentence);
+          // console.log("PROCESSING", tactic, sentence);
           const stateId = sentence.stage.stateId;
 
           // FIXME: not sure how to better do this, but we do not want to send
@@ -76,10 +118,10 @@ export function setup(i: ProofTreeAutomationInput): void {
           // necessarily do a good job, so double-checking here:
           const curSid = _.max(doc.getAllSentences().map(s => s.getStateId().caseOf({ nothing: () => 0, just: sid => sid })));
           if (stateId !== curSid) {
-            console.log("Was expecting", stateId, "but we are at", curSid, "aborting");
+            // console.log("Was expecting", stateId, "but we are at", curSid, "aborting");
             return;
           } else {
-            console.log("Was expecting", stateId, "and we are at", curSid, "proceeding");
+            // console.log("Was expecting", stateId, "and we are at", curSid, "proceeding");
           }
 
           const add = new Command.Control(new ControlCommand.StmAdd({ ontop: stateId }, tactic));
@@ -122,7 +164,7 @@ export function setup(i: ProofTreeAutomationInput): void {
             getContext$,
             Rx.Observable.just(editAt)
           ]).share();
-          console.log("SENDING ADD ONTOP OF", add.controlCommand.addOptions.ontop);
+          // console.log("SENDING ADD ONTOP OF", add.controlCommand.addOptions.ontop);
           queryForTacticToTry$.onNext(commandStreamItem);
 
         });

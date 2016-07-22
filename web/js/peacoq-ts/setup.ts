@@ -299,12 +299,6 @@ $(document).ready(() => {
       queryForTacticToTry$,
     ]);
 
-  addsToProcess$
-    .flatMap(a => a)
-    .subscribe(add =>
-      console.log("ADD TO PROCESS SHOULD STOP AUTOMATION ROUND", add.controlCommand.sentence)
-    );
-
   // Automated tasks need to stop whenever the user changes the current state
   const stopAutomationRound$: Rx.Observable<{}> =
     Rx.Observable.merge([
@@ -323,7 +317,36 @@ $(document).ready(() => {
       .concatMap(cmds => cmds)
       .share();
 
+  const stmAdd$ =
+    flatCoqtopInputs$
+      .filter<Command.Control<any>>(i => i instanceof Command.Control)
+      .filter(i => i.controlCommand instanceof ControlCommand.StmAdd)
+      .map(_ => 1);
+
   const coqtopOutput$s = Sertop.setupCommunication(flatCoqtopInputs$);
+
+  const stmAdded$ =
+    coqtopOutput$s.answer$s.stmAdded$
+      .map(_ => -1);
+
+  const stmAddAddedCounter$ =
+    Rx.Observable.merge([
+      flatCoqtopInputs$
+        .filter<Command.Control<any>>(i => i instanceof Command.Control)
+        .filter(i => i.controlCommand instanceof ControlCommand.StmAdd)
+        .map(_ => 1),
+      coqtopOutput$s.answer$s.stmAdded$
+        .map(_ => -1),
+      // every time we quit, an StmAdd is done by the server and we receive the
+      // StmAdded...
+      flatCoqtopInputs$
+        .filter<Command.Control<any>>(i => i instanceof Command.Control)
+        .filter(i => i.controlCommand instanceof ControlCommand.Quit)
+        .map(_ => 1),
+    ])
+      .scan((acc, elt) => acc + elt, 1);
+
+  // stmAddAddedCounter$.subscribe(c => console.log("COUNT", c));
 
   /*
   Feedback comes back untagged, so need the zip to keep track of the relationship
@@ -358,6 +381,7 @@ $(document).ready(() => {
   });
 
   ProofTreeAutomation.setup({
+    stmAddAddedCounter$,
     completed$: coqtopOutput$s.answer$s.completed$,
     doc,
     error$: coqtopOutput$s.feedback$s.message$s.error$,
@@ -415,9 +439,18 @@ $(document).ready(() => {
     });
 
   coqtopOutput$s.answer$s.stmCanceled$.subscribe(a => {
-    doc.removeSentencesByStateIds(a.answer.stateIds);
+
+    const removedStateIds = a.answer.stateIds;
+
+    // if this looks like a cancel caused by PeaCoq trying tactics, ignore it
+    if (!_.some(removedStateIds, sid => isJust(doc.getSentenceByStateId(sid)))) {
+      return;
+    }
+
+    doc.removeSentencesByStateIds(removedStateIds);
     const tip = _.maxBy(doc.getAllSentences(), s => s.sentenceId);
     if (tip) { doc.setTip(tip); }
+
   });
 
   // NOTE: CoqExn is pretty useless in indicating which command failed
