@@ -100,5 +100,8 @@ function sendCommand(cmd: ISertop.ICommand): Promise<ISertop.IAnswer<ISertop.IAn
     url: "coqtop",
     data: { data: JSON.stringify(`(${cmd.tag} ${cmd.toSexp()})`) },
     async: true,
-  }).then(r => _(r).map(sexpParse).map(Answer.create).value());
+  }).then(r => {
+    // console.log("RECV", r);
+    return _(r).map(sexpParse).map(Answer.create).value();
+  });
 }
