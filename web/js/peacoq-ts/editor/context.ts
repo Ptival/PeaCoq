@@ -35,5 +35,17 @@ export function getAllGoals(c: PeaCoqContext): IGoal[] {
 
 export function isEqual(context1: PeaCoqContext, context2: PeaCoqContext): boolean {
   // we compare only the goal field, because the ppgoal field gets injected with HTML and stuff...
-  return _.isEqual(getAllGoals(context1), getAllGoals(context2));
+  // we also must avoid comparing goal field, because each goal has an id, and
+  // some tactics produce the same context with a fresh id, so we compare
+  // goalHyp and goalCcl fields only
+  return _.every(
+    _.zipWith(
+      getAllGoals(context1), getAllGoals(context2),
+      (g1, g2) =>
+        g1 !== undefined && g2 !== undefined // in case lengths differ
+        && _.isEqual(g1.goalHyp, g2.goalHyp)
+        && _.isEqual(g1.goalCcl, g2.goalCcl)
+    )
+  );
+  // isEqualWith(getAllGoals(context1), getAllGoals(context2));
 }
