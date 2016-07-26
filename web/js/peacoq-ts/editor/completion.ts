@@ -14,7 +14,7 @@ export function createGetCompletions(
   // show$.subscribe(() => console.log("show"));
   // select$.subscribe(() => console.log("select"));
   const contextPreview$ = show$
-    .concatMap(() => select$.startWith({}).takeUntil(hide$).doOnCompleted(() => console.log("This one is done")))
+    .concatMap(() => select$.startWith({}).takeUntil(hide$))
     .map(() => {
       const row = popup.getRow();
       const data = popup.getData(row);
