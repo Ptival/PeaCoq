@@ -277,7 +277,7 @@ $(document).ready(() => {
 
   const quitBecauseFileLoaded$: CommandStream<any> =
     userActionStreams.loadedFile$
-      .startWith({})
+      .startWith({}) // quit upon loading the webpage
       .map(({}) => Rx.Observable.just(new Command.Control(new ControlCommand.Quit())))
       .share();
 

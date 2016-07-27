@@ -26,13 +26,14 @@ export function setupCommunication(
   const slowedCmd$ =
     Rx.Observable.zip(
       cmd$,
-      cmdOutputSubject.startWith(-1)
+      cmdOutputSubject
     );
+
+  // cmdOutputSubject.subscribe(nb => console.log("ACK", nb));
 
   const cmdOutput$ =
     slowedCmd$
       .concatMap(([cmd, nb]) => {
-        // console.log("ACK", nb);
         // console.log("SND", cmd.tag);
         return sendCommand(cmd);
       })
@@ -44,10 +45,16 @@ export function setupCommunication(
   output$
     .filter(o => o instanceof Answer.Answer)
     .filter(o => o.answer instanceof AnswerKind.Ack)
-    .filter(o => + o.cmdTag >= Command.cmdTagMinimum)
+    // we don't listen to the answer from `cmdTagMinimum` as it may not arrive
+    .filter(o => + o.cmdTag >= Command.cmdTagMinimum + 1)
     .subscribe(o => { cmdOutputSubject.onNext(+ o.cmdTag); });
 
   cmdOutput$.connect();
+  // So, this is a bit complicated, but we need two freebies:
+  // - the first one is the command Quit, whose ACK we may or may not receive
+  // - the second one is the first actualy command we care to send
+  cmdOutputSubject.onNext(-2);
+  cmdOutputSubject.onNext(-1);
 
   const answer$ =
     output$.filter<ISertop.IAnswer<ISertop.IAnswerKind>>(a => a instanceof Answer.Answer);

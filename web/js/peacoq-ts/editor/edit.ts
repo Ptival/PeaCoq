@@ -89,6 +89,7 @@ export class Processed implements IProcessed {
   getColor() { return Theme.theme.processed; }
 
   getContext(): Promise<PeaCoqContext> {
+    // console.log("GETTING CONTEXT FOR STATE ID", this.stateId);
     if (this.context === null) {
       this.context = new Promise(onFulfilled => {
         const query = new Command.Control(new ControlCommand.StmQuery({

@@ -1,7 +1,7 @@
 import * as ControlCommand from "./control-command";
 import * as Sexp from "./sexp";
 
-export const cmdTagMinimum = 2;
+export const cmdTagMinimum = 2; // 0 and 1 will be sent by the server
 let cmdTagCounter = cmdTagMinimum;
 
 abstract class Command implements ISertop.ICommand {
