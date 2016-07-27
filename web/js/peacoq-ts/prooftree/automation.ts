@@ -11,7 +11,7 @@ interface ProofTreeAutomationInput {
   queryForTacticToTry$: Rx.Observer<CommandStreamItem<any>>;
   stmAdded$: Rx.Observable<ISertop.IAnswer<ISertop.IStmAdded>>;
   stopAutomationRound$: Rx.Observable<{}>;
-  tip$: Rx.Observable<ISentence<IStage>>;
+  debouncedTip$: Rx.Observable<ISentence<IStage>>;
 }
 
 const tacticAutomationRouteId = 2;
@@ -27,11 +27,11 @@ export function setup(i: ProofTreeAutomationInput): void {
     queryForTacticToTry$,
     stmAdded$,
     stopAutomationRound$,
-    tip$,
+    debouncedTip$,
   } = i;
 
   const processedSentenceToDisplay$ =
-    tip$
+    debouncedTip$
       // .do(tip => console.log("START TIP", tip.query, tip.stage))
       .concatMap(s => s.waitUntilProcessed());
 
@@ -107,7 +107,7 @@ export function setup(i: ProofTreeAutomationInput): void {
       tactic$
         // .takeUntil(stopAutomationRound$)
         .pausableBuffered(pause$)
-        .takeUntil(tip$ /*.do(tip => console.log("TIP", tip.query, tip.stage))*/)
+        .takeUntil(debouncedTip$ /*.do(tip => console.log("TIP", tip.query, tip.stage))*/)
         // .doOnCompleted(() => console.log("completed"))
         .subscribe(([{ context: previousContext, group, tactic, sentence }, {}]) => {
           // console.log("PROCESSING", tactic, sentence);

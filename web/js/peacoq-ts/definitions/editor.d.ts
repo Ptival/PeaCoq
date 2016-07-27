@@ -74,7 +74,7 @@ interface ICoqDocument {
   sentenceBeingProcessed$: Rx.Observable<ISentence<IBeingProcessed>>;
   sentenceProcessed$: Rx.Observable<ISentence<IProcessed>>;
   session: AceAjax.IEditSession;
-  tip$: Rx.Observable<ISentence<IStage>>;
+  debouncedTip$: Rx.Observable<ISentence<IStage>>;
   getAllSentences(): ISentence<IStage>[];
   getSentenceByStateId(s: StateId): Maybe<ISentence<IStage>>;
   getSentenceByTag(tag: CommandTag): Maybe<ISentence<IStage>>;

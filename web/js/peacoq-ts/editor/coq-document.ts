@@ -15,7 +15,7 @@ export class CoqDocument implements ICoqDocument {
   sentenceProcessed$: Rx.Observable<ISentence<IProcessed>>;
   session: AceAjax.IEditSession;
   private tipSubject: Rx.Subject<ISentence<IStage>>;
-  tip$: Rx.Observable<ISentence<IStage>>;
+  debouncedTip$: Rx.Observable<ISentence<IStage>>;
 
   constructor(
     public editor: AceAjax.Editor
@@ -43,7 +43,7 @@ export class CoqDocument implements ICoqDocument {
     this.sentenceBeingProcessed$ = this.sentences.sentenceBeingProcessed$;
     this.sentenceProcessed$ = this.sentences.sentenceProcessed$;
     this.tipSubject = new Rx.Subject<ISentence<IStage>>();
-    this.tip$ = this.tipSubject.distinctUntilChanged();
+    this.debouncedTip$ = this.tipSubject.distinctUntilChanged().debounce(250);
     this.sentenceBeingProcessed$.subscribe(s => this.setTip(s));
   }
 

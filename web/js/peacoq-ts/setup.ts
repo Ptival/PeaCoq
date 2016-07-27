@@ -414,7 +414,7 @@ $(document).ready(() => {
     queryForTacticToTry$,
     stmAdded$: coqtopOutput$s.answer$s.stmAdded$,
     stopAutomationRound$,
-    tip$: doc.tip$,
+    debouncedTip$: doc.debouncedTip$,
   });
 
   coqtopOutput$s.answer$s.stmAdded$.subscribe(a => {
