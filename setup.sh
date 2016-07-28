@@ -65,6 +65,6 @@ cat <<END > ${FILE}
 PeaCoqConfig
 { configUserId = "peacoq"
 , configLogPath = "${LOGPATH}"
-, configCoqtop = "/home/ptival/coq-serapi/sertop.native --prelude /home/ptival/coq-for-coq-serapi"
+, configCoqtop = "/home/ptival/coq-serapi/sertop.native --prelude /home/ptival/coq-for-coq-serapi --custom-escape"
 }
 END
