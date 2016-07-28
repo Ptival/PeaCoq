@@ -13,6 +13,7 @@ interface IProofTree {
   tacticWaiting: Maybe<string>;
   xFactor: number;
   yFactor: number;
+  getAllGoals(): IGoalNode[];
   getGoalWidth(): number;
   getTacticWidth(): number;
   isCurNode(n: IProofTreeNode): boolean;
@@ -65,12 +66,15 @@ interface IGoalNode extends IProofTreeNode {
   context: PeaCoqContext;
   fgIndex: number;
   html: JQuery;
-  stateIds: number[];
+  // stateIds: number[];
   tacticGroups: ITacticGroupNode[];
+  addStateId(s: StateId): void;
   getGoalAncestors(): IGoalNode[];
   getTactics(): ITactic[];
+  getStateIds(): StateId[];
   onChildSolved(sid: number): void;
   onSolved(sid: number): void;
+  removeStateIds(sids: StateId[]): void;
 }
 
 interface ITactic {

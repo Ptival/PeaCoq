@@ -463,6 +463,8 @@ $(document).ready(() => {
       }
     });
 
+  const stmCanceledFiltered$ = new Rx.Subject<ISertop.IAnswer<ISertop.IStmCanceled>>();
+
   coqtopOutput$s.answer$s.stmCanceled$.subscribe(a => {
 
     const removedStateIds = a.answer.stateIds;
@@ -471,6 +473,8 @@ $(document).ready(() => {
     if (!_.some(removedStateIds, sid => isJust(doc.getSentenceByStateId(sid)))) {
       return;
     }
+
+    stmCanceledFiltered$.onNext(a);
 
     doc.removeSentencesByStateIds(removedStateIds);
     const tip = _.maxBy(doc.getAllSentences(), s => s.sentenceId);
@@ -604,13 +608,13 @@ $(document).ready(() => {
   //     r.input.getArgs()
   //   ));
 
-  // ProofTreeSetup.setup({
-  //   doc,
-  //   hideProofTreePanel,
-  //   sentenceProcessed$: doc.sentenceProcessed$,
-  //   showProofTreePanel,
-  //   stmCanceled$: coqtopOutput$s.answer$s.stmCanceled$,
-  // });
+  ProofTreeSetup.setup({
+    doc,
+    hideProofTreePanel,
+    sentenceProcessed$: doc.sentenceProcessed$,
+    showProofTreePanel,
+    stmCanceled$: stmCanceledFiltered$,
+  });
 
 });
 

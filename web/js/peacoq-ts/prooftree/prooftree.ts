@@ -71,6 +71,7 @@ export class ProofTree implements IProofTree {
     this.tacticWaiting = nothing();
 
     this.rootNode = new GoalNode(this, parent, context, index);
+    this._curNode = this.rootNode;
 
     this.tree = d3.layout.tree<IProofTreeNode>()
       .children((node: IProofTreeNode, index: number) => {
@@ -257,8 +258,11 @@ export class ProofTree implements IProofTree {
 
   get curNode(): IGoalNode { return this._curNode; }
   set curNode(n: IGoalNode) {
-    // console.log("Switching current node to", n);
-    this._curNode = n;
+    if (n.id !== this._curNode.id) {
+      // debugger;
+      // console.log("Switching current node to", n);
+      this._curNode = n;
+    }
   }
 
   findOrCreateGroup(goalNode: IGoalNode, groupName: string): ITacticGroupNode {
@@ -272,6 +276,13 @@ export class ProofTree implements IProofTree {
     let groupNode = new TacticGroupNode(this, goalNode, groupName);
     goalNode.tacticGroups.push(groupNode);
     return groupNode;
+  }
+
+  getAllGoals(): IGoalNode[] {
+    return [].concat(
+      [this.rootNode],
+      this.rootNode.getAllGoalDescendants()
+    );
   }
 
   getAllNodes(): IProofTreeNode[] { return this.rootNode.getAllDescendants(); }
@@ -847,8 +858,16 @@ export class ProofTree implements IProofTree {
 
   update(): Promise<{}> {
     let self = this;
+    // debugger;
+    // console.log("UPDATE");
     return new Promise(function(onFulfilled, onRejected) {
-      self.updatePromise(onFulfilled, onRejected);
+      self.updatePromise(
+        () => {
+          // console.log("UPDATE: DONE");
+          onFulfilled();
+        },
+        onRejected
+      );
     });
   }
 

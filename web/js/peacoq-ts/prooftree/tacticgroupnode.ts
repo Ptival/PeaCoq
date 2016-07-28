@@ -93,10 +93,12 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
       .find(function(elt) {
         return !elt.isSolved();
       });
+    // debugger;
+    // console.log("unsolved", unsolved);
     if (unsolved === undefined) {
       this.onSolved(sid);
     } else {
-      unsolved.stateIds.push(sid);
+      unsolved.addStateId(sid);
       this.proofTree.curNode = unsolved;
       //this.proofTree.refreshTactics();
       this.proofTree.update();
@@ -108,6 +110,7 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
     this.proofTree.curNode = this.parentGoal;
     this.proofTree.update()
       .then(function() {
+        // console.log("THEN");
         self.parentGoal.onChildSolved(sid);
       })
       ;

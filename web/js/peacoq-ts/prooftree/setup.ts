@@ -25,6 +25,7 @@ export function setup(i: ProofTreeSetupInput): ProofTreeSetupOutput {
   sentenceProcessed$
     .flatMap(s => s.stage.getContext().then(c => ({ sentence: s, context: c })))
     .subscribe(({ sentence, context }) => {
+      // console.log("proofTree sees sentence", sentence);
       ProofTreeHandlers.proofTreeOnEdit(
         doc, showProofTreePanel, hideProofTreePanel,
         sentence.query, sentence.stage.stateId, context
@@ -32,6 +33,7 @@ export function setup(i: ProofTreeSetupInput): ProofTreeSetupOutput {
     });
 
   stmCanceled$.subscribe(c => {
+    // console.log("proofTree cancels IDs", c.answer.stateIds);
     ProofTreeHandlers.onStmCanceled(
       doc,
       hideProofTreePanel,

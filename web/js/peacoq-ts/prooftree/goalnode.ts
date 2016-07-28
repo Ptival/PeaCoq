@@ -8,7 +8,7 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
   openBraces: number;
   // DO NOT USE "parent" AS D3 WILL OVERWRITE
   private parentGroup: Maybe<ITacticGroupNode>;
-  stateIds: number[];
+  private stateIds: number[];
   tacticGroups: ITacticGroupNode[];
   tacticIndex: number;
 
@@ -19,7 +19,7 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
     public fgIndex: number
   ) {
     super(proofTree, parent);
-    debugger;
+    // debugger;
     this.closedBraces = 0;
     this.html = $("<div>")
       .attr("id", _.uniqueId())
@@ -30,6 +30,11 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
     this.stateIds = [];
     this.tacticGroups = [];
     this.tacticIndex = 0;
+  }
+
+  addStateId(s: StateId): void {
+    // console.log("Adding state ID", s);
+    this.stateIds.push(s);
   }
 
   click(): void { return; }
@@ -87,6 +92,10 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
   }
 
   getParent(): Maybe<ITacticGroupNode> { return this.parentGroup; }
+
+  getStateIds(): StateId[] {
+    return this.stateIds;
+  }
 
   getTactics(): ITactic[] {
     return _(this.tacticGroups)
@@ -151,6 +160,12 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
     //  else if (autoLayout) {
     //   //proofTreeQueryWish('}');
     // }
+  }
+
+  removeStateIds(sids: StateId[]): void {
+    // console.log("Removing state IDs", sids, "from", this.stateIds);
+    this.stateIds = _(this.stateIds).filter(s => !_(sids).includes(s)).value();
+    // console.log("Remaining", this.stateIds);
   }
 
 }

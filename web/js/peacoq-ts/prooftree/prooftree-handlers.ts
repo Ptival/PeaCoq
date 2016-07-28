@@ -36,7 +36,7 @@ export function proofTreeOnEdit(
         );
         doc.proofTrees.unshift(pt);
         const g = pt.rootNode;
-        g.stateIds.push(stateId);
+        g.addStateId(stateId);
         pt.curNode = g;
         pt.update();
       });
@@ -66,7 +66,7 @@ export function proofTreeOnEdit(
 
   if (isUpperCase(trimmed[0]) || CoqStringUtils.isBullet(trimmed)) {
     // curNode.goals = goals;
-    curNode.stateIds.push(stateId);
+    curNode.addStateId(stateId);
     return;
   }
 
@@ -89,9 +89,12 @@ export function proofTreeOnEdit(
   const goalsAfter = context;
   const nbRelevantGoals =
     goalsBefore.bgGoals.length === goalsAfter.bgGoals.length
-      ? goalsAfter.fgGoals.length - (goalsBefore.fgGoals.length - 1)
-      : 0;
+      ? goalsAfter.fgGoals.length - (goalsBefore.fgGoals.length - curNode.fgIndex - 1)
+      : goalsAfter.fgGoals.length;
   const relevantGoals = context.fgGoals.slice(0, nbRelevantGoals);
+
+  // console.log("nbRelevantGoals", nbRelevantGoals);
+  // debugger;
 
   const goalNodes: IGoalNode[] =
     _(_.range(nbRelevantGoals))
@@ -117,7 +120,7 @@ export function proofTreeOnEdit(
 
   if (goalNodes.length > 0) {
     const curGoal: IGoalNode = goalNodes[0];
-    curGoal.stateIds.push(stateId);
+    curGoal.addStateId(stateId);
     activeProofTree.curNode = curGoal;
     activeProofTree.update();
   } else {
@@ -146,19 +149,23 @@ export function onStmCanceled(
 
   // first, get rid of all stored stateIds > sid
   // and mark their children tactic groups unprocessed
-  const allGoals = activeProofTree.rootNode.getAllGoalDescendants();
+  const allGoals = activeProofTree.getAllGoals();
+
   _(allGoals).each(g => {
-    if (_(g.stateIds).some(s => _(sids).includes(s))) {
+    if (_(g.getStateIds()).some(s => _(sids).includes(s))) {
       _(g.tacticGroups).each(g => { g.isProcessed = false; });
     }
-    g.stateIds = _(g.stateIds).filter(s => _(sids).includes(s)).value();
+    g.removeStateIds(sids);
   });
+
   // TODO: Not sure if this is always correct
-  const target = _.maxBy(allGoals, g => _.max(g.stateIds));
+  const target = _.maxBy(allGoals, g => _.max(g.getStateIds()));
+
   if (target) {
     activeProofTree.curNode = target;
     activeProofTree.update();
   } else {
+    debugger;
     doc.proofTrees.length = 0;
     hideProofTreePanel();
     $("#prooftree").empty();
