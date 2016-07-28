@@ -108,6 +108,7 @@ export class ProofTree implements IProofTree {
       .insert("div", ":first-child")
       .attr("id", "pt-" + this.svgId)
       .classed("prooftree", true)
+      .style("overflow", "hidden")
       ;
 
     this.svg = this.div
@@ -647,6 +648,9 @@ export class ProofTree implements IProofTree {
       .style("opacity", "1")
       .attr("x", function(d) { return d.getScaledX(); })
       .attr("y", function(d) { return d.getScaledY(); })
+      // the width must be updated (when resizing window horizontally)
+      .attr("width", function(d) { return d.getWidth(); })
+      .attr("height", function(d) { return d.getHeight(); })
       .each("end", function() {
         // this is in "end" so that it does not trigger before nodes are positioned
         d3.select(this)
@@ -743,14 +747,14 @@ export class ProofTree implements IProofTree {
   }
 
   resize(width: number, height: number) {
-    this.width = width;
-    this.height = height;
+    this.width = Math.floor(width);
+    this.height = Math.floor(height);
     this.svg
-      .style("width", width + "px")
-      .style("height", height + "px")
+      .style("width", `${this.width}px`)
+      .style("height", `${this.height}px`)
       // also need these as attributes for svg_todataurl
-      .attr("width", width + "px")
-      .attr("height", height + "px")
+      .attr("width", `${this.width}px`)
+      .attr("height", `${this.height}px`)
       ;
     this.update();
   }
@@ -759,10 +763,10 @@ export class ProofTree implements IProofTree {
     let m = parseSVGTransform(this.viewport.attr('transform'));
     if (m.hasOwnProperty('matrix')) {
       m = m.matrix;
-      this.viewport.attr('transform',
-        'matrix(1' + ',' + m[1] + ',' + m[2]
-        + ', 1' + ',' + m[4] + ',' + m[5] + ')')
-        ;
+      this.viewport.attr(
+        'transform',
+        `matrix(1, ${m[1]}, ${m[2]}, 1, ${m[4]}, ${m[5]})`
+      );
     }
   }
 

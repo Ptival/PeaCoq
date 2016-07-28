@@ -3,24 +3,30 @@ import * as ProofTreeHandlers from "./prooftree-handlers";
 interface ProofTreeSetupInput {
   doc: ICoqDocument;
   hideProofTreePanel: () => void;
+  resize$: Rx.Observable<{}>;
   sentenceProcessed$: Rx.Observable<ISentence<IProcessed>>;
   showProofTreePanel: () => Promise<{}>;
   stmCanceled$: Rx.Observable<ISertop.IAnswer<ISertop.IStmCanceled>>;
 }
 
-interface ProofTreeSetupOutput {
-}
-
-export function setup(i: ProofTreeSetupInput): ProofTreeSetupOutput {
+export function setup(i: ProofTreeSetupInput): void {
   const {
     doc,
     hideProofTreePanel,
+    resize$,
     sentenceProcessed$,
     showProofTreePanel,
     stmCanceled$,
   } = i;
-  const hideProofTreePanel$ = new Rx.Subject();
-  const showProofTreePanel$ = new Rx.Subject();
+
+  resize$.debounce(250).subscribe(() => {
+    if (doc.proofTrees.length === 0) { return; }
+    const activeProofTree = doc.proofTrees[0];
+    activeProofTree.resize(
+      $("#prooftree").parent().width(),
+      $("#prooftree").parent().height()
+    );
+  });
 
   sentenceProcessed$
     .flatMap(s => s.stage.getContext().then(c => ({ sentence: s, context: c })))
@@ -41,8 +47,4 @@ export function setup(i: ProofTreeSetupInput): ProofTreeSetupOutput {
     )
   });
 
-  return {
-    hideProofTreePanel$,
-    showProofTreePanel$,
-  };
 }

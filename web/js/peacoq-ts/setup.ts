@@ -118,7 +118,7 @@ $(document).ready(() => {
   $().w2layout({
     name: bottomLayoutName,
     panels: [
-      { type: "top", size: "90%", hidden: true, resizable: false, content: $("<div>", { id: "prooftree" }) },
+      { type: "top", size: "90%", overflow: "hidden", hidden: true, resizable: false, content: $("<div>", { id: "prooftree" }) },
       { type: "main", size: "10%", overflow: "hidden", resizable: false, content: $("<div>", { id: "progress-bar", height: "100%" }) },
     ],
   });
@@ -611,6 +611,7 @@ $(document).ready(() => {
   ProofTreeSetup.setup({
     doc,
     hideProofTreePanel,
+    resize$,
     sentenceProcessed$: doc.sentenceProcessed$,
     showProofTreePanel,
     stmCanceled$: stmCanceledFiltered$,
