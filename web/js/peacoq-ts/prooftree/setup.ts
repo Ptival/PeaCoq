@@ -28,21 +28,38 @@ export function setup(i: ProofTreeSetupInput): void {
     );
   });
 
+  const exitProofTree$ = new Rx.Subject<{}>();
+  function hideProofTreePanelAndSignal() {
+    exitProofTree$.onNext({});
+    hideProofTreePanel();
+  }
+
+  // We want to start a ProofTree session everytime:
+  // - the last sentence processed is "Proof."
+  // - no further sentence remains to be processed
   sentenceProcessed$
-    .flatMap(s => s.stage.getContext().then(c => ({ sentence: s, context: c })))
+    .filter(s => CoqStringUtils.coqTrim(s.query) === "Proof.")
+    .filter(s => doc.getSentencesToProcess().length === 0)
+    .filter(s => doc.getSentencesBeingProcessed().length === 0)
+    // .do(s => console.log("Starting to listen because of sentence", s))
+    .flatMap(s =>
+      sentenceProcessed$.startWith(s)
+        .takeUntil(exitProofTree$)
+        // .doOnCompleted(() => console.log("Stopped listening"))
+        .flatMap(s => s.stage.getContext().then(c => ({ sentence: s, context: c })))
+    )
     .subscribe(({ sentence, context }) => {
-      // console.log("proofTree sees sentence", sentence);
       ProofTreeHandlers.proofTreeOnEdit(
-        doc, showProofTreePanel, hideProofTreePanel,
+        doc, showProofTreePanel, hideProofTreePanelAndSignal,
         sentence.query, sentence.stage.stateId, context
-      )
+      );
     });
 
   stmCanceled$.subscribe(c => {
     // console.log("proofTree cancels IDs", c.answer.stateIds);
     ProofTreeHandlers.onStmCanceled(
       doc,
-      hideProofTreePanel,
+      hideProofTreePanelAndSignal,
       c.answer.stateIds
     )
   });
