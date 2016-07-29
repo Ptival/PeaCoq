@@ -68,3 +68,7 @@ declare module _ {
     ): T;
   }
 }
+
+declare namespace d3 {
+  export function select(selector: Object): Selection<any>;
+}

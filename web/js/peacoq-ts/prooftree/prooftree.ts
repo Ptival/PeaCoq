@@ -905,7 +905,11 @@ export class ProofTree implements IProofTree {
       })
       ;
 
-    d3.transition().duration(animationDuration).each(() => {
+    // Here we need select({}) because d3 transitions are exclusive and
+    // without it, concurrent selections will not each call their "end"
+    // callback.
+    // See. https://bl.ocks.org/mbostock/5348789
+    d3.select({}).transition().duration(animationDuration).each(() => {
 
       let textEnter = textSelection.enter().append("foreignObject");
       let rectSelection = self.rectLayer.selectAll("rect").data(nodes, ProofTreeUtils.byNodeId);
