@@ -55,7 +55,7 @@ namespace BrightTheme {
   export const syntaxVariable = "rgb(147, 112, 219)";
   export const syntaxVernacular = "rgb(255, 69, 0)";
   export const toprocess = "rgba(173, 216, 230, 1)";
-  export const tacticFill = "#FFF056";
+  export const tacticFill = "rgb(147, 112, 219)";
 }
 
 namespace DarkTheme {
@@ -81,7 +81,7 @@ namespace DarkTheme {
   export const syntaxVariable = "rgb(147, 112, 219)";
   export const syntaxVernacular = "rgb(255, 69, 0)";
   export const toprocess = "rgba(73, 116, 130, 1)";
-  export const tacticFill = "#9F9006";
+  export const tacticFill = "rgb(147, 112, 219)";
 }
 
 export let theme: Theme = BrightTheme;
