@@ -458,12 +458,14 @@ let rec string_of_constr_expr ce =
           ; string_of_list string_of_branch_expr branchl
           ])
 
-      | CLetTuple(loc, nll, (nlo, ceo), ce1, ce2) ->
+      | CLetTuple(loc, nll, nlo_ceo, ce1, ce2) ->
          ("CLetTuple",
           [ string_of_location loc
           ; string_of_list (string_of_located string_of_name) nll
-          ; string_of_option (string_of_located string_of_name) nlo
-          ; string_of_option string_of_constr_expr ceo
+          ; string_of_pair
+              (string_of_option (string_of_located string_of_name))
+              (string_of_option string_of_constr_expr)
+              nlo_ceo
           ; string_of_constr_expr ce1
           ; string_of_constr_expr ce2
           ])
