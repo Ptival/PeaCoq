@@ -5,9 +5,11 @@ const maxMessagesOnScreen = 10;
 export class CoqtopPanel {
   constructor(
     private container: JQuery,
-    private message$: Rx.Observable<{ message: string; level: PeaCoqMessageLevel }>
+    message$: Rx.Observable<{ message: string; level: PeaCoqMessageLevel }>,
+    loadedFile$: Rx.Observable<{}>
   ) {
     message$.subscribe(m => this.addAlert(m.message, peaCoqMessageLevelToString(m.level)));
+    loadedFile$.subscribe(() => this.container.empty());
   }
 
   addAlert(message: string, klass: string) {

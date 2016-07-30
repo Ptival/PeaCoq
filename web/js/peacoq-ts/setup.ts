@@ -530,7 +530,8 @@ $(document).ready(() => {
           message: e.feedbackContent.message,
           level: PeaCoqMessageLevel.Success,
         }))
-    )
+    ),
+    userActionStreams.loadedFile$
   );
 
   // keep this under subscribers who need the edit to exist
@@ -611,6 +612,7 @@ $(document).ready(() => {
   ProofTreeSetup.setup({
     doc,
     hideProofTreePanel,
+    loadedFile$: userActionStreams.loadedFile$,
     resize$,
     sentenceProcessed$: doc.sentenceProcessed$,
     showProofTreePanel,

@@ -3,6 +3,7 @@ import * as ProofTreeHandlers from "./prooftree-handlers";
 interface ProofTreeSetupInput {
   doc: ICoqDocument;
   hideProofTreePanel: () => void;
+  loadedFile$: Rx.Observable<{}>;
   resize$: Rx.Observable<{}>;
   sentenceProcessed$: Rx.Observable<ISentence<IProcessed>>;
   showProofTreePanel: () => Promise<{}>;
@@ -13,6 +14,7 @@ export function setup(i: ProofTreeSetupInput): void {
   const {
     doc,
     hideProofTreePanel,
+    loadedFile$,
     resize$,
     sentenceProcessed$,
     showProofTreePanel,
@@ -33,6 +35,8 @@ export function setup(i: ProofTreeSetupInput): void {
     exitProofTree$.onNext({});
     hideProofTreePanel();
   }
+
+  loadedFile$.subscribe(hideProofTreePanelAndSignal);
 
   // We want to start a ProofTree session everytime:
   // - the last sentence processed is "Proof."
