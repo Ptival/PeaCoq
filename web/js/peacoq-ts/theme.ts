@@ -161,7 +161,7 @@ function update(doc: ICoqDocument): void {
   $.get(theme.css, (response) => {
     $('#theme').text(response);
     $("#w2uicss")
-      .load(() => afterChangeSubject.onNext({}))
+      .on("load", () => afterChangeSubject.onNext({}))
       .attr("href", theme.css);
   });
 

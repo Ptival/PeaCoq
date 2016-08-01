@@ -56,7 +56,7 @@ requirejs(
         "d3",
         "jquery.hotkeys",
         "jquery-contextmenu",
-        "jquery-ui",
+        // "jquery-ui",
         "jss",
         "lodash",
         "MathJax",
