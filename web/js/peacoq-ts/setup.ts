@@ -368,7 +368,7 @@ $(document).ready(() => {
     Rx.Observable.combineLatest(
       stmAddAddedCounter$,
       stmCancelEditAtCanceledCounter$,
-      (x, y) => x+y
+      (x, y) => x + y
     );
 
   // stmActionsInFlightCounter$.subscribe(c => console.log("COUNT", c));
@@ -488,6 +488,7 @@ $(document).ready(() => {
   // if you "Require Import Nonsense." So need both?
   coqtopOutput$s.feedback$s.message$s.error$.subscribe(e => {
     switch (e.editOrState) {
+      case EditOrState.Edit: return;
       case EditOrState.State:
         const cancel = new Command.Control(new ControlCommand.StmCancel([e.editOrStateId]));
         cancelBecauseErrorMsg$.onNext(Rx.Observable.just(cancel));
@@ -516,7 +517,9 @@ $(document).ready(() => {
   new CoqtopPanel(
     $(w2ui[rightLayoutName].get("bottom").content),
     Rx.Observable.merge(
+
       coqtopOutput$s.feedback$s.message$s.error$
+      .filter(e => e.editOrState === EditOrState.State)
         // due to sending sentences fast, we receive errors for states beyond
         // another failed state. reporting those looks spurious to the user.
         .filter(e => isJust(doc.getSentenceByStateId(e.editOrStateId)))
@@ -524,6 +527,14 @@ $(document).ready(() => {
           message: e.feedbackContent.message,
           level: PeaCoqMessageLevel.Danger,
         })),
+
+      coqtopOutput$s.feedback$s.message$s.error$
+      .filter(e => e.editOrState === EditOrState.Edit)
+        .map(e => ({
+          message: e.feedbackContent.message,
+          level: PeaCoqMessageLevel.Danger,
+        })),
+
       coqtopOutput$s.feedback$s.message$s.notice$
         .filter(e => e.routeId === 0) // other routes are used by PeaCoq
         .map(e => ({
@@ -537,6 +548,7 @@ $(document).ready(() => {
   // keep this under subscribers who need the edit to exist
   coqtopOutput$s.feedback$s.message$s.error$.subscribe(e => {
     switch (e.editOrState) {
+      case EditOrState.Edit: return;
       case EditOrState.State:
         const failedStateId = e.editOrStateId;
         const failedSentence = doc.getSentenceByStateId(failedStateId);
