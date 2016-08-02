@@ -497,13 +497,6 @@ $(document).ready(() => {
     }
   });
 
-  coqtopOutput$s.answer$s.coqExn$.subscribe(e => {
-    doc.removeSentences(s => s.commandTag.caseOf({
-      nothing: () => false,
-      just: t => t === e.cmdTag,
-    }));
-  });
-
   // keep this above the subscription that removes edits
   UnderlineError.setup(
     doc,
@@ -519,7 +512,7 @@ $(document).ready(() => {
     Rx.Observable.merge(
 
       coqtopOutput$s.feedback$s.message$s.error$
-      .filter(e => e.editOrState === EditOrState.State)
+        .filter(e => e.editOrState === EditOrState.State)
         // due to sending sentences fast, we receive errors for states beyond
         // another failed state. reporting those looks spurious to the user.
         .filter(e => isJust(doc.getSentenceByStateId(e.editOrStateId)))
@@ -529,7 +522,7 @@ $(document).ready(() => {
         })),
 
       coqtopOutput$s.feedback$s.message$s.error$
-      .filter(e => e.editOrState === EditOrState.Edit)
+        .filter(e => e.editOrState === EditOrState.Edit)
         .map(e => ({
           message: e.feedbackContent.message,
           level: PeaCoqMessageLevel.Danger,
@@ -541,9 +534,19 @@ $(document).ready(() => {
           message: e.feedbackContent.message,
           level: PeaCoqMessageLevel.Success,
         }))
+
     ),
     userActionStreams.loadedFile$
   );
+
+  // keep this under subscribers who need the edit to exist
+  coqtopOutput$s.answer$s.coqExn$.subscribe(e => {
+    // debugger;
+    doc.removeSentences(s => s.commandTag.caseOf({
+      nothing: () => false,
+      just: t => +t >= +e.cmdTag,
+    }));
+  });
 
   // keep this under subscribers who need the edit to exist
   coqtopOutput$s.feedback$s.message$s.error$.subscribe(e => {

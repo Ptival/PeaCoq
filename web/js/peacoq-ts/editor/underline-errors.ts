@@ -4,6 +4,7 @@ export function setup(
   clear$: Rx.Observable<{}>
 ): void {
   errorMsg$.subscribe(e => {
+    // debugger;
     let failedEdit: Maybe<ISentence<IStage>> = nothing();
     switch (e.editOrState) {
       case EditOrState.Edit:
