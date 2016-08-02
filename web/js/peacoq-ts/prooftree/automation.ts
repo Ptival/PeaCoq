@@ -258,19 +258,21 @@ function tacticsToTry(e: PeaCoqContextElement): TacticGroup[] {
     //         .value()
     // ),
 
-    // makeGroup(
-    //     "inductions",
-    //     _(curHypsFull)
-    //         .filter(function(h) {
-    //             return h.hType.tag === "Var" && h.hType.contents === "natlist";
-    //         })
-    //         .map(function(h) { return "induction " + h.hName; })
-    //         .value()
-    // ),
+    makeGroup(
+        "induction",
+        curHyps.map(h => `induction ${h}`)
+        // This was used for the study because induction applies to everything :(
+        // _(curHypsFull)
+        //     .filter(function(h) {
+        //         return h.hType.tag === "Var" && h.hType.contents === "natlist";
+        //     })
+        //     .map(function(h) { return "induction " + h.hName; })
+        //     .value()
+    ),
 
     makeGroup(
       "inversion",
-      _(curHyps).map(function(h) { return "inversion " + h; }).value()
+      curHyps.map(h => `inversion ${h}`)
     ),
 
     makeGroup(

@@ -165,7 +165,7 @@ export function onStmCanceled(
     activeProofTree.curNode = target;
     activeProofTree.update();
   } else {
-    debugger;
+    // debugger;
     doc.proofTrees.length = 0;
     hideProofTreePanel();
     $("#prooftree").empty();
