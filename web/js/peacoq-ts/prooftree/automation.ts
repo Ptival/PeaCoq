@@ -32,77 +32,37 @@ export function setup(i: ProofTreeAutomationInput): void {
     tip$,
   } = i;
 
-  const processedSentenceToDisplay$ =
-    debouncedTip$
-      // .do(tip => console.log("START TIP", tip.query, tip.stage))
-      .concatMap(s => s.waitUntilProcessed());
+  const pause$ = makePause$(stmActionsInFlightCounter$);
 
-  const contextToDisplay$ =
-    processedSentenceToDisplay$
-      .concatMap(
+  debouncedTip$
+    .concatMap(sentence => sentence.waitUntilProcessed())
+    // sentence-1, ...
+    .concatMap(
       sentence => sentence.stage.getContext(),
-      (sentence, context) => ({ context, sentence })
-      );
-
-  const setOfTacticsToTry$ =
-    contextToDisplay$
-      .map(({ context, sentence }) =>
-        ({ context, sentence, tactics: getTacticsForContext(context, sentence) })
-      );
-
-  /* Due to the asynchronicity of interactions with coqtop, we may have
-     bad races. For instance, we don't want to send a tactic if we sent a StmAdd
-     and are about to change state. We cannot rely on tip$ or stmAdded$ because
-     we might receive their acknowledgment later. The only reliable way is to
-     track pairs of StmAdd-StmAdded and pairs of StmCancel-StmCanceled, and to
-     only allow the emission of a tactic-to-try when pairs are matched.
-     We also regulate the tactic-to-try flow so that only one tactic is being
-     tried at a time, so that we can interrupt the flow between any two attempts.
-  */
-
-  const pause$ =
-    stmActionsInFlightCounter$
-      .map(n => n === 0)
-      .startWith(true)
-      .distinctUntilChanged()
-      /* We need replay because the paused stream will subscribe to pause$
-         later, and it needs to know the last value of pause$ upon subscription.
-         Otherwise, when calling pausableBuffered, the stream will assume false
-         and pause, even though the last value of pause$ was true.
-      */
-      .replay();
-
-  pause$.connect(); // make pause$ start running immediately
-
-  // pause$.subscribe(b => console.log(b ? "RESUME" : "PAUSE"));
-
-  // every time there is a set of tactics to try, we go through them one by one
-  setOfTacticsToTry$
-    .subscribe(({ context, sentence, tactics }) => {
+      (sentence, context) => getTacticsForContext(context, sentence)
+    )
+    // tactics-for-sentence-1, ...
+    .map(tactics =>
+      Rx.Observable.fromArray(tactics)
+        .map(tactic => makeCandidate(doc, tactic, completed$, error$, notice$, stmAdded$))
+    )
+    // For each sentence, we have an item.
+    // Each item is a stream of candidates, one per tactic to be tried
+    // Each candidate is a stream of 3 commands, namely Add, Query, Cancel
+    .subscribe(candidatesForASentence$ => {
+      // every time a new sentence comes, this stream helps regulate the flow of its candidates
       const readyToSendNextCandidate$ = new Rx.Subject<{}>();
-
       Rx.Observable
-        .zip(
-        Rx.Observable.fromArray(tactics),
-        readyToSendNextCandidate$
-        )
+        .zip(candidatesForASentence$, readyToSendNextCandidate$)
         .map(([t, {}]) => t)
-        .share() // make sure it's hot for pausableBuffered
+        .share()
         .pausableBuffered(pause$)
         .takeUntil(tip$)
-        .subscribe(input => {
-
-          const { commandStreamItem, done$ } = makeCompletionTuple(
-            doc, input, completed$, error$, notice$, stmAdded$
-          );
-          done$.subscribe(() => readyToSendNextCandidate$.onNext({}));
-
-          // console.log("SENDING ADD ONTOP OF", add.controlCommand.addOptions.ontop);
-
-          queryForTacticToTry$.onNext(commandStreamItem);
-
+        .subscribe(candidate => {
+          candidate.done$.subscribe(() => readyToSendNextCandidate$.onNext({}));
+          queryForTacticToTry$.onNext(candidate.commandsToTryOneTactic$);
         });
-
+      // start processing candidates for this sentence
       readyToSendNextCandidate$.onNext({});
     });
 
@@ -290,7 +250,7 @@ function getTacticsForContext(context, sentence) {
 }
 
 /* This needs to be simplified... */
-function makeCompletionTuple(
+function makeCandidate(
   doc: ICoqDocument,
   input,
   completed$,
@@ -298,7 +258,7 @@ function makeCompletionTuple(
   notice$,
   stmAdded$
 ): {
-    commandStreamItem: CommandStreamItem<ISertop.ICommand>;
+    commandsToTryOneTactic$: CommandStreamItem<ISertop.ICommand>;
     done$: Rx.Observable<{}>
   } {
   const { context, group, tactic, sentence } = input;
@@ -311,7 +271,7 @@ function makeCompletionTuple(
   if (stateId !== curSid) {
     // console.log("Was expecting", stateId, "but we are at", curSid, "aborting");
     return {
-      commandStreamItem: Rx.Observable.empty<ISertop.ICommand>(),
+      commandsToTryOneTactic$: Rx.Observable.empty<ISertop.ICommand>(),
       done$: Rx.Observable.empty(),
     };
   } else {
@@ -351,11 +311,40 @@ function makeCompletionTuple(
       }
     });
   const editAt = new Command.Control(new ControlCommand.StmEditAt(stateId));
-  const commandStreamItem = Rx.Observable.concat<ISertop.ICommand>([
+  const commandsToTryOneTactic$ = Rx.Observable.concat<ISertop.ICommand>([
     Rx.Observable.just(add),
     getContext$,
     Rx.Observable.just(editAt)
   ]).share();
-  return { commandStreamItem, done$: Rx.Observable.amb(stmAddErrored$, addNotice$) };
+  return { commandsToTryOneTactic$, done$: Rx.Observable.amb(stmAddErrored$, addNotice$) };
+
+}
+
+/*
+Due to the asynchronicity of interactions with coqtop, we may have
+bad races. For instance, we don't want to send a tactic if we sent a StmAdd
+and are about to change state. We cannot rely on tip$ or stmAdded$ because
+we might receive their acknowledgment later. The only reliable way is to
+track pairs of StmAdd-StmAdded and pairs of StmCancel-StmCanceled, and to
+only allow the emission of a tactic-to-try when pairs are matched.
+We also regulate the tactic-to-try flow so that only one tactic is being
+tried at a time, so that we can interrupt the flow between any two attempts.
+*/
+function makePause$(stmActionsInFlightCounter$): Rx.Observable<boolean> {
+
+  const pause$ = stmActionsInFlightCounter$
+    .map(n => n === 0)
+    .startWith(true)
+    .distinctUntilChanged()
+    /* We need replay because the paused stream will subscribe to pause$
+       later, and it needs to know the last value of pause$ upon subscription.
+       Otherwise, when calling pausableBuffered, the stream will assume false
+       and pause, even though the last value of pause$ was true.
+    */
+    .replay();
+
+  pause$.connect(); // make pause$ start running immediately
+
+  return pause$;
 
 }

@@ -14,6 +14,7 @@ export function createGetCompletions(
   const select$ = Rx.Observable.fromEvent(popup, "select").debounce(0);
   // show$.subscribe(() => console.log("show"));
   // select$.subscribe(() => console.log("select"));
+
   show$
     .concatMap(() => select$.startWith({}).takeUntil(hide$))
     .map(() => {
@@ -27,6 +28,7 @@ export function createGetCompletions(
       doc.contextPanel.display(context);
       // console.log(data.caption, completion);
     });
+
   hide$
     .concatMap(() => {
       // when the suggestion panel hides, we should display either:
