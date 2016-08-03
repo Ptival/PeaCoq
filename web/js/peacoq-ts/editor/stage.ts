@@ -2,7 +2,7 @@
 import * as Command from "../sertop/command";
 import * as ControlCommand from "../sertop/control-command";
 import * as DebugFlags from "../debug-flags";
-import { EditMarker } from "./edit-marker";
+import { SentenceMarker } from "./sentence-marker";
 import * as Global from "../global-variables";
 import * as Goal from "../goal";
 import * as Goals from "../goals";
@@ -21,7 +21,7 @@ export class ToProcess implements IToProcess {
     start: AceAjax.Position,
     stop: AceAjax.Position
   ) {
-    this.marker = new EditMarker(doc, start, stop);
+    this.marker = new SentenceMarker(doc, start, stop);
   }
 
   getColor(): string { return Theme.theme.toprocess; }

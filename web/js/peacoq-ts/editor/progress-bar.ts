@@ -1,6 +1,4 @@
 import * as DebugFlags from "../debug-flags";
-import * as Edit from "./edit";
-import * as Global from "../global-variables";
 import * as Theme from "../theme";
 
 let barItemClass = "progress-bar-item";

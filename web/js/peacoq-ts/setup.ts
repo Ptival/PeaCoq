@@ -10,7 +10,7 @@ import * as Coq85 from "./editor/coq85";
 import { CoqDocument } from "./editor/coq-document";
 import { CoqtopPanel } from "./editor/coqtop-panel";
 import { ContextPanel } from "./editor/context-panel";
-import * as Edit from "./editor/edit";
+import * as Stage from "./editor/stage";
 import * as Editor from "./editor/editor";
 
 import { isBefore } from "./editor/editor-utils";
@@ -390,7 +390,7 @@ $(document).ready(() => {
       nothing: () => { },
       just: sentence => {
 
-        if (!(sentence.stage instanceof Edit.Processed)) { debugger; }
+        if (!(sentence.stage instanceof Stage.Processed)) { debugger; }
         const stage: IProcessed = <any>sentence.stage;
 
         if (DebugFlags.rawPeaCoqContext) { console.log(rawContext); }
@@ -421,7 +421,7 @@ $(document).ready(() => {
     const allEdits = doc.getSentencesToProcess();
     const edit = _(allEdits).find(e => isJust(e.commandTag) && fromJust(e.commandTag) === a.cmdTag);
     if (!edit) { return; } // this happens for a number of reasons...
-    const newStage = new Edit.BeingProcessed(edit.stage, a.answer.stateId);
+    const newStage = new Stage.BeingProcessed(edit.stage, a.answer.stateId);
     edit.setStage(newStage);
   });
 
@@ -443,7 +443,7 @@ $(document).ready(() => {
           const editsBeingProcessed = doc.getSentencesBeingProcessed();
           const edit = _(editsBeingProcessed).find(e => e.stage.stateId === stateId);
           if (edit) {
-            const newStage = new Edit.Processed(edit.stage, peaCoqGetContext$);
+            const newStage = new Stage.Processed(edit.stage, peaCoqGetContext$);
             edit.setStage(newStage);
             // if (
             //   Global.coqDocument.getEditsToProcess().length === 0

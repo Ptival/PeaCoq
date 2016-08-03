@@ -14,9 +14,9 @@ export const rawPeaCoqContext = false;
 
 // editor-related
 
-export const editChangedStage = false;
-export const editCreated = false;
-export const editRemoved = false;
+export const sentenceChangedStage = false;
+export const sentenceCreated = false;
+export const sentenceRemoved = false;
 export const sentenceToBeDisplayed = false;
 export const progressBarClick = false;
 export const textCursorPosition = false;

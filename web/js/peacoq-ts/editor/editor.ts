@@ -1,6 +1,3 @@
-import * as Completion from "./completion";
-import * as Edit from "./edit";
-import * as Global from "../global-variables";
 import { theme } from "../theme";
 
 const CoqMode = ace.require("peacoq-js/mode-coq").Mode;

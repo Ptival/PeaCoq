@@ -1,4 +1,4 @@
-import * as Edit from "./edit";
+import * as Stage from "./stage";
 import { isBefore } from "./editor-utils";
 import { Strictly } from "../strictly";
 
@@ -34,8 +34,8 @@ export class Sentence<S extends IStage> implements ISentence<S> {
     this.sentenceId = freshSentenceId();
     // we use a replay subject so that the observables behave like promises
     this.stage$ = new Rx.ReplaySubject<any>();
-    this.beingProcessed$ = this.stage$.filter<IBeingProcessed>(s => s instanceof Edit.BeingProcessed).take(1);
-    this.processed$ = this.stage$.filter<IProcessed>(s => s instanceof Edit.Processed).take(1);
+    this.beingProcessed$ = this.stage$.filter<IBeingProcessed>(s => s instanceof Stage.BeingProcessed).take(1);
+    this.processed$ = this.stage$.filter<IProcessed>(s => s instanceof Stage.Processed).take(1);
     this.setStage(stage); // keep last
     this.completions = {};
     this.completionAdded$ = new Rx.Subject();
@@ -50,7 +50,7 @@ export class Sentence<S extends IStage> implements ISentence<S> {
 
   cleanup(): void {
     this.stage.marker.remove();
-    if (!(this.stage instanceof Edit.Processed)) {
+    if (!(this.stage instanceof Stage.Processed)) {
       this.stage$.onCompleted();
     } // otherwise, it should have already completed!
   }
@@ -102,7 +102,7 @@ export class Sentence<S extends IStage> implements ISentence<S> {
     // no strong update, so circumventing the type system
     this.stage = <any>stage;
     this.stage$.onNext(this.stage);
-    if (this.stage instanceof Edit.Processed) { this.stage$.onCompleted(); }
+    if (this.stage instanceof Stage.Processed) { this.stage$.onCompleted(); }
     return <any>this;
   }
 

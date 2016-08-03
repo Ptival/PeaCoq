@@ -1,6 +1,5 @@
-import * as Edit from "./edit";
-import { SentenceArray } from "./edit-array";
-import * as Global from "./../global-variables";
+import * as Stage from "./stage";
+import { SentenceArray } from "./sentence-array";
 import { errorUnderlineClass, theme } from "./../theme";
 
 export class CoqDocument implements ICoqDocument {
@@ -77,15 +76,15 @@ export class CoqDocument implements ICoqDocument {
   }
 
   getSentencesBeingProcessed(): ISentence<IBeingProcessed>[] {
-    return this.getSentencesByStage(Edit.BeingProcessed);
+    return this.getSentencesByStage(Stage.BeingProcessed);
   }
 
   getSentencesToProcess(): ISentence<IToProcess>[] {
-    return this.getSentencesByStage(Edit.ToProcess);
+    return this.getSentencesByStage(Stage.ToProcess);
   }
 
   getProcessedSentences(): ISentence<IProcessed>[] {
-    return this.getSentencesByStage(Edit.Processed);
+    return this.getSentencesByStage(Stage.Processed);
   }
 
   // getStopPositions(): AceAjax.Position[] {
@@ -214,7 +213,7 @@ export class CoqDocument implements ICoqDocument {
         let newStopPos = this.movePositionRight(lastEditStopPos, nextIndex);
         let query = unprocessedText.substring(0, nextIndex);
         let previousEdit = this.sentences.getLast();
-        let stage = new Edit.ToProcess(this, lastEditStopPos, newStopPos);
+        let stage = new Stage.ToProcess(this, lastEditStopPos, newStopPos);
         let edit: ISentence<IToProcess> =
           this.sentences.createSentence(this, lastEditStopPos, newStopPos, query, previousEdit, stage);
         // debugger;

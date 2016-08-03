@@ -1,4 +1,4 @@
-export class EditMarker implements IEditMarker {
+export class SentenceMarker implements IEditMarker {
   klass: string;
   markerId: number;
   markerRange: AceAjax.Range;
