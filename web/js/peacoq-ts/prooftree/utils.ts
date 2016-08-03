@@ -1,16 +1,14 @@
-import * as Global from "./../global-variables";
-
 /*
   Stuff that is somewhat general but mostly useful for the proof tree.
  */
 
-export function getActiveProofTree(): Maybe<IProofTree> {
-  return (
-    Global.proofTrees.length > 0
-      ? just(Global.proofTrees[0])
-      : nothing()
-  );
-}
+// export function getActiveProofTree(): Maybe<IProofTree> {
+//   return (
+//     Global.proofTrees.length > 0
+//       ? just(Global.proofTrees[0])
+//       : nothing()
+//   );
+// }
 
 /*
  * Returns a rect of the absolute position of [elmt] within the canvas. It needs

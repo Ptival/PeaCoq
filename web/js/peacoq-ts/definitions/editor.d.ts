@@ -76,6 +76,8 @@ interface ICoqDocument {
   session: AceAjax.IEditSession;
   debouncedTip$: Rx.Observable<ISentence<IStage>>;
   tip$: Rx.Observable<ISentence<IStage>>;
+
+  getActiveProofTree(): Maybe<IProofTree>;
   getAllSentences(): ISentence<IStage>[];
   getSentenceByStateId(s: StateId): Maybe<ISentence<IStage>>;
   getSentenceByTag(tag: CommandTag): Maybe<ISentence<IStage>>;

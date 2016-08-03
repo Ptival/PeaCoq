@@ -1,10 +1,7 @@
-import * as Global from "../global-variables";
-
 import { GoalNode } from "./goalnode";
 import { ProofTree } from "./prooftree";
 import { Tactic } from "./tactic";
 import { TacticGroupNode } from "./tacticgroupnode";
-import { getActiveProofTree } from "./utils";
 
 export function proofTreeOnEdit(
   doc: ICoqDocument,

@@ -1,4 +1,3 @@
-import * as Global from "../global-variables";
 import { onResize } from "../setup";
 import { switchToBright, switchToDark } from "../theme";
 

@@ -1,5 +1,3 @@
-import * as Global from "./../global-variables";
-
 export class Debug implements IMessageLevel.IDebug { }
 
 export class Error implements IMessageLevel.IError { }

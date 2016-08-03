@@ -1,4 +1,3 @@
-import * as Global from "./../global-variables";
 // TODO: the thing causing this import should go elsewhere
 import { Warning } from "../coq/message-level";
 

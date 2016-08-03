@@ -3,7 +3,6 @@ import * as Command from "../sertop/command";
 import * as ControlCommand from "../sertop/control-command";
 import * as DebugFlags from "../debug-flags";
 import { SentenceMarker } from "./sentence-marker";
-import * as Global from "../global-variables";
 import * as Goal from "../goal";
 import * as Goals from "../goals";
 import { walkJSON } from "../peacoq/json";

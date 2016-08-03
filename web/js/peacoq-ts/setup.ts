@@ -14,7 +14,6 @@ import * as Stage from "./editor/stage";
 import * as Editor from "./editor/editor";
 
 import { isBefore } from "./editor/editor-utils";
-// import { pimpMyError } from "./editor/error";
 import { setupKeybindings } from "./editor/keybindings";
 import { setupProgressBar } from "./editor/progress-bar";
 
@@ -31,7 +30,6 @@ import { GoalNode } from "./prooftree/goalnode";
 import { ProofTree } from "./prooftree/prooftree";
 import { Tactic } from "./prooftree/tactic";
 import { TacticGroupNode } from "./prooftree/tacticgroupnode";
-import { getActiveProofTree } from "./prooftree/utils";
 import { proofTreeOnEdit, onStmCanceled } from "./prooftree/prooftree-handlers";
 import * as ProofTreeSetup from "./prooftree/setup";
 import * as ProofTreeAutomation from "./prooftree/automation";
@@ -41,10 +39,7 @@ import * as Command from "./sertop/command";
 import * as ControlCommand from "./sertop/control-command";
 import * as QueryCommand from "./sertop/query-command";
 
-import * as Coqtop from "./coqtop-rx";
-// import * as CoqtopInput from "./coqtop-input";
 import * as DebugFlags from "./debug-flags";
-import * as Global from "./global-variables";
 import { PeaCoqGoal } from "./peacoq-goal";
 import { Strictly } from "./strictly";
 import * as Theme from "./theme";
@@ -648,7 +643,7 @@ function updateCoqtopTabs(context: PeaCoqContext) {
 
 export function onResize(doc: ICoqDocument): void {
   doc.editor.resize();
-  getActiveProofTree().fmap(t => {
+  doc.getActiveProofTree().fmap(t => {
     const parent = $("#prooftree").parent();
     t.resize(parent.width(), parent.height());
   });
@@ -676,7 +671,7 @@ function updateFontSize(doc: ICoqDocument): void {
   doc.contextPanel.onFontSizeChanged(fontSize);
   jss.set("#pretty-content", { "font-size": fontSize + "px" });
   jss.set("svg body", { "font-size": fontSize + "px" });
-  getActiveProofTree().fmap(t => t.update());
+  doc.getActiveProofTree().fmap(t => t.update());
 }
 
 function setupW2LayoutResizeStream(layout: W2UI.W2Layout): Rx.Observable<{}> {

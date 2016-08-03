@@ -1,5 +1,3 @@
-// import * as CoqtopInput from "../coqtop-input";
-import * as Global from "../global-variables";
 import { isBefore } from "./editor-utils";
 import { Strictly } from "../strictly";
 

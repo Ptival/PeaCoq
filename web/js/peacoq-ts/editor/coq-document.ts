@@ -50,6 +50,14 @@ export class CoqDocument implements ICoqDocument {
     this.sentenceBeingProcessed$.subscribe(s => this.setTip(s));
   }
 
+  getActiveProofTree(): Maybe<IProofTree> {
+    return (
+      this.proofTrees.length > 0
+        ? just(this.proofTrees[0])
+        : nothing()
+    );
+  }
+
   getAllSentences(): ISentence<any>[] { return this.sentences.getAll(); }
 
   getSentenceAtPosition(pos: AceAjax.Position): Maybe<ISentence<any>> {

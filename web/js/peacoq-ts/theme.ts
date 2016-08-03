@@ -1,5 +1,3 @@
-import * as Global from "./global-variables";
-
 const cssPath = "node_modules/w2ui/";
 
 const afterChangeSubject = new Rx.Subject<{}>();

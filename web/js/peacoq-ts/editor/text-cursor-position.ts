@@ -1,4 +1,3 @@
-import * as Global from "../global-variables";
 import { ValueFail } from "../coq/value-fail";
 import { Processed } from "../coq/feedback-content";
 

@@ -86,13 +86,11 @@ export function setup(i: ProofTreeAutomationInput): void {
         Rx.Observable.fromArray(tactics),
         readyToSendNextCandidate$
         )
-        .share() // make it hot!
-        // .do(t => console.log("WAITING", t[0]))
+        .map(([t, {}]) => t)
+        .share() // make sure it's hot for pausableBuffered
         .pausableBuffered(pause$)
-        // .do(t => console.log("PASSED", t[0]))
-        .takeUntil(tip$ /*.do(tip => console.log("TIP", tip.query, tip.stage))*/)
-        // .doOnCompleted(() => console.log("completed"))
-        .subscribe(([input, {}]) => {
+        .takeUntil(tip$)
+        .subscribe(input => {
 
           const { commandStreamItem, done$ } = makeCompletionTuple(
             doc, input, completed$, error$, notice$, stmAdded$
