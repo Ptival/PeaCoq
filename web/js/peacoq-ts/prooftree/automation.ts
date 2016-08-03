@@ -44,20 +44,9 @@ export function setup(i: ProofTreeAutomationInput): void {
 
   const setOfTacticsToTry$ =
     contextToDisplay$
-      .map(({ context, sentence }) => ({
-        context, sentence,
-        tactics: (
-          context.fgGoals.length === 0
-            ? []
-            : _(tacticsToTry(context.fgGoals[0])).flatMap(group =>
-              group.tactics.map(tactic =>
-                ({ context, group: group.name, tactic, sentence })
-              )
-            ).value()
-        ),
-      }));
-
-  // tip$.subscribe(s => console.log("TIP", s.query, s.stage));
+      .map(({ context, sentence }) =>
+        ({ context, sentence, tactics: getTacticsForContext(context, sentence) })
+      );
 
   /* Due to the asynchronicity of interactions with coqtop, we may have
      bad races. For instance, we don't want to send a tactic if we sent a StmAdd
@@ -259,15 +248,15 @@ function tacticsToTry(e: PeaCoqContextElement): TacticGroup[] {
     // ),
 
     makeGroup(
-        "induction",
-        curHyps.map(h => `induction ${h}`)
-        // This was used for the study because induction applies to everything :(
-        // _(curHypsFull)
-        //     .filter(function(h) {
-        //         return h.hType.tag === "Var" && h.hType.contents === "natlist";
-        //     })
-        //     .map(function(h) { return "induction " + h.hName; })
-        //     .value()
+      "induction",
+      curHyps.map(h => `induction ${h}`)
+      // This was used for the study because induction applies to everything :(
+      // _(curHypsFull)
+      //     .filter(function(h) {
+      //         return h.hType.tag === "Var" && h.hType.contents === "natlist";
+      //     })
+      //     .map(function(h) { return "induction " + h.hName; })
+      //     .value()
     ),
 
     makeGroup(
@@ -341,4 +330,17 @@ function tacticsToTry(e: PeaCoqContextElement): TacticGroup[] {
 
   return res;
 
+}
+
+function getTacticsForContext(context, sentence) {
+  if (context.fgGoals.length === 0) { return []; }
+  return (
+    _(tacticsToTry(context.fgGoals[0]))
+      .flatMap(group =>
+        group.tactics.map(tactic =>
+          ({ context, group: group.name, tactic, sentence })
+        )
+      )
+      .value()
+  );
 }
