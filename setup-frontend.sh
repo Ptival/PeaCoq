@@ -15,4 +15,5 @@ cd js/peacoq-ts/
 ./typings-bin prune
 ./typings-bin install
 
+rm -rf ../peacoq-js-of-ts/*
 ./tsc -p .
