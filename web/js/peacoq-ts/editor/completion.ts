@@ -8,12 +8,13 @@ export function createGetCompletions(
   doc.editor.execCommand("startAutocomplete");
 
   const popup = doc.editor.completer.getPopup();
-  const show$ = Rx.Observable.fromEvent(popup, "show");
+  // Ace sometimes triggers show and select like crazy, so debounce it a little
+  const show$ = Rx.Observable.fromEvent(popup, "show").debounce(0);
   const hide$ = Rx.Observable.fromEvent(popup, "hide");
-  const select$ = Rx.Observable.fromEvent(popup, "select");
+  const select$ = Rx.Observable.fromEvent(popup, "select").debounce(0);
   // show$.subscribe(() => console.log("show"));
   // select$.subscribe(() => console.log("select"));
-  const contextPreview$ = show$
+  show$
     .concatMap(() => select$.startWith({}).takeUntil(hide$))
     .map(() => {
       const row = popup.getRow();
@@ -21,8 +22,7 @@ export function createGetCompletions(
       const sentence: ISentence<IStage> = data.sentence;
       const context = sentence.completions[data.meta][data.caption];
       return { context, sentence };
-    });
-  contextPreview$
+    })
     .subscribe(({ context, sentence }) => {
       doc.contextPanel.display(context);
       // console.log(data.caption, completion);
@@ -51,12 +51,12 @@ export function createGetCompletions(
     session: AceAjax.IEditSession,
     position: AceAjax.Position,
     prefix: string,
-    callback: (err: boolean, results: AceAjax.Completion[]) => void
+    callback: (err: boolean, results: AceAjax.Completion[], keepPopupPosition: boolean) => void
   ): void {
 
     const sentenceToComplete = _.maxBy(doc.getAllSentences(), s => s.sentenceId);
 
-    if (sentenceToComplete === undefined) { return callback(false, []); }
+    if (sentenceToComplete === undefined) { return callback(false, [], true); }
 
     const completions = sentenceToComplete.completions;
 
@@ -81,7 +81,8 @@ export function createGetCompletions(
         score: 100,
         value: tactic,
         sentence: sentenceToComplete,
-      }))
+      })),
+      true
     );
 
     sentenceToComplete.completionAdded$

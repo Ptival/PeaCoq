@@ -15,6 +15,7 @@ export class CoqDocument implements ICoqDocument {
   session: AceAjax.IEditSession;
   private tipSubject: Rx.Subject<ISentence<IStage>>;
   debouncedTip$: Rx.Observable<ISentence<IStage>>;
+  tip$: Rx.Observable<ISentence<IStage>>;
 
   constructor(
     public editor: AceAjax.Editor
@@ -42,6 +43,9 @@ export class CoqDocument implements ICoqDocument {
     this.sentenceBeingProcessed$ = this.sentences.sentenceBeingProcessed$;
     this.sentenceProcessed$ = this.sentences.sentenceProcessed$;
     this.tipSubject = new Rx.Subject<ISentence<IStage>>();
+    // Use distinctUntilChanged because PeaCoq automation triggers spurious
+    // tipSubject notifications for the same tip
+    this.tip$ = this.tipSubject.distinctUntilChanged();
     this.debouncedTip$ = this.tipSubject.distinctUntilChanged().debounce(250);
     this.sentenceBeingProcessed$.subscribe(s => this.setTip(s));
   }

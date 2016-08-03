@@ -12,6 +12,7 @@ interface ProofTreeAutomationInput {
   stmAdded$: Rx.Observable<ISertop.IAnswer<ISertop.IStmAdded>>;
   stopAutomationRound$: Rx.Observable<{}>;
   debouncedTip$: Rx.Observable<ISentence<IStage>>;
+  tip$: Rx.Observable<ISentence<IStage>>;
 }
 
 const tacticAutomationRouteId = 2;
@@ -28,6 +29,7 @@ export function setup(i: ProofTreeAutomationInput): void {
     stmAdded$,
     stopAutomationRound$,
     debouncedTip$,
+    tip$,
   } = i;
 
   const processedSentenceToDisplay$ =
@@ -79,81 +81,26 @@ export function setup(i: ProofTreeAutomationInput): void {
     .subscribe(({ context, sentence, tactics }) => {
       const readyToSendNextCandidate$ = new Rx.Subject<{}>();
 
-      // console.log("PREPARING FOR", sentence);
-      // readyToSendNextCandidate$.subscribe(() => console.log("Ready for next candidate"));
-
-      const tactic$ =
-        Rx.Observable
-          .zip(
-          Rx.Observable.fromArray(tactics),
-          readyToSendNextCandidate$
-          )
-          .share(); // make it hot!
-
-      // tactic$.subscribe(t => console.log("WAITING", t[0]));
-      // tactic$.pausableBuffered(pause$).subscribe(t => console.log("PASSED", t[0]));
-
-      tactic$
-        // .takeUntil(stopAutomationRound$)
+      Rx.Observable
+        .zip(
+        Rx.Observable.fromArray(tactics),
+        readyToSendNextCandidate$
+        )
+        .share() // make it hot!
+        // .do(t => console.log("WAITING", t[0]))
         .pausableBuffered(pause$)
-        .takeUntil(debouncedTip$ /*.do(tip => console.log("TIP", tip.query, tip.stage))*/)
+        // .do(t => console.log("PASSED", t[0]))
+        .takeUntil(tip$ /*.do(tip => console.log("TIP", tip.query, tip.stage))*/)
         // .doOnCompleted(() => console.log("completed"))
-        .subscribe(([{ context: previousContext, group, tactic, sentence }, {}]) => {
-          // console.log("PROCESSING", tactic, sentence);
-          const stateId = sentence.stage.stateId;
+        .subscribe(([input, {}]) => {
 
-          // FIXME: not sure how to better do this, but we do not want to send
-          // any command if the tip has moved. Somehow, takeUntil(tip$) does not
-          // necessarily do a good job, so double-checking here:
-          const curSid = _.max(doc.getAllSentences().map(s => s.getStateId().caseOf({ nothing: () => 0, just: sid => sid })));
-          if (stateId !== curSid) {
-            // console.log("Was expecting", stateId, "but we are at", curSid, "aborting");
-            return;
-          } else {
-            // console.log("Was expecting", stateId, "and we are at", curSid, "proceeding");
-          }
+          const { commandStreamItem, done$ } = makeCompletionTuple(
+            doc, input, completed$, error$, notice$, stmAdded$
+          );
+          done$.subscribe(() => readyToSendNextCandidate$.onNext({}));
 
-          const add = new Command.Control(new ControlCommand.StmAdd({ ontop: stateId }, tactic));
-          // listen for the STM added answer (there should be 0 if failed otherwise 1)
-          const filteredStmAdded$ = stmAdded$.filter(a => a.cmdTag === add.tag)
-            .takeUntil(completed$.filter(a => a.cmdTag === add.tag));
-          const getContext$ =
-            filteredStmAdded$
-              .map(a => new Command.Control(new ControlCommand.StmQuery({
-                sid: a.answer.stateId,
-                // route is used so that the rest of PeaCoq can safely ignore those feedback messages
-                route: tacticAutomationRouteId
-              }, "PeaCoqGetContext.")))
-              .share();
-          const stmAddErrored$ = filteredStmAdded$.flatMap(a => error$.filter(e => e.editOrStateId === a.answer.stateId));
-          // now, try to pick up the notice feedback for that state id
-          const addNotice$ =
-            filteredStmAdded$
-              .flatMap(a => {
-                return notice$
-                  .filter(n => n.editOrStateId === a.answer.stateId)
-                  .takeUntil(stmAddErrored$)
-                  .take(1)
-              });
-          // we can send the next candidate when we receive either the error or
-          // the notice, unless we need to stop.
-          stmAddErrored$.subscribe(_ => readyToSendNextCandidate$.onNext({}));
-          addNotice$.subscribe(_ => readyToSendNextCandidate$.onNext({}));
-          addNotice$
-            .subscribe(n => {
-              const context = Context.create(n.feedbackContent.message);
-              // we only add tactics that change something
-              if (!Context.isEqual(context, previousContext)) {
-                sentence.addCompletion(tactic, group, context);
-              }
-            });
-          const editAt = new Command.Control(new ControlCommand.StmEditAt(stateId));
-          const commandStreamItem = Rx.Observable.concat<ISertop.ICommand>([
-            Rx.Observable.just(add),
-            getContext$,
-            Rx.Observable.just(editAt)
-          ]).share();
           // console.log("SENDING ADD ONTOP OF", add.controlCommand.addOptions.ontop);
+
           queryForTacticToTry$.onNext(commandStreamItem);
 
         });
@@ -259,10 +206,10 @@ function tacticsToTry(e: PeaCoqContextElement): TacticGroup[] {
       //     .value()
     ),
 
-    makeGroup(
-      "inversion",
-      curHyps.map(h => `inversion ${h}`)
-    ),
+    // makeGroup(
+    //   "inversion",
+    //   curHyps.map(h => `inversion ${h}`)
+    // ),
 
     makeGroup(
       "solver",
@@ -275,21 +222,20 @@ function tacticsToTry(e: PeaCoqContextElement): TacticGroup[] {
 
     makeGroup(
       "application",
-      _(curNames).map(function(n) { return "apply " + n; }).value()
-        .concat(
-        _(curNames).map(function(n) { return "eapply " + n; }).value()
-        )
+      [].concat(
+        curNames.map(n => `apply ${n}`),
+        curNames.map(n => `eapply ${n}`)
+      )
     ),
 
-    // makeGroup(
-    //     "rewrites",
-    //     _(curNames)
-    //         .map(function(n) {
-    //             return ["rewrite -> " + n, "rewrite <- " + n];
-    //         })
-    //         .flatten(true).value()
-    // ),
-    //
+    makeGroup(
+      "rewriting",
+      [].concat(
+        curNames.map(n => `rewrite -> {n}`),
+        curNames.map(n => `rewrite <- {n}`),
+      )
+    ),
+
     // makeGroup(
     //     "applications in",
     //     _(curNames).map(function(n) {
@@ -323,7 +269,7 @@ function tacticsToTry(e: PeaCoqContextElement): TacticGroup[] {
 
     makeGroup(
       "revert",
-      _(curHyps).map(function(h) { return "revert " + h; }).value()
+      curHyps.map(h => `revert ${h}`)
     ),
 
   ];
@@ -343,4 +289,75 @@ function getTacticsForContext(context, sentence) {
       )
       .value()
   );
+}
+
+/* This needs to be simplified... */
+function makeCompletionTuple(
+  doc: ICoqDocument,
+  input,
+  completed$,
+  error$,
+  notice$,
+  stmAdded$
+): {
+    commandStreamItem: CommandStreamItem<ISertop.ICommand>;
+    done$: Rx.Observable<{}>
+  } {
+  const { context, group, tactic, sentence } = input;
+  const stateId = sentence.stage.stateId;
+
+  // FIXME: not sure how to better do this, but we do not want to send
+  // any command if the tip has moved. Somehow, takeUntil(tip$) does not
+  // necessarily do a good job, so double-checking here:
+  const curSid = _.max(doc.getAllSentences().map(s => s.getStateId().caseOf({ nothing: () => 0, just: sid => sid })));
+  if (stateId !== curSid) {
+    // console.log("Was expecting", stateId, "but we are at", curSid, "aborting");
+    return {
+      commandStreamItem: Rx.Observable.empty<ISertop.ICommand>(),
+      done$: Rx.Observable.empty(),
+    };
+  } else {
+    // console.log("Was expecting", stateId, "and we are at", curSid, "proceeding");
+  }
+
+  const add = new Command.Control(new ControlCommand.StmAdd({ ontop: stateId }, tactic));
+  // listen for the STM added answer (there should be 0 if failed otherwise 1)
+  const filteredStmAdded$ = stmAdded$.filter(a => a.cmdTag === add.tag)
+    .takeUntil(completed$.filter(a => a.cmdTag === add.tag));
+  const getContext$ =
+    filteredStmAdded$
+      .map(a => new Command.Control(new ControlCommand.StmQuery({
+        sid: a.answer.stateId,
+        // route is used so that the rest of PeaCoq can safely ignore those feedback messages
+        route: tacticAutomationRouteId
+      }, "PeaCoqGetContext.")))
+      .share();
+  const stmAddErrored$ = filteredStmAdded$.flatMap(a => error$.filter(e => e.editOrStateId === a.answer.stateId));
+  // now, try to pick up the notice feedback for that state id
+  const addNotice$ =
+    filteredStmAdded$
+      .flatMap(a => {
+        return notice$
+          .filter(n => n.editOrStateId === a.answer.stateId)
+          .takeUntil(stmAddErrored$)
+          .take(1)
+      });
+  // we can send the next candidate when we receive either the error or
+  // the notice, unless we need to stop.
+  addNotice$
+    .subscribe(n => {
+      const afterContext = Context.create(n.feedbackContent.message);
+      // we only add tactics that change something
+      if (!Context.isEqual(afterContext, context)) {
+        sentence.addCompletion(tactic, group, afterContext);
+      }
+    });
+  const editAt = new Command.Control(new ControlCommand.StmEditAt(stateId));
+  const commandStreamItem = Rx.Observable.concat<ISertop.ICommand>([
+    Rx.Observable.just(add),
+    getContext$,
+    Rx.Observable.just(editAt)
+  ]).share();
+  return { commandStreamItem, done$: Rx.Observable.amb(stmAddErrored$, addNotice$) };
+
 }

@@ -415,6 +415,7 @@ $(document).ready(() => {
     stmAdded$: coqtopOutput$s.answer$s.stmAdded$,
     stopAutomationRound$,
     debouncedTip$: doc.debouncedTip$,
+    tip$: doc.tip$,
   });
 
   coqtopOutput$s.answer$s.stmAdded$.subscribe(a => {
