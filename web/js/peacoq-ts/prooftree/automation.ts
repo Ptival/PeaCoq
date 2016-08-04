@@ -38,13 +38,25 @@ export function setup(i: ProofTreeAutomationInput): void {
     .concatMap(sentence => sentence.waitUntilProcessed())
     // sentence-1, ...
     .concatMap(
-      sentence => sentence.stage.getContext(),
-      (sentence, context) => getTacticsForContext(context, sentence)
+    sentence => sentence.stage.getContext(),
+    (sentence, context) => getTacticsForContext(context, sentence)
     )
+
+    // .concatMap(tactics => Rx.Observable.from(tactics))
+    // .concatMap(tactic =>
+    //   Rx.Observable.of(makeCandidate(doc, tactic, completed$, error$, notice$, stmAdded$))
+    //     .pausableBuffered(pause$)
+    //     .takeUntil(tip$)
+    //     .do(candidate => queryForTacticToTry$.onNext(candidate.commandsToTryOneTactic$))
+    //     .concatMap(candidate => candidate.done$)
+    // ).subscribe();
+
     // tactics-for-sentence-1, ...
     .map(tactics =>
-      Rx.Observable.fromArray(tactics)
+      Rx.Observable.from(tactics)
         .map(tactic => makeCandidate(doc, tactic, completed$, error$, notice$, stmAdded$))
+        .pausableBuffered(pause$)
+        .takeUntil(tip$)
     )
     // For each sentence, we have an item. Each item is a stream of
     // candidates, one per tactic to be tried. Each candidate is a
@@ -54,9 +66,6 @@ export function setup(i: ProofTreeAutomationInput): void {
       const readyToSendNextCandidate$ = new Rx.Subject<{}>();
       Rx.Observable
         .zip(candidatesForASentence$, readyToSendNextCandidate$, (t, {}) => t)
-        .share()
-        .pausableBuffered(pause$)
-        .takeUntil(tip$)
         .subscribe(candidate => {
           candidate.done$.subscribe(() => readyToSendNextCandidate$.onNext({}));
           queryForTacticToTry$.onNext(candidate.commandsToTryOneTactic$);
