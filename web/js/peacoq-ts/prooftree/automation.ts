@@ -46,9 +46,9 @@ export function setup(i: ProofTreeAutomationInput): void {
       Rx.Observable.fromArray(tactics)
         .map(tactic => makeCandidate(doc, tactic, completed$, error$, notice$, stmAdded$))
     )
-    // For each sentence, we have an item.
-    // Each item is a stream of candidates, one per tactic to be tried
-    // Each candidate is a stream of 3 commands, namely Add, Query, Cancel
+    // For each sentence, we have an item. Each item is a stream of
+    // candidates, one per tactic to be tried. Each candidate is a
+    // stream of 3 commands, namely Add, Query, Cancel.
     .subscribe(candidatesForASentence$ => {
       // every time a new sentence comes, this stream helps regulate the flow of its candidates
       const readyToSendNextCandidate$ = new Rx.Subject<{}>();
@@ -320,27 +320,26 @@ function makeCandidate(
 
 }
 
-/*
-Due to the asynchronicity of interactions with coqtop, we may have
-bad races. For instance, we don't want to send a tactic if we sent a StmAdd
-and are about to change state. We cannot rely on tip$ or stmAdded$ because
-we might receive their acknowledgment later. The only reliable way is to
-track pairs of StmAdd-StmAdded and pairs of StmCancel-StmCanceled, and to
-only allow the emission of a tactic-to-try when pairs are matched.
-We also regulate the tactic-to-try flow so that only one tactic is being
-tried at a time, so that we can interrupt the flow between any two attempts.
-*/
+// Due to the asynchronicity of interactions with coqtop, we may have
+// bad races. For instance, we don't want to send a tactic if we sent a
+// StmAdd and are about to change state. We cannot rely on tip$ or
+// stmAdded$ because we might receive their acknowledgment later. The
+// only reliable way is to track pairs of StmAdd-StmAdded and pairs of
+// StmCancel-StmCanceled, and to only allow the emission of a
+// tactic-to-try when pairs are matched. We also regulate the
+// tactic-to-try flow so that only one tactic is being tried at a time,
+// so that we can interrupt the flow between any two attempts.
 function makePause$(stmActionsInFlightCounter$): Rx.Observable<boolean> {
 
   const pause$ = stmActionsInFlightCounter$
     .map(n => n === 0)
     .startWith(true)
     .distinctUntilChanged()
-    /* We need replay because the paused stream will subscribe to pause$
-       later, and it needs to know the last value of pause$ upon subscription.
-       Otherwise, when calling pausableBuffered, the stream will assume false
-       and pause, even though the last value of pause$ was true.
-    */
+    // We need replay because the paused stream will subscribe to pause$
+    // later, and it needs to know the last value of pause$ upon
+    // subscription. Otherwise, when calling pausableBuffered, the
+    // stream will assume false and pause, even though the last value of
+    // pause$ was true.
     .replay();
 
   pause$.connect(); // make pause$ start running immediately
