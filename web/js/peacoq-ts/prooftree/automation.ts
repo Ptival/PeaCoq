@@ -53,8 +53,7 @@ export function setup(i: ProofTreeAutomationInput): void {
       // every time a new sentence comes, this stream helps regulate the flow of its candidates
       const readyToSendNextCandidate$ = new Rx.Subject<{}>();
       Rx.Observable
-        .zip(candidatesForASentence$, readyToSendNextCandidate$)
-        .map(([t, {}]) => t)
+        .zip(candidatesForASentence$, readyToSendNextCandidate$, (t, {}) => t)
         .share()
         .pausableBuffered(pause$)
         .takeUntil(tip$)
