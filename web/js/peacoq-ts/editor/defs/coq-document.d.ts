@@ -1,0 +1,37 @@
+interface ICoqDocument {
+  contextPanel: IContextPanel;
+  editor: AceAjax.Editor;
+  editorChange$: Rx.Observable<AceAjax.EditorChangeEvent>;
+  sentences: ISentenceArray;
+  endAnchor: AceAjax.Anchor;
+  proofTrees: IProofTree[];
+  sentencesChanged$: Rx.Observable<{}>;
+  sentenceBeingProcessed$: Rx.Observable<ISentence<IBeingProcessed>>;
+  sentenceProcessed$: Rx.Observable<ISentence<IProcessed>>;
+  session: AceAjax.IEditSession;
+  debouncedTip$: Rx.Observable<ISentence<IStage>>;
+  tip$: Rx.Observable<ISentence<IStage>>;
+
+  getActiveProofTree(): Maybe<IProofTree>;
+  getAllSentences(): ISentence<IStage>[];
+  getSentenceByStateId(s: StateId): Maybe<ISentence<IStage>>;
+  getSentenceByTag(tag: CommandTag): Maybe<ISentence<IStage>>;
+  getSentenceAtPosition(pos: AceAjax.Position): Maybe<ISentence<IStage>>;
+  getSentencesBeingProcessed(): ISentence<IBeingProcessed>[];
+  getSentencesToProcess(): ISentence<IToProcess>[];
+  getProcessedSentences(): ISentence<IProcessed>[];
+  // getLastSentence(): Maybe<ISentence<IEditStage>>;
+  getLastSentenceStop(): AceAjax.Position;
+  markError(range: AceAjax.Range, clear$: Rx.Observable<{}>): void;
+  moveCursorToPositionAndCenter(pos: AceAjax.Position): void;
+  movePositionRight(pos: AceAjax.Position, n: number): AceAjax.Position;
+  nextSentence(next$: Rx.Observable<{}>): Rx.Observable<ISentence<IToProcess>>;
+  removeAllSentences(): void;
+  removeSentence(e: ISentence<IStage>): void;
+  // removeEditAndFollowingOnes(e: ISentence<IEditStage>): void;
+  removeSentences(pred: (e: ISentence<IStage>) => boolean): void;
+  removeSentencesByStateIds(ids: StateId[]): void;
+  // removeFollowingEdits(e: ISentence<IEditStage>): void;
+  resetEditor(s: string): void;
+  setTip(tip: ISentence<IStage>): void;
+}

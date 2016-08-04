@@ -13,7 +13,7 @@ import * as Theme from "../theme";
 const peaCoqGetContextRouteId = 1;
 
 export class ToProcess implements IToProcess {
-  marker: IEditMarker;
+  marker: ISentenceMarker;
 
   constructor(
     doc: ICoqDocument,
@@ -27,14 +27,14 @@ export class ToProcess implements IToProcess {
 
   getStateId() { return nothing(); }
 
-  nextStageMarker(): IEditMarker {
+  nextStageMarker(): ISentenceMarker {
     this.marker.markBeingProcessed();
     return this.marker;
   }
 }
 
 export class BeingProcessed implements IBeingProcessed {
-  marker: IEditMarker;
+  marker: ISentenceMarker;
   stateId: number;
 
   constructor(e: IToProcess, sid: number) {
@@ -46,7 +46,7 @@ export class BeingProcessed implements IBeingProcessed {
 
   getStateId() { return just(this.stateId); }
 
-  nextStageMarker(): IEditMarker {
+  nextStageMarker(): ISentenceMarker {
     this.marker.markProcessed();
     return this.marker;
   }
@@ -71,7 +71,7 @@ export class BeingProcessed implements IBeingProcessed {
 export class Processed implements IProcessed {
   private context: Promise<PeaCoqContext> | null;
   private onFulfilled: (c: PeaCoqContext) => void | null;
-  marker: IEditMarker;
+  marker: ISentenceMarker;
   stateId: number;
 
   constructor(

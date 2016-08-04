@@ -25,6 +25,7 @@
     "coq/*.ts",
     "definitions/*.d.ts",
     "editor/*.ts",
+    "editor/defs/*.ts",
     "peacoq/*.ts",
     "prooftree/*.ts",
     "sertop/*.ts",
