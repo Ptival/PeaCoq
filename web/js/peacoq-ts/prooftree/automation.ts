@@ -56,7 +56,7 @@ export function setup(i: ProofTreeAutomationInput): void {
       // emit item$
       Rx.Observable.of(commandsToTryOneTactic$)
       // then wait for done$ before completing
-        .merge(Rx.Observable.empty<any>().delay(done$))
+        .merge(done$)
     )
     .subscribe(commandsToTryOneTactic$ =>
       queryForTacticToTry$.onNext(commandsToTryOneTactic$)
@@ -255,7 +255,7 @@ function makeCandidate(
   stmAdded$
 ): {
     commandsToTryOneTactic$: CommandStreamItem<ISertop.ICommand>;
-    done$: Rx.Observable<{}>
+    done$: Rx.Observable<any>
   } {
   const { context, group, tactic, sentence } = input;
   const stateId = sentence.stage.stateId;
@@ -315,7 +315,7 @@ function makeCandidate(
   return {
     commandsToTryOneTactic$,
     // this is an empty stream that waits until either stream emits
-    done$: Rx.Observable.empty<any>().delay(Rx.Observable.amb(stmAddErrored$, addNotice$)),
+    done$: Rx.Observable.amb(stmAddErrored$, addNotice$).take(1).ignoreElements(),
   };
 
 }
