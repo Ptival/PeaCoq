@@ -52,6 +52,7 @@ declare var sexpParse: (o: any) => any;
 // adding delay with selector
 declare namespace Rx {
   export interface Observable<T> {
+    delay(subscriptionDelay: Observable<any>): Observable<T>;
     delay(subscriptionDelay: Observable<any>, delayDurationSelector: (t: T) => Rx.Observable<any>): Observable<T>;
     // a version of filter that lets me cast the type (when filtering with type assertion)
     filter<U>(predicate: (value: T, index: number, source: Observable<T>) => boolean, thisArg?: any): Observable<U>;

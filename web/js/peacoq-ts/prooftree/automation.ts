@@ -41,38 +41,26 @@ export function setup(i: ProofTreeAutomationInput): void {
     sentence => sentence.stage.getContext(),
     (sentence, context) => getTacticsForContext(context, sentence)
     )
-
-    // .concatMap(tactics => Rx.Observable.from(tactics))
-    // .concatMap(tactic =>
-    //   Rx.Observable.of(makeCandidate(doc, tactic, completed$, error$, notice$, stmAdded$))
-    //     .pausableBuffered(pause$)
-    //     .takeUntil(tip$)
-    //     .do(candidate => queryForTacticToTry$.onNext(candidate.commandsToTryOneTactic$))
-    //     .concatMap(candidate => candidate.done$)
-    // ).subscribe();
-
     // tactics-for-sentence-1, ...
-    .map(tactics =>
+    .concatMap(tactics =>
       Rx.Observable.from(tactics)
         .map(tactic => makeCandidate(doc, tactic, completed$, error$, notice$, stmAdded$))
         .pausableBuffered(pause$)
         .takeUntil(tip$)
     )
-    // For each sentence, we have an item. Each item is a stream of
-    // candidates, one per tactic to be tried. Each candidate is a
-    // stream of 3 commands, namely Add, Query, Cancel.
-    .subscribe(candidatesForASentence$ => {
-      // every time a new sentence comes, this stream helps regulate the flow of its candidates
-      const readyToSendNextCandidate$ = new Rx.Subject<{}>();
-      Rx.Observable
-        .zip(candidatesForASentence$, readyToSendNextCandidate$, (t, {}) => t)
-        .subscribe(candidate => {
-          candidate.done$.subscribe(() => readyToSendNextCandidate$.onNext({}));
-          queryForTacticToTry$.onNext(candidate.commandsToTryOneTactic$);
-        });
-      // start processing candidates for this sentence
-      readyToSendNextCandidate$.onNext({});
-    });
+    // At this point, the stream contains tuples { item$, done$ } such
+    // that after sending item$[0], we must wait until done$[0] before
+    // sending item$[1]. We turn it into a stream of just item$, where
+    // each item$ is appropriately delayed.
+    .concatMap(({ commandsToTryOneTactic$, done$ }) =>
+      // emit item$
+      Rx.Observable.of(commandsToTryOneTactic$)
+      // then wait for done$ before completing
+        .merge(Rx.Observable.empty<any>().delay(done$))
+    )
+    .subscribe(commandsToTryOneTactic$ =>
+      queryForTacticToTry$.onNext(commandsToTryOneTactic$)
+    );
 
 }
 
@@ -324,7 +312,11 @@ function makeCandidate(
     getContext$,
     Rx.Observable.just(editAt)
   ]).share();
-  return { commandsToTryOneTactic$, done$: Rx.Observable.amb(stmAddErrored$, addNotice$) };
+  return {
+    commandsToTryOneTactic$,
+    // this is an empty stream that waits until either stream emits
+    done$: Rx.Observable.empty<any>().delay(Rx.Observable.amb(stmAddErrored$, addNotice$)),
+  };
 
 }
 
