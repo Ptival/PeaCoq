@@ -34,7 +34,7 @@ export function setupCommunication(
   const cmdOutput$ =
     slowedCmd$
       .concatMap(([cmd, nb]) => {
-        // console.log("SND", cmd.tag);
+        console.log("SND", cmd.tag, cmd);
         return sendCommand(cmd);
       })
       .concatMap(a => a)

@@ -34,30 +34,29 @@ export function setup(i: ProofTreeAutomationInput): void {
 
   const pause$ = makePause$(stmActionsInFlightCounter$);
 
+  // pause$.subscribe(b => console.log(b ? "Resume" : "Pause"));
+
   debouncedTip$
     .concatMap(sentence => sentence.waitUntilProcessed())
-    // sentence-1, ...
+    // Observable<ISentence<IProcessed>>
     .concatMap(
     sentence => sentence.stage.getContext(),
     (sentence, context) => getTacticsForContext(context, sentence)
     )
-    // tactics-for-sentence-1, ...
-    .concatMap(tactics =>
+    // Observable<Tactic[]>
+    .map(tactics =>
       Rx.Observable.from(tactics)
         .map(tactic => makeCandidate(doc, tactic, completed$, error$, notice$, stmAdded$))
-        .pausableBuffered(pause$)
-        .takeUntil(tip$)
     )
-    // At this point, the stream contains tuples { item$, done$ } such
-    // that after sending item$[0], we must wait until done$[0] before
-    // sending item$[1]. We turn it into a stream of just item$, where
-    // each item$ is appropriately delayed.
-    .concatMap(({ commandsToTryOneTactic$, done$ }) =>
-      // emit item$
-      Rx.Observable.of(commandsToTryOneTactic$)
-      // then wait for done$ before completing
-        .merge(done$)
-    )
+    // Observable<Observable<Observable<Command>>>
+    // ^ one per sentence
+    //            ^ one per tactic to try for that sentence
+    //                       ^ each tactic involves 3 commands and then a waiting time
+    // We want to interrupt the tactics for a given sentence when tip$ emits,
+    // and now start trying for the next sentence.
+    .concatMap(s => s.takeUntil(tip$))
+    .pausableBuffered(pause$)
+    .do(e => console.log("emitting", e))
     .subscribe(commandsToTryOneTactic$ =>
       queryForTacticToTry$.onNext(commandsToTryOneTactic$)
     );
@@ -253,10 +252,7 @@ function makeCandidate(
   error$,
   notice$,
   stmAdded$
-): {
-    commandsToTryOneTactic$: CommandStreamItem<ISertop.ICommand>;
-    done$: Rx.Observable<any>
-  } {
+): CommandStreamItem<ISertop.ICommand> {
   const { context, group, tactic, sentence } = input;
   const stateId = sentence.stage.stateId;
 
@@ -266,10 +262,7 @@ function makeCandidate(
   const curSid = _.max(doc.getAllSentences().map(s => s.getStateId().caseOf({ nothing: () => 0, just: sid => sid })));
   if (stateId !== curSid) {
     // console.log("Was expecting", stateId, "but we are at", curSid, "aborting");
-    return {
-      commandsToTryOneTactic$: Rx.Observable.empty<ISertop.ICommand>(),
-      done$: Rx.Observable.empty(),
-    };
+    return Rx.Observable.empty<ISertop.ICommand>();
   } else {
     // console.log("Was expecting", stateId, "and we are at", curSid, "proceeding");
   }
@@ -312,11 +305,14 @@ function makeCandidate(
     getContext$,
     Rx.Observable.just(editAt)
   ]).share();
-  return {
-    commandsToTryOneTactic$,
-    // this is an empty stream that waits until either stream emits
-    done$: Rx.Observable.amb(stmAddErrored$, addNotice$).take(1).ignoreElements(),
-  };
+
+  // this is an empty stream that waits until either stream emits
+  const done$: Rx.Observable<any> = Rx.Observable.amb(stmAddErrored$, addNotice$).take(1).ignoreElements();
+
+  // emit item$
+  return Rx.Observable.of(commandsToTryOneTactic$)
+  // then wait for done$ before completing
+    .merge(done$);
 
 }
 
