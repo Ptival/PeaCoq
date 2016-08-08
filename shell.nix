@@ -1,9 +1,11 @@
-{ nixpkgs ? import <nixpkgs> {}, compiler ? "ghc7103" }:
+{ nixpkgs ? import <nixpkgs> {}, compiler ? "ghc801" }:
+let xmlhtml = nixpkgs.pkgs.haskell.packages.${compiler}.callPackage snap-framework/xmlhtml/xmlhtml.nix {}; in
+let heist = nixpkgs.pkgs.haskell.packages.${compiler}.callPackage snap-framework/heist/heist.nix { inherit xmlhtml; }; in
 let io-streams-haproxy = nixpkgs.pkgs.haskell.packages.${compiler}.callPackage snap-framework/io-streams-haproxy/io-streams-haproxy.nix {}; in
-let heist = nixpkgs.pkgs.haskell.packages.${compiler}.callPackage snap-framework/heist/heist.nix {}; in
 let snap-core = nixpkgs.pkgs.haskell.packages.${compiler}.callPackage snap-framework/snap-core/snap-core.nix {}; in
 let snap-server = nixpkgs.pkgs.haskell.packages.${compiler}.callPackage snap-framework/snap-server/snap-server.nix { inherit io-streams-haproxy snap-core; }; in
 let snap = nixpkgs.pkgs.haskell.packages.${compiler}.callPackage snap-framework/snap/snap.nix { inherit heist snap-core snap-server; }; in
+#let peacoq-server = nixpkgs.pkgs.haskell.packages.${compiler}.callPackage peacoq-server/peacoq-server.nix { inherit snap; }; in
 let peacoq-server = nixpkgs.pkgs.haskell.packages.${compiler}.callPackage peacoq-server/peacoq-server.nix { inherit snap; }; in
 nixpkgs.stdenv.mkDerivation {
   name = "peacoq";
@@ -23,7 +25,7 @@ nixpkgs.stdenv.mkDerivation {
     #heist
     #snap-core
     #snap-server
-    snap
+    #snap
     peacoq-server
   ]);
   nativeBuildInputs = (with nixpkgs; [
