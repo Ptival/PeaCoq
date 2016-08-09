@@ -10,3 +10,4 @@ cabal configure --enable-tests ${CABALFLAGS}
 cabal build -j2
 cabal copy
 cabal register
+

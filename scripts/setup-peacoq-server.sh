@@ -22,3 +22,4 @@ cabal register
 
 # this path is ridiculous!
 ln -sf peacoq-server/dist/build/peacoq-server/peacoq-server ../peacoq
+

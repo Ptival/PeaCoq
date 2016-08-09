@@ -3,3 +3,4 @@ set -euv
 
 cd peacoqtop/plugin
 make -B
+

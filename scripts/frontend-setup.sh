@@ -17,3 +17,4 @@ cd js/peacoq-ts/
 
 rm -rf ../peacoq-js-of-ts/*
 ./tsc -p .
+
