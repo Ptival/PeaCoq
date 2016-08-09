@@ -15,9 +15,11 @@ export function setup(
 
   // 1. listen to its context being ready, and display it when it is
   sentenceToDisplay$
-    // .do(s => console.log("Sentence to display", s))
+    // .do(s => console.log("I want to display", s))
     .concatMap(sentence => sentence.getProcessed$())
+    // .do(s => console.log("I waited for it to be processed", s))
     .concatMap(stage => stage.getContext())
+    // .do(s => console.log("I waited for its context", s))
     .subscribe(context => doc.contextPanel.display(context));
 
   // 2. send an Observe command to coqtop so that the context gets evaluated

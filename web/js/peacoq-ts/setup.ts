@@ -306,11 +306,17 @@ $(document).ready(() => {
 
   doc.editor.completers = [{ getCompletions: Completion.createGetCompletions(doc, stopAutomationRound$) }];
 
-  const flatCoqtopInputs$: Rx.Observable<ISertop.ICommand> =
+  let counter = 0;
+
+  const flatCoqtopInputs$: Rx.ConnectableObservable<ISertop.ICommand> =
     coqtopInputs$
       // merge sequence of groups of commands into one sequence of commands
-      .concatMap(cmds => cmds)
-      .share();
+      .concatMap(cmds => cmds
+        // .do(e => console.log("ELEMENT IN", e))
+        // .doOnCompleted(() => console.log("COMPLETED"))
+      )
+      //  .do(cmd => console.log("ELEMENT OUT", cmd))
+      .publish();
 
   const stmAdd$ =
     flatCoqtopInputs$
@@ -319,6 +325,8 @@ $(document).ready(() => {
       .map(_ => 1);
 
   const coqtopOutput$s = Sertop.setupCommunication(flatCoqtopInputs$);
+
+  flatCoqtopInputs$.connect();
 
   const stmAdded$ =
     coqtopOutput$s.answer$s.stmAdded$
@@ -414,6 +422,7 @@ $(document).ready(() => {
   });
 
   coqtopOutput$s.answer$s.stmAdded$.subscribe(a => {
+    // console.log("STM ADDED", a);
     const allEdits = doc.getSentencesToProcess();
     const edit = _(allEdits).find(e => isJust(e.commandTag) && fromJust(e.commandTag) === a.cmdTag);
     if (!edit) { return; } // this happens for a number of reasons...
@@ -433,6 +442,7 @@ $(document).ready(() => {
 
   coqtopOutput$s.feedback$s.processed$
     .subscribe(f => {
+      // console.log("PROCESSED", f);
       switch (f.editOrState) {
         case EditOrState.State:
           const stateId = f.editOrStateId;

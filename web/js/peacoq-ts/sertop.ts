@@ -34,7 +34,7 @@ export function setupCommunication(
   const cmdOutput$ =
     slowedCmd$
       .concatMap(([cmd, nb]) => {
-        // console.log("SND", cmd.tag, cmd);
+        // console.log("SENDING", cmd.tag, cmd);
         return sendCommand(cmd);
       })
       .concatMap(a => a)
@@ -52,7 +52,7 @@ export function setupCommunication(
   cmdOutput$.connect();
   // So, this is a bit complicated, but we need two freebies:
   // - the first one is the command Quit, whose ACK we may or may not receive
-  // - the second one is the first actualy command we care to send
+  // - the second one is the first actual command we care to send
   cmdOutputSubject.onNext(-2);
   cmdOutputSubject.onNext(-1);
 

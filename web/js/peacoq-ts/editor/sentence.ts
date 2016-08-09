@@ -32,11 +32,18 @@ export class Sentence<S extends IStage> implements ISentence<S> {
   ) {
     this.commandTag = nothing(); // filled when Add command is created
     this.sentenceId = freshSentenceId();
-    // we use a replay subject so that the observables behave like promises
     this.stage$ = new Rx.ReplaySubject<any>();
-    this.beingProcessed$ = this.stage$.filter<IBeingProcessed>(s => s instanceof Stage.BeingProcessed).take(1);
-    this.processed$ = this.stage$.filter<IProcessed>(s => s instanceof Stage.Processed).take(1);
-    this.setStage(stage); // keep last
+    const beingProcessedSubject = new Rx.AsyncSubject<IBeingProcessed>();
+    this.beingProcessed$ = beingProcessedSubject.asObservable();
+    this.stage$.filter<IBeingProcessed>(s => s instanceof Stage.BeingProcessed)
+      .take(1)
+      .subscribe(beingProcessedSubject);
+    const processedSubject = new Rx.AsyncSubject<IProcessed>();
+    this.processed$ = processedSubject.asObservable();
+    this.stage$.filter<IProcessed>(s => s instanceof Stage.Processed)
+      .take(1)
+      .subscribe(processedSubject);
+    this.setStage(stage); // keep this line after the subscriptions
     this.completions = {};
     this.completionAdded$ = new Rx.Subject();
   }
