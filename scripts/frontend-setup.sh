@@ -3,6 +3,7 @@ set -euv
 
 cd web
 
+npm --version
 npm install
 
 (
