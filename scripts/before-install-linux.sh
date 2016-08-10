@@ -24,7 +24,7 @@ make install
 (
 git clone https://github.com/ejgallego/coq-serapi.git
 cd coq-serapi
-sed -i 's@/home/egallego/external/coq-git/@'"$TRAVIS_BUILD_DIR"'/coq/@g' myocamlbuild.ml
+sed -i 's~/home/egallego/external/coq-git/~'"$TRAVIS_BUILD_DIR"'/coq/~g' myocamlbuild.ml
 cat myocamlbuild.ml
 make
 ) || exit 1

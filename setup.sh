@@ -25,7 +25,7 @@ if [ -f /etc/NIXOS ]; then
   #  CABALFLAGS="--extra-include-dirs=${INCLUDEDIR} --extra-lib-dirs=${LIBDIR}"
 else
   cabal --version >/dev/null 2>&1 || missing "cabal-install"
-  camlp5 -v       >/dev/null 2>&1 || missing "camlp5"
+  # camlp5 -v       >/dev/null 2>&1 || missing "camlp5"
   coqc -v         >/dev/null 2>&1 || missing "coq"
   if [[ `coqtop -v` != *"version 8.5"* ]]; then missing "coqtop version 8.5"; fi
   ghc --version   >/dev/null 2>&1 || missing "ghc"
