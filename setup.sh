@@ -33,10 +33,10 @@ else
   log "Cleaning up Haskell packages (reverse order)"
   ghc-pkg unregister peacoq-server || true
   ghc-pkg unregister peacoqtop || true
-  # log "Building OCaml plugin (needed by peacoqtop's tests)"
-  # ./setup-peacoq-plugin.sh
-  # log "Building and installing peacoqtop"
-  # ./setup-peacoqtop.sh
+  log "Building OCaml plugin (needed by peacoqtop's tests)"
+  ./setup-peacoq-plugin.sh
+  log "Building and installing peacoqtop"
+  ./setup-peacoqtop.sh
   log "Building and installing peacoq-server"
   ./scripts/setup-peacoq-server.sh
 fi
@@ -61,4 +61,3 @@ PeaCoqConfig
 , configCoqtop = "/home/ptival/coq-serapi/sertop.native --prelude /home/ptival/coq-for-coq-serapi --printer=sertop"
 }
 END
-
