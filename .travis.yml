@@ -13,7 +13,6 @@ matrix:
 addons:
   apt:
     sources:
-      - avsm/ppa
       - hvr-ghc
     packages:
       - cabal-install-1.24
@@ -21,9 +20,6 @@ addons:
       - alex
       - happy
       - ocaml
-      - ocaml-native-compilers
-      - camlp4-extra
-      - opam
       - nodejs
 
 env:
