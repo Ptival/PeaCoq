@@ -15,7 +15,7 @@ $PKGMGR install ocaml camlp5 opam
 opam init
 opam switch 4.02.3
 eval `opam config env`
-opam install camlp5 ocamlfind ppx_import cmdliner core_kernel sexplib ppx_sexp_conv
+yes '' | opam install camlp5 ocamlfind ppx_import cmdliner core_kernel sexplib ppx_sexp_conv
 
 # Brew packages a version of coq that was not built with its version of
 # ocaml so coq complains
