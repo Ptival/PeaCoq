@@ -44,8 +44,10 @@ before_install:
 install:
   - export PATH=/opt/cabal/1.24/bin:$PATH
   - export PATH=/opt/ghc/7.10.3/bin:$PATH
+  - export PATH=$TRAVIS_BUILD_DIR/opam:$PATH
   - export PATH=$TRAVIS_BUILD_DIR/coq/bin:$PATH
   - cabal update
+  - eval `opam config env`
   # building src/Handlers.hs takes more than 10 minutes on Travis :(
   - travis_wait 40 ./setup.sh
 
