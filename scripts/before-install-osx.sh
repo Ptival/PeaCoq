@@ -12,6 +12,7 @@ cabal install alex happy
 
 # Coq and OCaml plugin
 $PKGMGR install ocaml camlp5 opam
+opam init
 opam switch 4.02.3
 eval `opam config env`
 opam install camlp5 ocamlfind ppx_import cmdliner core_kernel sexplib ppx_sexp_conv

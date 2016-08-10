@@ -2,8 +2,10 @@
 set -euv
 
 (
+mkdir -p opam
 OPAMINSTALLER="https://raw.github.com/ocaml/opam/master/shell/opam_installer.sh"
-wget $OPAMINSTALLER -O - | sh -s /usr/local/bin
+wget $OPAMINSTALLER -O - | sh -s $TRAVIS_BUILD_DIR/opam
+export PATH=$TRAVIS_BUILD_DIR/opam:$PATH
 ) || exit 1
 
 opam switch 4.02.3
