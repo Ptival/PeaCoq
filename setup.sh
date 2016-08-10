@@ -24,16 +24,12 @@ if [ -f /etc/NIXOS ]; then
   #  echo "Setting --extra-lib-dirs to: ${LIBDIR}"
   #  CABALFLAGS="--extra-include-dirs=${INCLUDEDIR} --extra-lib-dirs=${LIBDIR}"
 else
-  cabal --version >/dev/null 2>&1 || missing "cabal-install"
+  cabal --version || missing "cabal-install"
   # camlp5 -v       >/dev/null 2>&1 || missing "camlp5"
-  which coqc
-  coqc -v
-  coqc -v         >/dev/null 2>&1 || missing "coq"
-  which coqtop
-  coqtop -v
-  if [[ `coqtop -v` != *"version 8.5"* ]]; then missing "coqtop version 8.5"; fi
-  ghc --version   >/dev/null 2>&1 || missing "ghc"
-  ocamlc -v       >/dev/null 2>&1 || missing "ocaml"
+  coqc -v || missing "coq"
+  coqtop -v || missing "coqtop"
+  ghc --version || missing "ghc"
+  ocamlc -v || missing "ocaml"
   log "Cleaning up Haskell packages (reverse order)"
   ghc-pkg unregister peacoq-server || true
   ghc-pkg unregister peacoqtop || true
