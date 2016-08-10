@@ -10,7 +10,7 @@ wget $OPAMINSTALLER -O - | sh -s $TRAVIS_BUILD_DIR/opam
 export PATH=$TRAVIS_BUILD_DIR/opam:$PATH
 opam switch 4.02.3
 eval `opam config env`
-yes '' | opam install camlp5 ocamlfind ppx_import cmdliner core_kernel sexplib ppx_sexp_conv
+opam install --yes camlp5 ocamlfind ppx_import cmdliner core_kernel sexplib ppx_sexp_conv
 
 (
 git clone https://github.com/coq/coq.git
