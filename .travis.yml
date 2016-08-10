@@ -37,9 +37,6 @@ cache:
     - $TRAVIS_BUILD_DIR/web/node_modules
 
 before_install:
-  - opam switch 4.02.3
-  - eval `opam config env`
-  - opam install camlp5 ocamlfind ppx_import cmdliner core_kernel sexplib ppx_sexp_conv
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then ./scripts/before-install-linux.sh; fi
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then ./scripts/before-install-osx.sh; fi
 

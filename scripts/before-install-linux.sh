@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
 set -euv
 
+(
 OPAMINSTALLER="https://raw.github.com/ocaml/opam/master/shell/opam_installer.sh"
 wget $OPAMINSTALLER -O - | sh -s /usr/local/bin
+) || exit 1
+
+opam switch 4.02.3
+eval `opam config env`
+opam install camlp5 ocamlfind ppx_import cmdliner core_kernel sexplib ppx_sexp_conv
 
 (
 git clone https://github.com/coq/coq.git
