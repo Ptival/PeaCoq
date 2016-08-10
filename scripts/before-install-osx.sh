@@ -11,7 +11,7 @@ cabal update
 cabal install alex happy
 
 # Coq and OCaml plugin
-$PKGMGR install ocaml camlp5
+$PKGMGR install ocaml camlp5 opam
 # Brew packages a version of coq that was not built with its version of
 # ocaml so coq complains
 (
