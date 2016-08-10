@@ -25,7 +25,7 @@ if [ -f /etc/NIXOS ]; then
   #  CABALFLAGS="--extra-include-dirs=${INCLUDEDIR} --extra-lib-dirs=${LIBDIR}"
 else
   cabal --version || missing "cabal-install"
-  # camlp5 -v       >/dev/null 2>&1 || missing "camlp5"
+  # camlp5 -v || missing "camlp5"
   coqc -v || missing "coq"
   coqtop -v || missing "coqtop"
   ghc --version || missing "ghc"
@@ -34,9 +34,9 @@ else
   ghc-pkg unregister peacoq-server || true
   ghc-pkg unregister peacoqtop || true
   log "Building OCaml plugin (needed by peacoqtop's tests)"
-  ./setup-peacoq-plugin.sh
+  ./scripts/setup-peacoq-plugin.sh
   log "Building and installing peacoqtop"
-  ./setup-peacoqtop.sh
+  ./scripts/setup-peacoqtop.sh
   log "Building and installing peacoq-server"
   ./scripts/setup-peacoq-server.sh
 fi
