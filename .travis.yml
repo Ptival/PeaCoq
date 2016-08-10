@@ -30,6 +30,7 @@ cache:
   directories:
     - $HOME/.cabal
     - $HOME/.ghc
+    - $HOME/.opam
     - $TRAVIS_BUILD_DIR/peacoqtop/dist
     - $TRAVIS_BUILD_DIR/peacoq-server/dist
     - $TRAVIS_BUILD_DIR/snap-framework

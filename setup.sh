@@ -26,7 +26,11 @@ if [ -f /etc/NIXOS ]; then
 else
   cabal --version >/dev/null 2>&1 || missing "cabal-install"
   # camlp5 -v       >/dev/null 2>&1 || missing "camlp5"
+  which coqc
+  coqc -v
   coqc -v         >/dev/null 2>&1 || missing "coq"
+  which coqtop
+  coqtop -v
   if [[ `coqtop -v` != *"version 8.5"* ]]; then missing "coqtop version 8.5"; fi
   ghc --version   >/dev/null 2>&1 || missing "ghc"
   ocamlc -v       >/dev/null 2>&1 || missing "ocaml"
