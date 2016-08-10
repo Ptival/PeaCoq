@@ -29,6 +29,7 @@ else
   coqc -v || missing "coq"
   coqtop -v || missing "coqtop"
   ghc --version || missing "ghc"
+  eval `opam config env`
   ocamlc -v || missing "ocaml"
   log "Cleaning up Haskell packages (reverse order)"
   ghc-pkg unregister peacoq-server || true
