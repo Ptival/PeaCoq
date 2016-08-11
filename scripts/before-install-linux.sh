@@ -13,5 +13,5 @@ opam switch 4.02.3
 eval `opam config env`
 opam install --yes camlp5 ocamlfind ppx_import cmdliner core_kernel sexplib ppx_sexp_conv
 
-./before-install-coq
-./before-install-coq-serapi
+./scripts/before-install-coq
+./scripts/before-install-coq-serapi
