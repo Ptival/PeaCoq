@@ -31,6 +31,6 @@ make
 
 # Travis ships a stupid-old version of npm when you don't set nodejs language...
 # This is supposed to help bring a not-so-terrible version
-curl -s -o $HOME/.nvm/nvm.sh https://raw.githubusercontent.com/creationix/nvm/v0.31.0/nvm.sh
-source $HOME/.nvm/nvm.sh
-nvm install stable
+# curl -s -o $HOME/.nvm/nvm.sh https://raw.githubusercontent.com/creationix/nvm/v0.31.0/nvm.sh
+# source $HOME/.nvm/nvm.sh
+# nvm install stable
