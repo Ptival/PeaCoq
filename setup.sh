@@ -34,10 +34,11 @@ else
   log "Cleaning up Haskell packages (reverse order)"
   ghc-pkg unregister peacoq-server || true
   ghc-pkg unregister peacoqtop || true
-  log "Building OCaml plugin (needed by peacoqtop's tests)"
+  log "Building OCaml plugin"
   ./scripts/setup-peacoq-plugin.sh
-  log "Building and installing peacoqtop"
-  ./scripts/setup-peacoqtop.sh
+  # Not using peacoqtop anymore
+  #log "Building and installing peacoqtop"
+  #./scripts/setup-peacoqtop.sh
   log "Building and installing peacoq-server"
   ./scripts/setup-peacoq-server.sh
 fi
