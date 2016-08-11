@@ -6,5 +6,6 @@ if [ ! -f coq/.git/config ]; then
 fi
 cd coq-serapi
 git pull
-sed --in-place=.bak "s|/home/egallego/external/coq-git/|$TRAVIS_BUILD_DIR/coq/|g" myocamlbuild.ml
+# Holy shit, sed on OSX and on Linux are really hard to make work the same...
+sed -i.bak "s|/home/egallego/external/coq-git/|$TRAVIS_BUILD_DIR/coq/|g" myocamlbuild.ml
 make || make clean && make
