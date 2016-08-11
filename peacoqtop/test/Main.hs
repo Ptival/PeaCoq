@@ -63,7 +63,7 @@ testRequireList :: Test
 testRequireList = TestCase $ do
   s <- spawnAndRunCoqtopIO $ do
     _ <- init Nothing
-    add' "Require Import List."
+    add' "From Coq Require Import List."
   assertEqual "Require List" s (ValueGood (StateId 2, (Left (), "")))
 
 testRequirePeaCoq :: Test

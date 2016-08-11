@@ -20,7 +20,7 @@ addons:
       - alex
       - happy
       - ocaml
-      - nodejs
+      - npm
 
 env:
   global:
