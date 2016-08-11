@@ -41,12 +41,7 @@ before_install:
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then ./scripts/before-install-osx.sh; fi
 
 install:
-  # Travis ships a stupid-old version of npm when you don't set nodejs language...
-  # This is supposed to help bring a not-so-terrible version
-  - . $HOME/.nvm/nvm.sh
-  - nvm install stable
-  - nvm use stable
-  - npm install
+  - npm -v
   - export PATH=/opt/cabal/1.24/bin:$PATH
   - export PATH=/opt/ghc/7.10.3/bin:$PATH
   - export PATH=$TRAVIS_BUILD_DIR/opam:$PATH
