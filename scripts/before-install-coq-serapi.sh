@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euv
 
-if [ ! -f coq/.git/config ]; then
+if [ ! -f coq-serapi/.git/config ]; then
   git clone https://github.com/ejgallego/coq-serapi.git
 fi
 cd coq-serapi
