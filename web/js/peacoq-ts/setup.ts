@@ -312,8 +312,8 @@ $(document).ready(() => {
     coqtopInputs$
       // merge sequence of groups of commands into one sequence of commands
       .concatMap(cmds => cmds
-        // .do(e => console.log("ELEMENT IN", e))
-        // .doOnCompleted(() => console.log("COMPLETED"))
+      // .do(e => console.log("ELEMENT IN", e))
+      // .doOnCompleted(() => console.log("COMPLETED"))
       )
       //  .do(cmd => console.log("ELEMENT OUT", cmd))
       .publish();
@@ -321,33 +321,28 @@ $(document).ready(() => {
   const stmAdd$ =
     flatCoqtopInputs$
       .filter<Command.Control<any>>(i => i instanceof Command.Control)
-      .filter(i => i.controlCommand instanceof ControlCommand.StmAdd)
-      .map(_ => 1);
+      .filter(i => i.controlCommand instanceof ControlCommand.StmAdd);
 
   const coqtopOutput$s = Sertop.setupCommunication(flatCoqtopInputs$);
 
   flatCoqtopInputs$.connect();
 
-  const stmAdded$ =
-    coqtopOutput$s.answer$s.stmAdded$
-      .map(_ => -1);
-
-  const stmAddAddedCounter$ =
+  const stmAddCounter$ =
     Rx.Observable.merge([
-      flatCoqtopInputs$
-        .filter<Command.Control<any>>(i => i instanceof Command.Control)
-        .filter(i => i.controlCommand instanceof ControlCommand.StmAdd)
-        .map(_ => 1),
-      coqtopOutput$s.answer$s.stmAdded$
-        .map(_ => -1),
-      // every time we quit, an StmAdd is done by the server and we receive the
-      // StmAdded...
-      flatCoqtopInputs$
-        .filter<Command.Control<any>>(i => i instanceof Command.Control)
-        .filter(i => i.controlCommand instanceof ControlCommand.Quit)
-        .map(_ => 1),
+      stmAdd$.map(() => 1),
+      stmAdd$
+        .concatMap(a =>
+          coqtopOutput$s.answer$s.completed$.filter(c => c.cmdTag === a.tag).take(1)
+        )
+        .map(() => -1),
+      // flatCoqtopInputs$
+      //   .filter<Command.Control<any>>(i => i instanceof Command.Control)
+      //   .filter(i => i.controlCommand instanceof ControlCommand.Quit)
+      //   .map(() => 1),
     ])
-      .scan((acc, elt) => acc + elt, 1);
+      .scan((acc, elt) => acc + elt, 0);
+
+  // stmAddCounter$.subscribe(c => console.log("ADD COUNTER", c));
 
   const stmCancelEditAtCanceledCounter$ =
     Rx.Observable.merge([
@@ -364,12 +359,11 @@ $(document).ready(() => {
     ])
       .scan((acc, elt) => acc + elt, 0);
 
-  // stmAddAddedCounter$.subscribe(c => console.log("COUNT", c));
   // stmCancelEditAtCanceledCounter$.subscribe(c => console.log("COUNT", c));
 
   const stmActionsInFlightCounter$: Rx.Observable<number> =
     Rx.Observable.combineLatest(
-      stmAddAddedCounter$,
+      stmAddCounter$,
       stmCancelEditAtCanceledCounter$,
       (x, y) => x + y
     );
