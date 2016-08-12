@@ -80,6 +80,23 @@ $(document).ready(() => {
   const sentenceToDisplay$ = SentenceToDisplay.setup(doc);
   const stmObserve$ = DisplayContext.setup(doc, sentenceToDisplay$);
 
+  // For now, if we don't remove the sentences immediately, when the user does
+  // Next right after editing somewhere, the Next grabs the sentence after the
+  // old tip, because the new tip has not registered yet. As a bad optimization,
+  // we drop all sentences beyond the change immediately. This will be incorrect
+  // when the user is allowed to edit within blocks.
+  doc.editorChange$
+    .subscribe(change =>
+      doc.getSentenceAtPosition(minPos(change.start, change.end))
+        .caseOf({
+          nothing: () => { },
+          just: sRemoved => {
+            console.log()
+            doc.removeSentences(s => s.sentenceId >= sRemoved.sentenceId);
+          },
+        })
+    );
+
   // Minor bug: this sends two Cancel commands when the user hits Enter
   // and Ace proceeds to insert a tabulation (these count as two changes)
   // The second Cancel is acknowledged by coqtop with no further action.
@@ -305,8 +322,6 @@ $(document).ready(() => {
     ]);
 
   doc.editor.completers = [{ getCompletions: Completion.createGetCompletions(doc, stopAutomationRound$) }];
-
-  let counter = 0;
 
   const flatCoqtopInputs$: Rx.ConnectableObservable<ISertop.ICommand> =
     coqtopInputs$
