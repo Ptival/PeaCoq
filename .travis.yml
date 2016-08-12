@@ -51,8 +51,7 @@ install:
   - export PATH=$TRAVIS_BUILD_DIR/coq/bin:$PATH
   - cabal update
   - eval `opam config env`
-  # building src/Handlers.hs takes more than 10 minutes on Travis :(
-  - travis_wait 40 ./setup.sh
+  - ./travis-setup.sh
 
 script:
   #- (cd peacoqtop && ./dist/build/peacoqtop-test/peacoqtop-test)

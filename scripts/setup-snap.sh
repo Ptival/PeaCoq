@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euv
 
-. shared-variables.sh
+. scripts/shared-variables.sh
 
 cd snap-framework
 
