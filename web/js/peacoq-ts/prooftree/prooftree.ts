@@ -760,7 +760,9 @@ export class ProofTree implements IProofTree {
   }
 
   resetSVGTransform(): void {
-    let m = parseSVGTransform(this.viewport.attr('transform'));
+    const transform = this.viewport.attr('transform');
+    if (transform.length === 0) { return; }
+    let m = parseSVGTransform(transform);
     if (m.hasOwnProperty('matrix')) {
       m = m.matrix;
       this.viewport.attr(
