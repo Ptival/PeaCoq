@@ -1,6 +1,3 @@
-# Temporarily disabled docker
-# https://www.refme.com/blog/2015/11/05/haskell-travis-heroku-and-docker-oh-my/
-
 dist:     trusty
 language: sh
 sudo:     false
@@ -10,49 +7,13 @@ matrix:
     - os: linux
     - os: osx
 
-addons:
-  apt:
-    sources:
-      - hvr-ghc
-    packages:
-      - cabal-install-1.24
-      - ghc-7.10.3
-      - alex
-      - happy
-      - ocaml
-
-env:
-  global:
-    - COQVER=8.5pl1
-
 cache:
   directories:
-    - $HOME/.cabal
-    - $HOME/.ghc
-    - $HOME/.opam
-    - $TRAVIS_BUILD_DIR/coq
-    - $TRAVIS_BUILD_DIR/coq-serapi
-    - $TRAVIS_BUILD_DIR/peacoqtop/dist
-    - $TRAVIS_BUILD_DIR/peacoq-server/dist
-    - $TRAVIS_BUILD_DIR/snap-framework
     - $TRAVIS_BUILD_DIR/web/js/peacoq-ts/typings
     - $TRAVIS_BUILD_DIR/web/node_modules
 
 before_install:
   - npm install -g npm@3
-  - npm -v
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then ./scripts/before-install-linux.sh; fi
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then ./scripts/before-install-osx.sh; fi
 
 install:
-  - export PATH=/opt/cabal/1.24/bin:$PATH
-  - export PATH=/opt/ghc/7.10.3/bin:$PATH
-  - export PATH=$TRAVIS_BUILD_DIR/opam:$PATH
-  - export PATH=$TRAVIS_BUILD_DIR/coq/bin:$PATH
-  - cabal update
-  - eval `opam config env`
-  - ./travis-setup.sh
-
-script:
-  #- (cd peacoqtop && ./dist/build/peacoqtop-test/peacoqtop-test)
-  - (cd peacoq-server && ./dist/build/peacoq-server-test/peacoq-server-test)
+  - ./scripts/setup-frontend.sh

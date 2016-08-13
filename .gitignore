@@ -1,8 +1,10 @@
 /.swp
-/.vscode/
 /ab-study/
-/dist/
+/coq/
+/coq-serapi/
 /encryption_key
 /peacoq.nix
 /peacoq
-/snap-framework/
+/peacoqtop/
+/peacoq-plugin/
+/peacoq-server/

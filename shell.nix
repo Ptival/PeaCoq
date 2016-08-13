@@ -1,12 +1,13 @@
 { nixpkgs ? import <nixpkgs> {}, compiler ? "ghc801" }:
-let xmlhtml = nixpkgs.pkgs.haskell.packages.${compiler}.callPackage snap-framework/xmlhtml/xmlhtml.nix {}; in
-let heist = nixpkgs.pkgs.haskell.packages.${compiler}.callPackage snap-framework/heist/heist.nix { inherit xmlhtml; }; in
-let io-streams-haproxy = nixpkgs.pkgs.haskell.packages.${compiler}.callPackage snap-framework/io-streams-haproxy/io-streams-haproxy.nix {}; in
-let snap-core = nixpkgs.pkgs.haskell.packages.${compiler}.callPackage snap-framework/snap-core/snap-core.nix {}; in
-let snap-server = nixpkgs.pkgs.haskell.packages.${compiler}.callPackage snap-framework/snap-server/snap-server.nix { inherit io-streams-haproxy snap-core; }; in
-let snap = nixpkgs.pkgs.haskell.packages.${compiler}.callPackage snap-framework/snap/snap.nix { inherit heist snap-core snap-server; }; in
-#let peacoq-server = nixpkgs.pkgs.haskell.packages.${compiler}.callPackage peacoq-server/peacoq-server.nix { inherit snap; }; in
-let peacoq-server = nixpkgs.pkgs.haskell.packages.${compiler}.callPackage peacoq-server/peacoq-server.nix { inherit snap; }; in
+let callPackage = nixpkgs.pkgs.haskell.packages.${compiler}.callPackage; in
+let snapPath = ./peacoq-server/snap-framework; in
+let xmlhtml = callPackage "${snapPath}/xmlhtml/xmlhtml.nix" {}; in
+let heist = callPackage "${snapPath}/heist/heist.nix" { inherit xmlhtml; }; in
+let io-streams-haproxy = callPackage "${snapPath}/io-streams-haproxy/io-streams-haproxy.nix" {}; in
+let snap-core = callPackage "${snapPath}/snap-core/snap-core.nix" {}; in
+let snap-server = callPackage "${snapPath}/snap-server/snap-server.nix" { inherit io-streams-haproxy snap-core; }; in
+let snap = callPackage "${snapPath}/snap/snap.nix" { inherit heist snap-core snap-server; }; in
+let peacoq-server = callPackage peacoq-server/peacoq-server.nix { inherit snap; }; in
 nixpkgs.stdenv.mkDerivation {
   name = "peacoq";
   jailbreak = true;
@@ -36,6 +37,7 @@ nixpkgs.stdenv.mkDerivation {
     export NIXSHELL="$NIXSHELL\[PeaCoq\]"
     export SSL_CERT_FILE="/etc/ssl/certs/ca-bundle.crt"
     eval `opam config env`
+    echo "Remember to run setup.sh again"
+    # ./setup.sh
   '';
 }
-

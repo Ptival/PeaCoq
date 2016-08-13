@@ -3,7 +3,6 @@ set -euv
 
 function missing {
   echo >&2 "$1 is missing. Please install it."
-  echo >&2 "If you are running NixOS, run nix-shell."
   exit 1
 }
 
@@ -11,9 +10,25 @@ function log {
   echo -e "\n\nPEACOQ: $1\n\n"
 }
 
+function check-and-clone {
+  if [ ! -d $1/.git ]; then
+    if [ -d /home/ptival ]; then
+      git clone git@github.com:Ptival/$1.git
+    else
+      git clone https://github.com/Ptival/$1.git
+    fi
+  fi
+}
+
+check-and-clone "peacoq-server"
+
 if [ -f /etc/NIXOS ]; then
+  # should change this test to something portable, like testing for peacoq-server
   if [ -z "${NIXSHELL+x}" ]; then
-    ./scripts/clone-snap.sh
+    (
+      cd peacoq-server
+      ./snap-framework.sh clone
+    ) || exit 1
     log "This seems to be NixOS, use nix-shell before calling setup.sh or set NIXSHELL"
     exit 1
   fi
@@ -34,32 +49,15 @@ else
   log "Cleaning up Haskell packages (reverse order)"
   ghc-pkg unregister peacoq-server || true
   ghc-pkg unregister peacoqtop || true
-  log "Building OCaml plugin"
-  ./scripts/setup-peacoq-plugin.sh
-  # Not using peacoqtop anymore
-  #log "Building and installing peacoqtop"
-  #./scripts/setup-peacoqtop.sh
-  log "Building and installing peacoq-server"
-  ./scripts/setup-peacoq-server.sh
 fi
 
-log "Installing front-end dependencies"
-./scripts/frontend-setup.sh
+./scripts/setup-coq.sh
+./scripts/setup-coq-serapi.sh
+check-and-clone "peacoq-plugin"
+(cd peacoq-plugin && PATH=../coq/bin:$PATH make)
 
-# TODO: the config file should not go in HOME, it's annoying for everyone
-# TODO: this config should be shared with the Haskell code somehow
+log "Installing front-end dependencies"
+./scripts/setup-frontend.sh
 
 log "Setting up configuration file"
-PEACOQPATH=`pwd`
-CONFIGPATH="${HOME}"
-PEACOQCONFIG=".PeaCoqConfig.hs"
-FILE="${CONFIGPATH}/${PEACOQCONFIG}"
-LOGPATH="/tmp"
-
-cat <<END > ${FILE}
-PeaCoqConfig
-{ configUserId = "peacoq"
-, configLogPath = "${LOGPATH}"
-, configCoqtop = "/home/ptival/coq-serapi/sertop.native --prelude /home/ptival/coq-for-coq-serapi --printer=sertop"
-}
-END
+./scripts/setup-configuration.sh
