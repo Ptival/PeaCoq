@@ -376,8 +376,8 @@ $(document).ready(() => {
 
   const stmActionsInFlightCounter$: Rx.Observable<number> =
     Rx.Observable.combineLatest(
-      stmAddCounter$,
-      stmCancelEditAtCanceledCounter$,
+      stmAddCounter$.startWith(0),
+      stmCancelEditAtCanceledCounter$.startWith(0),
       (x, y) => x + y
     );
 
