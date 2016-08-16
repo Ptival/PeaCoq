@@ -85,30 +85,25 @@ $(document).ready(() => {
   // old tip, because the new tip has not registered yet. As a bad optimization,
   // we drop all sentences beyond the change immediately. This will be incorrect
   // when the user is allowed to edit within blocks.
-  doc.editorChange$
-    .subscribe(change =>
-      doc.getSentenceAtPosition(minPos(change.start, change.end))
-        .caseOf({
-          nothing: () => { },
-          just: sRemoved => {
-            console.log()
-            doc.removeSentences(s => s.sentenceId >= sRemoved.sentenceId);
-          },
-        })
-    );
 
   // Minor bug: this sends two Cancel commands when the user hits Enter
   // and Ace proceeds to insert a tabulation (these count as two changes)
   // The second Cancel is acknowledged by coqtop with no further action.
   const cancelBecauseEditorChange$: Rx.Observable<Rx.Observable<Command.Control<ISertop.IControlCommand.IStmCancel>>> =
     doc.editorChange$
-      .flatMap(change =>
-        doc.getSentenceAtPosition(minPos(change.start, change.end))
-          .bind(s => s.getStateId())
-          .caseOf({
-            nothing: () => [],
-            just: sid => [Rx.Observable.just(new Command.Control(new ControlCommand.StmCancel([sid])))],
-          })
+      .flatMap<ISentence<IStage>>(change =>
+        doc.getSentenceAtPosition(minPos(change.start, change.end)).caseOf({
+          nothing: () => [],
+          just: s => [s],
+        })
+      )
+      .do(sRemoved => doc.removeSentences(s => s.sentenceId >= sRemoved.sentenceId))
+      .flatMap(s =>
+        s.getStateId()
+        .caseOf({
+          nothing: () => [],
+          just: sid => [Rx.Observable.just(new Command.Control(new ControlCommand.StmCancel([sid])))],
+        })
       )
       .share();
 
