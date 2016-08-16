@@ -91,10 +91,14 @@ export class Processed implements IProcessed {
     // console.log("GETTING CONTEXT FOR STATE ID", this.stateId);
     if (this.context === null) {
       this.context = new Promise(onFulfilled => {
-        const query = new Command.Control(new ControlCommand.StmQuery({
-          route: peaCoqGetContextRouteId,
-          sid: this.stateId,
-        }, "PeaCoqGetContext."));
+        const query = new Command.Control(new ControlCommand.StmQuery(
+          {
+            route: peaCoqGetContextRouteId,
+            sid: this.stateId,
+          },
+          "PeaCoqGetContext.",
+          false
+        ));
         this.onFulfilled = onFulfilled;
         this.inputObserver.onNext(query);
       });

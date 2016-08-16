@@ -22,7 +22,8 @@ export class LibAdd implements ISertop.IControlCommand {
 export class StmAdd implements ISertop.IControlCommand {
   constructor(
     public addOptions: AddOptions,
-    public sentence: string
+    public sentence: string,
+    public readonly fromAutomation: boolean
   ) { }
   toSexp() {
     const opts = "".concat(
@@ -67,7 +68,8 @@ export class StmObserve implements ISertop.IControlCommand.IStmObserve {
 export class StmQuery implements ISertop.IControlCommand.IStmQuery {
   constructor(
     public queryOptions: ISertop.QueryOptions,
-    public query: string
+    public query: string,
+    public readonly fromAutomation: boolean
   ) { }
   toSexp() {
     const opts = "".concat(

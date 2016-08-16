@@ -273,7 +273,7 @@ $(document).ready(() => {
   const addsToProcess$: CommandStream<ISertop.IControl<ISertop.IControlCommand.IStmAdd>> =
     sentencesToProcessStream
       .map(s => {
-        const command = new Command.Control(new ControlCommand.StmAdd({}, s.query));
+        const command = new Command.Control(new ControlCommand.StmAdd({}, s.query, false));
         s.commandTag = just(command.tag);
         return Rx.Observable.just(command);
       })
@@ -333,7 +333,7 @@ $(document).ready(() => {
       //  .do(cmd => console.log("ELEMENT OUT", cmd))
       .publish();
 
-  const stmAdd$ =
+  const stmAdd$: Rx.Observable<Command.Control<ControlCommand.StmAdd>> =
     flatCoqtopInputs$
       .filter<Command.Control<any>>(i => i instanceof Command.Control)
       .filter(i => i.controlCommand instanceof ControlCommand.StmAdd);
@@ -554,8 +554,36 @@ $(document).ready(() => {
     userActionStreams.loadedFile$
   );
 
+  // This used to be simply:
+  // - subscribe to coqExn$
+  // - remove sentences whose cmdTag >= exn.cmdTag
+  // But this won't work with automation, because sometimes a sentence
+  // is created in the middle of an automation round, and some
+  // automation sentences will have a low cmdTag and raise a CoqExn.
+  // We must track provenance of the CoqExn and only remove sentences
+  // when it happened because of user action.
+
+  const stmQuery$ =
+    flatCoqtopInputs$
+      .filter<Command.Control<any>>(i => i instanceof Command.Control)
+      .filter(i => i.controlCommand instanceof ControlCommand.StmQuery);
+
   // keep this under subscribers who need the edit to exist
-  coqtopOutput$s.answer$s.coqExn$.subscribe(e => {
+  Rx.Observable.merge(
+    // Assuming `CoqExn`s occur after `StmAdd` and `StmQuery` only.
+    stmAdd$
+      .filter(a => !a.controlCommand.fromAutomation)
+      .flatMap(a =>
+        coqtopOutput$s.answer$s.coqExn$.filter(e => e.cmdTag === a.tag)
+          .take(1).takeUntil(coqtopOutput$s.answer$s.completed$.filter(c => c.cmdTag === a.tag))
+      ),
+    stmQuery$
+      .filter(a => !a.controlCommand.fromAutomation)
+      .flatMap(a =>
+        coqtopOutput$s.answer$s.coqExn$.filter(e => e.cmdTag === a.tag)
+          .take(1).takeUntil(coqtopOutput$s.answer$s.completed$.filter(c => c.cmdTag === a.tag))
+      ),
+  ).subscribe(e => {
     // debugger;
     doc.removeSentences(s => s.commandTag.caseOf({
       nothing: () => false,

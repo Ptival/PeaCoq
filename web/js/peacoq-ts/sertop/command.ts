@@ -12,7 +12,7 @@ abstract class Command implements ISertop.ICommand {
 
 export class Control<C extends ISertop.IControlCommand> extends Command implements ISertop.IControl<C> {
   constructor(
-    public controlCommand: C
+    public readonly controlCommand: C
   ) { super(); }
   toSexp() { return `(Control ${this.controlCommand.toSexp()})`; }
 }

@@ -283,17 +283,21 @@ function makeCandidate(
     // console.log("Was expecting", stateId, "and we are at", curSid, "proceeding");
   }
 
-  const add = new Command.Control(new ControlCommand.StmAdd({ ontop: stateId }, tactic));
+  const add = new Command.Control(new ControlCommand.StmAdd({ ontop: stateId }, tactic, true));
   // listen for the STM added answer (there should be 0 if failed otherwise 1)
   const filteredStmAdded$ = stmAdded$.filter(a => a.cmdTag === add.tag)
     .takeUntil(completed$.filter(a => a.cmdTag === add.tag));
   const getContext$ =
     filteredStmAdded$
-      .map(a => new Command.Control(new ControlCommand.StmQuery({
-        sid: a.answer.stateId,
-        // route is used so that the rest of PeaCoq can safely ignore those feedback messages
-        route: tacticAutomationRouteId
-      }, "PeaCoqGetContext.")))
+      .map(a => new Command.Control(new ControlCommand.StmQuery(
+        {
+          sid: a.answer.stateId,
+          // route is used so that the rest of PeaCoq can safely ignore those feedback messages
+          route: tacticAutomationRouteId
+        },
+        "PeaCoqGetContext.",
+        true
+      )))
       .share();
   const stmAddErrored$ = filteredStmAdded$.flatMap(a => error$.filter(e => e.editOrStateId === a.answer.stateId));
   // now, try to pick up the notice feedback for that state id
