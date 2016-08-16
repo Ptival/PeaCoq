@@ -18,7 +18,9 @@ export class StmAdded implements ISertop.IStmAdded {
     public stateId: StateId,
     public location: CoqLocation,
     public tip: Tip.NewTip | Tip.Unfocus
-  ) { }
+  ) {
+    // console.log("StmAdded", stateId);
+  }
 }
 
 export class StmCanceled implements ISertop.IStmCanceled {

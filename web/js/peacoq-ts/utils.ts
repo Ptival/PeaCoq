@@ -80,6 +80,7 @@ function parseSVGTransform(a: string): any {
 }
 
 function MatchFailure(fn: string, o: Object) {
+  debugger;
   if (!o) { return "undefined discriminee"; }
   return (`Match failed in ${fn}, constructor: ${o.constructor.toString()}`);
 }

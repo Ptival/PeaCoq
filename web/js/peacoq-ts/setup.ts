@@ -359,13 +359,16 @@ $(document).ready(() => {
       flatCoqtopInputs$
         .filter<Command.Control<any>>(i => i instanceof Command.Control)
         .filter(i => i.controlCommand instanceof ControlCommand.StmCancel)
-        .map(_ => 1),
+        // .do(c => console.log("+1", c.controlCommand))
+        .map(() => 1),
       flatCoqtopInputs$
         .filter<Command.Control<any>>(i => i instanceof Command.Control)
         .filter(i => i.controlCommand instanceof ControlCommand.StmEditAt)
-        .map(_ => 1),
+        // .do(c => console.log("+1", c.controlCommand))
+        .map(() => 1),
       coqtopOutput$s.answer$s.stmCanceled$
-        .map(_ => -1),
+        // .do(c => console.log("-1", c))
+        .map(() => -1),
     ])
       .scan((acc, elt) => acc + elt, 0);
 
@@ -603,6 +606,11 @@ $(document).ready(() => {
       default: debugger;
     }
   });
+
+  // debugging
+  coqtopOutput$s.answer$s.coqExn$
+    .filter(e => e.answer.getMessage().indexOf("Anomaly") >= 0)
+    .subscribe(e => { debugger; });
 
   // const editorError$: Rx.Observable<IEditorError> =
   //   coqtopOutput$s.valueFail$
