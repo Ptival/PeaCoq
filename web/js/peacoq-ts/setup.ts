@@ -100,10 +100,10 @@ $(document).ready(() => {
       .do(sRemoved => doc.removeSentences(s => s.sentenceId >= sRemoved.sentenceId))
       .flatMap(s =>
         s.getStateId()
-        .caseOf({
-          nothing: () => [],
-          just: sid => [Rx.Observable.just(new Command.Control(new ControlCommand.StmCancel([sid])))],
-        })
+          .caseOf({
+            nothing: () => [],
+            just: sid => [Rx.Observable.just(new Command.Control(new ControlCommand.StmCancel([sid])))],
+          })
       )
       .share();
 
@@ -354,31 +354,51 @@ $(document).ready(() => {
 
   // stmAddCounter$.subscribe(c => console.log("ADD COUNTER", c));
 
-  const stmCancelEditAtCanceledCounter$ =
+  const stmCancel$ = flatCoqtopInputs$
+    .filter<Command.Control<any>>(i => i instanceof Command.Control)
+    .filter(i => i.controlCommand instanceof ControlCommand.StmCancel);
+
+  const stmCancelCounter$ =
     Rx.Observable.merge([
-      flatCoqtopInputs$
-        .filter<Command.Control<any>>(i => i instanceof Command.Control)
-        .filter(i => i.controlCommand instanceof ControlCommand.StmCancel)
+      stmCancel$
         // .do(c => console.log("+1", c.controlCommand))
         .map(() => 1),
-      flatCoqtopInputs$
-        .filter<Command.Control<any>>(i => i instanceof Command.Control)
-        .filter(i => i.controlCommand instanceof ControlCommand.StmEditAt)
+      stmCancel$
+        .concatMap(a =>
+          coqtopOutput$s.answer$s.completed$.filter(c => c.cmdTag === a.tag).take(1)
+        )
+        .map(() => -1),
+    ])
+      .scan((acc, elt) => acc + elt, 0);
+
+  // stmCancelCounter$.subscribe(c => console.log("CANCEL COUNTER", c));
+
+  const stmEditAt$ = flatCoqtopInputs$
+    .filter<Command.Control<any>>(i => i instanceof Command.Control)
+    .filter(i => i.controlCommand instanceof ControlCommand.StmEditAt);
+
+  const stmEditAtCounter$ =
+    Rx.Observable.merge([
+      stmEditAt$
         // .do(c => console.log("+1", c.controlCommand))
         .map(() => 1),
-      coqtopOutput$s.answer$s.stmCanceled$
+      stmEditAt$
+        .concatMap(a =>
+          coqtopOutput$s.answer$s.completed$.filter(c => c.cmdTag === a.tag).take(1)
+        )
         // .do(c => console.log("-1", c))
         .map(() => -1),
     ])
       .scan((acc, elt) => acc + elt, 0);
 
-  // stmCancelEditAtCanceledCounter$.subscribe(c => console.log("COUNT", c));
+  // stmEditAtCounter$.subscribe(c => console.log("EDITAT COUNTER", c));
 
   const stmActionsInFlightCounter$: Rx.Observable<number> =
     Rx.Observable.combineLatest(
       stmAddCounter$.startWith(0),
-      stmCancelEditAtCanceledCounter$.startWith(0),
-      (x, y) => x + y
+      stmCancelCounter$.startWith(0),
+      stmEditAtCounter$.startWith(0),
+      (x, y, z) => x + y + z
     );
 
   // stmActionsInFlightCounter$.subscribe(c => console.log("COUNT", c));

@@ -34,7 +34,8 @@ export function setup(i: ProofTreeAutomationInput): void {
 
   const pause$ = makePause$(stmActionsInFlightCounter$);
 
-  // pause$.subscribe(b => console.log(b ? "Resume" : "Pause"));
+  // tip$.subscribe(t => console.log(Date.now(), "TIP CHANGED"));
+  // pause$.subscribe(b => console.log(Date.now(), b ? "RESUME" : "PAUSE"));
 
   debouncedTip$
     .concatMap(sentence => sentence.waitUntilProcessed())
@@ -60,9 +61,12 @@ export function setup(i: ProofTreeAutomationInput): void {
     //                       ^ each tactic involves 3 commands
     // We want to interrupt the tactics for a given sentence when tip$
     // emits, and then start trying for the next sentence.
+    .pausableBuffered(pause$) // I don't know why but this is needed for the next pausableBuffered call to work correctly
     .concatMap(candidatesForOneSentence$ =>
       candidatesForOneSentence$
+        // .do(cs => cs.take(1).subscribe((cmd: Command.Control<ControlCommand.StmAdd>) => console.log(Date.now(), "Before pause", cmd.controlCommand.sentence)))
         .pausableBuffered(pause$)
+        // .do(cs => cs.take(1).subscribe((cmd: Command.Control<ControlCommand.StmAdd>) => console.log(Date.now(), "After pause", cmd.controlCommand.sentence)))
         .takeUntil(tip$)
     )
     .subscribe(commands$ => queryForTacticToTry$.onNext(commands$));
@@ -346,18 +350,20 @@ function makeCandidate(
 function makePause$(stmActionsInFlightCounter$): Rx.Observable<boolean> {
 
   const pause$ = stmActionsInFlightCounter$
+    // .do(c => console.log("COUNT", c))
     .map(n => n === 0)
     .startWith(true)
     .distinctUntilChanged()
+    // .do(b => console.log("BOOL", b))
     // We need replay because the paused stream will subscribe to pause$
     // later, and it needs to know the last value of pause$ upon
     // subscription. Otherwise, when calling pausableBuffered, the
     // stream will assume false and pause, even though the last value of
     // pause$ was true.
-    .replay();
+    .replay(1);
 
   pause$.connect(); // make pause$ start running immediately
 
-  return pause$;
+  return pause$;//.share();
 
 }
