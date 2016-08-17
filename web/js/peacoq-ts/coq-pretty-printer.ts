@@ -615,55 +615,61 @@ function prPatt(
   p: ConstrExpr
 ): PpCmds {
 
-  function match(p: ConstrExpr): [PpCmds, number] {
+  function match(_p: ConstrExpr): [PpCmds, number] {
+    const p = _p; // (cf. Microsoft/TypeScript/issues/7662)
     // TODO CPatRecord
     // TODO CPatAlias
     if (p instanceof CPatCstr) {
-      if (p.cases1.length === 0 && p.cases2.length === 0) {
-        return [prReference(p.reference), lAtom];
-      }
-      if (p.cases1.length === 0) {
-        return [
-          [].concat(
-            prReference(p.reference),
-            prList(
-              x => prPatt(spc, [lApp, new L()], x),
-              p.cases2
-            )
-          ),
-          lApp
-        ];
-      }
-      if (p.cases2.length === 0) {
-        return [
-          [].concat(
-            str("@"),
-            prReference(p.reference),
-            prList(
-              x => prPatt(spc, [lApp, new L()], x),
-              p.cases1
-            )
-          ),
-          lApp
-        ];
-      }
-      return [
-        [].concat(
-          surround([].concat(
-            str("@"),
-            prReference(p.reference),
-            prList(
-              x => prPatt(spc, [lApp, new L()], x),
-              p.cases1
-            )
-          )),
-          prList(
-            x => prPatt(spc, [lApp, new L()], x),
-            p.cases2
-          )
-        ),
-        lApp
-      ];
+      return p.cases1.caseOf<[PpCmds, number]>({
+        nothing: () => {
+          if (p.cases2.length === 0) {
+            return [prReference(p.reference), lAtom];
+          } else {
+            return [
+              [].concat(
+                prReference(p.reference),
+                prList(
+                  x => prPatt(spc, [lApp, new L()], x),
+                  p.cases2
+                )
+              ),
+              lApp
+            ];
+          }
+        },
+        just: cases1 => {
+          if (p.cases2.length === 0) {
+            return [
+              [].concat(
+                str("@"),
+                prReference(p.reference),
+                prList(
+                  x => prPatt(spc, [lApp, new L()], x),
+                  cases1
+                )
+              ),
+              lApp
+            ];
+          }
+          return [
+            [].concat(
+              surround([].concat(
+                str("@"),
+                prReference(p.reference),
+                prList(
+                  x => prPatt(spc, [lApp, new L()], x),
+                  cases1
+                )
+              )),
+              prList(
+                x => prPatt(spc, [lApp, new L()], x),
+                p.cases2
+              )
+            ),
+            lApp
+          ];
+        },
+      });
     } else if (p instanceof CPatAtom) {
       let r = p.reference;
       return r.caseOf<PpResult>({

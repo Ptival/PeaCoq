@@ -9,7 +9,7 @@ class CPatCstr extends CasesPatternExpr {
   constructor(
     public location: CoqLocation,
     public reference: Reference,
-    public cases1: CasesPatternExpr[],
+    public cases1: Maybe<CasesPatternExpr[]>,
     public cases2: CasesPatternExpr[]
   ) {
     super();
