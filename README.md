@@ -95,7 +95,7 @@ Shortcuts
 Note: certain shortcuts offer a poor user experience on Windows and possibly MacOS.
 
 They will eventually be re-bind-able. Feel free to alter them in
-`web/js/peacoq-ts/editor/keybindings.ts`.
+`web/ts/editor/keybindings.ts`.
 
 | Shortcut        | Action        |
 | --------------- | ------------- |

@@ -54,7 +54,7 @@ fi
 ./scripts/setup-coq.sh
 ./scripts/setup-coq-serapi.sh
 check-and-clone "peacoq-plugin"
-(cd peacoq-plugin && PATH=../coq/bin:$PATH make)
+(cd peacoq-plugin && make clean && PATH=../coq/bin:$PATH make)
 
 log "Installing front-end dependencies"
 ./scripts/setup-frontend.sh

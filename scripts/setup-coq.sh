@@ -5,7 +5,7 @@ if [ ! -d coq/.git ]; then
   git clone https://github.com/coq/coq.git
 fi
 cd coq
-git pull
+git pull origin trunk
 if [ ! -f config/Makefile ]; then
   ./configure -local
 fi

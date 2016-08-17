@@ -1,6 +1,6 @@
 import { theme } from "../theme";
 
-const CoqMode = ace.require("peacoq-js/mode-coq").Mode;
+const CoqMode = ace.require("js/mode-coq").Mode;
 
 export function setupEditor(e: AceAjax.Editor) {
   e.setTheme(theme.aceTheme);
