@@ -10,7 +10,10 @@ export function setupProgressBar(doc: ICoqDocument): void {
     Theme.afterChange$,
     doc.sentencesChanged$
   )
-  .debounce(250)
+  // Next line should probably be .audit(250) in RxJS 5
+  // it makes sure we get running every 250ms and at least once after
+  // 250ms of silence following an emission
+  .publish(s => Rx.Observable.merge(s.debounce(250), s.throttle(250)))
   .subscribe(() => updateProgressBar(doc));
   let barClick$: Rx.Observable<Event> =
     Rx.Observable.fromEvent<Event>(document, "click")
