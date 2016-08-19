@@ -37,7 +37,7 @@ nixpkgs.stdenv.mkDerivation {
     export NIXSHELL="$NIXSHELL\[PeaCoq\]"
     export SSL_CERT_FILE="/etc/ssl/certs/ca-bundle.crt"
     eval `opam config env`
-    echo "Remember to run setup.sh again"
+    echo -e "\nRemember to run setup.sh again\n"
     # ./setup.sh
   '';
 }
