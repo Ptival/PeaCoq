@@ -18,6 +18,7 @@ function check-and-clone {
       git clone https://github.com/Ptival/$1.git
     fi
   fi
+  (cd $1 && git pull) || exit 1
 }
 
 check-and-clone "peacoq-server"
