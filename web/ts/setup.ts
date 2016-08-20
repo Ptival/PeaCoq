@@ -450,11 +450,11 @@ $(document).ready(() => {
 
   coqtopOutput$s.answer$s.stmAdded$.subscribe(a => {
     // console.log("STM ADDED", a);
-    const allEdits = doc.getSentencesToProcess();
-    const edit = _(allEdits).find(e => isJust(e.commandTag) && fromJust(e.commandTag) === a.cmdTag);
-    if (!edit) { return; } // this happens for a number of reasons...
-    const newStage = new Stage.BeingProcessed(edit.stage, a.answer.stateId);
-    edit.setStage(newStage);
+    const allSentences = doc.getSentencesToProcess();
+    const sentence = _(allSentences).find(e => isJust(e.commandTag) && fromJust(e.commandTag) === a.cmdTag);
+    if (!sentence) { return; } // this happens for a number of reasons...
+    const newStage = new Stage.BeingProcessed(sentence.stage, a.answer.stateId);
+    sentence.setStage(newStage);
   });
 
   const nextBecauseGoTo$ = setupUserInteractionForwardGoto(
@@ -474,15 +474,15 @@ $(document).ready(() => {
         case EditOrState.State:
           const stateId = f.editOrStateId;
           const editsBeingProcessed = doc.getSentencesBeingProcessed();
-          const edit = _(editsBeingProcessed).find(e => e.stage.stateId === stateId);
-          if (edit) {
-            const newStage = new Stage.Processed(edit.stage, peaCoqGetContext$);
-            edit.setStage(newStage);
+          const sentence = _(editsBeingProcessed).find(e => e.stage.stateId === stateId);
+          if (sentence) {
+            const newStage = new Stage.Processed(sentence.stage, peaCoqGetContext$);
+            sentence.setStage(newStage);
             // if (
-            //   Global.coqDocument.getEditsToProcess().length === 0
-            //   && Global.coqDocument.getEditsBeingProcessed().length === 0
+            //   Global.coqDocument.getSentencesToProcess().length === 0
+            //   && Global.coqDocument.getSentencesBeingProcessed().length === 0
             // ) {
-            //   Global.coqDocument.moveCursorToPositionAndCenter(edit.stopPosition);
+            //   Global.coqDocument.moveCursorToPositionAndCenter(sentence.stopPosition);
             // }
           } else {
             // this can happen for two reasons:
@@ -654,11 +654,11 @@ $(document).ready(() => {
   // editorError$.subscribe(ee =>
   //   // so, apparently we won't receive feedbacks for the edits before this one
   //   // so we need to mark them all processed...
-  //   _(Global.coqDocument.getEditsBeingProcessed())
+  //   _(Global.coqDocument.getSentencesBeingProcessed())
   //     // ASSUMPTION: state IDs are assigned monotonically
   //     .filter(e => e.stage.stateId < ee.error.stateId)
   //     .each(_ => { debugger; })
-  //     .each(e => e.setStage(new Edit.Processed(e.stage, queriesObserver)))
+  //     .each(e => e.setStage(new Sentence.Processed(e.stage, queriesObserver)))
   // );
 
   // setupTextCursorPositionUpdate(
