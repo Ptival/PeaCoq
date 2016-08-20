@@ -89,7 +89,7 @@ function tacticsToTry(e: PeaCoqContextElement): TacticGroup[] {
   const curHypsFull = _(hyps).clone().reverse();
   const curHyps = curHypsFull.map(h => h.name);
   // TODO: there is a better way to do this
-  const curNames = []; // _(curHyps).union(namesPossiblyInScope.reverse());
+  const curNames = curHyps; // _(curHyps).union(namesPossiblyInScope.reverse());
 
   const res = [
 
