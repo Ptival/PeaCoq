@@ -316,7 +316,7 @@ $(document).ready(() => {
       cancelFromBackwardGoTo$,
     ]);
 
-  doc.editor.completers = [{ getCompletions: Completion.createGetCompletions(doc, stopAutomationRound$) }];
+  doc.editor.completers = [{ getCompletions: Completion.createGetCompletions(doc, stopAutomationRound$, nextSubject) }];
 
   const flatCoqtopInputs$: Rx.ConnectableObservable<ISertop.ICommand> =
     coqtopInputs$

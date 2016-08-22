@@ -2,10 +2,26 @@ import * as PeaCoq from "../peacoq/peacoq";
 
 export function createGetCompletions(
   doc: ICoqDocument,
-  stopAutomationRound$
+  stopAutomationRound$: Rx.Observable<{}>,
+  nextSubject: Rx.Subject<{}>
 ) {
 
   doc.editor.execCommand("startAutocomplete");
+
+  // There doesn't seem to be a way to attach a post-insertion handler, but
+  // we can hack one together!
+  doc.editor.completer.keyboardHandler.bindKeys({
+    "Return": editor => {
+      Rx.Observable.fromEvent<any>(doc.editor.commands as any, "afterExec")
+        .filter(e => e.command.name === "insertstring")
+        .take(1)
+        .subscribe(() => {
+          nextSubject.onNext({});
+          (doc.editor as any).exec("insertstring", "\n");
+        });
+      return editor.completer.insertMatch();
+    }
+  });
 
   const popup = doc.editor.completer.getPopup();
   // Ace sometimes triggers show and select like crazy, so debounce it a little
