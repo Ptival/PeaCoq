@@ -523,6 +523,8 @@ $(document).ready(() => {
     switch (e.editOrState) {
       case EditOrState.Edit: return;
       case EditOrState.State:
+        // We have to send a Cancel message so that the next Add acts on the
+        // currently-valid state, rather than on the state that failed
         const cancel = new Command.Control(new ControlCommand.StmCancel([e.editOrStateId]));
         cancelBecauseErrorMsg$.onNext(Rx.Observable.just(cancel));
         break;
