@@ -45,8 +45,8 @@ export class CoqDocument implements ICoqDocument {
     this.tipSubject = new Rx.Subject<ISentence<IStage>>();
     // Use distinctUntilChanged because PeaCoq automation triggers spurious
     // tipSubject notifications for the same tip
-    this.tip$ = this.tipSubject.distinctUntilChanged();
-    this.debouncedTip$ = this.tipSubject.distinctUntilChanged().debounce(250);
+    this.tip$ = this.tipSubject.distinctUntilChanged(s => s.sentenceId).share();
+    this.debouncedTip$ = this.tipSubject.distinctUntilChanged(s => s.sentenceId).debounce(250).share();
     this.sentenceBeingProcessed$.subscribe(s => this.setTip(s));
   }
 
