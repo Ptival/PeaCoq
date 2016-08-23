@@ -17,7 +17,7 @@ export function createGetCompletions(
         .take(1)
         .subscribe(() => {
           nextSubject.onNext({});
-          (doc.editor as any).exec("insertstring", "\n");
+          editor.execCommand("insertstring", "\n");
         });
       return editor.completer.insertMatch();
     }
