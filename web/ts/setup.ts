@@ -1,11 +1,4 @@
 import * as Context from "./editor/context";
-import * as Goal from "./goal";
-import * as Goals from "./goals";
-import { walkJSON } from "./peacoq/json";
-
-import * as Feedback from "./coq/feedback";
-import * as FeedbackContent from "./coq/feedback-content";
-
 import * as Coq85 from "./editor/coq85";
 import { CoqDocument } from "./editor/coq-document";
 import { CoqtopPanel } from "./editor/coqtop-panel";
@@ -25,12 +18,6 @@ import { pickFile, saveFile, setupLoadFile, setupToolbar, setupSaveFile } from "
 
 import { emptyContext } from "./peacoq/peacoq";
 
-// TODO: not sure if this file should be creating those nodes...
-import { GoalNode } from "./prooftree/goalnode";
-import { ProofTree } from "./prooftree/prooftree";
-import { Tactic } from "./prooftree/tactic";
-import { TacticGroupNode } from "./prooftree/tacticgroupnode";
-import { proofTreeOnEdit, onStmCanceled } from "./prooftree/prooftree-handlers";
 import * as ProofTreeSetup from "./prooftree/setup";
 import * as ProofTreeAutomation from "./prooftree/automation";
 
