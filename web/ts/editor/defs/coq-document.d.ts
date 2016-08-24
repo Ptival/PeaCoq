@@ -1,3 +1,5 @@
+type Tip = Maybe<ISentence<IStage>>;
+
 interface ICoqDocument {
   contextPanel: IContextPanel;
   editor: AceAjax.Editor;
@@ -9,8 +11,8 @@ interface ICoqDocument {
   sentenceBeingProcessed$: Rx.Observable<ISentence<IBeingProcessed>>;
   sentenceProcessed$: Rx.Observable<ISentence<IProcessed>>;
   session: AceAjax.IEditSession;
-  debouncedTip$: Rx.Observable<ISentence<IStage>>;
-  tip$: Rx.Observable<ISentence<IStage>>;
+  debouncedTip$: Rx.Observable<Tip>;
+  tip$: Rx.Observable<Tip>;
 
   getActiveProofTree(): Maybe<IProofTree>;
   getAllSentences(): ISentence<IStage>[];
@@ -33,5 +35,5 @@ interface ICoqDocument {
   removeSentencesByStateIds(ids: StateId[]): void;
   // removeFollowingEdits(e: ISentence<IEditStage>): void;
   resetEditor(s: string): void;
-  setTip(tip: ISentence<IStage>): void;
+  setTip(tip: Tip): void;
 }

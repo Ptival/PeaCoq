@@ -499,7 +499,7 @@ $(document).ready(() => {
       stmCanceledFiltered$.onNext(a);
       doc.removeSentencesByStateIds(removedStateIds);
       const tip = _.maxBy(doc.getAllSentences(), s => s.sentenceId);
-      if (tip) { doc.setTip(tip); }
+      doc.setTip(tip ? just(tip) : nothing());
     });
 
   // NOTE: CoqExn is pretty useless in indicating which command failed
@@ -721,6 +721,7 @@ function showProofTreePanel(): Promise<{}> {
 }
 
 function hideProofTreePanel(): void {
+  // debugger;
   layout.set("bottom", { size: "20px" });
   bottomLayout.hide("top");
 }

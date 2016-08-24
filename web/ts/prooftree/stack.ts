@@ -10,7 +10,7 @@ export class ProofTreeStack implements IProofTreeStack {
     this.removed$ = new Rx.Subject<IProofTree>();
     this.length = 0;
     this.added$.subscribe(() => { this.length++; });
-    this.removed$.subscribe(() => { this.length--; });
+    this.removed$.subscribe(t => { t.cleanup(); this.length--; });
   }
 
   peek(): IProofTree {

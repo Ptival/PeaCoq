@@ -11,8 +11,8 @@ interface ProofTreeAutomationInput {
   queryForTacticToTry$: Rx.Observer<CommandStreamItem<any>>;
   stmAdded$: Rx.Observable<ISertop.IAnswer<ISertop.IStmAdded>>;
   stopAutomationRound$: Rx.Observable<{}>;
-  debouncedTip$: Rx.Observable<ISentence<IStage>>;
-  tip$: Rx.Observable<ISentence<IStage>>;
+  debouncedTip$: Rx.Observable<Tip>;
+  tip$: Rx.Observable<Tip>;
 }
 
 const tacticAutomationRouteId = 2;
@@ -38,6 +38,7 @@ export function setup(i: ProofTreeAutomationInput): void {
   // pause$.subscribe(b => console.log(Date.now(), b ? "RESUME" : "PAUSE"));
 
   debouncedTip$
+    .concatMap<ISentence<IStage>>(tip => tip.caseOf({ nothing: () => [], just: s => [s] }))
     .concatMap(sentence => sentence.waitUntilProcessed())
     // Observable<ISentence<IProcessed>>
     .concatMap(

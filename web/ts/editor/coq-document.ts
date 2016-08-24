@@ -3,6 +3,13 @@ import { SentenceArray } from "./sentence-array";
 import { errorUnderlineClass, theme } from "./../theme";
 import { ProofTreeStack } from "../prooftree/stack";
 
+function tipKey(t: Tip): number {
+  return t.caseOf({
+    nothing: () => -1,
+    just: s => s.sentenceId,
+  });
+}
+
 export class CoqDocument implements ICoqDocument {
   beginAnchor: AceAjax.Anchor;
   contextPanel: IContextPanel;
@@ -14,9 +21,9 @@ export class CoqDocument implements ICoqDocument {
   sentenceBeingProcessed$: Rx.Observable<ISentence<IBeingProcessed>>;
   sentenceProcessed$: Rx.Observable<ISentence<IProcessed>>;
   session: AceAjax.IEditSession;
-  private tipSubject: Rx.Subject<ISentence<IStage>>;
-  debouncedTip$: Rx.Observable<ISentence<IStage>>;
-  tip$: Rx.Observable<ISentence<IStage>>;
+  private tipSubject: Rx.Subject<Tip>;
+  debouncedTip$: Rx.Observable<Tip>;
+  tip$: Rx.Observable<Tip>;
 
   constructor(
     public editor: AceAjax.Editor
@@ -43,15 +50,15 @@ export class CoqDocument implements ICoqDocument {
     this.proofTrees = new ProofTreeStack();
     this.sentenceBeingProcessed$ = this.sentences.sentenceBeingProcessed$;
     this.sentenceProcessed$ = this.sentences.sentenceProcessed$;
-    this.tipSubject = new Rx.Subject<ISentence<IStage>>();
+    this.tipSubject = new Rx.Subject<Tip>();
     // Use distinctUntilChanged because PeaCoq automation triggers spurious
     // tipSubject notifications for the same tip
     // We don't want tip$ to be ref-counted as it creates problems with automation
-    const tip$ = this.tipSubject.distinctUntilChanged(s => s.sentenceId).publish();
+    const tip$ = this.tipSubject.distinctUntilChanged(tipKey).publish();
     this.tip$ = tip$;
     // this.tip$.subscribe(t => console.log("tip$ from coq-document", t.sentenceId));
-    this.debouncedTip$ = this.tipSubject.distinctUntilChanged(s => s.sentenceId).debounce(250).share();
-    this.sentenceBeingProcessed$.subscribe(s => this.setTip(s));
+    this.debouncedTip$ = this.tipSubject.distinctUntilChanged(tipKey).debounce(250).share();
+    this.sentenceBeingProcessed$.subscribe(s => this.setTip(just(s)));
 
     tip$.connect();
   }
@@ -59,7 +66,7 @@ export class CoqDocument implements ICoqDocument {
   getActiveProofTree(): Maybe<IProofTree> {
     return (
       this.proofTrees.length > 0
-        ? just(this.proofTrees[0])
+        ? just(this.proofTrees.peek())
         : nothing()
     );
   }
@@ -289,7 +296,7 @@ export class CoqDocument implements ICoqDocument {
   //   });
   // }
 
-  setTip(tip: ISentence<IStage>): void {
+  setTip(tip: Tip): void {
     this.tipSubject.onNext(tip);
   }
 

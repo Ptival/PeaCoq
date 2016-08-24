@@ -31,11 +31,11 @@ export function proofTreeOnEdit(
           context,
           0
         );
-        pt.curNode$.subscribe(
-          n => console.log("Current node changed to", n),
-          null,
-          () => console.log("No longer tracking current node for this tree")
-        );
+        // pt.curNode$.subscribe(
+        //   n => console.log("Current node changed to", n),
+        //   null,
+        //   () => console.log("No longer tracking current node for this tree")
+        // );
         doc.proofTrees.push(pt);
         const g = pt.rootNode;
         g.addStateId(stateId);
@@ -168,7 +168,9 @@ export function onStmCanceled(
     activeProofTree.update();
   } else {
     // debugger;
-    doc.proofTrees.length = 0;
+    while (doc.proofTrees.length > 0) {
+      doc.proofTrees.pop();
+    }
     hideProofTreePanel();
     $("#prooftree").empty();
   }
