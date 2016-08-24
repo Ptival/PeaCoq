@@ -17,4 +17,4 @@ cd ts
 ./typings-bin install
 
 rm -rf ../js-of-ts
-./tsc -p .
+./tsc -p . --listFiles --diagnostics
