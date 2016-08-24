@@ -1,8 +1,8 @@
 import * as Command from "../sertop/command";
 import * as ControlCommand from "../sertop/control-command";
 import { isBefore } from "./editor-utils";
-import * as DebugFlags from "../debug-flags";
-import { Strictly } from "../strictly";
+import * as DebugFlags from "../peacoq/debug-flags";
+import { Strictly } from "../peacoq/strictly";
 
 export function setup(
   doc: ICoqDocument,

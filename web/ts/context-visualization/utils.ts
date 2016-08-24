@@ -1,7 +1,7 @@
-import { PpCmdBox, PpCmdPrint, PpCmdToken } from "./coq/ppcmd-token";
-import { PpCmd, PpCmds, str } from "./coq-pretty-printer";
+import { PpCmdBox, PpCmdPrint, PpCmdToken } from "../coq/ppcmd-token";
+import { PpCmd, PpCmds, str } from "../printing/coq-pretty-printer";
 import * as Pattern from "./pattern";
-import { StrDef } from "./coq/str-token";
+import { StrDef } from "../coq/str-token";
 
 export function findPpCmdSuchThat(
   l: PpCmds,

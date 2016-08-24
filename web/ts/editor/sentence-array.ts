@@ -1,8 +1,8 @@
-import * as DebugFlags from "../debug-flags";
+import * as DebugFlags from "../peacoq/debug-flags";
 import { BeingProcessed, Processed } from "./stage";
 import { isBefore } from "./editor-utils";
 import { Sentence } from "./sentence";
-import { Strictly } from "../strictly";
+import { Strictly } from "../peacoq/strictly";
 
 export class SentenceArray implements ISentenceArray {
   private sentences: ISentence<IStage>[];

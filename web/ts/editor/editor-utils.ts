@@ -1,4 +1,4 @@
-import { Strictly } from "../strictly";
+import { Strictly } from "../peacoq/strictly";
 
 /**
  * Checks if first argument is strictly before second argument

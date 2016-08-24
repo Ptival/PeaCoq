@@ -1,6 +1,6 @@
-import { ppCmdsSameShape, PpCmd as PpCmdType, PpCmds } from "./coq-pretty-printer";
-import * as PpCmd from "./coq/ppcmd-token";
-import * as StrToken from "./coq/str-token";
+import { ppCmdsSameShape, PpCmd as PpCmdType, PpCmds } from "../printing/coq-pretty-printer";
+import * as PpCmd from "../coq/ppcmd-token";
+import * as StrToken from "../coq/str-token";
 import { patterns } from "./visualizations";
 
 function htmlPrintStrToken(t: StrToken.StrToken): string {

@@ -1,10 +1,10 @@
-import * as Answer from "./sertop/answer";
-import * as AnswerKind from "./sertop/answer-kind";
-import * as Command from "./sertop/command";
-import * as ControlCommand from "./sertop/control-command";
-import * as Feedback from "./coq/feedback";
-import * as FeedbackContent from "./coq/feedback-content";
-import * as MessageLevel from "./coq/message-level";
+import * as Answer from "./answer";
+import * as AnswerKind from "./answer-kind";
+import * as Command from "./command";
+import * as ControlCommand from "./control-command";
+import * as Feedback from "../coq/feedback";
+import * as FeedbackContent from "../coq/feedback-content";
+import * as MessageLevel from "../coq/message-level";
 
 export function setupCommunication(
   cmd$: Rx.Observable<ISertop.ICommand>

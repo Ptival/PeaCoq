@@ -21,15 +21,15 @@ import { emptyContext } from "./peacoq/peacoq";
 import * as ProofTreeSetup from "./prooftree/setup";
 import * as ProofTreeAutomation from "./prooftree/automation";
 
-import * as Sertop from "./sertop";
+import * as Sertop from "./sertop/sertop";
 import * as Command from "./sertop/command";
 import * as ControlCommand from "./sertop/control-command";
 import * as QueryCommand from "./sertop/query-command";
 
-import * as DebugFlags from "./debug-flags";
-import { PeaCoqGoal } from "./peacoq-goal";
-import { Strictly } from "./strictly";
-import * as Theme from "./theme";
+import * as DebugFlags from "./peacoq/debug-flags";
+import { PeaCoqGoal } from "./peacoq/goal";
+import { Strictly } from "./peacoq/strictly";
+import * as Theme from "./peacoq/theme";
 
 import * as DisplayContext from "./editor/display-context";
 import * as SentenceToDisplay from "./editor/sentence-to-display";

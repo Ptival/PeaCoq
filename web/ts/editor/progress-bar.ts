@@ -1,5 +1,5 @@
-import * as DebugFlags from "../debug-flags";
-import * as Theme from "../theme";
+import * as DebugFlags from "../peacoq/debug-flags";
+import * as Theme from "../peacoq/theme";
 
 let barItemClass = "progress-bar-item";
 let progressBarId = "progress-bar";

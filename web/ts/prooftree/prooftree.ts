@@ -2,7 +2,7 @@ import { FakeNode } from "./fakenode";
 import { GoalNode } from "./goalnode";
 import * as ProofTreeUtils from "./utils";
 import { TacticGroupNode } from "./tacticgroupnode";
-import { Strictly } from "./../strictly";
+import { Strictly } from "../peacoq/strictly";
 
 /* Globals to be configured */
 let animationDuration = 2000;

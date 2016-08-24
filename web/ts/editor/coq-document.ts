@@ -1,6 +1,6 @@
 import * as Stage from "./stage";
 import { SentenceArray } from "./sentence-array";
-import { errorUnderlineClass, theme } from "./../theme";
+import { errorUnderlineClass, theme } from "../peacoq/theme";
 import { ProofTreeStack } from "../prooftree/stack";
 
 function tipKey(t: Tip): number {

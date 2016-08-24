@@ -1,6 +1,6 @@
 import * as Stage from "./stage";
 import { isBefore } from "./editor-utils";
-import { Strictly } from "../strictly";
+import { Strictly } from "../peacoq/strictly";
 
 /*
 `stage$` should follow this success lifecycle:

@@ -1,6 +1,6 @@
-import { Goal } from "../goal";
-import * as Goals from "../goals";
-import { PeaCoqGoal } from "../peacoq-goal";
+import { Goal } from "../coq/goal";
+import * as Goals from "../coq/goals";
+import { PeaCoqGoal } from "../peacoq/goal";
 import { walkJSON } from "../peacoq/json";
 
 export function create(rawContext): PeaCoqContext {

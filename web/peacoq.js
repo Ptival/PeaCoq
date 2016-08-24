@@ -100,9 +100,9 @@ requirejs(
           "js-of-ts/coq/ppcut",
           "js-of-ts/coq/str-token",
           "js-of-ts/coq/xml-tree",
-          "js-of-ts/coq-string-utils",
-          "js-of-ts/setup",
-          "js-of-ts/utils",
+          "js-of-ts/peacoq/coq-string-utils",
+          "js-of-ts/peacoq/utils",
+          "js-of-ts/index",
           // "js-of-ts/ui-container",
           // "js-of-ts/ui-widget",
         ]

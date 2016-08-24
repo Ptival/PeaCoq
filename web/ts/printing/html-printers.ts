@@ -1,5 +1,5 @@
 import { prConstrExpr } from "./coq-pretty-printer";
-import { htmlPrintPpCmds, htmlPrintPpCmdsDiff } from "./visualization-printers";
+import { htmlPrintPpCmds, htmlPrintPpCmdsDiff } from "../context-visualization/printers";
 
 export function htmlPrintConstrExpr(c: IConstrExpr): string {
   let ppCmds = prConstrExpr(c);

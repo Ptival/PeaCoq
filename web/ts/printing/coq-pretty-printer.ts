@@ -1,6 +1,6 @@
-import { PpHBox, PpVBox, PpHVBox, PpHoVBox, PpTBox } from "./coq/block-type";
-import * as PpCmd from "./coq/ppcmd-token";
-import * as StrToken from "./coq/str-token";
+import { PpHBox, PpVBox, PpHVBox, PpHoVBox, PpTBox } from "../coq/block-type";
+import * as PpCmd from "../coq/ppcmd-token";
+import * as StrToken from "../coq/str-token";
 
 export type PpCmd = PpCmd.PpCmdToken<StrToken.StrToken>;
 export type PpCmds = PpCmd[];

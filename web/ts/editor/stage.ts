@@ -1,14 +1,14 @@
 // import * as CoqtopInput from "../coqtop-input";
 import * as Command from "../sertop/command";
 import * as ControlCommand from "../sertop/control-command";
-import * as DebugFlags from "../debug-flags";
+import * as DebugFlags from "../peacoq/debug-flags";
 import { SentenceMarker } from "./sentence-marker";
-import * as Goal from "../goal";
-import * as Goals from "../goals";
+import * as Goal from "../coq/goal";
+import * as Goals from "../coq/goals";
 import { walkJSON } from "../peacoq/json";
 import { emptyContext } from "../peacoq/peacoq";
-import { PeaCoqGoal } from "../peacoq-goal";
-import * as Theme from "../theme";
+import { PeaCoqGoal } from "../peacoq/goal";
+import * as Theme from "../peacoq/theme";
 
 const peaCoqGetContextRouteId = 1;
 

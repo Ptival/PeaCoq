@@ -1,5 +1,6 @@
-import { onResize } from "../setup";
-import { switchToBright, switchToDark } from "../theme";
+// TODO: this import seems weird
+import { onResize } from "../index";
+import { switchToBright, switchToDark } from "../peacoq/theme";
 
 let filePickerId = "filepicker";
 

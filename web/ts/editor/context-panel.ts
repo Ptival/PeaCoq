@@ -1,6 +1,6 @@
 import { EditorTab } from "./editor-tab";
 import { Tab } from "./tab";
-import * as VisualizationInteractions from "../visualization-interactions";
+import * as VisualizationInteractions from "../context-visualization/interactions";
 
 export class ContextPanel implements IContextPanel {
   private pretty: ITab;
