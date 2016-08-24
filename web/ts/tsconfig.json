@@ -17,20 +17,12 @@
     "suppressImplicitAnyIndexErrors": true,
     "target": "es5"
   },
-  "exclude": [
-    "typings/globals"
+  "include": [
+    "**/*.ts"
   ],
-  "filesGlob": [
-    "*.ts",
-    "coq/*.ts",
-    "definitions/*.d.ts",
-    "editor/*.ts",
-    "editor/defs/*.ts",
-    "peacoq/*.ts",
-    "prooftree/*.ts",
-    "sertop/*.ts",
-    "typings/index.d.ts",
-    "!typings/globals/**"
+  "exclude": [
+    "node_modules",
+    "typings/globals"
   ],
   "formatCodeOptions": {
     "indentSize": 2,
