@@ -23,7 +23,7 @@ export function setup(i: ProofTreeSetupInput): void {
 
   resize$.debounce(250).subscribe(() => {
     if (doc.proofTrees.length === 0) { return; }
-    const activeProofTree = doc.proofTrees[0];
+    const activeProofTree = doc.proofTrees.peek();
     activeProofTree.resize(
       $("#prooftree").parent().width(),
       $("#prooftree").parent().height()

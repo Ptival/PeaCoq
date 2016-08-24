@@ -19,6 +19,7 @@ export class ProofTree implements IProofTree {
   /* whatever the client wants to store as meta-data */
   clientState: Object;
   private _curNode: IGoalNode;
+  public readonly curNode$: Rx.Subject<IGoalNode>;
   descendantsOffset: number;
   //diagonal: d3.svg.Diagonal<ProofTreeLink, ProofTreeNode>;
   paused: boolean;
@@ -71,7 +72,9 @@ export class ProofTree implements IProofTree {
     this.tacticWaiting = nothing();
 
     this.rootNode = new GoalNode(this, parent, context, index);
+
     this._curNode = this.rootNode;
+    this.curNode$ = new Rx.BehaviorSubject(this.rootNode);
 
     this.tree = d3.layout.tree<IProofTreeNode>()
       .children((node: IProofTreeNode, index: number) => {
@@ -152,6 +155,10 @@ export class ProofTree implements IProofTree {
     //   this.svg.insert("script", ":first-child").attr("xlink:href", "SVGPan.js");
     // }
 
+  }
+
+  cleanup() {
+    this.curNode$.onCompleted();
   }
 
   /*
@@ -263,6 +270,7 @@ export class ProofTree implements IProofTree {
       // debugger;
       // console.log("Switching current node to", n);
       this._curNode = n;
+      this.curNode$.onNext(n);
     }
   }
 

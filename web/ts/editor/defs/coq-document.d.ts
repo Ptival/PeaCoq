@@ -4,7 +4,7 @@ interface ICoqDocument {
   editorChange$: Rx.Observable<AceAjax.EditorChangeEvent>;
   sentences: ISentenceArray;
   endAnchor: AceAjax.Anchor;
-  proofTrees: IProofTree[];
+  proofTrees: IProofTreeStack;
   sentencesChanged$: Rx.Observable<{}>;
   sentenceBeingProcessed$: Rx.Observable<ISentence<IBeingProcessed>>;
   sentenceProcessed$: Rx.Observable<ISentence<IProcessed>>;

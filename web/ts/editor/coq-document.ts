@@ -1,6 +1,7 @@
 import * as Stage from "./stage";
 import { SentenceArray } from "./sentence-array";
 import { errorUnderlineClass, theme } from "./../theme";
+import { ProofTreeStack } from "../prooftree/stack";
 
 export class CoqDocument implements ICoqDocument {
   beginAnchor: AceAjax.Anchor;
@@ -8,7 +9,7 @@ export class CoqDocument implements ICoqDocument {
   editorChange$: Rx.Observable<AceAjax.EditorChangeEvent>;
   sentences: ISentenceArray;
   endAnchor: AceAjax.Anchor;
-  proofTrees: IProofTree[];
+  proofTrees: IProofTreeStack;
   sentencesChanged$: Rx.Observable<{}>;
   sentenceBeingProcessed$: Rx.Observable<ISentence<IBeingProcessed>>;
   sentenceProcessed$: Rx.Observable<ISentence<IProcessed>>;
@@ -39,7 +40,7 @@ export class CoqDocument implements ICoqDocument {
     );
     // this.editsChange$ = this.editsChangeSubject.asObservable();
     const newEditSubject = new Rx.Subject<ISentence<IToProcess>>();
-    this.proofTrees = [];
+    this.proofTrees = new ProofTreeStack();
     this.sentenceBeingProcessed$ = this.sentences.sentenceBeingProcessed$;
     this.sentenceProcessed$ = this.sentences.sentenceProcessed$;
     this.tipSubject = new Rx.Subject<ISentence<IStage>>();

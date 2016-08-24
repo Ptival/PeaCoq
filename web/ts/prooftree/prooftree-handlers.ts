@@ -31,7 +31,12 @@ export function proofTreeOnEdit(
           context,
           0
         );
-        doc.proofTrees.unshift(pt);
+        pt.curNode$.subscribe(
+          n => console.log("Current node changed to", n),
+          null,
+          () => console.log("No longer tracking current node for this tree")
+        );
+        doc.proofTrees.push(pt);
         const g = pt.rootNode;
         g.addStateId(stateId);
         pt.curNode = g;
@@ -41,7 +46,7 @@ export function proofTreeOnEdit(
   } else {
     // multiple trees might have been finished at once?
     if (_(["Qed.", "Defined.", "Abort."]).includes(trimmed)) {
-      doc.proofTrees.shift();
+      doc.proofTrees.pop();
       if (doc.proofTrees.length === 0) {
         $("#prooftree").empty();
         hideProofTreePanel();
@@ -58,7 +63,7 @@ export function proofTreeOnEdit(
 
   if (doc.proofTrees.length === 0) { return; }
 
-  const activeProofTree = doc.proofTrees[0];
+  const activeProofTree = doc.proofTrees.peek();
   const curNode = activeProofTree.curNode;
 
   if (isUpperCase(trimmed[0]) || CoqStringUtils.isBullet(trimmed)) {
@@ -137,7 +142,7 @@ export function onStmCanceled(
 ): void {
 
   if (doc.proofTrees.length === 0) { return; }
-  const activeProofTree = doc.proofTrees[0];
+  const activeProofTree = doc.proofTrees.peek();
   //lastStateId = sid;
   const curNode = activeProofTree.curNode;
 
