@@ -584,7 +584,7 @@ $(document).ready(() => {
       .flatMap(a =>
         coqtopOutput$s.answer$s.coqExn$.filter(e => e.cmdTag === a.tag)
           .take(1).takeUntil(coqtopOutput$s.answer$s.completed$.filter(c => c.cmdTag === a.tag))
-      ),
+      )
   ).subscribe(e => {
     // debugger;
     doc.removeSentences(s => s.commandTag.caseOf({
