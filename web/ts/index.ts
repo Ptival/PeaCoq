@@ -1,22 +1,27 @@
+import * as Completion from "./editor/completion";
 import * as Context from "./editor/context";
 import * as Coq85 from "./editor/coq85";
 import { CoqDocument } from "./editor/coq-document";
 import { CoqtopPanel } from "./editor/coqtop-panel";
 import { ContextPanel } from "./editor/context-panel";
-import * as Stage from "./editor/stage";
+import * as DisplayContext from "./editor/display-context";
 import * as Editor from "./editor/editor";
-
 import { isBefore } from "./editor/editor-utils";
 import { setupKeybindings } from "./editor/keybindings";
 import { setupProgressBar } from "./editor/progress-bar";
-
+import * as SentenceToDisplay from "./editor/sentence-to-display";
+import * as Stage from "./editor/stage";
 import { setupTextCursorPositionUpdate } from "./editor/text-cursor-position";
-import { setupUserInteractionForwardGoto } from "./editor/user-interaction-forward-goto";
-// // TODO: toolbar.ts should setup{Load,Save}File upon setupToolbar
-// // TODO: unless it can't because of keybindings?
 import { pickFile, saveFile, setupLoadFile, setupToolbar, setupSaveFile } from "./editor/toolbar";
+import * as UnderlineError from "./editor/underline-errors";
+import { setupUserInteractionForwardGoto } from "./editor/user-interaction-forward-goto";
 
+import * as DebugFlags from "./peacoq/debug-flags";
+import * as Filters from "./peacoq/filters";
+import { PeaCoqGoal } from "./peacoq/goal";
 import { emptyContext } from "./peacoq/peacoq";
+import { Strictly } from "./peacoq/strictly";
+import * as Theme from "./peacoq/theme";
 
 import * as ProofTreeSetup from "./prooftree/setup";
 import * as ProofTreeAutomation from "./prooftree/automation";
@@ -25,16 +30,6 @@ import * as Sertop from "./sertop/sertop";
 import * as Command from "./sertop/command";
 import * as ControlCommand from "./sertop/control-command";
 import * as QueryCommand from "./sertop/query-command";
-
-import * as DebugFlags from "./peacoq/debug-flags";
-import { PeaCoqGoal } from "./peacoq/goal";
-import { Strictly } from "./peacoq/strictly";
-import * as Theme from "./peacoq/theme";
-
-import * as DisplayContext from "./editor/display-context";
-import * as SentenceToDisplay from "./editor/sentence-to-display";
-import * as UnderlineError from "./editor/underline-errors";
-import * as Completion from "./editor/completion";
 
 let fontSize = 16; // pixels
 const resizeBufferingTime = 250; // milliseconds
@@ -317,8 +312,8 @@ $(document).ready(() => {
 
   const stmAdd$: Rx.Observable<Command.Control<ControlCommand.StmAdd>> =
     flatCoqtopInputs$
-      .filter<Command.Control<any>>(i => i instanceof Command.Control)
-      .filter(i => i.controlCommand instanceof ControlCommand.StmAdd);
+      .let(Filters.controlCommand)
+      .let(Filters.stmAdd);
 
   const coqtopOutput$s = Sertop.setupCommunication(flatCoqtopInputs$);
 
@@ -342,8 +337,8 @@ $(document).ready(() => {
   // stmAddCounter$.subscribe(c => console.log("ADD COUNTER", c));
 
   const stmCancel$ = flatCoqtopInputs$
-    .filter<Command.Control<any>>(i => i instanceof Command.Control)
-    .filter(i => i.controlCommand instanceof ControlCommand.StmCancel);
+    .let(Filters.controlCommand)
+    .let(Filters.stmCancel);
 
   const stmCancelCounter$ =
     Rx.Observable.merge([
@@ -361,8 +356,8 @@ $(document).ready(() => {
   // stmCancelCounter$.subscribe(c => console.log("CANCEL COUNTER", c));
 
   const stmEditAt$ = flatCoqtopInputs$
-    .filter<Command.Control<any>>(i => i instanceof Command.Control)
-    .filter(i => i.controlCommand instanceof ControlCommand.StmEditAt);
+    .let(Filters.controlCommand)
+    .let(Filters.stmEditAt);
 
   const stmEditAtCounter$ =
     Rx.Observable.merge([
@@ -490,7 +485,7 @@ $(document).ready(() => {
   // PeaCoq's automation is more complex than checking if the removed stateIds
   // match a sentence in the document.
   stmCancel$
-    .filter(c => !c.controlCommand.fromAutomation)
+    // .filter(c => !c.controlCommand.fromAutomation)
     .flatMap(c =>
       coqtopOutput$s.answer$s.stmCanceled$.filter(e => e.cmdTag === c.tag)
     )
@@ -572,8 +567,8 @@ $(document).ready(() => {
 
   const stmQuery$ =
     flatCoqtopInputs$
-      .filter<Command.Control<any>>(i => i instanceof Command.Control)
-      .filter(i => i.controlCommand instanceof ControlCommand.StmQuery);
+      .let(Filters.controlCommand)
+      .let(Filters.stmQuery);
 
   // keep this under subscribers who need the edit to exist
   Rx.Observable.merge(

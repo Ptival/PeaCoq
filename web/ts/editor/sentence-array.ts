@@ -1,4 +1,5 @@
 import * as DebugFlags from "../peacoq/debug-flags";
+import * as Filters from "../peacoq/filters";
 import { BeingProcessed, Processed } from "./stage";
 import { isBefore } from "./editor-utils";
 import { Sentence } from "./sentence";
@@ -25,9 +26,9 @@ export class SentenceArray implements ISentenceArray {
       );
     }
     this.sentenceBeingProcessed$ =
-      this.sentenceChangedStage$.filter<ISentence<IBeingProcessed>>(e => e.stage instanceof BeingProcessed);
+      this.sentenceChangedStage$.let(Filters.sentenceBeingProcessed);
     this.sentenceProcessed$ =
-      this.sentenceChangedStage$.filter<ISentence<IProcessed>>(e => e.stage instanceof Processed);
+      this.sentenceChangedStage$.let(Filters.sentenceProcessed);
     this.sentenceCreated$ = new Rx.Subject<any>();
     if (DebugFlags.sentenceCreated) { this.sentenceCreated$.subscribe(s => console.log("sentence created", s)); }
     this.sentenceRemoved$ = new Rx.Subject<any>();

@@ -1,3 +1,4 @@
+import * as Filters from "../peacoq/filters";
 import * as Stage from "./stage";
 import { isBefore } from "./editor-utils";
 import { Strictly } from "../peacoq/strictly";
@@ -35,12 +36,12 @@ export class Sentence<S extends IStage> implements ISentence<S> {
     this.stage$ = new Rx.ReplaySubject<any>();
     const beingProcessedSubject = new Rx.AsyncSubject<IBeingProcessed>();
     this.beingProcessed$ = beingProcessedSubject.asObservable();
-    this.stage$.filter<IBeingProcessed>(s => s instanceof Stage.BeingProcessed)
+    this.stage$.let(Filters.beingProcessed)
       .take(1)
       .subscribe(beingProcessedSubject);
     const processedSubject = new Rx.AsyncSubject<IProcessed>();
     this.processed$ = processedSubject.asObservable();
-    this.stage$.filter<IProcessed>(s => s instanceof Stage.Processed)
+    this.stage$.let(Filters.processed)
       .take(1)
       .subscribe(processedSubject);
     this.setStage(stage); // keep this line after the subscriptions

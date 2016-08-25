@@ -22,20 +22,28 @@ declare namespace AceAjax {
   }
 }
 
-// JQuery-UI
-interface JQuery {
-  draggable(options: Object): JQuery;
-  resizable(options: Object): JQuery;
-}
+// Wow, I am not even using these, and each of them slows down tsc terribly!!!
+// see https://github.com/Microsoft/TypeScript/issues/9791
 
-declare namespace Rx {
-  export interface Observable<T> extends IObservable<T> {
-    flatMapLatest<TResult>(selector: (value: T, index: number, source: Observable<T>) => IPromise<TResult>, thisArg?: any): Observable<TResult>;	// alias for selectSwitch
-  }
-  export interface IPromise<T> {
-    catch(handler: (exception: any) => IPromise<T>): IPromise<T>;
-  }
-}
+// declare namespace Rx {
+//   export interface Observable<T> extends IObservable<T> {
+//     flatMapLatest<TResult>(selector: (value: T, index: number, source: Observable<T>) => IPromise<TResult>, thisArg?: any): Observable<TResult>;	// alias for selectSwitch
+//   }
+//   export interface IPromise<T> {
+//     catch(handler: (exception: any) => IPromise<T>): IPromise<T>;
+//   }
+// }
+
+// adding delay with selector
+// declare namespace Rx {
+//   export interface Observable<T> {
+// //     delay(subscriptionDelay: Observable<any>): Observable<T>;
+// //     delay(subscriptionDelay: Observable<any>, delayDurationSelector: (t: T) => Rx.Observable<any>): Observable<T>;
+// //     // a version of filter that lets me cast the type (when filtering with type assertion)
+//     // filter<U>(predicate: (value: T, index: number, source: Observable<T>) => boolean, thisArg?: any): Observable<U>;
+// //     last(): Observable<T>;
+//   }
+// }
 
 interface JQueryContextMenuBuildOptions {
   selector: string;
@@ -49,26 +57,15 @@ interface JQueryStatic {
 
 declare var sexpParse: (o: any) => any;
 
-// adding delay with selector
-declare namespace Rx {
-  export interface Observable<T> {
-    delay(subscriptionDelay: Observable<any>): Observable<T>;
-    delay(subscriptionDelay: Observable<any>, delayDurationSelector: (t: T) => Rx.Observable<any>): Observable<T>;
-    // a version of filter that lets me cast the type (when filtering with type assertion)
-    filter<U>(predicate: (value: T, index: number, source: Observable<T>) => boolean, thisArg?: any): Observable<U>;
-    last(): Observable<T>;
-  }
-}
-
-declare module _ {
-  interface LoDashStatic {
-    maxBy<T>(
-      collection: List<T>,
-      iteratee?: ListIterator<T, number>,
-      thisArg?: any
-    ): T;
-  }
-}
+// declare module _ {
+//   interface LoDashStatic {
+//     maxBy<T>(
+//       collection: List<T>,
+//       iteratee?: ListIterator<T, number>,
+//       thisArg?: any
+//     ): T;
+//   }
+// }
 
 declare namespace d3 {
   export function select(selector: Object): Selection<any>;

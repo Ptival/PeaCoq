@@ -1,12 +1,12 @@
 {
   "globalDependencies": {
     "ace": "registry:dt/ace#0.0.0+20160630235124",
-    "d3": "registry:dt/d3#0.0.0+20160628065019",
+    "d3": "registry:dt/d3#0.0.0+20160727131401",
     "es6-shim": "registry:dt/es6-shim#0.31.2+20160602141504",
     "jquery": "registry:dt/jquery#1.10.0+20160704162008",
     "jquery.contextmenu": "registry:dt/jquery.contextmenu#1.7.0+20160705153350",
     "jss": "registry:dt/jss#0.6.0+20160315014830",
-    "lodash": "registry:dt/lodash#0.0.0+20160709062853",
+    "lodash": "registry:dt/lodash#4.14.0+20160817155621",
     "mathjax": "registry:dt/mathjax#0.0.0+20160317120654",
     "polymer-ts": "registry:dt/polymer-ts#0.1.25+20160404114553",
     "rx": "registry:dt/rx#0.0.0+20160317120654",
@@ -16,6 +16,7 @@
     "rx.binding-lite": "registry:dt/rx.binding-lite#0.0.0+20160316171810",
     "rx.coincidence": "registry:dt/rx.coincidence#2.2.28+20160317120654",
     "rx.coincidence-lite": "registry:dt/rx.coincidence-lite#0.0.0+20160412135432",
+    "rx.experimental": "registry:dt/rx.experimental#2.2.28+20160317120654",
     "rx.time": "registry:dt/rx.time#2.2.28+20160317120654",
     "rx.time-lite": "registry:dt/rx.time-lite#0.0.0+20160316171810",
     "tsmonad": "registry:dt/tsmonad#0.0.0+20160317120654",

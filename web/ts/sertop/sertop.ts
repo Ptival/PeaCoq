@@ -5,6 +5,7 @@ import * as ControlCommand from "./control-command";
 import * as Feedback from "../coq/feedback";
 import * as FeedbackContent from "../coq/feedback-content";
 import * as MessageLevel from "../coq/message-level";
+import * as Filters from "../peacoq/filters";
 
 export function setupCommunication(
   cmd$: Rx.Observable<ISertop.ICommand>
@@ -56,26 +57,24 @@ export function setupCommunication(
   cmdOutputSubject.onNext(-2);
   cmdOutputSubject.onNext(-1);
 
-  const answer$ =
-    output$.filter<ISertop.IAnswer<ISertop.IAnswerKind>>(a => a instanceof Answer.Answer);
-  const feedback$ =
-    output$.filter<IFeedback<IFeedbackContent>>(a => a instanceof Feedback.Feedback);
+  const answer$ = output$.let(Filters.answer);
+  const feedback$ = output$.let(Filters.feedback);
   const messageFeedback$ =
-    feedback$.filter<MessageFeedback<IMessageLevel>>(a => a.feedbackContent instanceof FeedbackContent.Message);
+    feedback$.filter(a => a.feedbackContent instanceof FeedbackContent.Message) as any as Rx.Observable<IFeedback<FeedbackContent.Message<any>>>;
   return {
     answer$s: {
-      completed$: answer$.filter<ISertop.IAnswer<ISertop.ICoqExn>>(a => a.answer instanceof AnswerKind.Completed),
-      coqExn$: answer$.filter<ISertop.IAnswer<ISertop.ICoqExn>>(a => a.answer instanceof AnswerKind.CoqExn),
-      stmAdded$: answer$.filter<ISertop.IAnswer<ISertop.IStmAdded>>(a => a.answer instanceof AnswerKind.StmAdded),
-      stmCanceled$: answer$.filter<ISertop.IAnswer<ISertop.IStmCanceled>>(a => a.answer instanceof AnswerKind.StmCanceled),
+      completed$: answer$.filter(a => a.answer instanceof AnswerKind.Completed) as any,
+      coqExn$: answer$.filter(a => a.answer instanceof AnswerKind.CoqExn) as any,
+      stmAdded$: answer$.filter(a => a.answer instanceof AnswerKind.StmAdded) as any,
+      stmCanceled$: answer$.filter(a => a.answer instanceof AnswerKind.StmCanceled) as any,
     },
     feedback$s: {
       message$s: {
-        debug$: messageFeedback$.filter<DebugMessageFeedback>(f => f.feedbackContent.level instanceof MessageLevel.Debug),
-        error$: messageFeedback$.filter<ErrorMessageFeedback>(f => f.feedbackContent.level instanceof MessageLevel.Error),
-        info$: messageFeedback$.filter<InfoMessageFeedback>(f => f.feedbackContent.level instanceof MessageLevel.Info),
-        notice$: messageFeedback$.filter<NoticeMessageFeedback>(f => f.feedbackContent.level instanceof MessageLevel.Notice),
-        warning$: messageFeedback$.filter<WarningMessageFeedback>(f => f.feedbackContent.level instanceof MessageLevel.Warning),
+        debug$: messageFeedback$.filter(f => f.feedbackContent.level instanceof MessageLevel.Debug) as any,
+        error$: messageFeedback$.filter(f => f.feedbackContent.level instanceof MessageLevel.Error) as any,
+        info$: messageFeedback$.filter(f => f.feedbackContent.level instanceof MessageLevel.Info) as any,
+        notice$: messageFeedback$.filter(f => f.feedbackContent.level instanceof MessageLevel.Notice) as any,
+        warning$: messageFeedback$.filter(f => f.feedbackContent.level instanceof MessageLevel.Warning) as any,
       },
       processed$: feedback$.filter(f => f.feedbackContent instanceof FeedbackContent.Processed),
     },
