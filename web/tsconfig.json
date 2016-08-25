@@ -9,11 +9,10 @@
     "moduleResolution": "Node",
     "noImplicitAny": false,
     "noLib": false,
-    "outDir": "../js-of-ts",
+    "outDir": "js-of-ts",
     "preserveConstEnums": true,
     "removeComments": true,
-    "rootDir": ".",
-    "strictNullChecks": false,
+    "rootDir": "ts",
     "suppressImplicitAnyIndexErrors": true,
     "target": "es5"
   },
