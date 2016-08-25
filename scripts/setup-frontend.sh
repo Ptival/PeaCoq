@@ -11,10 +11,8 @@ cd node_modules
 ./requirejs/bin/r.js -convert s-expression s-expression-amd
 )
 
-cd ts
-
 ./typings-bin prune
 ./typings-bin install
 
-rm -rf ../js-of-ts
+rm -rf ./js-of-ts
 ./tsc -p . --diagnostics
