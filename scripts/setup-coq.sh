@@ -8,7 +8,7 @@ if [ ! -d coq/.git ]; then
   git clone https://github.com/coq/coq.git
 fi
 cd coq
-git pull origin $branch
+git fetch origin $branch
 git checkout $commit
 if [ ! -f config/Makefile ]; then
   ./configure -local

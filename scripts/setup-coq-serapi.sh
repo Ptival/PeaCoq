@@ -9,7 +9,7 @@ if [ ! -d coq-serapi/.git ]; then
 fi
 cd coq-serapi
 git checkout myocamlbuild.ml # undo the effects of sed
-git pull origin $branch
+git fetch origin $branch
 git checkout $commit
 # Holy shit, sed on OSX and on Linux are really hard to make work the same...
 sed -i.bak "s|/home/egallego/external/coq-git/|$PWD/../coq/|g" myocamlbuild.ml
