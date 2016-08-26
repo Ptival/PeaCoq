@@ -13,4 +13,6 @@ git fetch origin $branch
 git checkout $commit
 # Holy shit, sed on OSX and on Linux are really hard to make work the same...
 sed -i.bak "s|/home/egallego/external/coq-git/|$PWD/../coq/|g" myocamlbuild.ml
-make clean && COQBIN="../coq/bin" make
+# Slower:
+# make clean && COQBIN="../coq/bin" make
+COQBIN="../coq/bin" make
