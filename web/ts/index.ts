@@ -23,8 +23,9 @@ import { emptyContext } from "./peacoq/peacoq";
 import { Strictly } from "./peacoq/strictly";
 import * as Theme from "./peacoq/theme";
 
-import * as ProofTreeSetup from "./prooftree/setup";
 import * as ProofTreeAutomation from "./prooftree/automation";
+import * as ProofTreePopulating from "./prooftree/populating";
+import * as ProofTreeSetup from "./prooftree/setup";
 
 import * as Sertop from "./sertop/sertop";
 import * as Command from "./sertop/command";
@@ -429,6 +430,8 @@ $(document).ready(() => {
     debouncedTip$: doc.debouncedTip$,
     tip$: doc.tip$,
   });
+
+  ProofTreePopulating.setup(doc, doc.tip$);
 
   coqtopOutput$s.answer$s.stmAdded$.subscribe(a => {
     // console.log("STM ADDED", a);
