@@ -73,5 +73,5 @@ export function answer(
 export function feedback(
   s: Rx.Observable<ISertop.IAnswer<ISertop.IAnswerKind>>
 ): Rx.Observable<Feedback.Feedback> {
-  return (s as Rx.Observable<any>).filter(i => i instanceof Answer.Answer);
+  return (s as Rx.Observable<any>).filter(i => i instanceof Feedback.Feedback);
 }
