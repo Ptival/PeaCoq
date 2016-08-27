@@ -1,3 +1,5 @@
+import { Tactic } from "./tactic";
+import { TacticGroupNode } from "./tacticgroupnode";
 import { ProofTreeNode } from "./prooftreenode";
 import { Strictly } from "../peacoq/strictly";
 
@@ -37,7 +39,70 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
     this.stateIds.push(s);
   }
 
+  addTactic(tacticName: string, groupName: string, context: PeaCoqContext, stateId: StateId): ITactic {
+    let tactic: Tactic = _.find(this.getTactics(), t => t.tactic === tacticName);
+
+    const tacticGroup: ITacticGroupNode = (
+      tactic
+        ? tactic.parentGroup
+        : new TacticGroupNode(this.proofTree, this, groupName)
+    );
+
+    /*
+    We need to figure out which foreground goals are relevant to this tactic node.
+    If the number of unfocused goals has changed by running the tactic, the tactic
+    must have solved the previous goal and the current foreground goals are the
+    remaining ones.
+    Otherwise, the delta foreground goals have been created by running the tactic.
+    */
+    const goalsBefore = this.context;
+    const goalsAfter = context;
+    const nbRelevantGoals =
+      goalsBefore.bgGoals.length === goalsAfter.bgGoals.length
+        ? goalsAfter.fgGoals.length - (goalsBefore.fgGoals.length - this.fgIndex - 1)
+        : goalsAfter.fgGoals.length;
+    const relevantGoals = context.fgGoals.slice(0, nbRelevantGoals);
+
+    // console.log("nbRelevantGoals", nbRelevantGoals);
+    // debugger;
+
+    const goalNodes: IGoalNode[] =
+      _(_.range(nbRelevantGoals))
+        .map(ndx =>
+          new GoalNode(
+            this.proofTree,
+            just(tacticGroup),
+            context,
+            ndx
+          )
+        )
+        .value();
+
+    if (!tactic) {
+      this.tacticGroups.push(tacticGroup);
+      tactic = new Tactic(tacticName, tacticGroup, goalNodes);
+      tacticGroup.tactics.push(tactic);
+    } else {
+      tactic.goals = goalNodes;
+    }
+
+    return tactic;
+
+  }
+
   click(): void { return; }
+
+  findOrCreateGroup(groupName: string): ITacticGroupNode {
+    let found = <ITacticGroupNode | undefined>_(this.tacticGroups)
+      .find(function(tacticGroup) {
+        return tacticGroup.name === groupName;
+      });
+    if (found !== undefined) { return found; }
+    // else, create it
+    let groupNode = new TacticGroupNode(this.proofTree, this, groupName);
+    this.tacticGroups.push(groupNode);
+    return groupNode;
+  }
 
   getAllDescendants(): IProofTreeNode[] {
     let children: ITacticGroupNode[] = this.tacticGroups;

@@ -133,66 +133,63 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
   }
 
   updateNode(): void {
-    let d = this;
     let jqBody = $(this.getHTMLElement());
     let jQContents;
-    if (d instanceof TacticGroupNode) {
-      let focusedTactic = d.tactics[d.tacticIndex];
-      let nbTactics = d.tactics.length;
-      d.span = $("<div>")
-        .addClass("tacticNode")
-        .css("padding", "4px")
-        .css("text-align", "center")
-        ;
+    let focusedTactic = this.tactics[this.tacticIndex];
+    let nbTactics = this.tactics.length;
 
-      // prepend a tactic node selector if necessary
-      if (nbTactics > 1) {
+    this.span = $("<div>")
+      .addClass("tacticNode")
+      .css("padding", "4px")
+      .css("text-align", "center")
+      ;
 
-        if (d.tacticIndex > 0) {
-          d.span.append(
-            $("<a>")
-              .attr("href", "#")
-              .text('◀')
-              .click(function(e) {
-                e.stopImmediatePropagation();
-                d.shiftPrevInGroup();
-              })
-          );
-        } else {
-          d.span.append(nbsp);
-        }
+    // prepend a tactic node selector if necessary
+    if (nbTactics > 1) {
 
-        d.span.append(
-          '[' + (d.tacticIndex + 1) + '/' + d.tactics.length + ']'
+      if (this.tacticIndex > 0) {
+        this.span.append(
+          $("<a>")
+            .attr("href", "#")
+            .text('◀')
+            .click(function(e) {
+              e.stopImmediatePropagation();
+              this.shiftPrevInGroup();
+            })
         );
-
-        if (d.tacticIndex < d.tactics.length - 1) {
-          d.span.append(
-            $("<a>")
-              .attr("href", "#")
-              .text('▶')
-              .click(function(e) {
-                e.stopImmediatePropagation();
-                d.shiftNextInGroup();
-              })
-          );
-        } else {
-          d.span.append(nbsp);
-        }
-
-        d.span.append($("<br>"));
-
+      } else {
+        this.span.append(nbsp);
       }
 
-      d.span.append(
-        focusedTactic.tactic
+      this.span.append(
+        '[' + (this.tacticIndex + 1) + '/' + this.tactics.length + ']'
       );
 
-      jQContents = d.span;
-      jqBody.empty();
-      jqBody.append(jQContents);
+      if (this.tacticIndex < this.tactics.length - 1) {
+        this.span.append(
+          $("<a>")
+            .attr("href", "#")
+            .text('▶')
+            .click(function(e) {
+              e.stopImmediatePropagation();
+              this.shiftNextInGroup();
+            })
+        );
+      } else {
+        this.span.append(nbsp);
+      }
+
+      this.span.append($("<br>"));
+
     }
 
+    this.span.append(
+      focusedTactic.tactic
+    );
+
+    jQContents = this.span;
+    jqBody.empty();
+    jqBody.append(jQContents);
   }
 
 }

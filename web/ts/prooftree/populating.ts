@@ -12,7 +12,14 @@ export function setup(
       doc.getActiveProofTree().fmap(pt => {
         const curNode = pt.curNode;
         if (_(curNode.getStateIds()).includes(stateId)) {
-          console.log("Curnode matches stateID, ready to add completions");
+          for (const groupName in s.completions) {
+            const group = s.completions[groupName];
+            for (const tactic in s.completions[groupName]) {
+              const completion = group[tactic];
+              curNode.addTactic(tactic, groupName, completion, stateId);
+              pt.update();
+            }
+          }
         } else {
           console.log("Curnode did not match stateID", stateId, curNode.getStateIds());
         }

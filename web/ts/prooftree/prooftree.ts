@@ -274,19 +274,6 @@ export class ProofTree implements IProofTree {
     }
   }
 
-  findOrCreateGroup(goalNode: IGoalNode, groupName: string): ITacticGroupNode {
-    let found = <ITacticGroupNode | undefined>_(goalNode.tacticGroups)
-      .find(function(tacticGroup) {
-        return tacticGroup.name === groupName;
-      })
-      ;
-    if (found !== undefined) { return found; }
-    // else, create it
-    let groupNode = new TacticGroupNode(this, goalNode, groupName);
-    goalNode.tacticGroups.push(groupNode);
-    return groupNode;
-  }
-
   getAllGoals(): IGoalNode[] {
     return [].concat(
       [this.rootNode],

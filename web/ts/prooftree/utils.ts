@@ -82,31 +82,31 @@ export function nodeY(d: IProofTreeNode): number {
   return d.x;
 }
 
-function goalNodeUnicityRepr(node: IGoalNode): string {
-  throw ("TOREDO");
-  /*
-  retur  JSON.stringify({
-    "goalTerm": node.goalTerm,
-    "hyps": _(node.hyps)
-      .map(function(h) {
-        return {
-          "hName": h.hName,
-          "hValue": h.hValue,
-          "hType": h.hType,
-        };
-      })
-      .value(),
-  });
-  */
-}
+// function goalNodeUnicityRepr(node: IGoalNode): string {
+//   debugger;
+//   /*
+//   retur  JSON.stringify({
+//     "goalTerm": node.goalTerm,
+//     "hyps": _(node.hyps)
+//       .map(function(h) {
+//         return {
+//           "hName": h.hName,
+//           "hValue": h.hValue,
+//           "hType": h.hType,
+//         };
+//       })
+//       .value(),
+//   });
+//   */
+// }
 
-function tacticUnicityRepr(node: ITactic): string {
-  return JSON.stringify(
-    _(node.goals)
-      .map(goalNodeUnicityRepr)
-      .value()
-  );
-}
+// function tacticUnicityRepr(node: ITactic): string {
+//   return JSON.stringify(
+//     _(node.goals)
+//       .map(goalNodeUnicityRepr)
+//       .value()
+//   );
+// }
 
 let centerLeftOffset = +10;
 

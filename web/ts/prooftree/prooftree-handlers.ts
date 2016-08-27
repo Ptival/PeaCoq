@@ -72,59 +72,15 @@ export function proofTreeOnEdit(
     return;
   }
 
-  let tactic: Tactic = _.find(curNode.getTactics(), t => t.tactic === trimmed);
+  const tactic = curNode.addTactic(trimmed, "", context, stateId);
 
-  const tacticGroup: ITacticGroupNode = (
-    tactic
-      ? tactic.parentGroup
-      : new TacticGroupNode(activeProofTree, curNode, "")
-  );
+  tactic.parentGroup.isProcessed = true;
 
-  /*
-  We need to figure out which foreground goals are relevant to this tactic node.
-  If the number of unfocused goals has changed by running the tactic, the tactic
-  must have solved the previous goal and the current foreground goals are the
-  remaining ones.
-  Otherwise, the delta foreground goals have been created by running the tactic.
-  */
-  const goalsBefore = curNode.context;
-  const goalsAfter = context;
-  const nbRelevantGoals =
-    goalsBefore.bgGoals.length === goalsAfter.bgGoals.length
-      ? goalsAfter.fgGoals.length - (goalsBefore.fgGoals.length - curNode.fgIndex - 1)
-      : goalsAfter.fgGoals.length;
-  const relevantGoals = context.fgGoals.slice(0, nbRelevantGoals);
-
-  // console.log("nbRelevantGoals", nbRelevantGoals);
-  // debugger;
-
-  const goalNodes: IGoalNode[] =
-    _(_.range(nbRelevantGoals))
-      .map(ndx =>
-        new GoalNode(
-          activeProofTree,
-          just(tacticGroup),
-          context,
-          ndx
-        )
-      )
-      .value();
-
-  if (!tactic) {
-    curNode.tacticGroups.push(tacticGroup);
-    tactic = new Tactic(trimmed, tacticGroup, goalNodes);
-    tacticGroup.tactics.push(tactic);
-  } else {
-    tactic.goals = goalNodes;
-  }
-
-  tacticGroup.isProcessed = true;
-
-  if (goalNodes.length > 0) {
-    const curGoal: IGoalNode = goalNodes[0];
+  if (tactic.goals.length > 0) {
+    const curGoal: IGoalNode = tactic.goals[0];
     curGoal.addStateId(stateId);
-    activeProofTree.curNode = curGoal;
-    activeProofTree.update();
+    curNode.proofTree.curNode = curGoal;
+    curNode.proofTree.update();
   } else {
     curNode.onChildSolved(stateId);
   }
