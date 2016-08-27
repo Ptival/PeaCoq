@@ -3,6 +3,7 @@ const nodePath = "./node_modules";
 requirejs.config({
   paths: {
     "ace":                `${nodePath}/ace-code-editor/lib/ace`,
+    "bluebird":           `${nodePath}/bluebird/js/browser/bluebird`,
     "bootstrap":          `${nodePath}/bootstrap/dist/js/bootstrap`,
     "d3":                 `${nodePath}/d3/d3`,
     "jquery":             `${nodePath}/jquery/dist/jquery`,
@@ -38,11 +39,13 @@ requirejs.config({
 requirejs(
   [
     "ace/ace",
+    "bluebird",
     "s-expression",
     "jquery",
   ],
-  (ace, sexpParse) => {
+  (ace, bluebird, sexpParse) => {
     window.ace = ace;
+    window.Promise = bluebird;
     // not sure how else this is usually done
     aceRequires = [
       ace.require("ace/anchor"),

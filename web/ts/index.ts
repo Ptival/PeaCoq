@@ -32,6 +32,12 @@ import * as Command from "./sertop/command";
 import * as ControlCommand from "./sertop/control-command";
 import * as QueryCommand from "./sertop/query-command";
 
+// import * as Promise from 'bluebird';
+// Promise.longStackTraces();
+// Promise.onUnhandledRejectionHandled((reason, promise) => {
+//   debugger;
+// });
+
 let fontSize = 16; // pixels
 const resizeBufferingTime = 250; // milliseconds
 
