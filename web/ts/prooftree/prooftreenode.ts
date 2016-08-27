@@ -31,9 +31,7 @@ export abstract class ProofTreeNode implements IProofTreeNode {
   abstract getHeight(): number;
 
   getHTMLElement(): HTMLElement {
-    if (!this.body) {
-      throw("BAD: missing this.body", this);
-    }
+    if (!this.body) { debugger; }
     //assert(this.body !== undefined, "ProofTreeNode.getHTMLElement");
     return this.body;
   }
