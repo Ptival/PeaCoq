@@ -104,6 +104,19 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
     return groupNode;
   }
 
+  focus(): void {
+    this.parentGroup.fmap(tg => {
+      const tacticIndex = _.findIndex(tg.tactics, t => _.some(t.goals, g => g.id === this.id));
+      if (tacticIndex === -1) { debugger; }
+      tg.tacticIndex = tacticIndex;
+      const tactic = tg.tactics[tg.tacticIndex];
+      const goalIndex = _.findIndex(tactic.goals, g => g.id === this.id);
+      if (goalIndex === -1) { debugger; }
+      tactic.goalIndex = goalIndex;
+      tg.focus();
+    });
+  }
+
   getAllDescendants(): IProofTreeNode[] {
     let children: ITacticGroupNode[] = this.tacticGroups;
     let descendants: IProofTreeNode[] = _(children).map(c => c.getAllDescendants()).flatten<IProofTreeNode>().value();

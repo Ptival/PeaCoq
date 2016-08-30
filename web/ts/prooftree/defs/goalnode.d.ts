@@ -6,6 +6,7 @@ interface IGoalNode extends IProofTreeNode {
   fgIndex: number;
   html: JQuery;
   // stateIds: number[];
+  tacticIndex: number;
   tacticGroups: ITacticGroupNode[];
   addStateId(s: StateId): void;
   addTactic(tacticName: string, groupName: string, context: PeaCoqContext, stateId: StateId): ITactic;

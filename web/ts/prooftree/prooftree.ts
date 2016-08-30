@@ -270,6 +270,7 @@ export class ProofTree implements IProofTree {
       // debugger;
       // console.log("Switching current node to", n);
       this._curNode = n;
+      n.focus();
       this.curNode$.onNext(n);
     }
   }
@@ -826,34 +827,26 @@ export class ProofTree implements IProofTree {
     */
   }
 
-  shiftNextByTacticGroup(n) {
+  shiftNextByTacticGroup(n: IGoalNode) {
     if (this.paused) { return; }
     let self = this;
-    if (n.solved) { return; }
+    if (n.isSolved()) { return; }
     let viewChildren = n.getViewChildren();
-    if (n instanceof GoalNode) {
-      if (n.tacticIndex + 1 < viewChildren.length) {
-        n.tacticIndex++;
-        //asyncLog("DOWNGROUP " + nodeString(viewChildren[n.tacticIndex]));
-        self.update();
-      }
-    } else {
-      throw ["shiftNextByTacticGroup", n];
+    if (n.tacticIndex + 1 < viewChildren.length) {
+      n.tacticIndex++;
+      //asyncLog("DOWNGROUP " + nodeString(viewChildren[n.tacticIndex]));
+      self.update();
     }
   }
 
-  shiftPrevByTacticGroup(n) {
+  shiftPrevByTacticGroup(n: IGoalNode) {
     if (this.paused) { return; }
     let self = this;
-    if (n.solved) { return; }
-    if (n instanceof GoalNode) {
-      if (n.tacticIndex > 0) {
-        n.tacticIndex--;
-        //asyncLog("UPGROUP " + nodeString(n.getViewChildren()[n.tacticIndex]));
-        self.update();
-      }
-    } else {
-      throw ["shiftPrevByTacticGroup", n];
+    if (n.isSolved()) { return; }
+    if (n.tacticIndex > 0) {
+      n.tacticIndex--;
+      //asyncLog("UPGROUP " + nodeString(n.getViewChildren()[n.tacticIndex]));
+      self.update();
     }
   }
 

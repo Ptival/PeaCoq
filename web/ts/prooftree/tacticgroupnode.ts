@@ -25,6 +25,19 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
     alert("TODO: click");
   }
 
+  focus() {
+    this.parentGoal.getFocusedChild().caseOf({
+      nothing: () => { },
+      just: focused => {
+        if (focused.id === this.id) { return; }
+        const thisIndex = _.findIndex(this.parentGoal.tacticGroups, t => t.id === this.id);
+        if (thisIndex === -1) { debugger; }
+        this.parentGoal.tacticIndex = thisIndex;
+        this.parentGoal.focus();
+      }
+    });
+  }
+
   getAllDescendants(): IProofTreeNode[] {
     let children: IGoalNode[] = _(this.tactics).map(t => t.goals).flatten<IGoalNode>().value();
     let descendants: IProofTreeNode[] = _(children).map(c => c.getAllDescendants()).flatten<IProofTreeNode>().value();

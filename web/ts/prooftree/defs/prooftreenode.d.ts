@@ -8,6 +8,7 @@ interface IProofTreeNode {
   x0: number;
   y: number;
   y0: number;
+  focus(): void;
   getAllDescendants(): IProofTreeNode[];
   getAllGoalDescendants(): IGoalNode[];
   getFocusedChild(): Maybe<IProofTreeNode>;

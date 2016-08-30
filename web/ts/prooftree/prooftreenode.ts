@@ -23,6 +23,7 @@ export abstract class ProofTreeNode implements IProofTreeNode {
   }
 
   abstract click(): void;
+  abstract focus(): void;
 
   abstract getAllDescendants(): IProofTreeNode[];
   abstract getAllGoalDescendants(): IGoalNode[];
