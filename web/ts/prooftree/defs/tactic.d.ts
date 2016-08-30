@@ -3,5 +3,6 @@ interface ITactic {
   goals: IGoalNode[];
   parentGroup: ITacticGroupNode;
   tactic: string;
+  focus(): void;
   isSolved(): boolean;
 }

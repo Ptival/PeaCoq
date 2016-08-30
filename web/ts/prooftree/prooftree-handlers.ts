@@ -73,6 +73,7 @@ export function proofTreeOnEdit(
   }
 
   const tactic = curNode.addTactic(trimmed, "", context, stateId);
+  tactic.focus();
 
   tactic.parentGroup.isProcessed = true;
 

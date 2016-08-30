@@ -173,7 +173,7 @@ export class ProofTree implements IProofTree {
     let centeredDescendant =
       this.curNode.getFocusedChild().caseOf<Maybe<IProofTreeNode>>({
         nothing: () => nothing(),
-        just: fc => fc.getFocusedChild().caseOf({
+        just: fc => fc.getFocusedChild().caseOf<Maybe<IProofTreeNode>>({
           nothing: () => just(fc),
           just: (fgc) => just(fgc),
         })
@@ -268,7 +268,7 @@ export class ProofTree implements IProofTree {
   set curNode(n: IGoalNode) {
     if (n.id !== this._curNode.id) {
       // debugger;
-      // console.log("Switching current node to", n);
+      console.log("Switching current node to", n);
       this._curNode = n;
       n.focus();
       this.curNode$.onNext(n);
@@ -991,6 +991,18 @@ export class ProofTree implements IProofTree {
     // current goal and the current suboal align
     if (this.isCurGoalGrandChild(d)) {
       return offset + this.descendantsOffset;
+    }
+
+    // we center the curNode parent to its focused child
+    if (this.isCurNodeParent(d)) {
+      if (d instanceof TacticGroupNode) {
+        return offset + (
+          ProofTreeUtils.nodeY(this.curNode) - ProofTreeUtils.nodeY(d)
+        ) * this.yFactor;
+      } else {
+        // This should not happen anymore (should not be a GoalNode)
+        debugger;
+      }
     }
 
     // the other nodes (current goal and its ancestors) stay where they need

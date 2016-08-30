@@ -36,6 +36,13 @@ export class Tactic {
     */
   }
 
+  focus(): void {
+    const tacticIndex = _.findIndex(this.parentGroup.tactics, t => t.tactic === this.tactic);
+    if (tacticIndex === -1) { debugger; }
+    this.parentGroup.tacticIndex = tacticIndex;
+    this.parentGroup.focus();
+  }
+
   isSolved(): boolean {
     return _.every(this.goals, g => g.isSolved());
   }
