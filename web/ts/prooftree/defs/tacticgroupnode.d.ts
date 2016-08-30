@@ -5,6 +5,7 @@ interface ITacticGroupNode extends IProofTreeNode {
   span: JQuery;
   tacticIndex: number;
   tactics: ITactic[];
+  getFocusedChild(): Maybe<IGoalNode>;
   getFocusedTactic(): Maybe<ITactic>;
   getTactics(): ITactic[];
   onChildSolvedAndUnfocused(sid: number): void;

@@ -50,10 +50,11 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
     return [].concat(children, descendants);
   }
 
-  getFocusedChild(): Maybe<IProofTreeNode> {
-    let viewChildren: IProofTreeNode[] = this.getViewChildren();
-    if (viewChildren.length === 0) { return nothing(); }
-    return just(viewChildren[this.tactics[this.tacticIndex].goalIndex]);
+  getFocusedChild(): Maybe<IGoalNode> {
+    if (this.tactics.length === 0) { return nothing(); }
+    const focusedTactic = this.tactics[this.tacticIndex];
+    if (focusedTactic.goals.length === 0) { return nothing(); }
+    return just(focusedTactic.goals[focusedTactic.goalIndex]);
   }
 
   getFocusedTactic(): Maybe<ITactic> {

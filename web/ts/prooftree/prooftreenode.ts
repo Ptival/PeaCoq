@@ -27,7 +27,7 @@ export abstract class ProofTreeNode implements IProofTreeNode {
 
   abstract getAllDescendants(): IProofTreeNode[];
   abstract getAllGoalDescendants(): IGoalNode[];
-  abstract getFocusedChild(): Maybe<ProofTreeNode>;
+  abstract getFocusedChild(): Maybe<IProofTreeNode>;
   abstract getGoalAncestor(): Maybe<IGoalNode>;
   abstract getHeight(): number;
 

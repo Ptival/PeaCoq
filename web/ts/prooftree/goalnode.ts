@@ -12,7 +12,7 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
   private parentGroup: Maybe<ITacticGroupNode>;
   private stateIds: number[];
   tacticGroups: ITacticGroupNode[];
-  tacticIndex: number;
+  private _tacticIndex: number;
 
   constructor(
     proofTree: IProofTree,
@@ -31,7 +31,13 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
     this.parentGroup = parent;
     this.stateIds = [];
     this.tacticGroups = [];
-    this.tacticIndex = 0;
+    this._tacticIndex = 0;
+  }
+
+  get tacticIndex() { return this._tacticIndex; }
+  set tacticIndex(ti: number) {
+    if (ti >= this.tacticGroups.length) { debugger; }
+    this._tacticIndex = ti;
   }
 
   addStateId(s: StateId): void {
@@ -130,10 +136,9 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
     return result.concat(descendants);
   }
 
-  getFocusedChild(): Maybe<IProofTreeNode> {
-    let viewChildren: IProofTreeNode[] = this.getViewChildren();
-    if (viewChildren.length === 0) { return nothing(); }
-    return just(viewChildren[this.tacticIndex]);
+  getFocusedChild(): Maybe<TacticGroupNode> {
+    if (this.tacticGroups.length === 0) { return nothing(); }
+    return just(this.tacticGroups[this.tacticIndex]);
   }
 
   getGoalAncestor(): Maybe<IGoalNode> {
@@ -193,15 +198,15 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
       && !this.proofTree.isCurNodeAncestor(Strictly.Yes, this)) {
       return [];
     }
-    let nonEmptyTacticGroups = _(this.tacticGroups)
-      .filter(function(group) { return (group.tactics.length > 0); })
-      .value()
-      ;
-    if (nonEmptyTacticGroups.length === 0) { return []; }
+    // let nonEmptyTacticGroups = _(this.tacticGroups)
+    //   .filter(function(group) { return (group.tactics.length > 0); })
+    //   .value()
+    //   ;
+    if (this.tacticGroups.length === 0) { return []; }
     if (this.proofTree.isCurNode(this)) {
-      return nonEmptyTacticGroups;
+      return this.tacticGroups;
     } else if (this.isCurNodeAncestor()) {
-      return [nonEmptyTacticGroups[this.tacticIndex]];
+      return [this.tacticGroups[this.tacticIndex]];
     } else {
       return [];
     }

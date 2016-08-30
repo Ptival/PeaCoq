@@ -10,6 +10,7 @@ interface IGoalNode extends IProofTreeNode {
   tacticGroups: ITacticGroupNode[];
   addStateId(s: StateId): void;
   addTactic(tacticName: string, groupName: string, context: PeaCoqContext, stateId: StateId): ITactic;
+  getFocusedChild(): Maybe<ITacticGroupNode>;
   getGoalAncestors(): IGoalNode[];
   getTactics(): ITactic[];
   getStateIds(): StateId[];
