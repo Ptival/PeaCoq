@@ -30,7 +30,7 @@ let aceMacPrefix = "Option-Command-";
 
 function createBindingForKey(doc: ICoqDocument, key: string): Rx.Observable<{}> {
   return Rx.Observable
-    .create((observer) => {
+    .create(observer => {
       $(document).bind("keydown", jQueryPrefix + key, () => observer.onNext({}));
       // TODO: should probably add shortcuts to all Ace editors
       // since they don't bubble up :(
