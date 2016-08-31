@@ -242,7 +242,7 @@ export class ProofTree implements IProofTree {
     );
     cSiblings.pop();
     // also, the current node should not overlap its siblings
-    let currentSiblings = [];
+    let currentSiblings: IProofTreeNode[][] = [];
     if (this.curNode instanceof GoalNode && this.curNode.hasParent()) {
       let curNodeSiblings = _(fromJust(this.curNode.getParent()).getViewChildren());
       currentSiblings = _.zip(
@@ -276,7 +276,7 @@ export class ProofTree implements IProofTree {
   }
 
   getAllGoals(): IGoalNode[] {
-    return [].concat(
+    return ([] as IGoalNode[]).concat(
       [this.rootNode],
       this.rootNode.getAllGoalDescendants()
     );
@@ -875,24 +875,18 @@ export class ProofTree implements IProofTree {
     let links = self.tree.links(nodes);
     // now remove all fake nodes
     nodes = _(nodes)
-      .filter(function(node) { return !(node instanceof FakeNode); })
+      .filter(node => !(node instanceof FakeNode))
       .value()
       ;
     links = _(links)
-      .filter(function(link) {
-        return !(link.source instanceof FakeNode || link.target instanceof FakeNode)
-      })
+      .filter(link => !(link.source instanceof FakeNode || link.target instanceof FakeNode))
       .value()
       ;
 
     // we build the foreignObject first, as its dimensions will guide the others
     let textSelection = self.textLayer
-      .selectAll(function() {
-        return this.getElementsByTagName("foreignObject");
-      })
-      .data(nodes, function(d) {
-        return d.id || (d.id = _.uniqueId());
-      })
+      .selectAll(function() { return this.getElementsByTagName("foreignObject"); })
+      .data(nodes, d => d.id || (d.id = _.uniqueId()))
       ;
 
     // Here we need select({}) because d3 transitions are exclusive and

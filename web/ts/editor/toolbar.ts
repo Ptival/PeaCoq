@@ -52,7 +52,11 @@ export function setupLoadFile(doc: ICoqDocument): Rx.Observable<string> {
     Rx.Observable
       .fromEvent<Event>(input, "change")
       .map((event) => {
-        let file = (<HTMLInputElement>input.get(0)).files[0];
+        const elt = <HTMLInputElement>input.get(0);
+        if (elt === null) { debugger; throw input; }
+        const files = elt.files;
+        if (files === null || files.length === 0) { debugger; throw input; }
+        let file = files[0];
         // necessary for change to fire upon reopening same file
         $(event.target).val("");
         return file;

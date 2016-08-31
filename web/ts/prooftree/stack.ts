@@ -20,6 +20,7 @@ export class ProofTreeStack implements IProofTreeStack {
 
   pop(): IProofTree {
     const t = this.proofTrees.shift();
+    if (t === undefined) { debugger; throw this; }
     this.removed$.onNext(t);
     return t;
   }

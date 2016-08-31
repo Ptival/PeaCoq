@@ -402,6 +402,7 @@ $(document).ready(() => {
   ).subscribe(([cmd, fbk]) => {
     // console.log(cmd, fbk);
     const stateId = cmd.controlCommand.queryOptions.sid;
+    if (stateId === undefined) { debugger; throw cmd; }
     const rawContext = fbk.feedbackContent.message;
     const sentence = doc.getSentenceByStateId(stateId);
 
@@ -712,9 +713,10 @@ export function onResize(doc: ICoqDocument): void {
   });
 }
 
+// TODO: use an AsyncSubject instead?
 function showProofTreePanel(): Promise<{}> {
   return new Promise(function(onFulfilled) {
-    const handler = function(event: W2UI.W2Event) {
+    const handler = function handler(event: W2UI.W2Event) {
       event.onComplete = onFulfilled;
       bottomLayout.off("show", handler);
     };

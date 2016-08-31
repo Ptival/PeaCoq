@@ -24,10 +24,10 @@ export function create(rawContext): PeaCoqContext {
 }
 
 export function getAllGoals(c: PeaCoqContext): IGoal[] {
-  return [].concat(
+  return ([] as PeaCoqContextElement[]).concat(
     c.fgGoals,
-    c.bgGoals.map(e => e.before),
-    c.bgGoals.map(e => e.after),
+    _.flatten(c.bgGoals.map(e => e.before)),
+    _.flatten(c.bgGoals.map(e => e.after)),
     c.shelvedGoals,
     c.givenUpGoals,
   ).map(e => e.goal);

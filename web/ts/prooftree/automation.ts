@@ -96,7 +96,7 @@ function tacticsToTry(e: PeaCoqContextElement): TacticGroup[] {
 
     makeGroup(
       "terminators",
-      [].concat(
+      ([] as string[]).concat(
         // (pt.goalIsReflexive() ? ["reflexivity"] : [])
         ["reflexivity"],
         [
@@ -132,7 +132,7 @@ function tacticsToTry(e: PeaCoqContextElement): TacticGroup[] {
 
     makeGroup(
       "simplification",
-      [].concat(
+      ([] as string[]).concat(
         ["simpl"],
         curHyps.map(h => `simpl in ${h}`),
         curHyps.length > 0 ? ["simpl in *"] : []
@@ -186,7 +186,7 @@ function tacticsToTry(e: PeaCoqContextElement): TacticGroup[] {
 
     makeGroup(
       "application",
-      [].concat(
+      ([] as string[]).concat(
         curNames.map(n => `apply ${n}`),
         curNames.map(n => `eapply ${n}`)
       )
@@ -194,7 +194,7 @@ function tacticsToTry(e: PeaCoqContextElement): TacticGroup[] {
 
     makeGroup(
       "rewriting",
-      [].concat(
+      ([] as string[]).concat(
         curNames.map(n => `rewrite -> {n}`),
         curNames.map(n => `rewrite <- {n}`),
       )

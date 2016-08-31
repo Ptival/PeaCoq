@@ -15,6 +15,6 @@ export function create(s: string): IMessageLevel {
     case "Info": return new Info();
     case "Notice": return new Notice();
     case "Warning": return new Warning();
-    default: debugger;
+    default: debugger; throw s;
   };
 }

@@ -126,7 +126,7 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
   getAllDescendants(): IProofTreeNode[] {
     let children: ITacticGroupNode[] = this.tacticGroups;
     let descendants: IProofTreeNode[] = _(children).map(c => c.getAllDescendants()).flatten<IProofTreeNode>().value();
-    return [].concat(children, descendants);
+    return ([] as IProofTreeNode[]).concat(children, descendants);
   }
 
   getAllGoalDescendants(): GoalNode[] {
@@ -155,9 +155,9 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
   }
 
   getGoalAncestors(): IGoalNode[] {
-    return this.getGrandParent().caseOf({
+    return this.getGrandParent().caseOf<IGoalNode[]>({
       nothing: () => [this],
-      just: gp => [].concat([this], gp.getGoalAncestors()),
+      just: gp => ([] as IGoalNode[]).concat([this], gp.getGoalAncestors()),
     });
   }
 

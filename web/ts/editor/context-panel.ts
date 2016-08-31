@@ -42,7 +42,7 @@ export class ContextPanel implements IContextPanel {
       _(c.fgGoals).map(g => g.goal.toString()).value().join("\n\n\n"), false
     );
     this.foreground.setCaptionSuffix("(" + c.fgGoals.length + ")");
-    const bgGoals = _(c.bgGoals).map((ba) => [].concat(ba.before, ba.after)).flatten().value();
+    const bgGoals = _(c.bgGoals).map((ba) => ([] as PeaCoqContextElement[]).concat(ba.before, ba.after)).flatten().value();
     this.background.setValue(
       _(c.bgGoals).map(ba =>
         _(ba.before).map(g => g.goal.toString()).value().join("\n\n\n")

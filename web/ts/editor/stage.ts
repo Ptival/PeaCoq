@@ -70,7 +70,7 @@ export class BeingProcessed implements IBeingProcessed {
 
 export class Processed implements IProcessed {
   private context: Promise<PeaCoqContext> | null;
-  private onFulfilled: (c: PeaCoqContext) => void | null;
+  private onFulfilled: ((c: PeaCoqContext) => void) | null;
   marker: ISentenceMarker;
   stateId: number;
 
@@ -112,6 +112,7 @@ export class Processed implements IProcessed {
     if (this.onFulfilled === null) {
       // someone else than getContext must have called PeaCoqGetContext
       debugger;
+      throw this;
     }
     this.onFulfilled(c);
   }

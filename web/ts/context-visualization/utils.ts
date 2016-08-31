@@ -33,7 +33,7 @@ export function replacePpCmd(
 ): PpCmds {
   let pos = findPpCmdSuchThat(l, match);
   if (pos < 0) { return l; }
-  return [].concat(
+  return ([] as PpCmds).concat(
     l.slice(0, pos),
     replace(l[pos]),
     l.slice(pos + 1)

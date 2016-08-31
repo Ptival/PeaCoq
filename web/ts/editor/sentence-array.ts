@@ -86,7 +86,7 @@ export class SentenceArray implements ISentenceArray {
   // }
 
   removeSentences(pred: (e: ISentence<any>) => boolean): void {
-    const removedSentences = [];
+    const removedSentences = ([] as ISentence<IStage>[]);
     _.remove(this.sentences, e => {
       const cond = pred(e);
       if (cond) { removedSentences.push(e); }

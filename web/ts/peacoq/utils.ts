@@ -210,11 +210,11 @@ function repeat(n: number, s: string): string {
 }
 
 function prefixes<T>(a: T[]): T[][] {
-  return _(a).reduce(
+  return _(a).reduce<T[][]>(
     (acc, elt) =>
       acc.length === 0
         ? [[elt]]
-        : [].concat(acc, [[].concat(_(acc).last(), elt)]),
+        : ([] as T[][]).concat(acc, [([] as T[]).concat(_(acc).last(), elt)]),
     []
   );
 }

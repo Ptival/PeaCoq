@@ -41,13 +41,13 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
   getAllDescendants(): IProofTreeNode[] {
     let children: IGoalNode[] = _(this.tactics).map(t => t.goals).flatten<IGoalNode>().value();
     let descendants: IProofTreeNode[] = _(children).map(c => c.getAllDescendants()).flatten<IProofTreeNode>().value();
-    return [].concat(children, descendants);
+    return ([] as IProofTreeNode[]).concat(children, descendants);
   }
 
   getAllGoalDescendants(): IGoalNode[] {
     let children: IGoalNode[] = _(this.tactics).map(t => t.goals).flatten<IGoalNode>().value();
     let descendants: IGoalNode[] = _(children).map(c => c.getAllGoalDescendants()).flatten<IGoalNode>().value();
-    return [].concat(children, descendants);
+    return ([] as IGoalNode[]).concat(children, descendants);
   }
 
   getFocusedChild(): Maybe<IGoalNode> {
