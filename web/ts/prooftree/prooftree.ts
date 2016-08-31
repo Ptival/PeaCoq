@@ -252,16 +252,22 @@ export class ProofTree implements IProofTree {
       currentSiblings.pop();
     }
     let siblings = _(gcSiblings.concat(cSiblings, currentSiblings));
+    // debugger;
     let yFactors = siblings
       .map(function(e) {
         let a = e[0], b = e[1];
         let yDistance = ProofTreeUtils.nodeY(b) - ProofTreeUtils.nodeY(a);
+        if (yDistance === 0) { debugger; return 1; }
         let wantedSpacing = ((a.getHeight() + b.getHeight()) / 2) + verticalSpacingBetweenNodes;
         return wantedSpacing / yDistance;
       })
       .value()
       ;
     this.yFactor = _.isEmpty(yFactors) ? this.height : _.max(yFactors);
+
+    // This has happened many times!!!
+    if (!Number.isFinite(this.xFactor)) { debugger; }
+    if (!Number.isFinite(this.yFactor)) { debugger; }
   }
 
   get curNode(): IGoalNode { return this._curNode; }
@@ -608,6 +614,7 @@ export class ProofTree implements IProofTree {
   onTextEnter(s: d3.Selection<IProofTreeNode>): void {
     let self = this;
     s
+      // .each(d => console.log("enter", d.id))
       .attr("x", function(d) { return d.getOriginalScaledX(); })
       .attr("y", function(d) { return d.getOriginalScaledY(); })
       .attr("width", function(d) { return d.getWidth(); })
@@ -919,6 +926,7 @@ export class ProofTree implements IProofTree {
           d.setHTMLElement(<HTMLElement><any>body);
           if (d instanceof GoalNode) { $(body).append(d.html); }
           if (d instanceof TacticGroupNode) { d.updateNode(); }
+          // $(body).prepend(d.id);
         });
       textEnter.attr("width", d => d.getWidth());
 
@@ -1010,9 +1018,17 @@ function mkDiagonal(cL, cR): d3.svg.Diagonal<d3.svg.diagonal.Link<d3.svg.diagona
     d3.svg
       .diagonal()
       .source((d: ProofTreeLink, i: number) => {
-        return ProofTreeUtils.swapXY(cR(d.source));
+        if (!Number.isFinite(d.source.x)) { debugger; }
+        if (!Number.isFinite(d.source.y)) { debugger; }
+        const centerRight = cR(d.source);
+        if (!Number.isFinite(centerRight.x)) { debugger; }
+        if (!Number.isFinite(centerRight.y)) { debugger; }
+        return ProofTreeUtils.swapXY(centerRight);
       })
       .target((d: ProofTreeLink, i: number) => {
+        if (!Number.isFinite(d.target.x)) { debugger; }
+        if (!Number.isFinite(d.target.y)) { debugger; }
+        // console.log("target", ProofTreeUtils.swapXY(cR(d.source)));
         return ProofTreeUtils.swapXY(cL(d.target));
       })
       .projection(function(d) { return [d.y, d.x]; })

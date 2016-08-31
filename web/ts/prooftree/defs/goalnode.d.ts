@@ -14,7 +14,7 @@ interface IGoalNode extends IProofTreeNode {
   getGoalAncestors(): IGoalNode[];
   getTactics(): ITactic[];
   getStateIds(): StateId[];
-  findOrCreateGroup(groupName: string): ITacticGroupNode;
+  // findOrCreateGroup(groupName: string): ITacticGroupNode;
   onChildSolved(sid: number): void;
   onSolved(sid: number): void;
   removeStateIds(sids: StateId[]): void;

@@ -38,28 +38,26 @@ export abstract class ProofTreeNode implements IProofTreeNode {
   }
 
   getOriginalScaledX(): number {
-    return this.getScaledX();
-    // let self = this;
-    // return this.getGoalAncestor().caseOf({
-    //   // the root needs to spawn somewhere arbitrary: (0, 0.5)
-    //   nothing: () => self.proofTree.xOffset(self),
-    //   // non-roots are spawned at their parent's (cX0, cY0)
-    //   // just: (p) => + $(p.body.parentElement).attr("x"),
-    //   just: (p) => self.getScaledX(),
-    // });
+    // return this.getScaledX();
+    return this.getGoalAncestor().caseOf({
+      // the root needs to spawn somewhere arbitrary: (0, 0.5)
+      nothing: () => this.proofTree.xOffset(this),
+      // non-roots are spawned at their parent's (cX0, cY0)
+      // just: (p) => + $(p.body.parentElement).attr("x"),
+      just: p => this.getScaledX(),
+    });
   }
 
   getOriginalScaledY(): number {
-    return this.getScaledY();
-    // let self = this;
-    // let tree = this.proofTree;
-    // return this.getGoalAncestor().caseOf({
-    //   // the root needs to spawn somewhere arbitrary: (0, 0.5)
-    //   nothing: () => 0.5 * tree.xOffset(self) + tree.yOffset(self),
-    //   // non-roots are spawned at their parent's (cX0, cY0)
-    //   // just: (p) => + $(p.body.parentElement).attr("y"),
-    //   just: (p) => self.getScaledY(),
-    // });
+    // return this.getScaledY();
+    let tree = this.proofTree;
+    return this.getGoalAncestor().caseOf({
+      // the root needs to spawn somewhere arbitrary: (0, 0.5)
+      nothing: () => 0.5 * tree.xOffset(this) + tree.yOffset(this),
+      // non-roots are spawned at their parent's (cX0, cY0)
+      // just: (p) => + $(p.body.parentElement).attr("y"),
+      just: (p) => this.getScaledY(),
+    });
   }
 
   abstract getParent(): Maybe<IProofTreeNode>;

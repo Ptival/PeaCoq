@@ -46,13 +46,16 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
   }
 
   addTactic(tacticName: string, groupName: string, context: PeaCoqContext, stateId: StateId): ITactic {
-    let tactic: Tactic = _.find(this.getTactics(), t => t.tactic === tacticName);
+    const found = _.find(this.getTactics(), t => t.tactic === tacticName);
+    if (found !== undefined) {
+      return found;
+    }
 
-    const tacticGroup: ITacticGroupNode = (
-      tactic
-        ? tactic.parentGroup
-        : new TacticGroupNode(this.proofTree, this, groupName)
-    );
+    let tacticGroup = _.find(this.tacticGroups, tg => tg.name === groupName);
+    if (tacticGroup === undefined) {
+      tacticGroup = new TacticGroupNode(this.proofTree, this, groupName);
+      this.tacticGroups.push(tacticGroup);
+    }
 
     /*
     We need to figure out which foreground goals are relevant to this tactic node.
@@ -84,31 +87,25 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
         )
         .value();
 
-    if (!tactic) {
-      this.tacticGroups.push(tacticGroup);
-      tactic = new Tactic(tacticName, tacticGroup, goalNodes);
-      tacticGroup.tactics.push(tactic);
-    } else {
-      tactic.goals = goalNodes;
-    }
-
-    return tactic;
+    const newTactic = new Tactic(tacticName, tacticGroup, goalNodes);
+    tacticGroup.tactics.push(newTactic);
+    return newTactic;
 
   }
 
   click(): void { return; }
 
-  findOrCreateGroup(groupName: string): ITacticGroupNode {
-    let found = <ITacticGroupNode | undefined>_(this.tacticGroups)
-      .find(function(tacticGroup) {
-        return tacticGroup.name === groupName;
-      });
-    if (found !== undefined) { return found; }
-    // else, create it
-    let groupNode = new TacticGroupNode(this.proofTree, this, groupName);
-    this.tacticGroups.push(groupNode);
-    return groupNode;
-  }
+  // findOrCreateGroup(groupName: string): ITacticGroupNode {
+  //   let found = <ITacticGroupNode | undefined>_(this.tacticGroups)
+  //     .find(function(tacticGroup) {
+  //       return tacticGroup.name === groupName;
+  //     });
+  //   if (found !== undefined) { return found; }
+  //   // else, create it
+  //   let groupNode = new TacticGroupNode(this.proofTree, this, groupName);
+  //   this.tacticGroups.push(groupNode);
+  //   return groupNode;
+  // }
 
   focus(): void {
     this.parentGroup.fmap(tg => {
