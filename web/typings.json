@@ -8,7 +8,7 @@
     "jquery": "registry:dt/jquery#1.10.0+20160704162008",
     "jquery.contextmenu": "registry:dt/jquery.contextmenu#1.7.0+20160705153350",
     "jss": "registry:dt/jss#0.6.0+20160315014830",
-    "lodash": "registry:dt/lodash#4.14.0+20160817155621",
+    "lodash": "registry:dt/lodash#4.14.0+20160830145422",
     "mathjax": "registry:dt/mathjax#0.0.0+20160317120654",
     "polymer-ts": "registry:dt/polymer-ts#0.1.25+20160404114553",
     "rx": "registry:dt/rx#0.0.0+20160317120654",
