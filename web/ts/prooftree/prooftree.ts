@@ -534,20 +534,21 @@ export class ProofTree implements IProofTree {
         //let src = swapXY(centerRight0(d.source));
         //let tgt = swapXY(centerLeft0(d.target));
         //return self.diagonal({ "source": src, "target": tgt });
-        return diagonal0({ "source": d.source, "target": d.target });
+        return currentDiagonal({ "source": d.source, "target": d.target });
       })
+      .style("opacity", 0)
       ;
   }
 
   onLinkExit(s: d3.Selection<ProofTreeLink>): void {
     s
       .transition()
-      // .attr("d", d => {
-      //   return d.source.getGoalAncestor().caseOf({
-      //     nothing: () => diagonal({ "source": d.source, "target": d.source }),
-      //     just: (g) => diagonal({ "source": g, "target": g })
-      //   });
-      // })
+      .attr("d", d => {
+        return d.source.getGoalAncestor().caseOf({
+          nothing: () => currentDiagonal({ "source": d.source, "target": d.source }),
+          just: (g) => currentDiagonal({ "source": g, "target": g })
+        });
+      })
       .style("opacity", "0")
       .remove()
       ;
@@ -559,7 +560,7 @@ export class ProofTree implements IProofTree {
       .transition()
       .style("opacity", 1)
       .attr("d", d => {
-        return diagonal({ "source": d.source, "target": d.target });
+        return destinationDiagonal({ "source": d.source, "target": d.target });
       })
       .attr("stroke-width", self.linkWidth.bind(self))
       ;
@@ -570,29 +571,30 @@ export class ProofTree implements IProofTree {
       .append("rect")
       .classed("goal", d => d instanceof GoalNode)
       .classed("tactic", d => d instanceof TacticGroupNode)
-      .attr("x", d => d.getOriginalScaledX())
-      .attr("y", d => d.getOriginalScaledY())
+      .attr("x", d => d.currentScaledX)
+      .attr("y", d => d.currentScaledY)
       .attr("width", d => d.getWidth())
       .attr("height", d => d.getHeight())
       .attr("rx", d => d instanceof GoalNode ? 0 : 10)
+      .style("opacity", 0)
       ;
   }
 
   onRectExit(s: d3.Selection<IProofTreeNode>): void {
     s
       .transition()
-      // .attr("x", function(d) {
-      //   return d.getGoalAncestor().caseOf({
-      //     nothing: () => d.getScaledX(),
-      //     just: gp => gp.getScaledX(),
-      //   });
-      // })
-      // .attr("y", function(d) {
-      //   return d.getGoalAncestor().caseOf({
-      //     nothing: () => d.getScaledY(),
-      //     just: gp => gp.getScaledY(),
-      //   });
-      // })
+      .attr("x", function(d) {
+        return d.getGoalAncestor().caseOf({
+          nothing: () => d.getDestinationScaledX(),
+          just: gp => gp.getDestinationScaledX(),
+        });
+      })
+      .attr("y", function(d) {
+        return d.getGoalAncestor().caseOf({
+          nothing: () => d.getDestinationScaledY(),
+          just: gp => gp.getDestinationScaledY(),
+        });
+      })
       .style("opacity", "0")
       .remove()
       ;
@@ -606,8 +608,9 @@ export class ProofTree implements IProofTree {
       .transition()
       .attr("width", function(d) { return d.getWidth(); })
       .attr("height", function(d) { return d.getHeight() / self.getCurrentScale(); })
-      .attr("x", function(d) { return d.getScaledX(); })
-      .attr("y", function(d) { return d.getScaledY(); })
+      .attr("x", function(d) { return d.getDestinationScaledX(); })
+      .attr("y", function(d) { return d.getDestinationScaledY(); })
+      .style("opacity", 1)
       ;
   }
 
@@ -615,28 +618,33 @@ export class ProofTree implements IProofTree {
     let self = this;
     s
       // .each(d => console.log("enter", d.id))
-      .attr("x", function(d) { return d.getOriginalScaledX(); })
-      .attr("y", function(d) { return d.getOriginalScaledY(); })
+      .attr("x", function(d) { return d.currentScaledX; })
+      .attr("y", function(d) { if (d.depth === 0) { console.log("update y", d.currentScaledY); } return d.currentScaledY; })
       .attr("width", function(d) { return d.getWidth(); })
       .attr("height", function(d) { return d.getHeight(); })
+      .style("opacity", 0)
       ;
   }
 
   onTextExit(s: d3.Selection<IProofTreeNode>): void {
     s
       .transition()
-      // .attr("x", function(d) {
-      //   return d.getGoalAncestor().caseOf({
-      //     nothing: () => d.getScaledX(),
-      //     just: gp => gp.getScaledX(),
-      //   });
-      // })
-      // .attr("y", function(d) {
-      //   return d.getGoalAncestor().caseOf({
-      //     nothing: () => d.getScaledY(),
-      //     just: gp => gp.getScaledY(),
-      //   });
-      // })
+      .attrTween("x", d => {
+        const destinationScaledX = d.getGoalAncestor().caseOf({
+          nothing: () => d.getDestinationScaledX(),
+          just: gp => gp.getDestinationScaledX(),
+        });
+        const interpolator = d3.interpolate(d.currentScaledX, destinationScaledX);
+        return t => { return d.currentScaledX = interpolator(t); };
+      })
+      .attrTween("y", d => {
+        const destinationScaledY = d.getGoalAncestor().caseOf({
+          nothing: () => d.getDestinationScaledY(),
+          just: gp => gp.getDestinationScaledY(),
+        });
+        const interpolator = d3.interpolate(d.currentScaledY, destinationScaledY);
+        return t => { return d.currentScaledY = interpolator(t); };
+      })
       .style("opacity", "0")
       .remove()
       ;
@@ -649,11 +657,18 @@ export class ProofTree implements IProofTree {
       })
       .transition()
       .style("opacity", "1")
-      .attr("x", function(d) { return d.getScaledX(); })
-      .attr("y", function(d) { return d.getScaledY(); })
+      .attrTween("x", (d, i, a) => {
+        const interpolator = d3.interpolate(d.currentScaledX, d.getDestinationScaledX());
+        return t => { return d.currentScaledX = interpolator(t); };
+      })
+      .attrTween("y", (d, i, a) => {
+        const interpolator = d3.interpolate(d.currentScaledY, d.getDestinationScaledY());
+        return t => { return d.currentScaledY = interpolator(t); };
+      })
       // the width must be updated (when resizing window horizontally)
       .attr("width", function(d) { return d.getWidth(); })
       .attr("height", function(d) { return d.getHeight(); })
+      .style("opacity", 1)
       .each("end", function() {
         // this is in "end" so that it does not trigger before nodes are positioned
         d3.select(this)
@@ -950,13 +965,13 @@ export class ProofTree implements IProofTree {
 
       self.viewportX = - (
         curNode.getParent().caseOf({
-          nothing: () => curNode.getScaledX(),
-          just: p => p.getScaledX(),
+          nothing: () => curNode.getDestinationScaledX(),
+          just: p => p.getDestinationScaledX(),
         })
       );
 
       self.viewportY = - (
-        curNode.getScaledY()
+        curNode.getDestinationScaledY()
         + curNode.getHeight() / 2
         - self.height / 2
       );
@@ -1035,5 +1050,5 @@ function mkDiagonal(cL, cR): d3.svg.Diagonal<d3.svg.diagonal.Link<d3.svg.diagona
   );
 }
 
-let diagonal0 = mkDiagonal(ProofTreeUtils.centerLeft0, ProofTreeUtils.centerRight0);
-let diagonal = mkDiagonal(ProofTreeUtils.centerLeft, ProofTreeUtils.centerRight);
+let currentDiagonal = mkDiagonal(ProofTreeUtils.currentCenterLeft, ProofTreeUtils.currentCenterRight);
+let destinationDiagonal = mkDiagonal(ProofTreeUtils.destinationCenterLeft, ProofTreeUtils.destinationCenterRight);

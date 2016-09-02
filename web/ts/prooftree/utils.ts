@@ -18,8 +18,8 @@
 function elmtRect(node: IProofTreeNode, elmt: HTMLElement) {
   let rect = elmt.getBoundingClientRect();
   let containerRect = $(elmt).parents("foreignObject")[0].getBoundingClientRect();
-  let left = node.getScaledX() + deltaX(containerRect, rect);
-  let top = node.getScaledY() + deltaY(containerRect, rect);
+  let left = node.getDestinationScaledX() + deltaX(containerRect, rect);
+  let top = node.getDestinationScaledY() + deltaY(containerRect, rect);
   return {
     "left": left, "right": left + rect.width, "width": rect.width,
     "top": top, "bottom": top + rect.height, "height": rect.height,
@@ -112,32 +112,28 @@ let centerLeftOffset = +10;
 
 let centerRightOffset = -10;
 
-export function centerLeft0(d: IProofTreeNode): XY {
-  return {
-    "x": d.getOriginalScaledX() + centerLeftOffset,
-    "y": d.getOriginalScaledY() + d.getHeight() / 2,
-  };
+function mkCenterLeft(x, y, h): XY {
+  return { x: x + centerLeftOffset, y: y + h/2 };
 }
 
-export function centerRight0(d: IProofTreeNode): XY {
-  return {
-    "x": d.getOriginalScaledX() + d.getWidth() + centerRightOffset,
-    "y": d.getOriginalScaledY() + d.getHeight() / 2,
-  };
+export function currentCenterLeft(d: IProofTreeNode): XY {
+  return mkCenterLeft(d.currentScaledX, d.currentScaledY, d.getHeight());
 }
 
-export function centerLeft(d: IProofTreeNode): XY {
-  return {
-    "x": d.getScaledX() + centerLeftOffset,
-    "y": d.getScaledY() + d.getHeight() / 2,
-  };
+export function destinationCenterLeft(d: IProofTreeNode): XY {
+  return mkCenterLeft(d.getDestinationScaledX(), d.getDestinationScaledY(), d.getHeight());
 }
 
-export function centerRight(d: IProofTreeNode): XY {
-  return {
-    "x": d.getScaledX() + d.getWidth() + centerRightOffset,
-    "y": d.getScaledY() + d.getHeight() / 2,
-  };
+function mkCenterRight(x, y, w, h): XY {
+  return { x: x + w + centerRightOffset, y: y + h/2 };
+}
+
+export function currentCenterRight(d: IProofTreeNode): XY {
+  return mkCenterRight(d.currentScaledX, d.currentScaledY, d.getWidth(), d.getHeight());
+}
+
+export function destinationCenterRight(d: IProofTreeNode): XY {
+  return mkCenterRight(d.getDestinationScaledX(), d.getDestinationScaledY(), d.getWidth(), d.getHeight());
 }
 
 /*
@@ -212,12 +208,12 @@ lines return an object of lists. Disabled for now.
   creates an empty rectangle in the same column as [node], at vertical position
   [currentY]
 */
-function emptyRect(node: IProofTreeNode, currentY: number): Rectangle {
+function destinationEmptyRect(node: IProofTreeNode, currentY: number): Rectangle {
   let delta = 1; // how big to make the empty rectangle
   return $.extend(
     {
-      "left": node.getScaledX(),
-      "right": node.getScaledX() + node.getWidth(),
+      "left": node.getDestinationScaledX(),
+      "right": node.getDestinationScaledX() + node.getWidth(),
       "width": node.getWidth()
     },
     {
@@ -228,12 +224,12 @@ function emptyRect(node: IProofTreeNode, currentY: number): Rectangle {
   );
 }
 
-function emptyRect0(node: IProofTreeNode, currentY: number): Rectangle {
+function currentEmptyRect(node: IProofTreeNode, currentY: number): Rectangle {
   let delta = 1; // how big to make the empty rectangle
   return $.extend(
     {
-      "left": node.getOriginalScaledX(),
-      "right": node.getOriginalScaledY() + node.getWidth(),
+      "left": node.currentScaledX,
+      "right": node.currentScaledY + node.getWidth(),
       "width": node.getWidth()
     },
     {

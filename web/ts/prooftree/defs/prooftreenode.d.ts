@@ -1,13 +1,14 @@
 interface IProofTreeNode {
-  //constructor(p: IProofTree, n: Maybe<IProofTreeNode>);
+  currentScaledX: number;
+  currentScaledY: number;
   depth: number;
   id: string;
   label: string;
   proofTree: IProofTree;
   x: number;
-  x0: number;
+  // x0: number;
   y: number;
-  y0: number;
+  // y0: number;
   focus(): void;
   getAllDescendants(): IProofTreeNode[];
   getAllGoalDescendants(): IGoalNode[];
@@ -15,11 +16,11 @@ interface IProofTreeNode {
   getGoalAncestor(): Maybe<IGoalNode>
   getHeight(): number;
   getHTMLElement(): HTMLElement;
-  getOriginalScaledX(): number;
-  getOriginalScaledY(): number;
+  // getOriginalScaledX(): number;
+  // getOriginalScaledY(): number;
   getParent(): Maybe<IProofTreeNode>;
-  getScaledX(): number;
-  getScaledY(): number;
+  getDestinationScaledX(): number;
+  getDestinationScaledY(): number;
   getViewChildren(): IProofTreeNode[];
   getViewGrandChildren(): IProofTreeNode[];
   getWidth(): number;
