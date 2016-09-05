@@ -274,7 +274,7 @@ export class ProofTree implements IProofTree {
   set curNode(n: IGoalNode) {
     if (n.id !== this._curNode.id) {
       // debugger;
-      console.log("Switching current node to", n);
+      // console.log("Switching current node to", n);
       this._curNode = n;
       n.focus();
       this.curNode$.onNext(n);
@@ -619,7 +619,7 @@ export class ProofTree implements IProofTree {
     s
       // .each(d => console.log("enter", d.id))
       .attr("x", function(d) { return d.currentScaledX; })
-      .attr("y", function(d) { if (d.depth === 0) { console.log("update y", d.currentScaledY); } return d.currentScaledY; })
+      .attr("y", function(d) { return d.currentScaledY; })
       .attr("width", function(d) { return d.getWidth(); })
       .attr("height", function(d) { return d.getHeight(); })
       .style("opacity", 0)
