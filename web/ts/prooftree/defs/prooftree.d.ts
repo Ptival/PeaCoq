@@ -1,6 +1,9 @@
 interface IProofTree {
   curNode: IGoalNode;
   curNode$: Rx.Observable<IGoalNode>;
+  cancelSubject: Rx.Subject<StateId>;
+  editor: AceAjax.Editor;
+  nextSubject: Rx.Subject<{}>;
   rootNode: IGoalNode;
   tacticWaiting: Maybe<string>;
   xFactor: number;

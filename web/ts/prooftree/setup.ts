@@ -2,8 +2,10 @@ import * as ProofTreeHandlers from "./prooftree-handlers";
 
 interface ProofTreeSetupInput {
   doc: ICoqDocument;
+  cancelSubject: Rx.Subject<StateId>;
   hideProofTreePanel: () => void;
   loadedFile$: Rx.Observable<{}>;
+  nextSubject: Rx.Subject<{}>;
   resize$: Rx.Observable<{}>;
   sentenceProcessed$: Rx.Observable<ISentence<IProcessed>>;
   showProofTreePanel: () => Promise<{}>;
@@ -13,8 +15,10 @@ interface ProofTreeSetupInput {
 export function setup(i: ProofTreeSetupInput): void {
   const {
     doc,
+    cancelSubject,
     hideProofTreePanel,
     loadedFile$,
+    nextSubject,
     resize$,
     sentenceProcessed$,
     showProofTreePanel,
@@ -55,7 +59,7 @@ export function setup(i: ProofTreeSetupInput): void {
     .subscribe(({ sentence, context }) => {
       ProofTreeHandlers.proofTreeOnEdit(
         doc, showProofTreePanel, hideProofTreePanelAndSignal,
-        sentence.query, sentence.stage.stateId, context
+        sentence.query, sentence.stage.stateId, context, nextSubject, cancelSubject
       );
     });
 

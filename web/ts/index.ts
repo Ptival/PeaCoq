@@ -221,6 +221,8 @@ $(document).ready(() => {
   const nextSubject = new Rx.ReplaySubject(1);
   userActionStreams.next$.subscribe(() => nextSubject.onNext({}));
 
+  const cancelSubject: Rx.Subject<StateId> = new Rx.ReplaySubject<StateId>(1);
+
   const sentencesToProcessStream = doc.nextSentence(nextSubject.asObservable());
 
   const sentenceToCancelBecausePrev$: Rx.Observable<ISentence<IStage>> =
@@ -237,12 +239,14 @@ $(document).ready(() => {
 
   const cancelBecausePrev$: CommandStream<any> =
     sentenceToCancelBecausePrev$
-      .flatMap(s => {
-        return s.getStateId().caseOf({
+      .flatMap(s =>
+        s.getStateId().caseOf({
           nothing: () => [],
-          just: sid => [Rx.Observable.just(new Command.Control(new ControlCommand.StmCancel([sid])))],
-        });
-      })
+          just: sid => [sid],
+        })
+      )
+      .merge(cancelSubject.asObservable())
+      .map(sid => Rx.Observable.just(new Command.Control(new ControlCommand.StmCancel([sid]))))
       .share();
 
   /*
@@ -686,8 +690,10 @@ $(document).ready(() => {
 
   ProofTreeSetup.setup({
     doc,
+    cancelSubject,
     hideProofTreePanel,
     loadedFile$: userActionStreams.loadedFile$,
+    nextSubject,
     resize$,
     sentenceProcessed$: doc.sentenceProcessed$,
     showProofTreePanel,

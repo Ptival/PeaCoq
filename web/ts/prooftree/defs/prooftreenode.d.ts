@@ -9,6 +9,7 @@ interface IProofTreeNode {
   // x0: number;
   y: number;
   // y0: number;
+  click(): void;
   focus(): void;
   getAllDescendants(): IProofTreeNode[];
   getAllGoalDescendants(): IGoalNode[];

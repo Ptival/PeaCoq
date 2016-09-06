@@ -22,7 +22,19 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
   }
 
   click() {
-    alert("TODO: click");
+    if (this.proofTree.isCurNodeAncestor(Strictly.Yes, this)) {
+      const stateId = _.min(this.proofTree.curNode.getStateIds());
+      if (stateId === undefined) { debugger; }
+      this.proofTree.cancelSubject.onNext(stateId);
+    }
+    this.getFocusedTactic().caseOf({
+      nothing: () => { debugger; },
+      just: t => {
+        this.proofTree.editor.execCommand("insertstring", ` ${t.tactic}`);
+        this.proofTree.nextSubject.onNext({});
+        this.proofTree.editor.execCommand("insertstring", "\n");
+      }
+    });
   }
 
   focus() {

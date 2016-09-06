@@ -54,7 +54,10 @@ export class ProofTree implements IProofTree {
     private height: number,
     parent: Maybe<ITacticGroupNode>,
     public context: PeaCoqContext,
-    public index: number
+    public index: number,
+    public editor: AceAjax.Editor,
+    public nextSubject: Rx.Subject<{}>,
+    public cancelSubject: Rx.Subject<StateId>
   ) {
     let self = this;
 
@@ -385,81 +388,78 @@ export class ProofTree implements IProofTree {
   }
 
   keydownHandler() {
-    //
-    // let ev: any = d3.event;
-    //
-    // // don't interact while typing
-    // if (ev.target.type === "textarea") { return; }
-    //
-    // var curNode = this.curNode;
-    //
-    // var children = curNode.getViewChildren();
-    //
-    // this.usingKeyboard = true;
-    //
-    // //console.log(d3.event.keyCode);
-    //
-    // switch (ev.keyCode) {
-    //
-    //   case 37: // Left
-    //     //case 65: // a
-    //     ev.preventDefault();
-    //     if (curNode.hasParent()) {
-    //       //asyncLog("LEFT " + nodeString(curNode.parent));
-    //       fromJust(curNode.getParent()).click();
-    //     } else {
-    //       // when at the root node, undo the last action (usually Proof.)
-    //       //onCtrlUp(false);
-    //     }
-    //     break;
-    //
-    //   case 39: // Right
-    //     //case 68: // d
-    //     ev.preventDefault();
-    //     curNode.getFocusedChild().fmap((dest) => {
-    //       //asyncLog("RIGHT " + nodeString(dest));
-    //       dest.click()
-    //     });
-    //     break;
-    //
-    //   case 38: // Up
-    //     //case 87: // w
-    //     ev.preventDefault();
-    //     if (ev.shiftKey) {
-    //       //this.shiftPrevGoal(curNode.getFocusedChild());
-    //     } else {
-    //       this.shiftPrevByTacticGroup(curNode);
-    //     }
-    //     break;
-    //
-    //   case 40: // Down
-    //     //case 83: // s
-    //     ev.preventDefault();
-    //     if (ev.shiftKey) {
-    //       //this.shiftNextGoal(curNode.getFocusedChild());
-    //     } else {
-    //       this.shiftNextByTacticGroup(curNode);
-    //     }
-    //     break;
-    //
-    //   case 219: // [
-    //     var focusedChild = curNode.getFocusedChild();
-    //     focusedChild.fmap((c) => (<TacticGroupNode>c).shiftPrevInGroup());
-    //     break;
-    //
-    //   case 221: // ]
-    //     var focusedChild = curNode.getFocusedChild();
-    //     focusedChild.fmap((c) => (<TacticGroupNode>c).shiftNextInGroup());
-    //     break;
-    //
-    //   default:
-    //     //console.log("Unhandled event", d3.event.keyCode);
-    //     return;
-    // }
-    //
-    // // EDIT: now that we integrate the proof tree, it's best to let stuff bubble up
-    // // if we haven't returned, we don't want the normal key behavior
-    // //d3.event.preventDefault();
+    const ev: any = d3.event;
+    // don't interact while typing
+    if (ev.target.type === "textarea") { return; }
+    const curNode = this.curNode;
+    const children = curNode.getViewChildren();
+    this.usingKeyboard = true;
+    //console.log(d3.event.keyCode);
+
+    switch (ev.keyCode) {
+
+      case 37: // Left
+        //case 65: // a
+        ev.preventDefault();
+        curNode.getParent().caseOf({
+          nothing: () => {
+            // when at the root node, undo the last action (usually Proof.)
+            //onCtrlUp(false);
+          },
+          just: parent => {
+            //asyncLog("LEFT " + nodeString(curNode.parent));
+            parent.click();
+          },
+        });
+        break;
+
+        case 39: // Right
+          //case 68: // d
+          ev.preventDefault();
+          curNode.getFocusedChild().fmap(dest => {
+            //asyncLog("RIGHT " + nodeString(dest));
+            dest.click();
+          });
+          break;
+
+      //   case 38: // Up
+      //     //case 87: // w
+      //     ev.preventDefault();
+      //     if (ev.shiftKey) {
+      //       //this.shiftPrevGoal(curNode.getFocusedChild());
+      //     } else {
+      //       this.shiftPrevByTacticGroup(curNode);
+      //     }
+      //     break;
+      //
+      //   case 40: // Down
+      //     //case 83: // s
+      //     ev.preventDefault();
+      //     if (ev.shiftKey) {
+      //       //this.shiftNextGoal(curNode.getFocusedChild());
+      //     } else {
+      //       this.shiftNextByTacticGroup(curNode);
+      //     }
+      //     break;
+      //
+      //   case 219: // [
+      //     var focusedChild = curNode.getFocusedChild();
+      //     focusedChild.fmap((c) => (<TacticGroupNode>c).shiftPrevInGroup());
+      //     break;
+      //
+      //   case 221: // ]
+      //     var focusedChild = curNode.getFocusedChild();
+      //     focusedChild.fmap((c) => (<TacticGroupNode>c).shiftNextInGroup());
+      //     break;
+
+      default:
+        console.log("Unhandled event", (d3.event as any).keyCode);
+        return;
+    }
+
+    // EDIT: now that we integrate the proof tree, it's best to let stuff bubble up
+    // if we haven't returned, we don't want the normal key behavior
+    // d3.event.preventDefault();
 
   }
 
