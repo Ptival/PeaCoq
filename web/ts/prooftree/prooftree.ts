@@ -59,10 +59,10 @@ export class ProofTree implements IProofTree {
     public nextSubject: Rx.Subject<{}>,
     public cancelSubject: Rx.Subject<StateId>
   ) {
-    let self = this;
-
     width = Math.max(0, width);
+    this.width = width;
     height = Math.max(0, height);
+    this.height = height;
 
     this.anchor = d3.select(anchor);
 
@@ -88,7 +88,7 @@ export class ProofTree implements IProofTree {
         // in order to trick d3 into displaying tactics better add fake
         // children to tactic nodes that solve their goal
         if (node instanceof TacticGroupNode && viewChildren.length === 0) {
-          return [new FakeNode(self, node)];
+          return [new FakeNode(this, node)];
         }
         return viewChildren;
       })
@@ -102,10 +102,10 @@ export class ProofTree implements IProofTree {
       ;
 
     d3.select("body")
-      .on("keydown", function() {
+      .on("keydown", () => {
         // capture events only if we are in proof mode
         if ($(":focus").length === 0) {
-          self.keydownHandler();
+          this.keydownHandler();
         }
       })
       ;
@@ -141,7 +141,7 @@ export class ProofTree implements IProofTree {
         .attr("id", "viewport") // for SVGPan.js
         .attr("class", "viewport")
         .attr("transform",
-        "translate(" + self.getGoalWidth() + ", 0)"
+        "translate(" + this.getGoalWidth() + ", 0)"
         )
       ;
 
@@ -257,7 +257,7 @@ export class ProofTree implements IProofTree {
     let siblings = _(gcSiblings.concat(cSiblings, currentSiblings));
     // debugger;
     let yFactors = siblings
-      .map(function(e) {
+      .map(e => {
         let a = e[0], b = e[1];
         let yDistance = ProofTreeUtils.nodeY(b) - ProofTreeUtils.nodeY(a);
         if (yDistance === 0) { debugger; return 1; }
@@ -583,18 +583,18 @@ export class ProofTree implements IProofTree {
   onRectExit(s: d3.Selection<IProofTreeNode>): void {
     s
       .transition()
-      .attr("x", function(d) {
-        return d.getGoalAncestor().caseOf({
+      .attr("x", d =>
+        d.getGoalAncestor().caseOf({
           nothing: () => d.getDestinationScaledX(),
           just: gp => gp.getDestinationScaledX(),
-        });
-      })
-      .attr("y", function(d) {
-        return d.getGoalAncestor().caseOf({
+        })
+      )
+      .attr("y", d =>
+        d.getGoalAncestor().caseOf({
           nothing: () => d.getDestinationScaledY(),
           just: gp => gp.getDestinationScaledY(),
-        });
-      })
+        })
+      )
       .style("opacity", "0")
       .remove()
       ;
@@ -603,13 +603,13 @@ export class ProofTree implements IProofTree {
   onRectUpdatePostMerge(s: d3.Selection<IProofTreeNode>): void {
     let self = this;
     s
-      .classed("currentnode", function(d) { return self.isCurNode(d); })
-      .classed("solved", function(d) { return d.isSolved(); })
+      .classed("currentnode", d => self.isCurNode(d))
+      .classed("solved", d => d.isSolved())
       .transition()
-      .attr("width", function(d) { return d.getWidth(); })
-      .attr("height", function(d) { return d.getHeight() / self.getCurrentScale(); })
-      .attr("x", function(d) { return d.getDestinationScaledX(); })
-      .attr("y", function(d) { return d.getDestinationScaledY(); })
+      .attr("width", d => d.getWidth())
+      .attr("height", d => d.getHeight() / self.getCurrentScale())
+      .attr("x", d => d.getDestinationScaledX())
+      .attr("y", d => d.getDestinationScaledY())
       .style("opacity", 1)
       ;
   }
@@ -618,10 +618,10 @@ export class ProofTree implements IProofTree {
     let self = this;
     s
       // .each(d => console.log("enter", d.id))
-      .attr("x", function(d) { return d.currentScaledX; })
-      .attr("y", function(d) { return d.currentScaledY; })
-      .attr("width", function(d) { return d.getWidth(); })
-      .attr("height", function(d) { return d.getHeight(); })
+      .attr("x", d => d.currentScaledX)
+      .attr("y", d => d.currentScaledY)
+      .attr("width", d => d.getWidth())
+      .attr("height", d => d.getHeight())
       .style("opacity", 0)
       ;
   }
@@ -646,15 +646,12 @@ export class ProofTree implements IProofTree {
         return t => { return d.currentScaledY = interpolator(t); };
       })
       .style("opacity", "0")
-      .remove()
-      ;
+      .remove();
   }
 
   onTextUpdatePostMerge(s: d3.Selection<IProofTreeNode>): void {
     s
-      .each(function(d) {
-        if (d instanceof TacticGroupNode) { d.updateNode(); }
-      })
+      .each(d =>  { if (d instanceof TacticGroupNode) { d.updateNode(); } })
       .transition()
       .style("opacity", "1")
       .attrTween("x", (d, i, a) => {
@@ -666,19 +663,17 @@ export class ProofTree implements IProofTree {
         return t => { return d.currentScaledY = interpolator(t); };
       })
       // the width must be updated (when resizing window horizontally)
-      .attr("width", function(d) { return d.getWidth(); })
-      .attr("height", function(d) { return d.getHeight(); })
+      .attr("width", d => d.getWidth())
+      .attr("height", d => d.getHeight())
       .style("opacity", 1)
-      .each("end", function() {
+      .each("end", function() { // binds `this`
         // this is in "end" so that it does not trigger before nodes are positioned
         d3.select(this)
-          .on("click", function(d) {
+          .on("click", d => {
             //asyncLog("CLICK " + nodeString(d));
             d.click();
-          })
-          ;
-      })
-      ;
+          });
+      });
   }
 
   processTactics(): Promise<any> {
@@ -863,21 +858,18 @@ export class ProofTree implements IProofTree {
 
   shiftPrevByTacticGroup(n: IGoalNode) {
     if (this.paused) { return; }
-    let self = this;
     if (n.isSolved()) { return; }
     if (n.tacticIndex > 0) {
       n.tacticIndex--;
       //asyncLog("UPGROUP " + nodeString(n.getViewChildren()[n.tacticIndex]));
-      self.update();
+      this.update();
     }
   }
 
   update(): Promise<{}> {
-    let self = this;
-    // debugger;
-    // console.log("UPDATE");
-    return new Promise(function(onFulfilled, onRejected) {
-      self.updatePromise(
+    console.trace();
+    return new Promise((onFulfilled, onRejected) => {
+      this.updatePromise(
         () => {
           // console.log("UPDATE: DONE");
           onFulfilled();
@@ -888,13 +880,12 @@ export class ProofTree implements IProofTree {
   }
 
   updatePromise<T>(onFulfilled: () => void, onRejected: () => void): void {
-    let self = this;
-    let curNode = self.curNode;
+    let curNode = this.curNode;
 
-    self.resetSVGTransform(); // cancel view transformations
+    this.resetSVGTransform(); // cancel view transformations
 
-    let nodes = self.tree.nodes(self.rootNode);
-    let links = self.tree.links(nodes);
+    let nodes = this.tree.nodes(this.rootNode);
+    let links = this.tree.links(nodes);
     // now remove all fake nodes
     nodes = _(nodes)
       .filter(node => !(node instanceof FakeNode))
@@ -906,8 +897,10 @@ export class ProofTree implements IProofTree {
       ;
 
     // we build the foreignObject first, as its dimensions will guide the others
-    let textSelection = self.textLayer
-      .selectAll(function() { return this.getElementsByTagName("foreignObject"); })
+    let textSelection = this.textLayer
+      .selectAll(function() { // binds `this`
+        return this.getElementsByTagName("foreignObject");
+      })
       .data(nodes, d => d.id || (d.id = _.uniqueId()))
       ;
 
@@ -918,8 +911,8 @@ export class ProofTree implements IProofTree {
     d3.select({}).transition().duration(animationDuration).each(() => {
 
       let textEnter = textSelection.enter().append("foreignObject");
-      let rectSelection = self.rectLayer.selectAll("rect").data(nodes, ProofTreeUtils.byNodeId);
-      let linkSelection = self.linkLayer.selectAll("path").data(links, ProofTreeUtils.byLinkId);
+      let rectSelection = this.rectLayer.selectAll("rect").data(nodes, ProofTreeUtils.byNodeId);
+      let linkSelection = this.linkLayer.selectAll("path").data(links, ProofTreeUtils.byLinkId);
 
       /*
       Here, we must rely on the DOM to compute the height of nodes, so
@@ -936,7 +929,7 @@ export class ProofTree implements IProofTree {
 
       textEnter
         .append("xhtml:body")
-        .each(function(d) {
+        .each(function(d) { // binds `this`
           let body = d3.select(this).node();
           d.setHTMLElement(<HTMLElement><any>body);
           if (d instanceof GoalNode) { $(body).append(d.html); }
@@ -946,41 +939,41 @@ export class ProofTree implements IProofTree {
       textEnter.attr("width", d => d.getWidth());
 
       // nodes now have a size, we can compute zooming factors
-      self.computeXYFactors();
+      this.computeXYFactors();
       // compute how much descendants must be moved to center current
-      self.computeDescendantsOffset();
+      this.computeDescendantsOffset();
 
-      self.onTextEnter(textEnter);
-      self.onRectEnter(rectSelection.enter());
-      self.onLinkEnter(linkSelection.enter());
+      this.onTextEnter(textEnter);
+      this.onRectEnter(rectSelection.enter());
+      this.onLinkEnter(linkSelection.enter());
 
-      self.onTextUpdatePostMerge(textSelection);
-      self.onRectUpdatePostMerge(rectSelection);
+      this.onTextUpdatePostMerge(textSelection);
+      this.onRectUpdatePostMerge(rectSelection);
 
-      self.onLinkUpdatePostMerge(linkSelection);
+      this.onLinkUpdatePostMerge(linkSelection);
 
-      self.onTextExit(textSelection.exit());
-      self.onRectExit(rectSelection.exit());
-      self.onLinkExit(linkSelection.exit());
+      this.onTextExit(textSelection.exit());
+      this.onRectExit(rectSelection.exit());
+      this.onLinkExit(linkSelection.exit());
 
-      self.viewportX = - (
+      this.viewportX = - (
         curNode.getParent().caseOf({
           nothing: () => curNode.getDestinationScaledX(),
           just: p => p.getDestinationScaledX(),
         })
       );
 
-      self.viewportY = - (
+      this.viewportY = - (
         curNode.getDestinationScaledY()
         + curNode.getHeight() / 2
-        - self.height / 2
+        - this.height / 2
       );
 
-      self.viewport
+      this.viewport
         .transition()
         .attr(
         "transform",
-        "translate(" + self.viewportX + ", " + self.viewportY + ")"
+        "translate(" + this.viewportX + ", " + this.viewportY + ")"
         );
 
     }).each("end", onFulfilled);

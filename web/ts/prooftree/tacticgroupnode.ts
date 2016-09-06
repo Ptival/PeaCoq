@@ -132,12 +132,11 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
   }
 
   onSolved(sid: number): void {
-    let self = this;
     this.proofTree.curNode = this.parentGoal;
     this.proofTree.update()
-      .then(function() {
+      .then(() => {
         // console.log("THEN");
-        self.parentGoal.onChildSolved(sid);
+        this.parentGoal.onChildSolved(sid);
       })
       ;
   }
