@@ -17,6 +17,8 @@ nixpkgs.stdenv.mkDerivation {
     ghc
     # ocaml # need 4.0.1 to work with camlp5
     # ocamlPackages.camlp5_6_strict
+    # ocamlPackages.lablgtk
+    # gnome3.gtk
     haskellPackages.zlib
     nodejs-5_x
     opam
