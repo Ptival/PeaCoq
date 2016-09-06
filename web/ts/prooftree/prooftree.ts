@@ -169,8 +169,6 @@ export class ProofTree implements IProofTree {
     node. it used to be at the top of the view, now it's centered.
   */
   computeDescendantsOffset() {
-
-    let self = this;
     let curNode = this.curNode;
 
     let centeredDescendant =
@@ -183,7 +181,7 @@ export class ProofTree implements IProofTree {
       });
 
     centeredDescendant.caseOf({
-      nothing: () => { self.descendantsOffset = 0; },
+      nothing: () => { this.descendantsOffset = 0; },
       just: d => {
         if (d instanceof GoalNode) {
           // computing the difference in height between the <hr> is not
@@ -333,13 +331,11 @@ export class ProofTree implements IProofTree {
   }
 
   isCurGoalChild(n: IProofTreeNode): boolean {
-    let self = this;
-    return n.hasParentSuchThat(p => self.isCurGoal(p));
+    return n.hasParentSuchThat(p => this.isCurGoal(p));
   }
 
   isCurGoalGrandChild(n: IProofTreeNode): boolean {
-    let self = this;
-    return n.hasParentSuchThat(p => self.isCurGoalChild(p));
+    return n.hasParentSuchThat(p => this.isCurGoalChild(p));
   }
 
   isCurNode(n: IProofTreeNode): boolean { return n.id === this.curNode.id; }
@@ -355,8 +351,7 @@ export class ProofTree implements IProofTree {
   }
 
   isCurNodeChild(n: IProofTreeNode): boolean {
-    let self = this;
-    return n.hasParentSuchThat(p => self.isCurNode(p));
+    return n.hasParentSuchThat(p => this.isCurNode(p));
   }
 
   isCurNodeDescendant(strictly: Strictly, n: IProofTreeNode): boolean {
@@ -370,12 +365,10 @@ export class ProofTree implements IProofTree {
   }
 
   isCurNodeGrandChild(n: IProofTreeNode): boolean {
-    let self = this;
-    return n.hasParentSuchThat(p => self.isCurNodeChild(p));
+    return n.hasParentSuchThat(p => this.isCurNodeChild(p));
   }
 
   isCurNodeParent(n: IProofTreeNode): boolean {
-    let self = this;
     return this.curNode.hasParentSuchThat(p => p.id === n.id);
   }
 
@@ -555,14 +548,13 @@ export class ProofTree implements IProofTree {
   }
 
   onLinkUpdatePostMerge(s: d3.Selection<ProofTreeLink>): void {
-    let self = this;
     s
       .transition()
       .style("opacity", 1)
       .attr("d", d => {
         return destinationDiagonal({ "source": d.source, "target": d.target });
       })
-      .attr("stroke-width", self.linkWidth.bind(self))
+      .attr("stroke-width", this.linkWidth.bind(this))
       ;
   }
 
@@ -601,13 +593,12 @@ export class ProofTree implements IProofTree {
   }
 
   onRectUpdatePostMerge(s: d3.Selection<IProofTreeNode>): void {
-    let self = this;
     s
-      .classed("currentnode", d => self.isCurNode(d))
+      .classed("currentnode", d => this.isCurNode(d))
       .classed("solved", d => d.isSolved())
       .transition()
       .attr("width", d => d.getWidth())
-      .attr("height", d => d.getHeight() / self.getCurrentScale())
+      .attr("height", d => d.getHeight() / this.getCurrentScale())
       .attr("x", d => d.getDestinationScaledX())
       .attr("y", d => d.getDestinationScaledY())
       .style("opacity", 1)
@@ -615,7 +606,6 @@ export class ProofTree implements IProofTree {
   }
 
   onTextEnter(s: d3.Selection<IProofTreeNode>): void {
-    let self = this;
     s
       // .each(d => console.log("enter", d.id))
       .attr("x", d => d.currentScaledX)
@@ -846,13 +836,12 @@ export class ProofTree implements IProofTree {
 
   shiftNextByTacticGroup(n: IGoalNode) {
     if (this.paused) { return; }
-    let self = this;
     if (n.isSolved()) { return; }
     let viewChildren = n.getViewChildren();
     if (n.tacticIndex + 1 < viewChildren.length) {
       n.tacticIndex++;
       //asyncLog("DOWNGROUP " + nodeString(viewChildren[n.tacticIndex]));
-      self.update();
+      this.update();
     }
   }
 
