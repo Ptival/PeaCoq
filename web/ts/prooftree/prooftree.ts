@@ -538,7 +538,7 @@ export class ProofTree implements IProofTree {
         //return self.diagonal({ "source": src, "target": tgt });
         return currentDiagonal({ "source": d.source, "target": d.target });
       })
-      .style("opacity", 0)
+      // .style("opacity", 0)
       ;
   }
 
@@ -551,7 +551,7 @@ export class ProofTree implements IProofTree {
           just: (g) => currentDiagonal({ "source": g, "target": g })
         });
       })
-      .style("opacity", "0")
+      // .style("opacity", "0")
       .remove()
       ;
   }
@@ -559,7 +559,7 @@ export class ProofTree implements IProofTree {
   onLinkUpdatePostMerge(s: d3.Selection<ProofTreeLink>): void {
     s
       .transition()
-      .style("opacity", 1)
+      // .style("opacity", 1)
       .attr("d", d => {
         return destinationDiagonal({ "source": d.source, "target": d.target });
       })
@@ -577,7 +577,7 @@ export class ProofTree implements IProofTree {
       .attr("width", d => d.getWidth())
       .attr("height", d => d.getHeight())
       .attr("rx", d => d instanceof GoalNode ? 0 : 10)
-      .style("opacity", 0)
+      // .style("opacity", 0)
       ;
   }
 
@@ -596,7 +596,7 @@ export class ProofTree implements IProofTree {
           just: gp => gp.getDestinationScaledY(),
         })
       )
-      .style("opacity", "0")
+      // .style("opacity", "0")
       .remove()
       ;
   }
@@ -607,10 +607,17 @@ export class ProofTree implements IProofTree {
       .classed("solved", d => d.isSolved())
       .transition()
       .attr("width", d => d.getWidth())
-      .attr("height", d => d.getHeight() / this.getCurrentScale())
-      .attr("x", d => d.getDestinationScaledX())
-      .attr("y", d => d.getDestinationScaledY())
-      .style("opacity", 1)
+      .attr("height", d => d.getHeight())
+      .attrTween("x", (d, i, a) => {
+        const interpolator = d3.interpolateRound(d.currentScaledX, d.getDestinationScaledX());
+        return t => { return d.currentScaledX = interpolator(t); };
+      })
+      .attrTween("y", (d, i, a) => {
+        const interpolator = d3.interpolateRound(d.currentScaledY, d.getDestinationScaledY());
+        return t => { return d.currentScaledY = interpolator(t); };
+      })
+      // .attr("y", d => d.getDestinationScaledY())
+      // .style("opacity", 1)
       ;
   }
 
@@ -621,7 +628,7 @@ export class ProofTree implements IProofTree {
       .attr("y", d => d.currentScaledY)
       .attr("width", d => d.getWidth())
       .attr("height", d => d.getHeight())
-      .style("opacity", 0)
+      // .style("opacity", 0)
       ;
   }
 
@@ -633,7 +640,7 @@ export class ProofTree implements IProofTree {
           nothing: () => d.getDestinationScaledX(),
           just: gp => gp.getDestinationScaledX(),
         });
-        const interpolator = d3.interpolate(d.currentScaledX, destinationScaledX);
+        const interpolator = d3.interpolateRound(d.currentScaledX, destinationScaledX);
         return t => { return d.currentScaledX = interpolator(t); };
       })
       .attrTween("y", d => {
@@ -641,30 +648,31 @@ export class ProofTree implements IProofTree {
           nothing: () => d.getDestinationScaledY(),
           just: gp => gp.getDestinationScaledY(),
         });
-        const interpolator = d3.interpolate(d.currentScaledY, destinationScaledY);
+        const interpolator = d3.interpolateRound(d.currentScaledY, destinationScaledY);
         return t => { return d.currentScaledY = interpolator(t); };
       })
-      .style("opacity", "0")
+      // .style("opacity", "0")
       .remove();
   }
 
   onTextUpdatePostMerge(s: d3.Selection<IProofTreeNode>): void {
     s
-      .each(d =>  { if (d instanceof TacticGroupNode) { d.updateNode(); } })
+      .each(d => { if (d instanceof TacticGroupNode) { d.updateNode(); } })
       .transition()
-      .style("opacity", "1")
+      // .style("opacity", "1")
+      // Note: we use attrTween to be able to update currentScaledX and currentScaledY
       .attrTween("x", (d, i, a) => {
-        const interpolator = d3.interpolate(d.currentScaledX, d.getDestinationScaledX());
+        const interpolator = d3.interpolateRound(d.currentScaledX, d.getDestinationScaledX());
         return t => { return d.currentScaledX = interpolator(t); };
       })
       .attrTween("y", (d, i, a) => {
-        const interpolator = d3.interpolate(d.currentScaledY, d.getDestinationScaledY());
+        const interpolator = d3.interpolateRound(d.currentScaledY, d.getDestinationScaledY());
         return t => { return d.currentScaledY = interpolator(t); };
       })
       // the width must be updated (when resizing window horizontally)
       .attr("width", d => d.getWidth())
       .attr("height", d => d.getHeight())
-      .style("opacity", 1)
+      // .style("opacity", 1)
       .each("end", function() { // binds `this`
         // this is in "end" so that it does not trigger before nodes are positioned
         d3.select(this)
