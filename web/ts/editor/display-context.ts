@@ -7,7 +7,7 @@ import { Strictly } from "../peacoq/strictly";
 export function setup(
   doc: ICoqDocument,
   sentenceToDisplay$: Rx.Observable<ISentence<IStage>>
-): Rx.Observable<Rx.Observable<Command.Control<ISertop.IControlCommand.IStmObserve>>> {
+): Rx.Observable<StmObserve$> {
 
   const editor = doc.editor;
 

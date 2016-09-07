@@ -16,27 +16,19 @@ export function controlCommand(
   return (s as Rx.Observable<any>).filter(i => i instanceof Command.Control);
 }
 
-export function stmAdd(
-  s: Rx.Observable<Command.Control<ISertop.IControlCommand>>
-): Rx.Observable<Command.Control<ControlCommand.StmAdd>> {
+export function stmAdd(s: ControlCommand$): StmAdd$ {
   return (s as Rx.Observable<Command.Control<any>>).filter(i => i.controlCommand instanceof ControlCommand.StmAdd);
 }
 
-export function stmCancel(
-  s: Rx.Observable<Command.Control<ISertop.IControlCommand>>
-): Rx.Observable<Command.Control<ControlCommand.StmCancel>> {
+export function stmCancel(s: ControlCommand$): StmCancel$ {
   return (s as Rx.Observable<Command.Control<any>>).filter(i => i.controlCommand instanceof ControlCommand.StmCancel);
 }
 
-export function stmEditAt(
-  s: Rx.Observable<Command.Control<ISertop.IControlCommand>>
-): Rx.Observable<Command.Control<ControlCommand.StmEditAt>> {
+export function stmEditAt(s: ControlCommand$): StmEditAt$ {
   return (s as Rx.Observable<Command.Control<any>>).filter(i => i.controlCommand instanceof ControlCommand.StmEditAt);
 }
 
-export function stmQuery(
-  s: Rx.Observable<Command.Control<ISertop.IControlCommand>>
-): Rx.Observable<Command.Control<ControlCommand.StmQuery>> {
+export function stmQuery(s: ControlCommand$): StmQuery$ {
   return (s as Rx.Observable<Command.Control<any>>).filter(i => i.controlCommand instanceof ControlCommand.StmQuery);
 }
 

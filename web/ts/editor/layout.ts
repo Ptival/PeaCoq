@@ -24,8 +24,8 @@ export function setup(): any {
   $().w2layout({
     name: bottomLayoutName,
     panels: [
-      { type: "main", overflow: "hidden", hidden: true, resizable: false, content: $("<div>", { id: "prooftree" }) },
-      { type: "bottom", overflow: "hidden", resizable: false, content: $("<div>", { id: "progress-bar", height: "100%", style: "background-color: red" }) },
+      { type: "main", size: 500, overflow: "hidden", hidden: true, resizable: false, content: $("<div>", { id: "prooftree" }) },
+      { type: "bottom", size: 20, overflow: "hidden", resizable: false, content: $("<div>", { id: "progress-bar", height: "100%" }) },
     ],
   });
 

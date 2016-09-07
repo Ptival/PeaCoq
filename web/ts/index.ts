@@ -1,20 +1,25 @@
 import * as Completion from "./editor/completion";
-import * as Context from "./editor/context";
+
 import * as Coq85 from "./editor/coq85";
 import { CoqDocument } from "./editor/coq-document";
 import { CoqtopPanel } from "./editor/coqtop-panel";
 import { ContextPanel } from "./editor/context-panel";
-import * as DisplayContext from "./editor/display-context";
+import { setup as setupDisplayContext } from "./editor/display-context";
 import * as Editor from "./editor/editor";
 import { isBefore } from "./editor/editor-utils";
-import { setupKeybindings } from "./editor/keybindings";
-import * as Layout from "./editor/layout";
+import * as FontSize from "./editor/font-size";
+import { setup as setupKeybindings } from "./editor/keybindings";
+import { setup as setupLayout, rightLayoutName } from "./editor/layout";
+import * as ObserveContext from "./editor/observe-context";
+import { setup as setupObserveCoqExn } from "./editor/observe-coqexn";
+import * as ObserveProcessed from "./editor/observe-processed";
 import { setupProgressBar } from "./editor/progress-bar";
-import * as SentenceToDisplay from "./editor/sentence-to-display";
+import { setup as setupSentenceToDisplay } from "./editor/sentence-to-display";
 import * as Stage from "./editor/stage";
 import { setupTextCursorPositionUpdate } from "./editor/text-cursor-position";
-import { pickFile, saveFile, setupLoadFile, setupToolbar, setupSaveFile } from "./editor/toolbar";
+import { setup as setupToolbar } from "./editor/toolbar";
 import * as UnderlineError from "./editor/underline-errors";
+import * as UserActions from "./editor/user-actions";
 import { setupUserInteractionForwardGoto } from "./editor/user-interaction-forward-goto";
 
 import * as DebugFlags from "./peacoq/debug-flags";
@@ -25,6 +30,7 @@ import { Strictly } from "./peacoq/strictly";
 import * as Theme from "./peacoq/theme";
 
 import * as ProofTreeAutomation from "./prooftree/automation";
+import { hide as hideProofTreePanel, show as showProofTreePanel } from "./prooftree/panel";
 import * as ProofTreePopulating from "./prooftree/populating";
 import * as ProofTreeSetup from "./prooftree/setup";
 
@@ -39,9 +45,7 @@ import * as QueryCommand from "./sertop/query-command";
 //   debugger;
 // });
 
-let fontSize = 16; // pixels
 const resizeBufferingTime = 250; // milliseconds
-
 const peaCoqGetContextRouteId = 1;
 
 $(document).ready(() => {
@@ -54,7 +58,7 @@ $(document).ready(() => {
     rightLayoutRenderedStream,
     rightLayoutResizeStream,
     windowResizeStream,
-  } = Layout.setup();
+  } = setupLayout();
 
   const resize$ =
     Rx.Observable.merge(windowResizeStream, layoutResizeStream, rightLayoutResizeStream)
@@ -75,15 +79,15 @@ $(document).ready(() => {
       const tabs: ITabs = <any>{};
       // top panes
       contextTabs.click("pretty");
-      doc.contextPanel = new ContextPanel(doc, Layout.rightLayoutName);
+      doc.contextPanel = new ContextPanel(doc, rightLayoutName);
       // TODO: stream this
-      updateFontSize(doc);
+      FontSize.update(doc);
       onFulfilled();
     });
   });
 
-  const sentenceToDisplay$ = SentenceToDisplay.setup(doc);
-  const stmObserve$ = DisplayContext.setup(doc, sentenceToDisplay$);
+  const sentenceToDisplay$ = setupSentenceToDisplay(doc);
+  const stmObserve$ = setupDisplayContext(doc, sentenceToDisplay$);
 
   // For now, if we don't remove the sentences immediately, when the user does
   // Next right after editing somewhere, the Next grabs the sentence after the
@@ -94,7 +98,7 @@ $(document).ready(() => {
   // Minor bug: this sends two Cancel commands when the user hits Enter
   // and Ace proceeds to insert a tabulation (these count as two changes)
   // The second Cancel is acknowledged by coqtop with no further action.
-  const cancelBecauseEditorChange$: Rx.Observable<Rx.Observable<Command.Control<ISertop.IControlCommand.IStmCancel>>> =
+  const cancelBecauseEditorChange$: Rx.Observable<StmCancel$> =
     doc.editorChange$
       .flatMap<ISentence<IStage>>(change =>
         doc.getSentenceAtPosition(minPos(change.start, change.end)).caseOf({
@@ -121,7 +125,7 @@ $(document).ready(() => {
 
   const toolbarStreams = setupToolbar(doc);
   const shortcutsStreams = setupKeybindings(doc);
-  const userActionStreams = setupUserActions(doc, toolbarStreams, shortcutsStreams);
+  const userActionStreams = UserActions.setup(doc, toolbarStreams, shortcutsStreams);
 
   userActionStreams.loadedFile$.subscribe(() => doc.contextPanel.clear());
 
@@ -166,10 +170,10 @@ $(document).ready(() => {
   Theme.afterChange$.subscribe(() => { rightLayout.refresh(); });
   Theme.afterChange$.subscribe(() => { bottomLayout.refresh(); });
 
-  const nextSubject = new Rx.ReplaySubject(1);
+  const nextSubject: Rx.ReplaySubject<{}> = new Rx.ReplaySubject(1);
   userActionStreams.next$.subscribe(() => nextSubject.onNext({}));
 
-  const cancelSubject: Rx.Subject<StateId> = new Rx.ReplaySubject<StateId>(1);
+  const cancelSubject: Rx.ReplaySubject<StateId> = new Rx.ReplaySubject<StateId>(1);
 
   const sentencesToProcessStream = doc.nextSentence(nextSubject.asObservable());
 
@@ -197,456 +201,400 @@ $(document).ready(() => {
       .map(sid => Rx.Observable.just(new Command.Control(new ControlCommand.StmCancel([sid]))))
       .share();
 
-  /*
-  Will have just(pos) when we are trying to reach some position, and
-  nothing() when we are not.
-  */
-  const forwardGoToSubject = new Rx.Subject<Maybe<AceAjax.Position>>();
-  forwardGoTo$.subscribe(o => forwardGoToSubject.onNext(just(o.destinationPos)));
+    /*
+    Will have just(pos) when we are trying to reach some position, and
+    nothing() when we are not.
+    */
+    const forwardGoToSubject: Rx.Subject<Maybe<AceAjax.Position>> = new Rx.Subject<Maybe<AceAjax.Position>>();
+    forwardGoTo$.subscribe(o => forwardGoToSubject.onNext(just(o.destinationPos)));
 
-  sentencesToProcessStream.subscribe(e => doc.moveCursorToPositionAndCenter(e.stopPosition));
+    sentencesToProcessStream.subscribe(e => doc.moveCursorToPositionAndCenter(e.stopPosition));
 
-  const addsToProcess$: CommandStream<ISertop.IControl<ISertop.IControlCommand.IStmAdd>> =
-    sentencesToProcessStream
-      .map(s => {
-        const command = new Command.Control(new ControlCommand.StmAdd({}, s.query, false));
-        s.commandTag = just(command.tag);
-        return Rx.Observable.just(command);
-      })
-      .share();
+    const addsToProcess$: CommandStream<ISertop.IControl<ISertop.IControlCommand.IStmAdd>> =
+      sentencesToProcessStream
+        .map(s => {
+          const command = new Command.Control(new ControlCommand.StmAdd({}, s.query, false));
+          s.commandTag = just(command.tag);
+          return Rx.Observable.just(command);
+        })
+        .share();
 
-  // TODO: I don't like how I pass queriesObserver to each edit stage, I should
-  // improve on this design
-  const peaCoqGetContext$ = new Rx.Subject<ISertop.IControl<ISertop.IControlCommand.IStmQuery>>();
+    // TODO: I don't like how I pass queriesObserver to each edit stage, I should
+    // improve on this design
+    const peaCoqGetContext$ = new Rx.Subject<ISertop.IControl<ISertop.IControlCommand.IStmQuery>>();
 
-  // Here are subjects for observables that react to coqtop output
-  const cancelBecauseErrorMsg$ = new Rx.Subject<CommandStreamItem<any>>();
-  const queryForTacticToTry$ = new Rx.Subject<CommandStreamItem<any>>();
+    // Here are subjects for observables that react to coqtop output
+    const cancelBecauseErrorMsg$: Rx.Subject<CommandStreamItem<any>> = new Rx.Subject<CommandStreamItem<any>>();
+    const queryForTacticToTry$: Rx.Subject<CommandStreamItem<any>> = new Rx.Subject<CommandStreamItem<any>>();
 
-  const quitBecauseFileLoaded$: CommandStream<any> =
-    userActionStreams.loadedFile$
-      .startWith({}) // quit upon loading the webpage
-      .map(({}) => Rx.Observable.just(new Command.Control(new ControlCommand.Quit())))
-      .share();
+    const quitBecauseFileLoaded$: CommandStream<any> =
+      userActionStreams.loadedFile$
+        .startWith({}) // quit upon loading the webpage
+        .map(({}) => Rx.Observable.just(new Command.Control(new ControlCommand.Quit())))
+        .share();
 
-  const inputsThatChangeErrorState$: CommandStream<any> =
-    Rx.Observable.merge<CommandStreamItem<any>>([
-      quitBecauseFileLoaded$,
-      addsToProcess$,
-      cancelBecauseEditorChange$,
-      cancelBecausePrev$,
-      cancelFromBackwardGoTo$,
-    ]);
+    const inputsThatChangeErrorState$: CommandStream<any> =
+      Rx.Observable.merge<CommandStreamItem<any>>([
+        quitBecauseFileLoaded$,
+        addsToProcess$,
+        cancelBecauseEditorChange$,
+        cancelBecausePrev$,
+        cancelFromBackwardGoTo$,
+      ]);
 
-  const coqtopInputs$: CommandStream<any> =
-    Rx.Observable.merge<CommandStreamItem<any>>([
-      inputsThatChangeErrorState$,
-      cancelBecauseErrorMsg$,
-      stmObserve$,
-      peaCoqGetContext$.map(i => Rx.Observable.just(i)),
-      queryForTacticToTry$,
-    ]);
+    const coqtopInputs$: CommandStream<any> =
+      Rx.Observable.merge<CommandStreamItem<any>>([
+        inputsThatChangeErrorState$,
+        cancelBecauseErrorMsg$,
+        stmObserve$,
+        peaCoqGetContext$.map(i => Rx.Observable.just(i)),
+        queryForTacticToTry$,
+      ]);
 
-  // Automated tasks need to stop whenever the user changes the current state
-  const stopAutomationRound$: Rx.Observable<{}> =
-    Rx.Observable.merge([
-      quitBecauseFileLoaded$.map(_ => ({})),
-      addsToProcess$.map(_ => ({})),
-      cancelBecauseEditorChange$,
-      cancelBecausePrev$,
-      cancelFromBackwardGoTo$,
-    ]);
+    // Automated tasks need to stop whenever the user changes the current state
+    const stopAutomationRound$: Rx.Observable<{}> =
+      Rx.Observable.merge([
+        quitBecauseFileLoaded$.map(_ => ({})),
+        addsToProcess$.map(_ => ({})),
+        cancelBecauseEditorChange$,
+        cancelBecausePrev$,
+        cancelFromBackwardGoTo$,
+      ]);
 
-  doc.editor.completers = [{ getCompletions: Completion.createGetCompletions(doc, stopAutomationRound$, nextSubject) }];
+    doc.editor.completers = [{ getCompletions: Completion.createGetCompletions(doc, stopAutomationRound$, nextSubject) }];
 
-  const flatCoqtopInputs$: Rx.ConnectableObservable<ISertop.ICommand> =
-    coqtopInputs$
-      // merge sequence of groups of commands into one sequence of commands
-      .concatMap(cmds => cmds
-      // .do(e => console.log("ELEMENT IN", e))
-      // .doOnCompleted(() => console.log("COMPLETED"))
-      )
-      //  .do(cmd => console.log("ELEMENT OUT", cmd))
-      .publish();
+    const flatCoqtopInputs$: Rx.ConnectableObservable<ISertop.ICommand> =
+      coqtopInputs$
+        // merge sequence of groups of commands into one sequence of commands
+        .concatMap(cmds => cmds
+        // .do(e => console.log("ELEMENT IN", e))
+        // .doOnCompleted(() => console.log("COMPLETED"))
+        )
+        //  .do(cmd => console.log("ELEMENT OUT", cmd))
+        .publish();
 
-  const stmAdd$: Rx.Observable<Command.Control<ControlCommand.StmAdd>> =
-    flatCoqtopInputs$
+    const stmAdd$: StmAdd$ =
+      flatCoqtopInputs$
+        .let(Filters.controlCommand)
+        .let(Filters.stmAdd);
+
+    const coqtopOutput$s = Sertop.setupCommunication(flatCoqtopInputs$);
+
+    flatCoqtopInputs$.connect();
+
+    const stmAddCounter$ =
+      Rx.Observable.merge([
+        stmAdd$.map(() => 1),
+        stmAdd$
+          .concatMap(a =>
+            coqtopOutput$s.answer$s.completed$.filter(c => c.cmdTag === a.tag).take(1)
+          )
+          .map(() => -1),
+        // flatCoqtopInputs$
+        //   .filter<Command.Control<any>>(i => i instanceof Command.Control)
+        //   .filter(i => i.controlCommand instanceof ControlCommand.Quit)
+        //   .map(() => 1),
+      ])
+        .scan((acc, elt) => acc + elt, 0);
+
+    // stmAddCounter$.subscribe(c => console.log("ADD COUNTER", c));
+
+    const stmCancel$ = flatCoqtopInputs$
       .let(Filters.controlCommand)
-      .let(Filters.stmAdd);
+      .let(Filters.stmCancel);
 
-  const coqtopOutput$s = Sertop.setupCommunication(flatCoqtopInputs$);
+    const stmCancelCounter$ =
+      Rx.Observable.merge([
+        stmCancel$
+          // .do(c => console.log("+1", c.controlCommand))
+          .map(() => 1),
+        stmCancel$
+          .concatMap(a =>
+            coqtopOutput$s.answer$s.completed$.filter(c => c.cmdTag === a.tag).take(1)
+          )
+          .map(() => -1),
+      ])
+        .scan((acc, elt) => acc + elt, 0);
 
-  flatCoqtopInputs$.connect();
+    stmCancelCounter$.subscribe(c => console.log("CANCEL COUNTER", c));
 
-  const stmAddCounter$ =
-    Rx.Observable.merge([
-      stmAdd$.map(() => 1),
-      stmAdd$
-        .concatMap(a =>
-          coqtopOutput$s.answer$s.completed$.filter(c => c.cmdTag === a.tag).take(1)
-        )
-        .map(() => -1),
-      // flatCoqtopInputs$
-      //   .filter<Command.Control<any>>(i => i instanceof Command.Control)
-      //   .filter(i => i.controlCommand instanceof ControlCommand.Quit)
-      //   .map(() => 1),
-    ])
-      .scan((acc, elt) => acc + elt, 0);
+    const stmEditAt$ = flatCoqtopInputs$
+      .let(Filters.controlCommand)
+      .let(Filters.stmEditAt);
 
-  // stmAddCounter$.subscribe(c => console.log("ADD COUNTER", c));
+    const stmEditAtCounter$ =
+      Rx.Observable.merge([
+        stmEditAt$
+          // .do(c => console.log("+1", c.controlCommand))
+          .map(() => 1),
+        stmEditAt$
+          .concatMap(a =>
+            coqtopOutput$s.answer$s.completed$.filter(c => c.cmdTag === a.tag).take(1)
+          )
+          // .do(c => console.log("-1", c))
+          .map(() => -1),
+      ])
+        .scan((acc, elt) => acc + elt, 0);
 
-  const stmCancel$ = flatCoqtopInputs$
-    .let(Filters.controlCommand)
-    .let(Filters.stmCancel);
+    // stmEditAtCounter$.subscribe(c => console.log("EDITAT COUNTER", c));
 
-  const stmCancelCounter$ =
-    Rx.Observable.merge([
-      stmCancel$
-        // .do(c => console.log("+1", c.controlCommand))
-        .map(() => 1),
-      stmCancel$
-        .concatMap(a =>
-          coqtopOutput$s.answer$s.completed$.filter(c => c.cmdTag === a.tag).take(1)
-        )
-        .map(() => -1),
-    ])
-      .scan((acc, elt) => acc + elt, 0);
+    const stmActionsInFlightCounter$: Rx.Observable<number> =
+      Rx.Observable.combineLatest(
+        stmAddCounter$.startWith(0),
+        stmCancelCounter$.startWith(0),
+        stmEditAtCounter$.startWith(0),
+        (x, y, z) => x + y + z
+      );
 
-  // stmCancelCounter$.subscribe(c => console.log("CANCEL COUNTER", c));
+    // stmActionsInFlightCounter$.subscribe(c => console.log("COUNT", c));
 
-  const stmEditAt$ = flatCoqtopInputs$
-    .let(Filters.controlCommand)
-    .let(Filters.stmEditAt);
-
-  const stmEditAtCounter$ =
-    Rx.Observable.merge([
-      stmEditAt$
-        // .do(c => console.log("+1", c.controlCommand))
-        .map(() => 1),
-      stmEditAt$
-        .concatMap(a =>
-          coqtopOutput$s.answer$s.completed$.filter(c => c.cmdTag === a.tag).take(1)
-        )
-        // .do(c => console.log("-1", c))
-        .map(() => -1),
-    ])
-      .scan((acc, elt) => acc + elt, 0);
-
-  // stmEditAtCounter$.subscribe(c => console.log("EDITAT COUNTER", c));
-
-  const stmActionsInFlightCounter$: Rx.Observable<number> =
-    Rx.Observable.combineLatest(
-      stmAddCounter$.startWith(0),
-      stmCancelCounter$.startWith(0),
-      stmEditAtCounter$.startWith(0),
-      (x, y, z) => x + y + z
+    ObserveContext.setup(
+      doc,
+      peaCoqGetContextRouteId,
+      peaCoqGetContext$,
+      coqtopOutput$s.feedback$s.message$s.notice$
     );
 
-  // stmActionsInFlightCounter$.subscribe(c => console.log("COUNT", c));
-
-  /*
-  Feedback comes back untagged, so need the zip to keep track of the relationship
-  between input PeaCoqGetContext and the output context...
-  */
-  Rx.Observable.zip(
-    peaCoqGetContext$,
-    coqtopOutput$s.feedback$s.message$s.notice$.filter(m => m.routeId === peaCoqGetContextRouteId)
-  ).subscribe(([cmd, fbk]) => {
-    // console.log(cmd, fbk);
-    const stateId = cmd.controlCommand.queryOptions.sid;
-    if (stateId === undefined) { debugger; throw cmd; }
-    const rawContext = fbk.feedbackContent.message;
-    const sentence = doc.getSentenceByStateId(stateId);
-
-    sentence.caseOf<void>({
-      nothing: () => { },
-      just: sentence => {
-
-        if (!(sentence.stage instanceof Stage.Processed)) { debugger; }
-        const stage: IProcessed = <any>sentence.stage;
-
-        if (DebugFlags.rawPeaCoqContext) { console.log(rawContext); }
-        if (rawContext.length === 0) {
-          stage.setContext(emptyContext);
-        } else {
-          const context = Context.create(rawContext);
-          stage.setContext(context);
-        }
-
-      }
-    })
-  });
-
-  ProofTreeAutomation.setup({
-    stmActionsInFlightCounter$,
-    completed$: coqtopOutput$s.answer$s.completed$,
-    doc,
-    error$: coqtopOutput$s.feedback$s.message$s.error$,
-    notice$: coqtopOutput$s.feedback$s.message$s.notice$,
-    queryForTacticToTry$,
-    stmAdded$: coqtopOutput$s.answer$s.stmAdded$,
-    stopAutomationRound$,
-    debouncedTip$: doc.debouncedTip$,
-    tip$: doc.tip$,
-  });
-
-  ProofTreePopulating.setup(doc, doc.tip$);
-
-  coqtopOutput$s.answer$s.stmAdded$.subscribe(a => {
-    // console.log("STM ADDED", a);
-    const allSentences = doc.getSentencesToProcess();
-    const sentence = _(allSentences).find(e => isJust(e.commandTag) && fromJust(e.commandTag) === a.cmdTag);
-    if (!sentence) { return; } // this happens for a number of reasons...
-    const newStage = new Stage.BeingProcessed(sentence.stage, a.answer.stateId);
-    sentence.setStage(newStage);
-  });
-
-  const nextBecauseGoTo$ = setupUserInteractionForwardGoto(
-    doc,
-    forwardGoTo$.map(goto => goto.destinationPos),
-    coqtopOutput$s.feedback$s.message$s.error$
-  );
-
-  nextBecauseGoTo$
-    .delay(0) // this is needed to set up the feedback loop properly
-    .subscribe(() => nextSubject.onNext({}));
-
-  coqtopOutput$s.feedback$s.processed$
-    .subscribe(f => {
-      // console.log("PROCESSED", f);
-      switch (f.editOrState) {
-        case EditOrState.State:
-          const stateId = f.editOrStateId;
-          const editsBeingProcessed = doc.getSentencesBeingProcessed();
-          const sentence = _(editsBeingProcessed).find(e => e.stage.stateId === stateId);
-          if (sentence) {
-            const newStage = new Stage.Processed(sentence.stage, peaCoqGetContext$);
-            sentence.setStage(newStage);
-            // if (
-            //   Global.coqDocument.getSentencesToProcess().length === 0
-            //   && Global.coqDocument.getSentencesBeingProcessed().length === 0
-            // ) {
-            //   Global.coqDocument.moveCursorToPositionAndCenter(sentence.stopPosition);
-            // }
-          } else {
-            // this can happen for two reasons:
-            // - when reloading
-            // - when some sentence fails, we sometimes get processed messages for later sentences
-            // debugger;
-          }
-          break;
-        default:
-          debugger; // not sure this ever happens
-      }
+    ProofTreeAutomation.setup({
+      stmActionsInFlightCounter$,
+      completed$: coqtopOutput$s.answer$s.completed$,
+      doc,
+      error$: coqtopOutput$s.feedback$s.message$s.error$,
+      notice$: coqtopOutput$s.feedback$s.message$s.notice$,
+      queryForTacticToTry$,
+      stmAdded$: coqtopOutput$s.answer$s.stmAdded$,
+      stopAutomationRound$,
+      debouncedTip$: doc.debouncedTip$,
+      tip$: doc.tip$,
     });
 
-  const stmCanceledFiltered$ = new Rx.Subject<ISertop.IAnswer<ISertop.IStmCanceled>>();
+    ProofTreePopulating.setup(doc, doc.tip$);
 
-  // Now that we pre-emptively removed sentences from the view before they are
-  // acknowledged by the backend, checking which StmCanceled were caused by
-  // PeaCoq's automation is more complex than checking if the removed stateIds
-  // match a sentence in the document.
-  stmCancel$
-    // .filter(c => !c.controlCommand.fromAutomation)
-    .flatMap(c =>
-      coqtopOutput$s.answer$s.stmCanceled$.filter(e => e.cmdTag === c.tag)
-    )
-    .subscribe(a => {
-      const removedStateIds = a.answer.stateIds;
-      stmCanceledFiltered$.onNext(a);
-      doc.removeSentencesByStateIds(removedStateIds);
-      const tip = _.maxBy(doc.getAllSentences(), s => s.sentenceId);
-      doc.setTip(tip ? just(tip) : nothing());
+    coqtopOutput$s.answer$s.stmAdded$.subscribe(a => {
+      // console.log("STM ADDED", a);
+      const allSentences = doc.getSentencesToProcess();
+      const sentence = _(allSentences).find(e => isJust(e.commandTag) && fromJust(e.commandTag) === a.cmdTag);
+      if (!sentence) { return; } // this happens for a number of reasons...
+      const newStage = new Stage.BeingProcessed(sentence.stage, a.answer.stateId);
+      sentence.setStage(newStage);
     });
 
-  // NOTE: CoqExn is pretty useless in indicating which command failed
-  // Feedback.ErrorMsg gives the failed state ID
-  // NOTE2: Except when the command fails wihtout a state ID! For instance
-  // if you "Require Import Nonsense." So need both?
-  coqtopOutput$s.feedback$s.message$s.error$.subscribe(e => {
-    switch (e.editOrState) {
-      case EditOrState.Edit: return;
-      case EditOrState.State:
-        // We have to send a Cancel message so that the next Add acts on the
-        // currently-valid state, rather than on the state that failed
-        const cancel = new Command.Control(new ControlCommand.StmCancel([e.editOrStateId]));
-        cancelBecauseErrorMsg$.onNext(Rx.Observable.just(cancel));
-        break;
-      default: debugger;
-    }
-  });
-
-  // keep this above the subscription that removes edits
-  UnderlineError.setup(
-    doc,
-    coqtopOutput$s.feedback$s.message$s.error$,
-    Rx.Observable.merge([
-      inputsThatChangeErrorState$
-    ])
-  );
-
-  // keep this above the subscription that removes edits
-  new CoqtopPanel(
-    $(w2ui[Layout.rightLayoutName].get("bottom").content),
-    Rx.Observable.merge(
-
+    const nextBecauseGoTo$ = setupUserInteractionForwardGoto(
+      doc,
+      forwardGoTo$.map(goto => goto.destinationPos),
       coqtopOutput$s.feedback$s.message$s.error$
-        .filter(e => e.editOrState === EditOrState.State)
-        // due to sending sentences fast, we receive errors for states beyond
-        // another failed state. reporting those looks spurious to the user.
-        .filter(e => isJust(doc.getSentenceByStateId(e.editOrStateId)))
-        .map(e => ({
-          message: e.feedbackContent.message,
-          level: PeaCoqMessageLevel.Danger,
-        })),
+    );
 
-      coqtopOutput$s.feedback$s.message$s.error$
-        .filter(e => e.editOrState === EditOrState.Edit)
-        .map(e => ({
-          message: e.feedbackContent.message,
-          level: PeaCoqMessageLevel.Danger,
-        })),
+    nextBecauseGoTo$
+      .delay(0) // this is needed to set up the feedback loop properly
+      .subscribe(() => nextSubject.onNext({}));
 
-      coqtopOutput$s.feedback$s.message$s.notice$
-        .filter(e => e.routeId === 0) // other routes are used by PeaCoq
-        .map(e => ({
-          message: e.feedbackContent.message,
-          level: PeaCoqMessageLevel.Success,
-        }))
+    ObserveProcessed.setup(
+      doc,
+      peaCoqGetContext$,
+      coqtopOutput$s.feedback$s.processed$
+    );
 
-    ),
-    userActionStreams.loadedFile$
-  );
+    const stmCanceledFiltered$ = new Rx.Subject<ISertop.IAnswer<ISertop.IStmCanceled>>();
 
-  // This used to be simply:
-  // - subscribe to coqExn$
-  // - remove sentences whose cmdTag >= exn.cmdTag
-  // But this won't work with automation, because sometimes a sentence
-  // is created in the middle of an automation round, and some
-  // automation sentences will have a low cmdTag and raise a CoqExn.
-  // We must track provenance of the CoqExn and only remove sentences
-  // when it happened because of user action.
-
-  const stmQuery$ =
-    flatCoqtopInputs$
-      .let(Filters.controlCommand)
-      .let(Filters.stmQuery);
-
-  // keep this under subscribers who need the edit to exist
-  Rx.Observable.merge(
-    // Assuming `CoqExn`s occur after `StmAdd` and `StmQuery` only.
-    stmAdd$
-      .filter(a => !a.controlCommand.fromAutomation)
-      .flatMap(a =>
-        coqtopOutput$s.answer$s.coqExn$.filter(e => e.cmdTag === a.tag)
-          .take(1).takeUntil(coqtopOutput$s.answer$s.completed$.filter(c => c.cmdTag === a.tag))
-      ),
-    stmQuery$
-      .filter(a => !a.controlCommand.fromAutomation)
-      .flatMap(a =>
-        coqtopOutput$s.answer$s.coqExn$.filter(e => e.cmdTag === a.tag)
-          .take(1).takeUntil(coqtopOutput$s.answer$s.completed$.filter(c => c.cmdTag === a.tag))
+    // Now that we pre-emptively removed sentences from the view before they are
+    // acknowledged by the backend, checking which StmCanceled were caused by
+    // PeaCoq's automation is more complex than checking if the removed stateIds
+    // match a sentence in the document.
+    stmCancel$
+      // .filter(c => !c.controlCommand.fromAutomation)
+      .flatMap(c =>
+        coqtopOutput$s.answer$s.stmCanceled$.filter(e => e.cmdTag === c.tag)
       )
-  ).subscribe(e => {
-    // debugger;
-    doc.removeSentences(s => s.commandTag.caseOf({
-      nothing: () => false,
-      just: t => +t >= +e.cmdTag,
-    }));
-  });
+      .subscribe(a => {
+        const removedStateIds = a.answer.stateIds;
+        stmCanceledFiltered$.onNext(a);
+        doc.removeSentencesByStateIds(removedStateIds);
+        const tip = _.maxBy(doc.getAllSentences(), s => s.sentenceId);
+        doc.setTip(tip ? just(tip) : nothing());
+      });
 
-  // keep this under subscribers who need the edit to exist
-  coqtopOutput$s.feedback$s.message$s.error$.subscribe(e => {
-    switch (e.editOrState) {
-      case EditOrState.Edit: return;
-      case EditOrState.State:
-        const failedStateId = e.editOrStateId;
-        const failedSentence = doc.getSentenceByStateId(failedStateId);
-        failedSentence.caseOf({
-          nothing: () => {
-            // This happens when commands fail before producing a state
-          },
-          just: s => doc.removeSentences(e => e.sentenceId >= s.sentenceId),
-        });
-        break;
-      default: debugger;
-    }
-  });
+    // NOTE: CoqExn is pretty useless in indicating which command failed
+    // Feedback.ErrorMsg gives the failed state ID
+    // NOTE2: Except when the command fails wihtout a state ID! For instance
+    // if you "Require Import Nonsense." So need both?
+    coqtopOutput$s.feedback$s.message$s.error$.subscribe(e => {
+      switch (e.editOrState) {
+        case EditOrState.Edit: return;
+        case EditOrState.State:
+          // We have to send a Cancel message so that the next Add acts on the
+          // currently-valid state, rather than on the state that failed
+          const cancel = new Command.Control(new ControlCommand.StmCancel([e.editOrStateId]));
+          cancelBecauseErrorMsg$.onNext(Rx.Observable.just(cancel));
+          break;
+        default: debugger;
+      }
+    });
 
-  // debugging
-  coqtopOutput$s.answer$s.coqExn$
-    .filter(e => e.answer.getMessage().indexOf("Anomaly") >= 0)
-    .subscribe(e => { debugger; });
+    // keep this above the subscription that removes edits
+    UnderlineError.setup(
+      doc,
+      coqtopOutput$s.feedback$s.message$s.error$,
+      Rx.Observable.merge([
+        inputsThatChangeErrorState$
+      ])
+    );
 
-  // const editorError$: Rx.Observable<IEditorError> =
-  //   coqtopOutput$s.valueFail$
-  //     .map(vf => pimpMyError(vf))
-  //     .share();
-  //
-  // editorError$.subscribe(ee =>
-  //   Global.coqDocument.removeEditAndFollowingOnes(ee.failedEdit)
-  // );
-  //
-  // new CoqtopPanel(
-  //   $(w2ui[rightLayoutName].get("bottom").content),
-  //   coqtopOutput$s.feedback$s.errorMsg$,
-  //   coqtopOutput$s.message$
-  // );
+    // keep this above the subscription that removes edits
+    new CoqtopPanel(
+      $(w2ui[rightLayoutName].get("bottom").content),
+      Rx.Observable.merge(
 
-  // editorError$.subscribe(ee => ee.range.fmap(range =>
-  //   Global.coqDocument.markError(range)
-  // ));
+        coqtopOutput$s.feedback$s.message$s.error$
+          .filter(e => e.editOrState === EditOrState.State)
+          // due to sending sentences fast, we receive errors for states beyond
+          // another failed state. reporting those looks spurious to the user.
+          .filter(e => isJust(doc.getSentenceByStateId(e.editOrStateId)))
+          .map(e => ({
+            message: e.feedbackContent.message,
+            level: PeaCoqMessageLevel.Danger,
+          })),
 
-  // editorError$.subscribe(ee =>
-  //   // so, apparently we won't receive feedbacks for the edits before this one
-  //   // so we need to mark them all processed...
-  //   _(Global.coqDocument.getSentencesBeingProcessed())
-  //     // ASSUMPTION: state IDs are assigned monotonically
-  //     .filter(e => e.stage.stateId < ee.error.stateId)
-  //     .each(_ => { debugger; })
-  //     .each(e => e.setStage(new Sentence.Processed(e.stage, queriesObserver)))
-  // );
+        coqtopOutput$s.feedback$s.message$s.error$
+          .filter(e => e.editOrState === EditOrState.Edit)
+          .map(e => ({
+            message: e.feedbackContent.message,
+            level: PeaCoqMessageLevel.Danger,
+          })),
 
-  // setupTextCursorPositionUpdate(
-  //   Global.coqDocument.edits.editProcessed$,
-  //   editorError$,
-  //   previousEditToReach$,
-  //   editsToProcessStream
-  // );
+        coqtopOutput$s.feedback$s.message$s.notice$
+          .filter(e => e.routeId === 0) // other routes are used by PeaCoq
+          .map(e => ({
+            message: e.feedbackContent.message,
+            level: PeaCoqMessageLevel.Success,
+          }))
 
-  // coqtopOutput$s.valueGood$s.editAt$
-  //   .subscribe(r => {
-  //     const processedEdits = Global.coqDocument.getProcessedEdits();
-  //     const firstEditAfter =
-  //       _(processedEdits).find(e => e.stage.stateId > (<CoqtopInput.EditAt>r.input).stateId);
-  //     if (firstEditAfter) {
-  //       Global.coqDocument.removeEditAndFollowingOnes(firstEditAfter);
-  //     }
-  //   });
+      ),
+      userActionStreams.loadedFile$
+    );
 
-  // I'm not sure when this happens, for now I'll assume it doesn't
-  // coqtopOutput$s.valueGood$s.editAt$
-  //   .subscribe(io => {
-  //     if (io.output.response.contents.hasOwnProperty("Right")) { throw io; }
-  //   });
+    // This used to be simply:
+    // - subscribe to coqExn$
+    // - remove sentences whose cmdTag >= exn.cmdTag
+    // But this won't work with automation, because sometimes a sentence
+    // is created in the middle of an automation round, and some
+    // automation sentences will have a low cmdTag and raise a CoqExn.
+    // We must track provenance of the CoqExn and only remove sentences
+    // when it happened because of user action.
 
-  // Rx.Observable.empty() // stmCanceled
-  //   .subscribe(r => onStmCanceled(
-  //     hideProofTreePanel,
-  //     r.input.getArgs()
-  //   ));
+    const stmQuery$ =
+      flatCoqtopInputs$
+        .let(Filters.controlCommand)
+        .let(Filters.stmQuery);
 
-  ProofTreeSetup.setup({
-    doc,
-    cancelSubject,
-    hideProofTreePanel: () => hideProofTreePanel(bottomLayout),
-    loadedFile$: userActionStreams.loadedFile$,
-    nextSubject,
-    resize$,
-    sentenceProcessed$: doc.sentenceProcessed$,
-    showProofTreePanel: () => showProofTreePanel(bottomLayout),
-    stmCanceled$: stmCanceledFiltered$,
-  });
+    // keep this under subscribers who need the edit to exist
+    setupObserveCoqExn(doc, coqtopOutput$s.answer$s.coqExn$, stmAdd$, stmQuery$, coqtopOutput$s.answer$s.completed$);
+
+    // keep this under subscribers who need the edit to exist
+    coqtopOutput$s.feedback$s.message$s.error$.subscribe(e => {
+      switch (e.editOrState) {
+        case EditOrState.Edit: return;
+        case EditOrState.State:
+          const failedStateId = e.editOrStateId;
+          const failedSentence = doc.getSentenceByStateId(failedStateId);
+          failedSentence.caseOf({
+            nothing: () => {
+              // This happens when commands fail before producing a state
+            },
+            just: s => doc.removeSentences(e => e.sentenceId >= s.sentenceId),
+          });
+          break;
+        default: debugger;
+      }
+    });
+
+    // debugging
+    coqtopOutput$s.answer$s.coqExn$
+      .filter(e => e.answer.getMessage().indexOf("Anomaly") >= 0)
+      .subscribe(e => { debugger; });
+
+    // const editorError$: Rx.Observable<IEditorError> =
+    //   coqtopOutput$s.valueFail$
+    //     .map(vf => pimpMyError(vf))
+    //     .share();
+    //
+    // editorError$.subscribe(ee =>
+    //   Global.coqDocument.removeEditAndFollowingOnes(ee.failedEdit)
+    // );
+    //
+    // new CoqtopPanel(
+    //   $(w2ui[rightLayoutName].get("bottom").content),
+    //   coqtopOutput$s.feedback$s.errorMsg$,
+    //   coqtopOutput$s.message$
+    // );
+
+    // editorError$.subscribe(ee => ee.range.fmap(range =>
+    //   Global.coqDocument.markError(range)
+    // ));
+
+    // editorError$.subscribe(ee =>
+    //   // so, apparently we won't receive feedbacks for the edits before this one
+    //   // so we need to mark them all processed...
+    //   _(Global.coqDocument.getSentencesBeingProcessed())
+    //     // ASSUMPTION: state IDs are assigned monotonically
+    //     .filter(e => e.stage.stateId < ee.error.stateId)
+    //     .each(_ => { debugger; })
+    //     .each(e => e.setStage(new Sentence.Processed(e.stage, queriesObserver)))
+    // );
+
+    // setupTextCursorPositionUpdate(
+    //   Global.coqDocument.edits.editProcessed$,
+    //   editorError$,
+    //   previousEditToReach$,
+    //   editsToProcessStream
+    // );
+
+    // coqtopOutput$s.valueGood$s.editAt$
+    //   .subscribe(r => {
+    //     const processedEdits = Global.coqDocument.getProcessedEdits();
+    //     const firstEditAfter =
+    //       _(processedEdits).find(e => e.stage.stateId > (<CoqtopInput.EditAt>r.input).stateId);
+    //     if (firstEditAfter) {
+    //       Global.coqDocument.removeEditAndFollowingOnes(firstEditAfter);
+    //     }
+    //   });
+
+    // I'm not sure when this happens, for now I'll assume it doesn't
+    // coqtopOutput$s.valueGood$s.editAt$
+    //   .subscribe(io => {
+    //     if (io.output.response.contents.hasOwnProperty("Right")) { throw io; }
+    //   });
+
+    // Rx.Observable.empty() // stmCanceled
+    //   .subscribe(r => onStmCanceled(
+    //     hideProofTreePanel,
+    //     r.input.getArgs()
+    //   ));
+
+    ProofTreeSetup.setup({
+      doc,
+      cancelSubject,
+      hideProofTreePanel: () => hideProofTreePanel(bottomLayout),
+      loadedFile$: userActionStreams.loadedFile$,
+      nextSubject,
+      resize$,
+      sentenceProcessed$: doc.sentenceProcessed$,
+      showProofTreePanel: () => showProofTreePanel(bottomLayout),
+      stmCanceled$: stmCanceledFiltered$,
+    });
+
+  // Debugging:
+  doc.editor.setValue(`
+    Inductive day : Type :=
+    | monday : day
+    | tuesday : day
+    | wednesday : day
+    | thursday : day
+    | friday : day
+    | saturday : day
+    | sunday : day
+    .
+  `);
 
 });
 
@@ -665,80 +613,6 @@ export function onResize(doc: ICoqDocument): void {
     const parent = $("#prooftree").parent();
     t.resize(parent.width(), parent.height());
   });
-}
-
-// TODO: use an AsyncSubject instead?
-function showProofTreePanel(bottomLayout: W2UI.W2Layout): Promise<{}> {
-  return new Promise(function(onFulfilled) {
-    const handler = function handler(event: W2UI.W2Event) {
-      event.onComplete = onFulfilled;
-      bottomLayout.off("show", handler);
-    };
-    bottomLayout.on("show", handler);
-    // layout.set("bottom", { size: "60%" });
-    bottomLayout.show("main");
-  });
-}
-
-function hideProofTreePanel(bottomLayout: W2UI.W2Layout): void {
-  // debugger;
-  // layout.set("bottom", { size: "20px" });
-  bottomLayout.hide("main");
-}
-
-function updateFontSize(doc: ICoqDocument): void {
-  doc.editor.setOption("fontSize", fontSize);
-  doc.contextPanel.onFontSizeChanged(fontSize);
-  jss.set("#pretty-content", { "font-size": fontSize + "px" });
-  jss.set("svg body", { "font-size": fontSize + "px" });
-  doc.getActiveProofTree().fmap(t => t.scheduleUpdate());
-}
-
-interface UserActionStreams {
-  goTo$: Rx.Observable<{}>,
-  loadedFile$: Rx.Observable<{}>,
-  next$: Rx.Observable<{}>,
-  prev$: Rx.Observable<{}>,
-}
-
-function setupUserActions(
-  doc: ICoqDocument,
-  toolbarStreams: ToolbarStreams,
-  shortcutsStreams: ShortcutsStreams
-): UserActionStreams {
-  const fontDecreasedStream =
-    Rx.Observable
-      .merge(toolbarStreams.fontDecrease, shortcutsStreams.fontDecrease)
-      .do(() => { fontSize--; })
-      .share();
-  const fontIncreasedStream =
-    Rx.Observable
-      .merge(toolbarStreams.fontIncrease, shortcutsStreams.fontIncrease)
-      .do(() => { fontSize++; })
-      .share();
-  Rx.Observable
-    .merge(fontIncreasedStream, fontDecreasedStream)
-    .subscribe(() => { updateFontSize(doc); });
-  const goTo$ = Rx.Observable
-    .merge(toolbarStreams.goToCaret, shortcutsStreams.goToCaret);
-  const next$ = Rx.Observable
-    .merge(toolbarStreams.next, shortcutsStreams.next);
-  const prev$ = Rx.Observable
-    .merge(toolbarStreams.previous, shortcutsStreams.previous);
-  Rx.Observable
-    .merge(toolbarStreams.load, shortcutsStreams.load)
-    .subscribe(pickFile);
-  Rx.Observable
-    .merge(toolbarStreams.save, shortcutsStreams.save)
-    .subscribe(({}) => saveFile(doc));
-  const loadedFilesStream = setupLoadFile(doc);
-  setupSaveFile();
-  return {
-    goTo$: goTo$,
-    loadedFile$: loadedFilesStream,
-    next$: next$,
-    prev$: prev$,
-  };
 }
 
 function minPos(pos1: AceAjax.Position, pos2: AceAjax.Position): AceAjax.Position {

@@ -44,7 +44,7 @@ function createBindingForKey(doc: ICoqDocument, key: string): Rx.Observable<{}> 
     ;
 }
 
-export function setupKeybindings(doc: ICoqDocument): ShortcutsStreams {
+export function setup(doc: ICoqDocument): ShortcutsStreams {
   return {
     fontDecrease: createBindingForKey(doc, "-"),
     fontIncrease: createBindingForKey(doc, "="),

@@ -4,7 +4,7 @@ import { switchToBright, switchToDark } from "../peacoq/theme";
 
 let filePickerId = "filepicker";
 
-export function setupToolbar(doc: ICoqDocument): ToolbarStreams {
+export function setup(doc: ICoqDocument): ToolbarStreams {
 
   let toolbar = $("#toolbar").w2toolbar({ name: "w2toolbar" });
   let loadClickStream = addButton(toolbar, { caption: "Load", icon: "floppy-open" });

@@ -31,14 +31,17 @@ declare namespace ISertop {
 
   namespace IControlCommand {
     interface IStmAdd extends IControlCommand {
+      fromAutomation: boolean;
       // addOptions: AddOptions;
       sentence: string;
     }
     interface IStmCancel extends IControlCommand { }
+    interface IStmEditAt extends IControlCommand { }
     interface IStmObserve extends IControlCommand {
       stateId: StateId;
     }
     interface IStmQuery extends IControlCommand {
+      fromAutomation: boolean;
       queryOptions: QueryOptions;
     }
   }
@@ -81,10 +84,10 @@ interface CoqtopOutputStreams {
   // io$: Rx.Observable<ICoqtopOutput<ICoqtopInput, any>>;
   // error$: Rx.Observable<ValueFail>;
   answer$s: {
-    completed$: Rx.Observable<ISertop.IAnswer<ISertop.ICompleted>>;
-    coqExn$: Rx.Observable<ISertop.IAnswer<ISertop.ICoqExn>>;
-    stmAdded$: Rx.Observable<ISertop.IAnswer<ISertop.IStmAdded>>;
-    stmCanceled$: Rx.Observable<ISertop.IAnswer<ISertop.IStmCanceled>>;
+    completed$: Completed$;
+    coqExn$: CoqExn$;
+    stmAdded$: StmAdded$;
+    stmCanceled$: StmCanceled$;
   }
   feedback$s: {
     message$s: {
