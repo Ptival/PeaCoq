@@ -11,8 +11,6 @@ interface ProofTreeAutomationInput {
   queryForTacticToTry$: Rx.Observer<CommandStreamItem<any>>;
   stmAdded$: Rx.Observable<ISertop.IAnswer<ISertop.IStmAdded>>;
   stopAutomationRound$: Rx.Observable<{}>;
-  debouncedTip$: Rx.Observable<Tip>;
-  tip$: Rx.Observable<Tip>;
 }
 
 const tacticAutomationRouteId = 2;
@@ -28,8 +26,6 @@ export function setup(i: ProofTreeAutomationInput): void {
     queryForTacticToTry$,
     stmAdded$,
     stopAutomationRound$,
-    debouncedTip$,
-    tip$,
   } = i;
 
   const pause$ = makePause$(stmActionsInFlightCounter$);
@@ -37,7 +33,7 @@ export function setup(i: ProofTreeAutomationInput): void {
   // tip$.subscribe(t => console.log(Date.now(), "TIP CHANGED"));
   // pause$.subscribe(b => console.log(Date.now(), b ? "RESUME" : "PAUSE"));
 
-  debouncedTip$
+  doc.debouncedTip$
     .concatMap<ISentence<IStage>>(tip => tip.caseOf({ nothing: () => [], just: s => [s] }))
     .concatMap(sentence => sentence.waitUntilProcessed())
     // Observable<ISentence<IProcessed>>
@@ -68,7 +64,7 @@ export function setup(i: ProofTreeAutomationInput): void {
         // .do(cs => cs.take(1).subscribe((cmd: Command.Control<ControlCommand.StmAdd>) => console.log(Date.now(), "Before pause", cmd.controlCommand.sentence)))
         .pausableBuffered(pause$)
         // .do(cs => cs.take(1).subscribe((cmd: Command.Control<ControlCommand.StmAdd>) => console.log(Date.now(), "After pause", cmd.controlCommand.sentence)))
-        .takeUntil(tip$)
+        .takeUntil(doc.tip$)
     )
     .subscribe(commands$ => queryForTacticToTry$.onNext(commands$));
 

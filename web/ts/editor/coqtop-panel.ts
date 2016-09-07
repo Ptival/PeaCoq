@@ -2,20 +2,48 @@ import * as MessageLevel from "../coq/message-level";
 
 const maxMessagesOnScreen = 10;
 
-export class CoqtopPanel {
-  constructor(
-    private container: JQuery,
-    message$: Rx.Observable<{ message: string; level: PeaCoqMessageLevel }>,
-    loadedFile$: Rx.Observable<{}>
-  ) {
-    message$.subscribe(m => this.addAlert(m.message, peaCoqMessageLevelToString(m.level)));
-    loadedFile$.subscribe(() => this.container.empty());
-  }
+export function setup(
+  doc: ICoqDocument,
+  container: JQuery,
+  error$: Error$,
+  notice$: Notice$,
+  loadedFile$: Rx.Observable<{}>
+) {
+  const message$: Rx.Observable<{ message: string; level: PeaCoqMessageLevel }> =
+    Rx.Observable.merge(
 
-  addAlert(message: string, klass: string) {
-    this.container.prepend(makeAlert(message, klass));
-    this.container.children().slice(maxMessagesOnScreen).remove();
-  }
+      error$
+        .filter(e => e.editOrState === EditOrState.State)
+        // due to sending sentences fast, we receive errors for states beyond
+        // another failed state. reporting those looks spurious to the user.
+        .filter(e => isJust(doc.getSentenceByStateId(e.editOrStateId)))
+        .map(e => ({
+          message: e.feedbackContent.message,
+          level: PeaCoqMessageLevel.Danger,
+        })),
+
+      error$
+        .filter(e => e.editOrState === EditOrState.Edit)
+        .map(e => ({
+          message: e.feedbackContent.message,
+          level: PeaCoqMessageLevel.Danger,
+        })),
+
+      notice$
+        .filter(e => e.routeId === 0) // other routes are used by PeaCoq
+        .map(e => ({
+          message: e.feedbackContent.message,
+          level: PeaCoqMessageLevel.Success,
+        }))
+
+    );
+
+  message$.subscribe(({ message, level }) => {
+    container.prepend(makeAlert(message, peaCoqMessageLevelToString(level)));
+    container.children().slice(maxMessagesOnScreen).remove();
+  });
+  loadedFile$.subscribe(() => container.empty());
+
 }
 
 function makeAlert(message: string, klass: string) {

@@ -92,15 +92,15 @@ interface CoqtopOutputStreams {
   feedback$s: {
     message$s: {
       debug$: Rx.Observable<DebugMessageFeedback>;
-      error$: Rx.Observable<ErrorMessageFeedback>;
+      error$: Error$;
       info$: Rx.Observable<InfoMessageFeedback>;
-      notice$: Rx.Observable<NoticeMessageFeedback>;
+      notice$: Notice$;
       warning$: Rx.Observable<WarningMessageFeedback>;
     },
   //   addedAxiom$: Rx.Observable<IFeedback<FeedbackContent.IAddedAxiom>>;
   //   fileDependency$: Rx.Observable<IFeedback<FeedbackContent.IFileDependency>>;
   //   fileLoaded$: Rx.Observable<IFeedback<FeedbackContent.IFileLoaded>>;
-    processed$: Rx.Observable<IFeedback<IFeedbackContent.IProcessed>>;
+    processed$: Processed$;
   //   processingIn$: Rx.Observable<IFeedback<FeedbackContent.IProcessingIn>>;
   };
   // feedback$: Rx.Observable<IFeedback<IFeedbackContent>>;
