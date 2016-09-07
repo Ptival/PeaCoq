@@ -1,5 +1,6 @@
 import * as DebugFlags from "../peacoq/debug-flags";
 import * as Theme from "../peacoq/theme";
+import { debounceAndThrottle } from "../rxjs/operators";
 
 let barItemClass = "progress-bar-item";
 let progressBarId = "progress-bar";
@@ -13,7 +14,7 @@ export function setupProgressBar(doc: ICoqDocument): void {
   // Next line should probably be .audit(250) in RxJS 5
   // it makes sure we get running every 250ms and at least once after
   // 250ms of silence following an emission
-  .publish(s => Rx.Observable.merge(s.debounce(250), s.throttle(250)))
+  .let(debounceAndThrottle(250))
   .subscribe(() => updateProgressBar(doc));
   let barClick$: Rx.Observable<Event> =
     Rx.Observable.fromEvent<Event>(document, "click")
