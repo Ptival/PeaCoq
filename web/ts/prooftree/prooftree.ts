@@ -415,14 +415,14 @@ export class ProofTree implements IProofTree {
         });
         break;
 
-        case 39: // Right
-          //case 68: // d
-          ev.preventDefault();
-          curNode.getFocusedChild().fmap(dest => {
-            //asyncLog("RIGHT " + nodeString(dest));
-            dest.click();
-          });
-          break;
+      case 39: // Right
+        //case 68: // d
+        ev.preventDefault();
+        curNode.getFocusedChild().fmap(dest => {
+          //asyncLog("RIGHT " + nodeString(dest));
+          dest.click();
+        });
+        break;
 
       //   case 38: // Up
       //     //case 87: // w
