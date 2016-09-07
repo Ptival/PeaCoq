@@ -45,7 +45,7 @@ export function proofTreeOnEdit(
         const g = pt.rootNode;
         g.addStateId(stateId);
         pt.curNode = g;
-        pt.update();
+        pt.scheduleUpdate();
       });
     return;
   } else {
@@ -86,7 +86,7 @@ export function proofTreeOnEdit(
     const curGoal: IGoalNode = tactic.goals[0];
     curGoal.addStateId(stateId);
     curNode.proofTree.curNode = curGoal;
-    curNode.proofTree.update();
+    curNode.proofTree.scheduleUpdate();
   } else {
     curNode.onChildSolved(stateId);
   }
@@ -127,7 +127,7 @@ export function onStmCanceled(
 
   if (target) {
     activeProofTree.curNode = target;
-    activeProofTree.update();
+    activeProofTree.scheduleUpdate();
   } else {
     // debugger;
     while (doc.proofTrees.length > 0) {

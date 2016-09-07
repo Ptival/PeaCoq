@@ -743,7 +743,7 @@ function updateFontSize(doc: ICoqDocument): void {
   doc.contextPanel.onFontSizeChanged(fontSize);
   jss.set("#pretty-content", { "font-size": fontSize + "px" });
   jss.set("svg body", { "font-size": fontSize + "px" });
-  doc.getActiveProofTree().fmap(t => t.update());
+  doc.getActiveProofTree().fmap(t => t.scheduleUpdate());
 }
 
 function setupW2LayoutResizeStream(layout: W2UI.W2Layout): Rx.Observable<{}> {

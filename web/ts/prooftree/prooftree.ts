@@ -3,9 +3,10 @@ import { GoalNode } from "./goalnode";
 import * as ProofTreeUtils from "./utils";
 import { TacticGroupNode } from "./tacticgroupnode";
 import { Strictly } from "../peacoq/strictly";
+import { debounceAndThrottle } from "../rxjs/operators";
 
 /* Globals to be configured */
-let animationDuration = 2000;
+let animationDuration = 800;
 // let diffBlue = "#8888EE";
 // let diffGreen = "#88EE88";
 // let diffOrange = "#FFB347";
@@ -15,10 +16,12 @@ let goalBodyPadding = 4;
 let verticalSpacingBetweenNodes = 10;
 
 export class ProofTree implements IProofTree {
+  private _curNode: IGoalNode;
+  private updateSubject: Rx.Subject<{}>;
+
   anchor: d3.Selection<HTMLElement>;
   /* whatever the client wants to store as meta-data */
   clientState: Object;
-  private _curNode: IGoalNode;
   public readonly curNode$: Rx.Subject<IGoalNode>;
   descendantsOffset: number;
   //diagonal: d3.svg.Diagonal<ProofTreeLink, ProofTreeNode>;
@@ -157,6 +160,12 @@ export class ProofTree implements IProofTree {
     // if (svgPanEnabled) {
     //   this.svg.insert("script", ":first-child").attr("xlink:href", "SVGPan.js");
     // }
+
+    this.updateSubject = new Rx.Subject();
+    Rx.Observable.interval(2000).subscribe(() => this.updateSubject.onNext({}));
+    this.updateSubject
+      .let(debounceAndThrottle(1000))
+      .subscribe(() => this.updateAndWait());
 
   }
 
@@ -759,7 +768,7 @@ export class ProofTree implements IProofTree {
       .attr("width", `${this.width}px`)
       .attr("height", `${this.height}px`)
       ;
-    this.update();
+    this.scheduleUpdate();
   }
 
   resetSVGTransform(): void {
@@ -841,7 +850,7 @@ export class ProofTree implements IProofTree {
     if (n.tacticIndex + 1 < viewChildren.length) {
       n.tacticIndex++;
       //asyncLog("DOWNGROUP " + nodeString(viewChildren[n.tacticIndex]));
-      this.update();
+      this.scheduleUpdate();
     }
   }
 
@@ -851,12 +860,16 @@ export class ProofTree implements IProofTree {
     if (n.tacticIndex > 0) {
       n.tacticIndex--;
       //asyncLog("UPGROUP " + nodeString(n.getViewChildren()[n.tacticIndex]));
-      this.update();
+      this.scheduleUpdate();
     }
   }
 
-  update(): Promise<{}> {
-    console.trace();
+  scheduleUpdate(): void {
+    this.updateSubject.onNext({});
+  }
+
+  updateAndWait(): Promise<{}> {
+    // console.trace(new Date());
     return new Promise((onFulfilled, onRejected) => {
       this.updatePromise(
         () => {
@@ -868,7 +881,7 @@ export class ProofTree implements IProofTree {
     });
   }
 
-  updatePromise<T>(onFulfilled: () => void, onRejected: () => void): void {
+  private updatePromise<T>(onFulfilled: () => void, onRejected: () => void): void {
     let curNode = this.curNode;
 
     this.resetSVGTransform(); // cancel view transformations
@@ -936,8 +949,8 @@ export class ProofTree implements IProofTree {
       this.onRectEnter(rectSelection.enter());
       this.onLinkEnter(linkSelection.enter());
 
-      this.onTextUpdatePostMerge(textSelection);
       this.onRectUpdatePostMerge(rectSelection);
+      this.onTextUpdatePostMerge(textSelection);
 
       this.onLinkUpdatePostMerge(linkSelection);
 

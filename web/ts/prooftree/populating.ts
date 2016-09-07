@@ -17,7 +17,7 @@ export function setup(
             for (const tactic in s.completions[groupName]) {
               const completion = group[tactic];
               curNode.addTactic(tactic, groupName, completion, stateId);
-              pt.update();
+              pt.scheduleUpdate();
             }
           }
         } else {

@@ -15,7 +15,8 @@ interface IProofTree {
   isCurNode(n: IProofTreeNode): boolean;
   isCurNodeAncestor(strictly: IStrictly, n: IProofTreeNode): boolean;
   resize(w: number, h: number);
-  update(): Promise<{}>;
+  scheduleUpdate(): void;
+  updateAndWait(): Promise<{}>;
   xOffset(n: IProofTreeNode): number;
   yOffset(n: IProofTreeNode): number;
 }

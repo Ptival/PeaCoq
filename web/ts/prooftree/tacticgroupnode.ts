@@ -127,13 +127,13 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
       unsolved.addStateId(sid);
       this.proofTree.curNode = unsolved;
       //this.proofTree.refreshTactics();
-      this.proofTree.update();
+      this.proofTree.scheduleUpdate();
     }
   }
 
   onSolved(sid: number): void {
     this.proofTree.curNode = this.parentGoal;
-    this.proofTree.update()
+    this.proofTree.updateAndWait()
       .then(() => {
         // console.log("THEN");
         this.parentGoal.onChildSolved(sid);
@@ -145,7 +145,7 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
     if (this.tacticIndex < this.tactics.length - 1) {
       this.tacticIndex++;
       //asyncLog("NEXTGROUPFOCUS " + nodeString(this.tactics[this.tacticIndex]));
-      this.proofTree.update();
+      this.proofTree.scheduleUpdate();
     }
   }
 
@@ -153,7 +153,7 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
     if (this.tacticIndex > 0) {
       this.tacticIndex--;
       //asyncLog("PREVGROUPFOCUS " + nodeString(this.tactics[this.tacticIndex]));
-      this.proofTree.update();
+      this.proofTree.scheduleUpdate();
     }
   }
 
