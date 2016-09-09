@@ -28,21 +28,6 @@ function resetCoqtop(): Promise<any> {
   //   .then(() => peaCoqStatus(false));
 }
 
-export function setupSyntaxHovering() {
-
-  $(document)
-    .on('mouseenter mouseover', '.syntax', function(e) {
-      $(this).toggleClass('peacoq-highlight', true);
-      e.stopImmediatePropagation();
-    })
-    .on('mouseout mouseleave', '.syntax', function(e) {
-      $(this).toggleClass('peacoq-highlight', false);
-      e.stopImmediatePropagation();
-    })
-    ;
-
-}
-
 let unlockedAnchor;
 let unlockedMarker;
 

@@ -2,7 +2,6 @@ import * as Stage from "./stage";
 
 export function setup(
   doc: ICoqDocument,
-  peaCoqGetContext$: Rx.Subject<ISertop.IControl<ISertop.IControlCommand.IStmQuery>>,
   processed$: Rx.Observable<IFeedback<IFeedbackContent.IProcessed>>
 ): void {
   processed$
@@ -14,7 +13,7 @@ export function setup(
           const editsBeingProcessed = doc.getSentencesBeingProcessed();
           const sentence = _(editsBeingProcessed).find(e => e.stage.stateId === stateId);
           if (sentence) {
-            const newStage = new Stage.Processed(sentence.stage, peaCoqGetContext$);
+            const newStage = new Stage.Processed(doc, sentence.stage);
             sentence.setStage(newStage);
             // if (
             //   Global.coqDocument.getSentencesToProcess().length === 0

@@ -3,30 +3,27 @@ import * as Command from "../sertop/command";
 import * as ControlCommand from "../sertop/control-command";
 
 interface ProofTreeAutomationInput {
-  stmActionsInFlightCounter$: Rx.Observable<number>;
+  command$: Rx.Observer<Command$>;
   completed$;
   doc: ICoqDocument;
   error$: Rx.Observable<ErrorMessageFeedback>;
   notice$: Rx.Observable<NoticeMessageFeedback>;
-  queryForTacticToTry$: Rx.Observer<CommandStreamItem<any>>;
+  stmActionsInFlightCounter$: Rx.Observable<number>;
   stmAdded$: Rx.Observable<ISertop.IAnswer<ISertop.IStmAdded>>;
   stopAutomationRound$: Rx.Observable<{}>;
 }
 
 const tacticAutomationRouteId = 2;
 
-export function setup(i: ProofTreeAutomationInput): void {
-
-  const {
-    stmActionsInFlightCounter$,
-    completed$,
-    doc,
-    error$,
-    notice$,
-    queryForTacticToTry$,
-    stmAdded$,
-    stopAutomationRound$,
-  } = i;
+export function setup(
+  completed$: Completed$,
+  doc: ICoqDocument,
+  error$: Error$,
+  notice$: Notice$,
+  stmActionsInFlightCounter$: Rx.Observable<number>,
+  stmAdded$: StmAdded$,
+  stopAutomationRound$: Rx.Observable<{}>
+): void {
 
   const pause$ = makePause$(stmActionsInFlightCounter$);
 
@@ -66,7 +63,7 @@ export function setup(i: ProofTreeAutomationInput): void {
         // .do(cs => cs.take(1).subscribe((cmd: Command.Control<ControlCommand.StmAdd>) => console.log(Date.now(), "After pause", cmd.controlCommand.sentence)))
         .takeUntil(doc.tip$)
     )
-    .subscribe(commands$ => queryForTacticToTry$.onNext(commands$));
+    .subscribe(commands$ => doc.sendCommands(commands$));
 
 }
 

@@ -11,9 +11,7 @@ export function proofTreeOnEdit(
   stateId: number,
   // lastStatus: IStatus,
   // status: IStatus,
-  context: PeaCoqContext,
-  nextSubject: Rx.Subject<{}>,
-  editAtSubject: Rx.Subject<StateId>
+  context: PeaCoqContext
 ): void {
 
   const trimmed = CoqStringUtils.coqTrim(query);
@@ -32,9 +30,7 @@ export function proofTreeOnEdit(
           nothing(),
           context,
           0,
-          doc.editor,
-          nextSubject,
-          editAtSubject
+          doc
         );
         // pt.curNode$.subscribe(
         //   n => console.log("Current node changed to", n),

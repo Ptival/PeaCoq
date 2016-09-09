@@ -2,6 +2,8 @@ import * as Stage from "./stage";
 import { SentenceArray } from "./sentence-array";
 import { errorUnderlineClass, theme } from "../peacoq/theme";
 import { ProofTreeStack } from "../prooftree/stack";
+import * as Command from "../sertop/command";
+import * as ControlCommand from "../sertop/control-command";
 
 function tipKey(t: Tip): number {
   return t.caseOf({
@@ -11,12 +13,16 @@ function tipKey(t: Tip): number {
 }
 
 export class CoqDocument implements ICoqDocument {
+  addsToProcess$: Rx.Observable<StmAdd$>;
   beginAnchor: AceAjax.Anchor;
+  private commandObserver: Rx.Observer<Command$>;
+  public command$: Rx.Observable<Command$>;
   contextPanel: IContextPanel;
   editorChange$: Rx.Observable<AceAjax.EditorChangeEvent>;
   sentences: ISentenceArray;
   endAnchor: AceAjax.Anchor;
-  proofTrees: IProofTreeStack;
+  private nextObserver: Rx.Observer<{}>;
+  proofTrees: ProofTreeStack;
   sentencesChanged$: Rx.Observable<{}>;
   sentenceBeingProcessed$: Rx.Observable<ISentence<IBeingProcessed>>;
   sentenceProcessed$: Rx.Observable<ISentence<IProcessed>>;
@@ -59,6 +65,23 @@ export class CoqDocument implements ICoqDocument {
     // this.tip$.subscribe(t => console.log("tip$ from coq-document", t.sentenceId));
     this.debouncedTip$ = this.tipSubject.distinctUntilChanged(tipKey).debounce(250).share();
     this.sentenceBeingProcessed$.subscribe(s => this.setTip(just(s)));
+
+    const nextSubject = new Rx.ReplaySubject(1);
+    this.nextObserver = nextSubject.asObserver();
+    const sentencesToProcess$ = this.nextSentence(nextSubject.asObservable());
+
+    const commandSubject = new Rx.Subject<Command$>();
+    this.commandObserver = commandSubject.asObserver();
+    this.command$ = commandSubject.asObservable();
+
+    sentencesToProcess$.subscribe(e => this.moveCursorToPositionAndCenter(e.stopPosition));
+    sentencesToProcess$
+        .map(s => {
+          const command = new Command.Control(new ControlCommand.StmAdd({}, s.query, false));
+          s.commandTag = just(command.tag);
+          return Rx.Observable.just(command);
+        })
+        .subscribe(cmd$ => this.sendCommands(cmd$));
 
     tip$.connect();
   }
@@ -220,6 +243,10 @@ export class CoqDocument implements ICoqDocument {
     ).subscribe(() => this.session.removeMarker(markerId));
   }
 
+  next(): void {
+    this.nextObserver.onNext({});
+  }
+
   nextSentence(next$: Rx.Observable<{}>): Rx.Observable<ISentence<IToProcess>> {
     return next$
       .concatMap<ISentence<IToProcess>>(() => {
@@ -295,6 +322,10 @@ export class CoqDocument implements ICoqDocument {
   //     return toBeRemoved;
   //   });
   // }
+
+  sendCommands(s: Command$): void {
+    this.commandObserver.onNext(s);
+  }
 
   setTip(tip: Tip): void {
     this.tipSubject.onNext(tip);

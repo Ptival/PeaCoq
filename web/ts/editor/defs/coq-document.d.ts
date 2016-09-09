@@ -1,6 +1,8 @@
 type Tip = Maybe<ISentence<IStage>>;
 
 interface ICoqDocument {
+  addsToProcess$: Rx.Observable<StmAdd$>;
+  command$: Rx.Observable<Command$>;
   contextPanel: IContextPanel;
   editor: AceAjax.Editor;
   editorChange$: Rx.Observable<AceAjax.EditorChangeEvent>;
@@ -27,7 +29,8 @@ interface ICoqDocument {
   markError(range: AceAjax.Range, clear$: Rx.Observable<{}>): void;
   moveCursorToPositionAndCenter(pos: AceAjax.Position): void;
   movePositionRight(pos: AceAjax.Position, n: number): AceAjax.Position;
-  nextSentence(next$: Rx.Observable<{}>): Rx.Observable<ISentence<IToProcess>>;
+  next(): void;
+  // nextSentence(next$: Rx.Observable<{}>): Rx.Observable<ISentence<IToProcess>>;
   removeAllSentences(): void;
   removeSentence(e: ISentence<IStage>): void;
   // removeEditAndFollowingOnes(e: ISentence<IEditStage>): void;
@@ -35,5 +38,6 @@ interface ICoqDocument {
   removeSentencesByStateIds(ids: StateId[]): void;
   // removeFollowingEdits(e: ISentence<IEditStage>): void;
   resetEditor(s: string): void;
+  sendCommands(s: Command$): void;
   setTip(tip: Tip): void;
 }

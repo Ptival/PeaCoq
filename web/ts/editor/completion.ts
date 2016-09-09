@@ -2,8 +2,7 @@ import * as PeaCoq from "../peacoq/peacoq";
 
 export function createGetCompletions(
   doc: ICoqDocument,
-  stopAutomationRound$: Rx.Observable<{}>,
-  nextSubject: Rx.Subject<{}>
+  stopAutomationRound$: Rx.Observable<{}>
 ) {
 
   doc.editor.execCommand("startAutocomplete");
@@ -16,7 +15,7 @@ export function createGetCompletions(
         .filter(e => e.command.name === "insertstring")
         .take(1)
         .subscribe(() => {
-          nextSubject.onNext({});
+          doc.next();
           editor.execCommand("insertstring", "\n");
         });
       return editor.completer.insertMatch();

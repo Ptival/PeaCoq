@@ -1,29 +1,14 @@
 import * as ProofTreeHandlers from "./prooftree-handlers";
 
-interface ProofTreeSetupInput {
-  doc: ICoqDocument;
-  cancelSubject: Rx.Subject<StateId>;
-  hideProofTreePanel: () => void;
-  loadedFile$: Rx.Observable<{}>;
-  nextSubject: Rx.Subject<{}>;
-  resize$: Rx.Observable<{}>;
-  sentenceProcessed$: Rx.Observable<ISentence<IProcessed>>;
-  showProofTreePanel: () => Promise<{}>;
-  stmCanceled$: Rx.Observable<ISertop.IAnswer<ISertop.IStmCanceled>>;
-}
-
-export function setup(i: ProofTreeSetupInput): void {
-  const {
-    doc,
-    cancelSubject,
-    hideProofTreePanel,
-    loadedFile$,
-    nextSubject,
-    resize$,
-    sentenceProcessed$,
-    showProofTreePanel,
-    stmCanceled$,
-  } = i;
+export function setup(
+  doc: ICoqDocument,
+  hideProofTreePanel: () => void,
+  loadedFile$: Rx.Observable<{}>,
+  resize$: Rx.Observable<{}>,
+  sentenceProcessed$: Rx.Observable<ISentence<IProcessed>>,
+  showProofTreePanel: () => Promise<{}>,
+  stmCanceled$: Rx.Observable<ISertop.IAnswer<ISertop.IStmCanceled>>
+): void {
 
   resize$.debounce(250).subscribe(() => {
     if (doc.proofTrees.length === 0) { return; }
@@ -46,6 +31,7 @@ export function setup(i: ProofTreeSetupInput): void {
   // - the last sentence processed is "Proof."
   // - no further sentence remains to be processed
   sentenceProcessed$
+    // .do(s => console.log("sentence processed", s))
     .filter(s => CoqStringUtils.coqTrim(s.query) === "Proof.")
     .filter(s => doc.getSentencesToProcess().length === 0)
     .filter(s => doc.getSentencesBeingProcessed().length === 0)
@@ -59,7 +45,7 @@ export function setup(i: ProofTreeSetupInput): void {
     .subscribe(({ sentence, context }) => {
       ProofTreeHandlers.proofTreeOnEdit(
         doc, showProofTreePanel, hideProofTreePanelAndSignal,
-        sentence.query, sentence.stage.stateId, context, nextSubject, cancelSubject
+        sentence.query, sentence.stage.stateId, context
       );
     });
 

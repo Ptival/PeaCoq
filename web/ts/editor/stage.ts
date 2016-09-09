@@ -75,9 +75,8 @@ export class Processed implements IProcessed {
   stateId: number;
 
   constructor(
-    e: IBeingProcessed,
-    // this is needed so that the edit can query for its context on-demand
-    private inputObserver: Rx.Observer<ISertop.ICommand>
+    private doc: ICoqDocument,
+    e: IBeingProcessed
   ) {
     this.context = null; // created later
     this.onFulfilled = null;
@@ -100,7 +99,7 @@ export class Processed implements IProcessed {
           false
         ));
         this.onFulfilled = onFulfilled;
-        this.inputObserver.onNext(query);
+        this.doc.sendCommands(Rx.Observable.just(query));
       });
     }
     return this.context;

@@ -1,5 +1,7 @@
 import { ProofTreeNode } from "./prooftreenode";
 import { Strictly } from "../peacoq/strictly";
+import * as Command from "../sertop/command";
+import * as ControlCommand from "../sertop/control-command";
 
 let userTacticsGroupName = "PeaCoq user tactics";
 
@@ -25,14 +27,16 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
     if (this.proofTree.isCurNodeAncestor(Strictly.Yes, this)) {
       const stateId = _.min(this.proofTree.curNode.getStateIds());
       if (stateId === undefined) { debugger; }
-      this.proofTree.cancelSubject.onNext(stateId);
+      this.proofTree.document.sendCommands(
+        Rx.Observable.just(new Command.Control(new ControlCommand.StmCancel([stateId])))
+      );
     }
     this.getFocusedTactic().caseOf({
       nothing: () => { debugger; },
       just: t => {
-        this.proofTree.editor.execCommand("insertstring", ` ${t.tactic}`);
-        this.proofTree.nextSubject.onNext({});
-        this.proofTree.editor.execCommand("insertstring", "\n");
+        this.proofTree.document.editor.execCommand("insertstring", ` ${t.tactic}`);
+        this.proofTree.document.next();
+        this.proofTree.document.editor.execCommand("insertstring", "\n");
       }
     });
   }

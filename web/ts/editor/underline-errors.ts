@@ -1,8 +1,10 @@
 export function setup(
   doc: ICoqDocument,
-  errorMsg$: Rx.Observable<ErrorMessageFeedback>,
-  clear$: Rx.Observable<{}>
+  errorMsg$: Rx.Observable<ErrorMessageFeedback>
 ): void {
+
+  const clear$ = Rx.Observable.empty(); // TODO FIXME
+
   errorMsg$.subscribe(e => {
     // debugger;
     let failedEdit: Maybe<ISentence<IStage>> = nothing();

@@ -18,7 +18,7 @@ export function setupEditor(e: AceAjax.Editor) {
   e.$blockScrolling = Infinity; // pestering warning
 }
 
-export function setupMainEditor(
+export function setup(
   doc: ICoqDocument,
   e: AceAjax.Editor
 ) {

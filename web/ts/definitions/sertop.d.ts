@@ -42,6 +42,7 @@ declare namespace ISertop {
     }
     interface IStmQuery extends IControlCommand {
       fromAutomation: boolean;
+      query: string;
       queryOptions: QueryOptions;
     }
   }

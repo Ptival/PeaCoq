@@ -5,16 +5,19 @@ import { emptyContext } from "../peacoq/peacoq";
 
 export function setup(
   doc: ICoqDocument,
+  notice$: Notice$,
   peaCoqGetContextRouteId: number,
-  peaCoqGetContext$: Rx.Subject<ISertop.IControl<ISertop.IControlCommand.IStmQuery>>,
-  notice$: Rx.Observable<NoticeMessageFeedback>
+  stmQuery$: StmQuery$
 ) {
   /*
   Feedback comes back untagged, so need the zip to keep track of the relationship
   between input PeaCoqGetContext and the output context...
   */
   Rx.Observable.zip(
-    peaCoqGetContext$,
+    // We want only PeaCoqGetContext happening because a sentence is processed
+    stmQuery$
+      .filter(q => q.controlCommand.query === "PeaCoqGetContext.")
+      .filter(q => q.controlCommand.fromAutomation === false),
     notice$.filter(m => m.routeId === peaCoqGetContextRouteId)
   ).subscribe(([cmd, fbk]) => {
     // console.log(cmd, fbk);

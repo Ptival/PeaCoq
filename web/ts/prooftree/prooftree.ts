@@ -58,9 +58,7 @@ export class ProofTree implements IProofTree {
     parent: Maybe<ITacticGroupNode>,
     public context: PeaCoqContext,
     public index: number,
-    public editor: AceAjax.Editor,
-    public nextSubject: Rx.Subject<{}>,
-    public cancelSubject: Rx.Subject<StateId>
+    public document: ICoqDocument
   ) {
     width = Math.max(0, width);
     this.width = width;
@@ -764,6 +762,10 @@ export class ProofTree implements IProofTree {
     //console.log("REPOPULATING TACTICS WORKLIST", this.tacticsWorklist);
 
     this.processTactics();
+  }
+
+  requestNext(): void {
+    this.document.next();
   }
 
   resize(width: number, height: number) {

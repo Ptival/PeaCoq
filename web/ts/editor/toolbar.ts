@@ -1,5 +1,5 @@
 // TODO: this import seems weird
-import { onResize } from "../index";
+import { onResize } from "../peacoq/on-resize";
 import { switchToBright, switchToDark } from "../peacoq/theme";
 
 let filePickerId = "filepicker";
