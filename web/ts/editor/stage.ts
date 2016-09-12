@@ -1,16 +1,8 @@
-// import * as CoqtopInput from "../coqtop-input";
-import * as Command from "../sertop/command";
-import * as ControlCommand from "../sertop/control-command";
-import * as DebugFlags from "../peacoq/debug-flags";
+import { Control } from "../sertop/command";
+import { StmQuery } from "../sertop/control-command";
 import { SentenceMarker } from "./sentence-marker";
-import * as Goal from "../coq/goal";
-import * as Goals from "../coq/goals";
-import { walkJSON } from "../peacoq/json";
-import { emptyContext } from "../peacoq/peacoq";
-import { PeaCoqGoal } from "../peacoq/goal";
-import * as Theme from "../peacoq/theme";
-
-const peaCoqGetContextRouteId = 1;
+import { getContextRoute } from "../peacoq/routes";
+import { theme } from "../peacoq/theme";
 
 export class ToProcess implements IToProcess {
   marker: ISentenceMarker;
@@ -23,7 +15,7 @@ export class ToProcess implements IToProcess {
     this.marker = new SentenceMarker(doc, start, stop);
   }
 
-  getColor(): string { return Theme.theme.toprocess; }
+  getColor(): string { return theme.toprocess; }
 
   getStateId() { return nothing(); }
 
@@ -42,7 +34,7 @@ export class BeingProcessed implements IBeingProcessed {
     this.stateId = sid;
   }
 
-  getColor(): string { return Theme.theme.processing; }
+  getColor(): string { return theme.processing; }
 
   getStateId() { return just(this.stateId); }
 
@@ -84,15 +76,15 @@ export class Processed implements IProcessed {
     this.stateId = e.stateId;
   }
 
-  getColor() { return Theme.theme.processed; }
+  getColor() { return theme.processed; }
 
   getContext(): Promise<PeaCoqContext> {
     // console.log("GETTING CONTEXT FOR STATE ID", this.stateId);
     if (this.context === null) {
       this.context = new Promise(onFulfilled => {
-        const query = new Command.Control(new ControlCommand.StmQuery(
+        const query = new Control(new StmQuery(
           {
-            route: peaCoqGetContextRouteId,
+            route: getContextRoute,
             sid: this.stateId,
           },
           "PeaCoqGetContext.",

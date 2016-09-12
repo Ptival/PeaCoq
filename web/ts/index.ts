@@ -44,7 +44,6 @@ import { setup as setupSertop } from "./sertop/sertop";
 // });
 
 const resizeBufferingTime = 250; // milliseconds
-const peaCoqGetContextRouteId = 1;
 
 $(document).ready(() => {
 
@@ -138,7 +137,7 @@ $(document).ready(() => {
   const { error$, notice$ } = coqtopOutput$s.feedback$s.message$s;
   const { processed$ } = coqtopOutput$s.feedback$s;
 
-  setupObserveContext(doc, notice$, peaCoqGetContextRouteId, stmQuery$);
+  setupObserveContext(doc, notice$, stmQuery$);
   const stmActionsInFlightCounter$ = setupInFlightCounter(stmAdd$, stmCancel$, stmEditAt$, completed$);
   setupProofTreeAutomation(completed$, doc, error$, notice$, stmActionsInFlightCounter$, stmAdded$, stopAutomationRound$);
   setupProofTreePopulating(doc, doc.tip$);

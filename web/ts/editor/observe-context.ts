@@ -2,11 +2,11 @@ import * as Context from "./context";
 import * as Stage from "./stage";
 import * as DebugFlags from "../peacoq/debug-flags";
 import { emptyContext } from "../peacoq/peacoq";
+import { getContextRoute } from "../peacoq/routes";
 
 export function setup(
   doc: ICoqDocument,
   notice$: Notice$,
-  peaCoqGetContextRouteId: number,
   stmQuery$: StmQuery$
 ) {
   /*
@@ -18,7 +18,7 @@ export function setup(
     stmQuery$
       .filter(q => q.controlCommand.query === "PeaCoqGetContext.")
       .filter(q => q.controlCommand.fromAutomation === false),
-    notice$.filter(m => m.routeId === peaCoqGetContextRouteId)
+    notice$.filter(m => m.routeId === getContextRoute)
   ).subscribe(([cmd, fbk]) => {
     // console.log(cmd, fbk);
     const stateId = cmd.controlCommand.queryOptions.sid;

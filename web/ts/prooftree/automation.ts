@@ -1,6 +1,7 @@
 import * as Context from "../editor/context";
-import * as Command from "../sertop/command";
-import * as ControlCommand from "../sertop/control-command";
+import { tacticAutomationRoute } from "../peacoq/routes";
+import { Control } from "../sertop/command";
+import { StmAdd, StmEditAt, StmQuery } from "../sertop/control-command";
 
 interface ProofTreeAutomationInput {
   command$: Rx.Observer<Command$>;
@@ -12,8 +13,6 @@ interface ProofTreeAutomationInput {
   stmAdded$: Rx.Observable<ISertop.IAnswer<ISertop.IStmAdded>>;
   stopAutomationRound$: Rx.Observable<{}>;
 }
-
-const tacticAutomationRouteId = 2;
 
 export function setup(
   completed$: Completed$,
@@ -281,17 +280,17 @@ function makeCandidate(
     // console.log("Was expecting", stateId, "and we are at", curSid, "proceeding");
   }
 
-  const add = new Command.Control(new ControlCommand.StmAdd({ ontop: stateId }, tactic, true));
+  const add = new Control(new StmAdd({ ontop: stateId }, tactic, true));
   // listen for the STM added answer (there should be 0 if failed otherwise 1)
   const filteredStmAdded$ = stmAdded$.filter(a => a.cmdTag === add.tag)
     .takeUntil(completed$.filter(a => a.cmdTag === add.tag));
   const getContext$ =
     filteredStmAdded$
-      .map(a => new Command.Control(new ControlCommand.StmQuery(
+      .map(a => new Control(new StmQuery(
         {
           sid: a.answer.stateId,
           // route is used so that the rest of PeaCoq can safely ignore those feedback messages
-          route: tacticAutomationRouteId
+          route: tacticAutomationRoute
         },
         "PeaCoqGetContext.",
         true
@@ -317,7 +316,7 @@ function makeCandidate(
         sentence.addCompletion(tactic, group, afterContext);
       }
     });
-  const editAt = new Command.Control(new ControlCommand.StmEditAt(stateId));
+  const editAt = new Control(new StmEditAt(stateId));
 
   const commands$ = Rx.Observable.concat<ISertop.ICommand>([
     Rx.Observable.just(add),
