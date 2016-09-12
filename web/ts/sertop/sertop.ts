@@ -7,7 +7,7 @@ import * as FeedbackContent from "../coq/feedback-content";
 import * as MessageLevel from "../coq/message-level";
 import * as Filters from "../peacoq/filters";
 
-export function setupCommunication(
+export function setup(
   cmd$: Rx.Observable<ISertop.ICommand>
 ): CoqtopOutputStreams {
 

@@ -1,13 +1,12 @@
+import { hide as hideProofTreePanel, show as showProofTreePanel } from "./panel";
 import * as ProofTreeHandlers from "./prooftree-handlers";
 
 export function setup(
   doc: ICoqDocument,
-  hideProofTreePanel: () => void,
   loadedFile$: Rx.Observable<{}>,
   resize$: Rx.Observable<{}>,
-  sentenceProcessed$: Rx.Observable<ISentence<IProcessed>>,
-  showProofTreePanel: () => Promise<{}>,
-  stmCanceled$: Rx.Observable<ISertop.IAnswer<ISertop.IStmCanceled>>
+  stmCanceled$: Rx.Observable<ISertop.IAnswer<ISertop.IStmCanceled>>,
+  bottomLayout: W2UI.W2Layout
 ): void {
 
   resize$.debounce(250).subscribe(() => {
@@ -22,7 +21,7 @@ export function setup(
   const exitProofTree$ = new Rx.Subject<{}>();
   function hideProofTreePanelAndSignal() {
     exitProofTree$.onNext({});
-    hideProofTreePanel();
+    hideProofTreePanel(bottomLayout);
   }
 
   loadedFile$.subscribe(hideProofTreePanelAndSignal);
@@ -30,21 +29,21 @@ export function setup(
   // We want to start a ProofTree session everytime:
   // - the last sentence processed is "Proof."
   // - no further sentence remains to be processed
-  sentenceProcessed$
+  doc.sentenceProcessed$
     // .do(s => console.log("sentence processed", s))
     .filter(s => CoqStringUtils.coqTrim(s.query) === "Proof.")
     .filter(s => doc.getSentencesToProcess().length === 0)
     .filter(s => doc.getSentencesBeingProcessed().length === 0)
     // .do(s => console.log("Starting to listen because of sentence", s))
     .flatMap(s =>
-      sentenceProcessed$.startWith(s)
+      doc.sentenceProcessed$.startWith(s)
         .takeUntil(exitProofTree$)
         // .doOnCompleted(() => console.log("Stopped listening"))
         .flatMap(s => s.stage.getContext().then(c => ({ sentence: s, context: c })))
     )
     .subscribe(({ sentence, context }) => {
       ProofTreeHandlers.proofTreeOnEdit(
-        doc, showProofTreePanel, hideProofTreePanelAndSignal,
+        doc, () => showProofTreePanel(bottomLayout), hideProofTreePanelAndSignal,
         sentence.query, sentence.stage.stateId, context
       );
     });

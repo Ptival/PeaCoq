@@ -1,7 +1,6 @@
-import * as Completion from "./editor/completion";
-
 import { setup as setupCancelBecauseBackwardGoTo } from "./editor/cancel-because-backward-goto";
 import { setup as setupCancelBecausePrev } from "./editor/cancel-because-prev";
+import { createGetCompletions } from "./editor/completion";
 import { CoqDocument } from "./editor/coq-document";
 import { setup as setupCoqtopPanel } from "./editor/coqtop-panel";
 import { ContextPanel } from "./editor/context-panel";
@@ -12,7 +11,7 @@ import { setup as setupGoToPartitioning } from "./editor/goto-partitioning";
 import { setup as setupInFlightCounter } from "./editor/in-flight-counter";
 import { setup as setupKeybindings } from "./editor/keybindings";
 import { setup as setupLayout, rightLayoutName } from "./editor/layout";
-import * as ObserveContext from "./editor/observe-context";
+import { setup as setupObserveContext } from "./editor/observe-context";
 import { setup as setupObserveCoqExn } from "./editor/observe-coqexn";
 import { setup as setupObserveEditorChange } from "./editor/observe-editor-change";
 import { setup as setupObserveError } from "./editor/observe-error";
@@ -28,18 +27,15 @@ import { setup as setupUnderlineError } from "./editor/underline-errors";
 import { setup as setupUserActions } from "./editor/user-actions";
 import { setupUserInteractionForwardGoto } from "./editor/user-interaction-forward-goto";
 
-import * as DebugFlags from "./peacoq/debug-flags";
 import * as Filters from "./peacoq/filters";
-import { PeaCoqGoal } from "./peacoq/goal";
 import { onResize } from "./peacoq/on-resize";
 import * as Theme from "./peacoq/theme";
 
-import * as ProofTreeAutomation from "./prooftree/automation";
-import { hide as hideProofTreePanel, show as showProofTreePanel } from "./prooftree/panel";
-import * as ProofTreePopulating from "./prooftree/populating";
-import * as ProofTreeSetup from "./prooftree/setup";
+import { setup as setupProofTreeAutomation } from "./prooftree/automation";
+import { setup as setupProofTreePopulating } from "./prooftree/populating";
+import { setup as setupProofTree } from "./prooftree/setup";
 
-import * as Sertop from "./sertop/sertop";
+import { setup as setupSertop } from "./sertop/sertop";
 
 // import * as Promise from 'bluebird';
 // Promise.longStackTraces();
@@ -115,7 +111,7 @@ $(document).ready(() => {
   // Automated tasks need to stop whenever the user changes the current state
   const stopAutomationRound$: Rx.Observable<{}> = Rx.Observable.empty(); // FIXME URGENT
 
-  doc.editor.completers = [{ getCompletions: Completion.createGetCompletions(doc, stopAutomationRound$) }];
+  doc.editor.completers = [{ getCompletions: createGetCompletions(doc, stopAutomationRound$) }];
 
   const flatCoqtopInputs$: Rx.ConnectableObservable<ISertop.ICommand> =
     doc.command$
@@ -127,7 +123,7 @@ $(document).ready(() => {
       //  .do(cmd => console.log("ELEMENT OUT", cmd))
       .publish();
 
-  const coqtopOutput$s = Sertop.setupCommunication(flatCoqtopInputs$);
+  const coqtopOutput$s = setupSertop(flatCoqtopInputs$);
   flatCoqtopInputs$.connect();
 
   // Shorthands for input streams
@@ -142,10 +138,10 @@ $(document).ready(() => {
   const { error$, notice$ } = coqtopOutput$s.feedback$s.message$s;
   const { processed$ } = coqtopOutput$s.feedback$s;
 
-  ObserveContext.setup(doc, notice$, peaCoqGetContextRouteId, stmQuery$);
+  setupObserveContext(doc, notice$, peaCoqGetContextRouteId, stmQuery$);
   const stmActionsInFlightCounter$ = setupInFlightCounter(stmAdd$, stmCancel$, stmEditAt$, completed$);
-  ProofTreeAutomation.setup(completed$, doc, error$, notice$, stmActionsInFlightCounter$, stmAdded$, stopAutomationRound$);
-  ProofTreePopulating.setup(doc, doc.tip$);
+  setupProofTreeAutomation(completed$, doc, error$, notice$, stmActionsInFlightCounter$, stmAdded$, stopAutomationRound$);
+  setupProofTreePopulating(doc, doc.tip$);
   setupObserveStmAdded(doc, stmAdded$);
   setupUserInteractionForwardGoto(doc, forwardGoTo$, error$);
   setupObserveProcessed(doc, processed$);
@@ -168,15 +164,7 @@ $(document).ready(() => {
     .subscribe(e => { debugger; });
 
   const stmCanceledFiltered$ = setupObserveStmCancel(doc, stmCancel$, stmCanceled$);
-  ProofTreeSetup.setup(
-    doc,
-    () => hideProofTreePanel(bottomLayout),
-    loadedFile$,
-    resize$,
-    doc.sentenceProcessed$,
-    () => showProofTreePanel(bottomLayout),
-    stmCanceledFiltered$
-  );
+  setupProofTree(doc, loadedFile$, resize$, stmCanceledFiltered$, bottomLayout);
 
   // Debugging:
   doc.editor.setValue(`
