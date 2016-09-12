@@ -1,5 +1,9 @@
 import * as Sexp from "./sexp";
 
+function escapeQuotes(s: string): string {
+  return s.replace(/"/g, `\\"`);
+}
+
 interface AddOptions {
   limit?: number;
   ontop?: StateId;
@@ -33,7 +37,7 @@ export class StmAdd implements ISertop.IControlCommand {
       Sexp.optionalToSexp("verb", this.addOptions.verb, b => b ? "True" : "False")
     );
     const o1 = Sexp.optionalToSexp("limit", this.addOptions.limit);
-    return `(StmAdd (${opts}) "${this.sentence.replace(/\"/g, `\\"`)}")`
+    return `(StmAdd (${opts}) "${escapeQuotes(this.sentence)}")`
   }
 }
 
@@ -76,7 +80,7 @@ export class StmQuery implements ISertop.IControlCommand.IStmQuery {
       Sexp.optionalToSexp("route", this.queryOptions.route, (r: RouteId) => r.toString()),
       Sexp.optionalToSexp("sid", this.queryOptions.sid, (s: StateId) => s.toString())
     );
-    return `(StmQuery (${opts}) "${this.query}")`;
+    return `(StmQuery (${opts}) "${escapeQuotes(this.query)}")`;
   }
 }
 
