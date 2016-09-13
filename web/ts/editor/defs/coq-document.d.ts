@@ -15,6 +15,8 @@ interface ICoqDocument {
   session: AceAjax.IEditSession;
   debouncedTip$: Rx.Observable<Tip>;
   tip$: Rx.Observable<Tip>;
+  input$: Command$;
+  output$s: CoqtopOutputStreams;
 
   getActiveProofTree(): Maybe<IProofTree>;
   getAllSentences(): ISentence<IStage>[];

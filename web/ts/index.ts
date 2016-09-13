@@ -11,6 +11,7 @@ import { setup as setupGoToPartitioning } from "./editor/goto-partitioning";
 import { setup as setupInFlightCounter } from "./editor/in-flight-counter";
 import { setup as setupKeybindings } from "./editor/keybindings";
 import { setup as setupLayout, rightLayoutName } from "./editor/layout";
+import { setup as setupNamesInScope } from "./editor/names-in-scope";
 import { setup as setupObserveContext } from "./editor/observe-context";
 import { setup as setupObserveCoqExn } from "./editor/observe-coqexn";
 import { setup as setupObserveEditorChange } from "./editor/observe-editor-change";
@@ -35,7 +36,7 @@ import { setup as setupProofTreeAutomation } from "./prooftree/automation";
 import { setup as setupProofTreePopulating } from "./prooftree/populating";
 import { setup as setupProofTree } from "./prooftree/setup";
 
-import { setup as setupSertop } from "./sertop/sertop";
+
 
 // import * as Promise from 'bluebird';
 // Promise.longStackTraces();
@@ -112,34 +113,22 @@ $(document).ready(() => {
 
   doc.editor.completers = [{ getCompletions: createGetCompletions(doc, stopAutomationRound$) }];
 
-  const flatCoqtopInputs$: Rx.ConnectableObservable<ISertop.ICommand> =
-    doc.command$
-      // merge sequence of groups of commands into one sequence of commands
-      .concatMap(cmd$ => cmd$
-      // .do(e => console.log("ELEMENT IN", e))
-      // .doOnCompleted(() => console.log("COMPLETED"))
-      )
-      //  .do(cmd => console.log("ELEMENT OUT", cmd))
-      .publish();
-
-  const coqtopOutput$s = setupSertop(flatCoqtopInputs$);
-  flatCoqtopInputs$.connect();
-
   // Shorthands for input streams
-  const controlCommand$ = flatCoqtopInputs$.let(Filters.controlCommand);
+  const controlCommand$ = doc.input$.let(Filters.controlCommand);
   const stmAdd$ = controlCommand$.let(Filters.stmAdd);
   const stmCancel$ = controlCommand$.let(Filters.stmCancel);
   const stmEditAt$ = controlCommand$.let(Filters.stmEditAt);
   const stmQuery$ = controlCommand$.let(Filters.stmQuery);
 
   // Shorthands for output streams
-  const { completed$, coqExn$, stmAdded$, stmCanceled$ } = coqtopOutput$s.answer$s;
-  const { error$, notice$ } = coqtopOutput$s.feedback$s.message$s;
-  const { processed$ } = coqtopOutput$s.feedback$s;
+  const { answer$s, feedback$s } = doc.output$s;
+  const { completed$, coqExn$, stmAdded$, stmCanceled$ } = answer$s;
+  const { error$, notice$ } = feedback$s.message$s;
+  const { processed$ } = feedback$s;
 
   setupObserveContext(doc, notice$, stmQuery$);
   const stmActionsInFlightCounter$ = setupInFlightCounter(stmAdd$, stmCancel$, stmEditAt$, completed$);
-  setupProofTreeAutomation(completed$, doc, error$, notice$, stmActionsInFlightCounter$, stmAdded$, stopAutomationRound$);
+  // setupProofTreeAutomation(completed$, doc, error$, notice$, stmActionsInFlightCounter$, stmAdded$, stopAutomationRound$);
   setupProofTreePopulating(doc, doc.tip$);
   setupObserveStmAdded(doc, stmAdded$);
   setupUserInteractionForwardGoto(doc, forwardGoTo$, error$);
@@ -164,6 +153,10 @@ $(document).ready(() => {
 
   const stmCanceledFiltered$ = setupObserveStmCancel(doc, stmCancel$, stmCanceled$);
   setupProofTree(doc, loadedFile$, resize$, stmCanceledFiltered$, bottomLayout);
+
+  const namesInScope$ = setupNamesInScope(doc, notice$);
+
+  namesInScope$.subscribe(names => console.log(`${names.length} names in scope`));
 
   // Debugging:
   doc.editor.setValue(`

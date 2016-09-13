@@ -4,6 +4,7 @@ import { errorUnderlineClass, theme } from "../peacoq/theme";
 import { ProofTreeStack } from "../prooftree/stack";
 import * as Command from "../sertop/command";
 import * as ControlCommand from "../sertop/control-command";
+import { setup as setupSertop } from "../sertop/sertop";
 
 function tipKey(t: Tip): number {
   return t.caseOf({
@@ -21,7 +22,9 @@ export class CoqDocument implements ICoqDocument {
   editorChange$: Rx.Observable<AceAjax.EditorChangeEvent>;
   sentences: ISentenceArray;
   endAnchor: AceAjax.Anchor;
+  input$: Command$;
   private nextObserver: Rx.Observer<{}>;
+  output$s: CoqtopOutputStreams;
   proofTrees: ProofTreeStack;
   sentencesChanged$: Rx.Observable<{}>;
   sentenceBeingProcessed$: Rx.Observable<ISentence<IBeingProcessed>>;
@@ -71,19 +74,32 @@ export class CoqDocument implements ICoqDocument {
     const sentencesToProcess$ = this.nextSentence(nextSubject.asObservable());
 
     const commandSubject = new Rx.Subject<Command$>();
+
+    this.input$ =
+      commandSubject
+        // merge sequence of groups of commands into one sequence of commands
+        .concatMap(cmd$ => cmd$
+        // .do(e => console.log("ELEMENT IN", e))
+        // .doOnCompleted(() => console.log("COMPLETED"))
+        )
+        // .do(cmd => console.log("ELEMENT OUT", cmd));
+    this.output$s = setupSertop(this.input$);
+
     this.commandObserver = commandSubject.asObserver();
-    this.command$ = commandSubject.asObservable();
+    const command$ = commandSubject.asObservable().publish();
+    this.command$ = command$;
 
     sentencesToProcess$.subscribe(e => this.moveCursorToPositionAndCenter(e.stopPosition));
     sentencesToProcess$
-        .map(s => {
-          const command = new Command.Control(new ControlCommand.StmAdd({}, s.query, false));
-          s.commandTag = just(command.tag);
-          return Rx.Observable.just(command);
-        })
-        .subscribe(cmd$ => this.sendCommands(cmd$));
+      .map(s => {
+        const command = new Command.Control(new ControlCommand.StmAdd({}, s.query, false));
+        s.commandTag = just(command.tag);
+        return Rx.Observable.just(command);
+      })
+      .subscribe(cmd$ => this.sendCommands(cmd$));
 
     tip$.connect();
+    command$.connect();
   }
 
   getActiveProofTree(): Maybe<IProofTree> {
@@ -342,7 +358,7 @@ function mkAnchor(
   if (insertRight) { a.$insertRight = true; }
   const marker = doc.session.addDynamicMarker(
     {
-      update: function(html, markerLayer, session, config) {
+      update: function (html, markerLayer, session, config) {
         const screenPos = session.documentToScreenPosition(a);
         const height = config.lineHeight;
         const width = config.characterWidth;
