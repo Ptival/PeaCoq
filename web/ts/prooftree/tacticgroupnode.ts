@@ -1,177 +1,177 @@
-import { ProofTreeNode } from "./prooftreenode";
-import { Strictly } from "../peacoq/strictly";
-import * as Command from "../sertop/command";
-import * as ControlCommand from "../sertop/control-command";
+import { ProofTreeNode } from "./prooftreenode"
+import { Strictly } from "../peacoq/strictly"
+import * as Command from "../sertop/command"
+import * as ControlCommand from "../sertop/control-command"
 
-let userTacticsGroupName = "PeaCoq user tactics";
+let userTacticsGroupName = "PeaCoq user tactics"
 
 export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
-  isProcessed: boolean;
+  public isProcessed: boolean
   // do not use parent, D3 will overwrite
-  span: JQuery;
-  tacticIndex: number;
-  tactics: ITactic[];
+  public span: JQuery
+  public tacticIndex: number
+  public tactics: ITactic[]
 
   constructor(
     proofTree: IProofTree,
     private parentGoal: IGoalNode,
     public name: string
   ) {
-    super(proofTree, just(parentGoal));
-    this.isProcessed = false;
-    this.tactics = [];
-    this.tacticIndex = 0;
+    super(proofTree, just(parentGoal))
+    this.isProcessed = false
+    this.tactics = []
+    this.tacticIndex = 0
   }
 
-  click() {
+  public click() {
     if (this.proofTree.isCurNodeAncestor(Strictly.Yes, this)) {
-      const stateId = _.min(this.proofTree.curNode.getStateIds());
-      if (stateId === undefined) { debugger; }
+      const stateId = _.min(this.proofTree.curNode.getStateIds())
+      if (stateId === undefined) { debugger }
       this.proofTree.document.sendCommands(
         Rx.Observable.just(new Command.Control(new ControlCommand.StmCancel([stateId])))
-      );
+      )
     }
     this.getFocusedTactic().caseOf({
-      nothing: () => { debugger; },
+      nothing: () => { debugger },
       just: t => {
-        this.proofTree.document.editor.execCommand("insertstring", ` ${t.tactic}`);
-        this.proofTree.document.next();
-        this.proofTree.document.editor.execCommand("insertstring", "\n");
+        this.proofTree.document.editor.execCommand("insertstring", ` ${t.tactic}`)
+        this.proofTree.document.next()
+        this.proofTree.document.editor.execCommand("insertstring", "\n")
       }
-    });
+    })
   }
 
-  focus() {
+  public focus() {
     this.parentGoal.getFocusedChild().caseOf({
       nothing: () => { },
       just: focused => {
-        if (focused.id === this.id) { return; }
-        const thisIndex = _.findIndex(this.parentGoal.tacticGroups, t => t.id === this.id);
-        if (thisIndex === -1) { debugger; }
-        this.parentGoal.tacticIndex = thisIndex;
-        this.parentGoal.focus();
+        if (focused.id === this.id) { return }
+        const thisIndex = _.findIndex(this.parentGoal.tacticGroups, t => t.id === this.id)
+        if (thisIndex === -1) { debugger }
+        this.parentGoal.tacticIndex = thisIndex
+        this.parentGoal.focus()
       }
-    });
+    })
   }
 
-  getAllDescendants(): IProofTreeNode[] {
-    let children: IGoalNode[] = _(this.tactics).map(t => t.goals).flatten<IGoalNode>().value();
-    let descendants: IProofTreeNode[] = _(children).map(c => c.getAllDescendants()).flatten<IProofTreeNode>().value();
-    return ([] as IProofTreeNode[]).concat(children, descendants);
+  public getAllDescendants(): IProofTreeNode[] {
+    let children: IGoalNode[] = _(this.tactics).map(t => t.goals).flatten<IGoalNode>().value()
+    let descendants: IProofTreeNode[] = _(children).map(c => c.getAllDescendants()).flatten<IProofTreeNode>().value()
+    return ([] as IProofTreeNode[]).concat(children, descendants)
   }
 
-  getAllGoalDescendants(): IGoalNode[] {
-    let children: IGoalNode[] = _(this.tactics).map(t => t.goals).flatten<IGoalNode>().value();
-    let descendants: IGoalNode[] = _(children).map(c => c.getAllGoalDescendants()).flatten<IGoalNode>().value();
-    return ([] as IGoalNode[]).concat(children, descendants);
+  public getAllGoalDescendants(): IGoalNode[] {
+    let children: IGoalNode[] = _(this.tactics).map(t => t.goals).flatten<IGoalNode>().value()
+    let descendants: IGoalNode[] = _(children).map(c => c.getAllGoalDescendants()).flatten<IGoalNode>().value()
+    return ([] as IGoalNode[]).concat(children, descendants)
   }
 
-  getFocusedChild(): Maybe<IGoalNode> {
-    if (this.tactics.length === 0) { return nothing(); }
-    const focusedTactic = this.tactics[this.tacticIndex];
-    if (focusedTactic.goals.length === 0) { return nothing(); }
-    return just(focusedTactic.goals[focusedTactic.goalIndex]);
+  public getFocusedChild(): Maybe<IGoalNode> {
+    if (this.tactics.length === 0) { return nothing() }
+    const focusedTactic = this.tactics[this.tacticIndex]
+    if (focusedTactic.goals.length === 0) { return nothing() }
+    return just(focusedTactic.goals[focusedTactic.goalIndex])
   }
 
-  getFocusedTactic(): Maybe<ITactic> {
+  public getFocusedTactic(): Maybe<ITactic> {
     return (
       this.tactics.length === 0
         ? nothing()
         : just(this.tactics[this.tacticIndex])
-    );
+    )
   }
 
-  getGoalAncestor(): Maybe<IGoalNode> { return just(this.parentGoal); }
+  public getGoalAncestor(): Maybe<IGoalNode> { return just(this.parentGoal) }
 
-  getHeight(): number {
-    let rect = this.getHTMLElement().getBoundingClientRect();
-    return Math.ceil(rect.height);
+  public getHeight(): number {
+    let rect = this.getHTMLElement().getBoundingClientRect()
+    return Math.ceil(rect.height)
   }
 
-  getParent(): Maybe<IGoalNode> { return just(this.parentGoal); }
+  public getParent(): Maybe<IGoalNode> { return just(this.parentGoal) }
 
-  getParentGoal(): IGoalNode { return this.parentGoal; }
+  public getParentGoal(): IGoalNode { return this.parentGoal }
 
-  getTactics(): ITactic[] {
-    return this.tactics;
+  public getTactics(): ITactic[] {
+    return this.tactics
   }
 
-  getViewChildren(): IGoalNode[] {
+  public getViewChildren(): IGoalNode[] {
     if (this.isSolved()
       && !this.proofTree.isCurNodeAncestor(Strictly.Yes, this)) {
-      return [];
+      return []
     }
-    if (this.tactics.length === 0) { return []; }
-    let focusedTactic = this.tactics[this.tacticIndex];
-    return focusedTactic.goals;
+    if (this.tactics.length === 0) { return [] }
+    let focusedTactic = this.tactics[this.tacticIndex]
+    return focusedTactic.goals
   }
 
-  getWidth(): number {
-    return this.proofTree.getTacticWidth();
+  public getWidth(): number {
+    return this.proofTree.getTacticWidth()
   }
 
-  isSolved(): boolean {
+  public isSolved(): boolean {
     return this.getFocusedTactic().caseOf({
       nothing: () => false,
       just: t => this.isProcessed && t.isSolved(),
-    });
+    })
   }
 
-  onChildSolvedAndUnfocused(sid: number): void {
-    let focusedTactic = fromJust(this.getFocusedTactic());
+  public onChildSolvedAndUnfocused(sid: number): void {
+    let focusedTactic = fromJust(this.getFocusedTactic())
     let unsolved = <IGoalNode | undefined>_(focusedTactic.goals)
-      .find(function(elt) {
-        return !elt.isSolved();
-      });
-    // debugger;
-    // console.log("unsolved", unsolved);
+      .find(function (elt) {
+        return !elt.isSolved()
+      })
+    // debugger
+    // console.log("unsolved", unsolved)
     if (unsolved === undefined) {
-      this.onSolved(sid);
+      this.onSolved(sid)
     } else {
-      unsolved.addStateId(sid);
-      this.proofTree.curNode = unsolved;
-      //this.proofTree.refreshTactics();
-      this.proofTree.scheduleUpdate();
+      unsolved.addStateId(sid)
+      this.proofTree.curNode = unsolved
+      // this.proofTree.refreshTactics()
+      this.proofTree.scheduleUpdate()
     }
   }
 
-  onSolved(sid: number): void {
-    this.proofTree.curNode = this.parentGoal;
+  public onSolved(sid: number): void {
+    this.proofTree.curNode = this.parentGoal
     this.proofTree.updateAndWait()
       .then(() => {
-        // console.log("THEN");
-        this.parentGoal.onChildSolved(sid);
+        // console.log("THEN")
+        this.parentGoal.onChildSolved(sid)
       })
-      ;
+
   }
 
-  shiftNextInGroup() {
+  public shiftNextInGroup() {
     if (this.tacticIndex < this.tactics.length - 1) {
-      this.tacticIndex++;
-      //asyncLog("NEXTGROUPFOCUS " + nodeString(this.tactics[this.tacticIndex]));
-      this.proofTree.scheduleUpdate();
+      this.tacticIndex++
+      // asyncLog("NEXTGROUPFOCUS " + nodeString(this.tactics[this.tacticIndex]))
+      this.proofTree.scheduleUpdate()
     }
   }
 
-  shiftPrevInGroup() {
+  public shiftPrevInGroup() {
     if (this.tacticIndex > 0) {
-      this.tacticIndex--;
-      //asyncLog("PREVGROUPFOCUS " + nodeString(this.tactics[this.tacticIndex]));
-      this.proofTree.scheduleUpdate();
+      this.tacticIndex--
+      // asyncLog("PREVGROUPFOCUS " + nodeString(this.tactics[this.tacticIndex]))
+      this.proofTree.scheduleUpdate()
     }
   }
 
-  updateNode(): void {
-    let jqBody = $(this.getHTMLElement());
-    let jQContents;
-    let focusedTactic = this.tactics[this.tacticIndex];
-    let nbTactics = this.tactics.length;
+  public updateNode(): void {
+    let jqBody = $(this.getHTMLElement())
+    let jQContents
+    let focusedTactic = this.tactics[this.tacticIndex]
+    let nbTactics = this.tactics.length
 
     this.span = $("<div>")
       .addClass("tacticNode")
       .css("padding", "4px")
       .css("text-align", "center")
-      ;
+
 
     // prepend a tactic node selector if necessary
     if (nbTactics > 1) {
@@ -180,45 +180,45 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
         this.span.append(
           $("<a>")
             .attr("href", "#")
-            .text('◀')
-            .click(function(e) {
-              e.stopImmediatePropagation();
-              this.shiftPrevInGroup();
+            .text("◀")
+            .click(function (e) {
+              e.stopImmediatePropagation()
+              this.shiftPrevInGroup()
             })
-        );
+        )
       } else {
-        this.span.append(nbsp);
+        this.span.append(nbsp)
       }
 
       this.span.append(
-        '[' + (this.tacticIndex + 1) + '/' + this.tactics.length + ']'
-      );
+        "[" + (this.tacticIndex + 1) + "/" + this.tactics.length + "]"
+      )
 
       if (this.tacticIndex < this.tactics.length - 1) {
         this.span.append(
           $("<a>")
             .attr("href", "#")
-            .text('▶')
-            .click(function(e) {
-              e.stopImmediatePropagation();
-              this.shiftNextInGroup();
+            .text("▶")
+            .click(function (e) {
+              e.stopImmediatePropagation()
+              this.shiftNextInGroup()
             })
-        );
+        )
       } else {
-        this.span.append(nbsp);
+        this.span.append(nbsp)
       }
 
-      this.span.append($("<br>"));
+      this.span.append($("<br>"))
 
     }
 
     this.span.append(
       focusedTactic.tactic
-    );
+    )
 
-    jQContents = this.span;
-    jqBody.empty();
-    jqBody.append(jQContents);
+    jQContents = this.span
+    jqBody.empty()
+    jqBody.append(jQContents)
   }
 
 }

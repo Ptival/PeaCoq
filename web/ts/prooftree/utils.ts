@@ -7,7 +7,7 @@
 //     Global.proofTrees.length > 0
 //       ? just(Global.proofTrees[0])
 //       : nothing()
-//   );
+//   )
 // }
 
 /*
@@ -16,39 +16,39 @@
  * within which [elmt] lives.
  */
 function elmtRect(node: IProofTreeNode, elmt: HTMLElement) {
-  let rect = elmt.getBoundingClientRect();
-  let containerRect = $(elmt).parents("foreignObject")[0].getBoundingClientRect();
-  let left = node.getDestinationScaledX() + deltaX(containerRect, rect);
-  let top = node.getDestinationScaledY() + deltaY(containerRect, rect);
+  let rect = elmt.getBoundingClientRect()
+  let containerRect = $(elmt).parents("foreignObject")[0].getBoundingClientRect()
+  let left = node.getDestinationScaledX() + deltaX(containerRect, rect)
+  let top = node.getDestinationScaledY() + deltaY(containerRect, rect)
   return {
     "left": left, "right": left + rect.width, "width": rect.width,
     "top": top, "bottom": top + rect.height, "height": rect.height,
-  };
+  }
 }
 
 // function elmtRect0(node: IProofTreeNode, elmt: HTMLElement) {
-//   let rect = elmt.getBoundingClientRect();
-//   let containerRect = $(elmt).parents("foreignObject")[0].getBoundingClientRect();
-//   let left = node.cX0 + deltaX(containerRect, rect);
-//   let top = node.cY0 + deltaY(containerRect, rect);
+//   let rect = elmt.getBoundingClientRect()
+//   let containerRect = $(elmt).parents("foreignObject")[0].getBoundingClientRect()
+//   let left = node.cX0 + deltaX(containerRect, rect)
+//   let top = node.cY0 + deltaY(containerRect, rect)
 //   return {
 //     "left": left, "right": left + rect.width, "width": rect.width,
 //     "top": top, "bottom": top + rect.height, "height": rect.height,
-//   };
+//   }
 // }
 
 type Rectangle = {
-  bottom: number;
-  left: number;
-  right: number;
-  top: number;
+  bottom: number
+  left: number
+  right: number
+  top: number
 }
 
 function deltaX(rect1: Rectangle, rect2: Rectangle): number {
-  return rect2.left - rect1.left;
+  return rect2.left - rect1.left
 }
 function deltaY(rect1: Rectangle, rect2: Rectangle): number {
-  return rect2.top - rect1.top;
+  return rect2.top - rect1.top
 }
 
 function makeGoalNodePre() {
@@ -60,30 +60,29 @@ function makeGoalNodePre() {
     .css("line-height", "normal")
     .css("margin", 0)
     .css("padding", 0)
-    ;
 }
 
 export function swapXY(r: XY): XY {
-  let [x, y] = [r.x, r.y];
-  r.x = y;
-  r.y = x;
-  return r;
+  let [x, y] = [r.x, r.y]
+  r.x = y
+  r.y = x
+  return r
 }
 
-export function byNodeId(d: IProofTreeNode): string { return d.id; }
-export function byLinkId(d: ProofTreeLink): string { return d.source.id + "," + d.target.id; }
+export function byNodeId(d: IProofTreeNode): string { return d.id }
+export function byLinkId(d: ProofTreeLink): string { return `${d.source.id}, ${d.target.id}` }
 
 // transposition accessors
 export function nodeX(d: IProofTreeNode): number {
-  return d.y;
+  return d.y
 }
 
 export function nodeY(d: IProofTreeNode): number {
-  return d.x;
+  return d.x
 }
 
 // function goalNodeUnicityRepr(node: IGoalNode): string {
-//   debugger;
+//   debugger
 //   /*
 //   retur  JSON.stringify({
 //     "goalTerm": node.goalTerm,
@@ -93,10 +92,10 @@ export function nodeY(d: IProofTreeNode): number {
 //           "hName": h.hName,
 //           "hValue": h.hValue,
 //           "hType": h.hType,
-//         };
+//         }
 //       })
 //       .value(),
-//   });
+//   })
 //   */
 // }
 
@@ -105,35 +104,35 @@ export function nodeY(d: IProofTreeNode): number {
 //     _(node.goals)
 //       .map(goalNodeUnicityRepr)
 //       .value()
-//   );
+//   )
 // }
 
-let centerLeftOffset = +10;
+let centerLeftOffset = +10
 
-let centerRightOffset = -10;
+let centerRightOffset = -10
 
 function mkCenterLeft(x, y, h): XY {
-  return { x: x + centerLeftOffset, y: y + h/2 };
+  return { x: x + centerLeftOffset, y: y + h / 2 }
 }
 
 export function currentCenterLeft(d: IProofTreeNode): XY {
-  return mkCenterLeft(d.currentScaledX, d.currentScaledY, d.getHeight());
+  return mkCenterLeft(d.currentScaledX, d.currentScaledY, d.getHeight())
 }
 
 export function destinationCenterLeft(d: IProofTreeNode): XY {
-  return mkCenterLeft(d.getDestinationScaledX(), d.getDestinationScaledY(), d.getHeight());
+  return mkCenterLeft(d.getDestinationScaledX(), d.getDestinationScaledY(), d.getHeight())
 }
 
 function mkCenterRight(x, y, w, h): XY {
-  return { x: x + w + centerRightOffset, y: y + h/2 };
+  return { x: x + w + centerRightOffset, y: y + h / 2 }
 }
 
 export function currentCenterRight(d: IProofTreeNode): XY {
-  return mkCenterRight(d.currentScaledX, d.currentScaledY, d.getWidth(), d.getHeight());
+  return mkCenterRight(d.currentScaledX, d.currentScaledY, d.getWidth(), d.getHeight())
 }
 
 export function destinationCenterRight(d: IProofTreeNode): XY {
-  return mkCenterRight(d.getDestinationScaledX(), d.getDestinationScaledY(), d.getWidth(), d.getHeight());
+  return mkCenterRight(d.getDestinationScaledX(), d.getDestinationScaledY(), d.getWidth(), d.getHeight())
 }
 
 /*
@@ -150,58 +149,58 @@ lines return an object of lists. Disabled for now.
 //
 //   function rec(before, after) {
 //
-//     let nbBefore = before.children().length;
-//     let nbAfter = after.children().length;
+//     let nbBefore = before.children().length
+//     let nbAfter = after.children().length
 //     if (nbBefore !== nbAfter) {
 //       return [{
 //         "removed": before,
 //         "added": after,
-//       }];
+//       }]
 //     }
 //
-//     let nbChildren = nbBefore;
+//     let nbChildren = nbBefore
 //     if (nbChildren === 0) { // both leaves
 //       if (before.html() !== after.html()) {
 //         return [{
 //           "removed": before,
 //           "added": after,
-//         }];
+//         }]
 //       } else {
-//         return [];;
+//         return [];
 //       }
 //     }
 //
-//     let everyChildChanged = true;
+//     let everyChildChanged = true
 //
 //     let childrenChanges = _.range(nbChildren).reduce(function(acc, i) {
-//       let tmp = rec($(before.children()[i]), $(after.children()[i]));
+//       let tmp = rec($(before.children()[i]), $(after.children()[i]))
 //       if (tmp.length === 0) { everyChildChanged = false; }
-//       return acc.concat(tmp);
+//       return acc.concat(tmp)
 //     }, [])
-//       ;
+//       
 //
 //     if (everyChildChanged) {
 //       return [{
 //         "removed": before,
 //         "added": after,
-//       }];
+//       }]
 //     } else {
-//       return childrenChanges;
+//       return childrenChanges
 //     }
 //
 //   }
 //
-//   let removed = [];
-//   let added = [];
+//   let removed = []
+//   let added = []
 //
 //   _(rec($(before).children(), $(after).children())).each(function(pair, ndx) {
-//     pair.removed.css("background-color", diffColor(ndx));
-//     pair.added.css("background-color", diffColor(ndx));
-//     //removed.push(pair.removed);
-//     //added.push(pair.added);
-//   });
+//     pair.removed.css("background-color", diffColor(ndx))
+//     pair.added.css("background-color", diffColor(ndx))
+//     //removed.push(pair.removed)
+//     //added.push(pair.added)
+//   })
 //
-//   return { "removed": removed, "added": added };
+//   return { "removed": removed, "added": added }
 // }
 
 /*
@@ -209,7 +208,7 @@ lines return an object of lists. Disabled for now.
   [currentY]
 */
 function destinationEmptyRect(node: IProofTreeNode, currentY: number): Rectangle {
-  let delta = 1; // how big to make the empty rectangle
+  let delta = 1 // how big to make the empty rectangle
   return $.extend(
     {
       "left": node.getDestinationScaledX(),
@@ -221,11 +220,11 @@ function destinationEmptyRect(node: IProofTreeNode, currentY: number): Rectangle
       "bottom": currentY + delta,
       "height": 2 * delta,
     }
-  );
+  )
 }
 
 function currentEmptyRect(node: IProofTreeNode, currentY: number): Rectangle {
-  let delta = 1; // how big to make the empty rectangle
+  let delta = 1 // how big to make the empty rectangle
   return $.extend(
     {
       "left": node.currentScaledX,
@@ -237,7 +236,7 @@ function currentEmptyRect(node: IProofTreeNode, currentY: number): Rectangle {
       "bottom": currentY + delta,
       "height": 2 * delta,
     }
-  );
+  )
 }
 
 export function commonAncestor(n1: IProofTreeNode, n2: IProofTreeNode): IProofTreeNode {
@@ -246,20 +245,20 @@ export function commonAncestor(n1: IProofTreeNode, n2: IProofTreeNode): IProofTr
     just: (n1p) => n2.getParent().caseOf({
       nothing: () => n2,
       just: (n2p) => {
-        if (n1.id === n2.id) { return n1; }
+        if (n1.id === n2.id) { return n1 }
         if (n1.depth < n2.depth) {
-          return commonAncestor(n1, n2p);
+          return commonAncestor(n1, n2p)
         } else if (n1.depth > n2.depth) {
-          return commonAncestor(n1p, n2);
+          return commonAncestor(n1p, n2)
         } else {
-          return commonAncestor(n1p, n2p);
+          return commonAncestor(n1p, n2p)
         }
       }
     })
-  });
+  })
 }
 
-let diffColor = (function() {
+let diffColor = (function () {
   let colors = [
     "#ffbb78",
     "#f7b6d2",
@@ -272,9 +271,9 @@ let diffColor = (function() {
     "#d6616b",
     "#ce6dbd",
     "#de9ed6",
-  ];
-  let scale = d3.scale.ordinal<number, string>().range(colors);
-  return function(n: number) {
-    return scale(n);
-  };
-})();
+  ]
+  let scale = d3.scale.ordinal<number, string>().range(colors)
+  return function (n: number) {
+    return scale(n)
+  }
+})()

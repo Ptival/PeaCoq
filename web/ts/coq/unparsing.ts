@@ -1,6 +1,6 @@
-// import ParenRelation from "./paren-relation";
-// import PpBox from "./ppbox";
-// import PpCut from "./ppcut";
+// import ParenRelation from "./paren-relation"
+// import PpBox from "./ppbox"
+// import PpCut from "./ppcut"
 
 abstract class Unparsing { }
 
@@ -9,7 +9,7 @@ class UnpMetaVar extends Unparsing {
     public index: number,
     public parenRelation: ParenRelation
   ) {
-    super();
+    super()
   }
 }
 
@@ -19,7 +19,7 @@ class UnpListMetaVar extends Unparsing {
     public parenRelation: ParenRelation,
     public unparsing: Unparsing[]
   ) {
-    super();
+    super()
   }
 }
 
@@ -29,7 +29,7 @@ class UnpBinderListMetaVar extends Unparsing {
     public isOpen: boolean,
     public unparsing: Unparsing[]
   ) {
-    super();
+    super()
   }
 }
 
@@ -37,7 +37,7 @@ class UnpTerminal extends Unparsing {
   constructor(
     public terminal: string
   ) {
-    super();
+    super()
   }
 }
 
@@ -46,12 +46,12 @@ class UnpBox extends Unparsing {
     public box: PpBox,
     public unparsing: Unparsing[]
   ) {
-    super();
+    super()
   }
 }
 
 class UnpCut extends Unparsing {
   constructor(public cut: PpCut) {
-    super();
+    super()
   }
 }

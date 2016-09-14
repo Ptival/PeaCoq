@@ -28,10 +28,10 @@ export function setup(
           .take(1).takeUntil(completed$.filter(c => c.cmdTag === a.tag))
       )
   ).subscribe(e => {
-    // debugger;
+    // debugger
     doc.removeSentences(s => s.commandTag.caseOf({
       nothing: () => false,
       just: t => +t >= +e.cmdTag,
-    }));
-  });
+    }))
+  })
 }

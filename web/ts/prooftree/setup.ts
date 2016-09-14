@@ -1,5 +1,5 @@
-import { hide as hideProofTreePanel, show as showProofTreePanel } from "./panel";
-import * as ProofTreeHandlers from "./prooftree-handlers";
+import { hide as hideProofTreePanel, show as showProofTreePanel } from "./panel"
+import * as ProofTreeHandlers from "./prooftree-handlers"
 
 export function setup(
   doc: ICoqDocument,
@@ -10,21 +10,21 @@ export function setup(
 ): void {
 
   resize$.debounce(250).subscribe(() => {
-    if (doc.proofTrees.length === 0) { return; }
-    const activeProofTree = doc.proofTrees.peek();
+    if (doc.proofTrees.length === 0) { return }
+    const activeProofTree = doc.proofTrees.peek()
     activeProofTree.resize(
       $("#prooftree").parent().width(),
       $("#prooftree").parent().height()
-    );
-  });
+    )
+  })
 
-  const exitProofTree$ = new Rx.Subject<{}>();
+  const exitProofTree$ = new Rx.Subject<{}>()
   function hideProofTreePanelAndSignal() {
-    exitProofTree$.onNext({});
-    hideProofTreePanel(bottomLayout);
+    exitProofTree$.onNext({})
+    hideProofTreePanel(bottomLayout)
   }
 
-  loadedFile$.subscribe(hideProofTreePanelAndSignal);
+  loadedFile$.subscribe(hideProofTreePanelAndSignal)
 
   // We want to start a ProofTree session everytime:
   // - the last sentence processed is "Proof."
@@ -45,16 +45,16 @@ export function setup(
       ProofTreeHandlers.proofTreeOnEdit(
         doc, () => showProofTreePanel(bottomLayout), hideProofTreePanelAndSignal,
         sentence.query, sentence.stage.stateId, context
-      );
-    });
+      )
+    })
 
   stmCanceled$.subscribe(c => {
-    // console.log("proofTree cancels IDs", c.answer.stateIds);
+    // console.log("proofTree cancels IDs", c.answer.stateIds)
     ProofTreeHandlers.onStmCanceled(
       doc,
       hideProofTreePanelAndSignal,
       c.answer.stateIds
     )
-  });
+  })
 
 }

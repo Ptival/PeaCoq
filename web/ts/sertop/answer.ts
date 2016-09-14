@@ -1,5 +1,5 @@
-import * as AnswerKind from "./answer-kind";
-import * as Feedback from "../coq/feedback";
+import * as AnswerKind from "./answer-kind"
+import * as Feedback from "../coq/feedback"
 
 export class Answer implements ISertop.IAnswer<ISertop.IAnswerKind> {
   constructor(
@@ -9,16 +9,16 @@ export class Answer implements ISertop.IAnswer<ISertop.IAnswerKind> {
 }
 
 export function create(o): Answer | Feedback.Feedback {
-  const [name, ...args] = o;
+  const [name, ...args] = o
   switch (o[0]) {
     case "Answer":
-      // console.log("RCV", o);
-      const [cmdTag, answerKind] = args;
-      return new Answer(cmdTag, AnswerKind.create(answerKind));
+      // console.log("RCV", o)
+      const [cmdTag, answerKind] = args
+      return new Answer(cmdTag, AnswerKind.create(answerKind))
     case "Feedback":
-      return Feedback.fromSertop(o);
+      return Feedback.fromSertop(o)
     default:
-      debugger;
+      debugger
   }
-  throw "Answer.create";
+  throw "Answer.create"
 }

@@ -1,17 +1,17 @@
-import * as Context from "../editor/context";
-import { tacticAutomationRoute } from "../peacoq/routes";
-import { Control } from "../sertop/command";
-import { StmAdd, StmEditAt, StmQuery } from "../sertop/control-command";
+import * as Context from "../editor/context"
+import { tacticAutomationRoute } from "../peacoq/routes"
+import { Control } from "../sertop/command"
+import { StmAdd, StmEditAt, StmQuery } from "../sertop/control-command"
 
 interface ProofTreeAutomationInput {
-  command$: Rx.Observer<Command$>;
-  completed$;
-  doc: ICoqDocument;
-  error$: Rx.Observable<ErrorMessageFeedback>;
-  notice$: Rx.Observable<NoticeMessageFeedback>;
-  stmActionsInFlightCounter$: Rx.Observable<number>;
-  stmAdded$: Rx.Observable<ISertop.IAnswer<ISertop.IStmAdded>>;
-  stopAutomationRound$: Rx.Observable<{}>;
+  command$: Rx.Observer<Command$>
+  completed$
+  doc: ICoqDocument
+  error$: Rx.Observable<ErrorMessageFeedback>
+  notice$: Rx.Observable<NoticeMessageFeedback>
+  stmActionsInFlightCounter$: Rx.Observable<number>
+  stmAdded$: Rx.Observable<ISertop.IAnswer<ISertop.IStmAdded>>
+  stopAutomationRound$: Rx.Observable<{}>
 }
 
 export function setup(
@@ -24,10 +24,10 @@ export function setup(
   stopAutomationRound$: Rx.Observable<{}>
 ): void {
 
-  const pause$ = makePause$(stmActionsInFlightCounter$);
+  const pause$ = makePause$(stmActionsInFlightCounter$)
 
-  // tip$.subscribe(t => console.log(Date.now(), "TIP CHANGED"));
-  // pause$.subscribe(b => console.log(Date.now(), b ? "RESUME" : "PAUSE"));
+  // tip$.subscribe(t => console.log(Date.now(), "TIP CHANGED"))
+  // pause$.subscribe(b => console.log(Date.now(), b ? "RESUME" : "PAUSE"))
 
   doc.debouncedTip$
     .concatMap<ISentence<IStage>>(tip => tip.caseOf({ nothing: () => [], just: s => [s] }))
@@ -62,15 +62,15 @@ export function setup(
         // .do(cs => cs.take(1).subscribe((cmd: Command.Control<ControlCommand.StmAdd>) => console.log(Date.now(), "After pause", cmd.controlCommand.sentence)))
         .takeUntil(doc.tip$)
     )
-    .subscribe(commands$ => doc.sendCommands(commands$));
+    .subscribe(commands$ => doc.sendCommands(commands$))
 
 }
 
 function makeGroup(name: string, tactics: string[]): TacticGroup {
   return {
     "name": name,
-    "tactics": _(tactics).map(function(s) { return s + '.'; }).value(),
-  };
+    "tactics": _(tactics).map(s => `${s}.`).value(),
+  }
 }
 
 /*
@@ -78,11 +78,11 @@ function makeGroup(name: string, tactics: string[]): TacticGroup {
 */
 function tacticsToTry(e: PeaCoqContextElement): TacticGroup[] {
 
-  const hyps = e.ppgoal.hyps;
-  const curHypsFull = _(hyps).clone().reverse();
-  const curHyps = curHypsFull.map(h => h.name);
+  const hyps = e.ppgoal.hyps
+  const curHypsFull = _(hyps).clone().reverse()
+  const curHyps = curHypsFull.map(h => h.name)
   // TODO: there is a better way to do this
-  const curNames = curHyps; // _(curHyps).union(namesPossiblyInScope.reverse());
+  const curNames = curHyps // _(curHyps).union(namesPossiblyInScope.reverse())
 
   const res = [
 
@@ -156,7 +156,7 @@ function tacticsToTry(e: PeaCoqContextElement): TacticGroup[] {
       // This was used for the study because induction applies to everything :(
       // _(curHypsFull)
       //     .filter(function(h) {
-      //         return h.hType.tag === "Var" && h.hType.contents === "natlist";
+      //         return h.hType.tag === "Var" && h.hType.contents === "natlist"
       //     })
       //     .map(function(h) { return "induction " + h.hName; })
       //     .value()
@@ -201,9 +201,9 @@ function tacticsToTry(e: PeaCoqContextElement): TacticGroup[] {
     //                 return ([
     //                     "apply " + n + " in " + h,
     //                     "eapply " + n + " in " + h,
-    //                 ]);
+    //                 ])
     //             })
-    //             .flatten(true).value();
+    //             .flatten(true).value()
     //     }).flatten(true).value()
     // ),
     //
@@ -216,10 +216,10 @@ function tacticsToTry(e: PeaCoqContextElement): TacticGroup[] {
     //                 return ([
     //                     ("rewrite -> " + n + " in " + h),
     //                     ("rewrite <- " + n + " in " + h)
-    //                 ]);
+    //                 ])
     //             })
     //             .flatten(true).value()
-    //         ;
+    //         
     //     }).flatten(true).value()
     // ),
 
@@ -228,14 +228,14 @@ function tacticsToTry(e: PeaCoqContextElement): TacticGroup[] {
       curHyps.map(h => `revert ${h}`)
     ),
 
-  ];
+  ]
 
-  return res;
+  return res
 
 }
 
 function getTacticsForContext(context, sentence) {
-  if (context.fgGoals.length === 0) { return []; }
+  if (context.fgGoals.length === 0) { return [] }
   return (
     _(tacticsToTry(context.fgGoals[0]))
       .flatMap(group =>
@@ -244,7 +244,7 @@ function getTacticsForContext(context, sentence) {
         )
       )
       .value()
-  );
+  )
 }
 
 // We keep separate commands$ and done$ because we want the recipient to
@@ -260,30 +260,30 @@ function makeCandidate(
   notice$,
   stmAdded$
 ): {
-    commands$: CommandStreamItem<ISertop.ICommand>;
-    done$: Rx.Observable<any>;
+    commands$: CommandStreamItem<ISertop.ICommand>
+    done$: Rx.Observable<any>
   } {
-  const { context, group, tactic, sentence } = input;
-  const stateId = sentence.stage.stateId;
+  const { context, group, tactic, sentence } = input
+  const stateId = sentence.stage.stateId
 
   // FIXME: not sure how to better do this, but we do not want to send
   // any command if the tip has moved. Somehow, takeUntil(tip$) does not
   // necessarily do a good job, so double-checking here:
-  const curSid = _.max(doc.getAllSentences().map(s => s.getStateId().caseOf({ nothing: () => 0, just: sid => sid })));
+  const curSid = _.max(doc.getAllSentences().map(s => s.getStateId().caseOf({ nothing: () => 0, just: sid => sid })))
   if (stateId !== curSid) {
-    // console.log("Was expecting", stateId, "but we are at", curSid, "aborting");
+    // console.log("Was expecting", stateId, "but we are at", curSid, "aborting")
     return {
       commands$: Rx.Observable.empty<ISertop.ICommand>(),
       done$: Rx.Observable.empty<any>(),
-    };
+    }
   } else {
-    // console.log("Was expecting", stateId, "and we are at", curSid, "proceeding");
+    // console.log("Was expecting", stateId, "and we are at", curSid, "proceeding")
   }
 
-  const add = new Control(new StmAdd({ ontop: stateId }, tactic, true));
+  const add = new Control(new StmAdd({ ontop: stateId }, tactic, true))
   // listen for the STM added answer (there should be 0 if failed otherwise 1)
   const filteredStmAdded$ = stmAdded$.filter(a => a.cmdTag === add.tag)
-    .takeUntil(completed$.filter(a => a.cmdTag === add.tag));
+    .takeUntil(completed$.filter(a => a.cmdTag === add.tag))
   const getContext$ =
     filteredStmAdded$
       .map(a => new Control(new StmQuery(
@@ -295,8 +295,8 @@ function makeCandidate(
         "PeaCoqGetContext.",
         true
       )))
-      .share();
-  const stmAddErrored$ = filteredStmAdded$.flatMap(a => error$.filter(e => e.editOrStateId === a.answer.stateId));
+      .share()
+  const stmAddErrored$ = filteredStmAdded$.flatMap(a => error$.filter(e => e.editOrStateId === a.answer.stateId))
   // now, try to pick up the notice feedback for that state id
   const addNotice$ =
     filteredStmAdded$
@@ -305,29 +305,29 @@ function makeCandidate(
           .filter(n => n.editOrStateId === a.answer.stateId)
           .takeUntil(stmAddErrored$)
           .take(1)
-      });
+      })
   // we can send the next candidate when we receive either the error or
   // the notice, unless we need to stop.
   addNotice$
     .subscribe(n => {
-      const afterContext = Context.create(n.feedbackContent.message);
+      const afterContext = Context.create(n.feedbackContent.message)
       // we only add tactics that change something
       if (!Context.isEqual(afterContext, context)) {
-        sentence.addCompletion(tactic, group, afterContext);
+        sentence.addCompletion(tactic, group, afterContext)
       }
-    });
-  const editAt = new Control(new StmEditAt(stateId));
+    })
+  const editAt = new Control(new StmEditAt(stateId))
 
   const commands$ = Rx.Observable.concat<ISertop.ICommand>([
     Rx.Observable.just(add),
     getContext$,
     Rx.Observable.just(editAt)
-  ]).share();
+  ]).share()
 
   // this is an empty stream that waits until either stream emits
-  const done$: Rx.Observable<any> = Rx.Observable.amb(stmAddErrored$, addNotice$).take(1).ignoreElements();
+  const done$: Rx.Observable<any> = Rx.Observable.amb(stmAddErrored$, addNotice$).take(1).ignoreElements()
 
-  return { commands$, done$ };
+  return { commands$, done$ }
 
 }
 
@@ -353,10 +353,10 @@ function makePause$(stmActionsInFlightCounter$): Rx.Observable<boolean> {
     // subscription. Otherwise, when calling pausableBuffered, the
     // stream will assume false and pause, even though the last value of
     // pause$ was true.
-    .replay(1);
+    .replay(1)
 
-  pause$.connect(); // make pause$ start running immediately
+  pause$.connect() // make pause$ start running immediately
 
-  return pause$;//.share();
+  return pause$ // .share()
 
 }

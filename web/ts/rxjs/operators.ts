@@ -5,5 +5,5 @@ This achieves two things:
 */
 export function debounceAndThrottle(time: number)
 : (s: Rx.Observable<{}>) => Rx.Observable<{}> {
-  return s => Rx.Observable.merge(s.debounce(time), s.throttle(time));
+  return s => Rx.Observable.merge(s.debounce(time), s.throttle(time))
 }

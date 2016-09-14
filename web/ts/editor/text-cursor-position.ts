@@ -1,5 +1,5 @@
-import { ValueFail } from "../coq/value-fail";
-import { Processed } from "../coq/feedback-content";
+import { ValueFail } from "../coq/value-fail"
+import { Processed } from "../coq/feedback-content"
 
 /*
   This takes care of updating the position of the text cursor in the following
@@ -27,14 +27,14 @@ export function setupTextCursorPositionUpdate(
     editProcessed$
       .filter(f => doc.getSentencesBeingProcessed().length === 0)
       .filter(f => doc.getSentencesToProcess().length === 0)
-      .map(e => e.stopPosition);
+      .map(e => e.stopPosition)
 
   const errorLocation$ =
     error$
       .map(ee => ee.range.caseOf<AceAjax.Position>({
         nothing: () => ee.failedEdit.stopPosition,
         just: r => r.start,
-      }));
+      }))
 
   const inhibitLastEditAfterError$ =
     Rx.Observable
@@ -42,25 +42,25 @@ export function setupTextCursorPositionUpdate(
         lastEditProcessedStopPosition$.map(() => false),
         errorLocation$.map(() => true),
       ])
-      .distinctUntilChanged(); // might as well
+      .distinctUntilChanged() // might as well
 
   const previousEditStopPosition$ =
     previousEditToReach$
-      .map(e => e.stopPosition);
+      .map(e => e.stopPosition)
 
   const nextEditStopPosition$ =
     nextEditToProcess$
-      .map(e => e.stopPosition);
+      .map(e => e.stopPosition)
 
   const positionUpdate$ = Rx.Observable.merge([
     lastEditProcessedStopPosition$.pausable(inhibitLastEditAfterError$),
     errorLocation$,
     previousEditStopPosition$,
     nextEditStopPosition$
-  ]);
+  ])
 
   positionUpdate$.subscribe(pos =>
     doc.moveCursorToPositionAndCenter(pos)
-  );
+  )
 
 }

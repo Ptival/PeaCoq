@@ -1,5 +1,5 @@
-import { isBefore } from "./editor-utils";
-import { Strictly } from "../peacoq/strictly";
+import { isBefore } from "./editor-utils"
+import { Strictly } from "../peacoq/strictly"
 
 export function setupUserInteractionForwardGoto(
   doc: ICoqDocument,
@@ -14,9 +14,9 @@ export function setupUserInteractionForwardGoto(
         .takeWhile(e => isBefore(Strictly.Yes, e.stopPosition, dest))
         // stop if there's no text between the last edit and the destination
         .takeWhile(e => {
-          const range = AceAjax.Range.fromPoints(e.stopPosition, dest);
-          const text = doc.session.getDocument().getTextRange(range);
-          return CoqStringUtils.coqTrimLeft(text) !== "";
+          const range = AceAjax.Range.fromPoints(e.stopPosition, dest)
+          const text = doc.session.getDocument().getTextRange(range)
+          return CoqStringUtils.coqTrimLeft(text) !== ""
         })
         // if an error occurs, abort
         .takeUntil(errorMsg$)
@@ -27,6 +27,6 @@ export function setupUserInteractionForwardGoto(
     })
     .delay(0) // this is needed to set up the feedback loop properly
     .subscribe(() => doc.next())
-    ;
+
 
 }

@@ -1,4 +1,4 @@
-// import BindingKind from "./binding-kind";
+// import BindingKind from "./binding-kind"
 
 abstract class BinderKind { }
 
@@ -6,7 +6,7 @@ class Default extends BinderKind {
   constructor(
     public kind: BindingKind
   ) {
-    super();
+    super()
   }
 }
 
@@ -16,6 +16,6 @@ class Generalized extends BinderKind {
     public kind2: BindingKind,
     public b: boolean
   ) {
-    super();
+    super()
   }
 }

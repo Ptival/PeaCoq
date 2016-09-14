@@ -1,5 +1,5 @@
-import * as Command from "../sertop/command";
-import * as ControlCommand from "../sertop/control-command";
+import * as Command from "../sertop/command"
+import * as ControlCommand from "../sertop/control-command"
 
 export function setup(
   doc: ICoqDocument,
@@ -8,7 +8,7 @@ export function setup(
 
   backwardGoTo$
     .flatMap(destinationPos => {
-      const maybeSentence = doc.getSentenceAtPosition(destinationPos);
+      const maybeSentence = doc.getSentenceAtPosition(destinationPos)
       return (
         maybeSentence
           .bind(e => e.getStateId())
@@ -17,8 +17,8 @@ export function setup(
             nothing: () => [],
             just: cmd => [Rx.Observable.just(cmd)],
           })
-      );
+      )
     })
-    .subscribe(cmd$ => doc.sendCommands(cmd$));
+    .subscribe(cmd$ => doc.sendCommands(cmd$))
 
 }

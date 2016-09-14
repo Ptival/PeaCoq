@@ -9,19 +9,19 @@ type BinderExpr = [
   Located<NameBase>[],
   BinderKind,
   ConstrExpr
-];
+]
 
 type ConstrNotationSubstitution = [
   ConstrExpr[],
   ConstrExpr[][],
   LocalBinder[][]
-];
+]
 
-type ProjFlag = Maybe<number>;
+type ProjFlag = Maybe<number>
 
-type AppFun = [ProjFlag, ConstrExpr];
-type AppArg = [ConstrExpr, Maybe<Located<Explicitation>>];
-type AppArgs = AppArg[];
+type AppFun = [ProjFlag, ConstrExpr]
+type AppArg = [ConstrExpr, Maybe<Located<Explicitation>>]
+type AppArgs = AppArg[]
 
 class CApp extends ConstrExpr {
   constructor(
@@ -29,20 +29,20 @@ class CApp extends ConstrExpr {
     public funct: AppFun,
     public args: AppArgs
   ) {
-    super();
+    super()
   }
 }
 
 type CaseExpr = [
   ConstrExpr,
   [Maybe<Located<Name>>, Maybe<CasesPatternExpr>]
-];
+]
 
 type BranchExpr = [
   CoqLocation,
   Located<CasesPatternExpr[]>[],
   ConstrExpr
-];
+]
 
 class CCases extends ConstrExpr {
   constructor(
@@ -52,7 +52,7 @@ class CCases extends ConstrExpr {
     public cases: CaseExpr[],
     public branches: BranchExpr[]
   ) {
-    super();
+    super()
   }
 }
 
@@ -63,10 +63,10 @@ class CCoFix extends ConstrExpr {
 class CDelimiters extends ConstrExpr {
   constructor(
     public location: CoqLocation,
-    public string: string,
+    public str: string,
     public expr: ConstrExpr
   ) {
-    super();
+    super()
   }
 }
 
@@ -81,7 +81,7 @@ class CHole extends ConstrExpr {
     public introPatternNamingExpr: any,
     public rawGenericArgument: any
   ) {
-    super();
+    super()
   }
 }
 
@@ -91,7 +91,7 @@ class CLambdaN extends ConstrExpr {
     public binders: BinderExpr[],
     public body: ConstrExpr
   ) {
-    super();
+    super()
   }
 }
 
@@ -102,7 +102,7 @@ class CLetIn extends ConstrExpr {
     public bound: ConstrExpr,
     public body: ConstrExpr
   ) {
-    super();
+    super()
   }
 }
 
@@ -114,11 +114,11 @@ class CLetTuple extends ConstrExpr {
     public bound: ConstrExpr,
     public body: ConstrExpr
   ) {
-    super();
+    super()
   }
 }
 
-type Notation = String;
+type Notation = String
 
 class CNotation extends ConstrExpr {
   constructor(
@@ -128,7 +128,7 @@ class CNotation extends ConstrExpr {
     public precedence: number,
     public unparsing: Unparsing[]
   ) {
-    super();
+    super()
   }
 }
 
@@ -138,7 +138,7 @@ class CProdN extends ConstrExpr {
     public binderList: BinderExpr[],
     public returnExpr: ConstrExpr
   ) {
-    super();
+    super()
   }
 }
 
@@ -147,7 +147,7 @@ class CPrim extends ConstrExpr {
     public location: CoqLocation,
     public token: PrimToken
   ) {
-    super();
+    super()
   }
 }
 
@@ -156,7 +156,7 @@ class CRef extends ConstrExpr {
     public reference: Reference,
     public universeInstance: Maybe<InstanceExpr>
   ) {
-    super();
+    super()
   }
 }
 
@@ -165,21 +165,21 @@ class CSort extends ConstrExpr {
     public location: CoqLocation,
     public globSort: GlobSort
   ) {
-    super();
+    super()
   }
 }
 
 function extractProdBinders(a: ConstrExpr): [LocalBinder[], ConstrExpr] {
   if (a instanceof CProdN) {
-    let [loc, bl, c] = [a.location, a.binderList, a.returnExpr];
+    let [loc, bl, c]: [any, any[], any] = [a.location, a.binderList, a.returnExpr]
     if (bl.length === 0) {
-      return extractProdBinders(a.returnExpr);
+      return extractProdBinders(a.returnExpr)
     } else {
-      let [nal, bk, t] = bl[0];
-      let [blrec, cRest] = extractProdBinders(new CProdN(loc, _.tail(bl), c));
-      let l: LocalBinder[] = [new LocalRawAssum(nal, bk, t)];
-      return [l.concat(blrec), cRest];
+      let [nal, bk, t] = bl[0]
+      let [blrec, cRest] = extractProdBinders(new CProdN(loc, _.tail(bl), c))
+      let l: LocalBinder[] = [new LocalRawAssum(nal, bk, t)]
+      return [l.concat(blrec), cRest]
     }
   }
-  return [[], a];
+  return [[], a]
 }

@@ -1,35 +1,35 @@
 // TODO: the thing causing this import should go elsewhere
-import { Warning } from "../coq/message-level";
+import { Warning } from "../coq/message-level"
 
 function isQueryWarning(m: IMessage) {
   return (
     m.level.constructor === Warning && m.content.indexOf(
       "Query commands should not be inserted in scripts"
     ) > -1
-  );
+  )
 }
 
 // function onMessage(m: IMessage) {
-//   m.display();
+//   m.display()
 // }
 
 function parentHeight(): string {
-  return $(this).parent().css("height");
+  return $(this).parent().css("height")
 }
 
 function halfParentHeight(): string {
-  return (parseInt($(this).parent().css("height"), 10) / 2) + "px";
+  return (parseInt($(this).parent().css("height"), 10) / 2) + "px"
 }
 
 function resetCoqtop(): Promise<any> {
-  return Promise.resolve();
+  return Promise.resolve()
   // return peaCoqEditAt(1)
   //   .then(() => peaCoqAddPrime("Require Import PeaCoq.PeaCoq."))
-  //   .then(() => peaCoqStatus(false));
+  //   .then(() => peaCoqStatus(false))
 }
 
-let unlockedAnchor;
-let unlockedMarker;
+let unlockedAnchor
+let unlockedMarker
 
 // export function onNextReactive(
 //   doc: ICoqDocument,
@@ -37,28 +37,28 @@ let unlockedMarker;
 // ): Rx.Observable<ISentence<IToProcess>> {
 //   return next$
 //     .concatMap<ISentence<IToProcess>>(() => {
-//       let lastEditStopPos = doc.getLastEditStop();
-//       let endPos = doc.endAnchor.getPosition();
+//       let lastEditStopPos = doc.getLastEditStop()
+//       let endPos = doc.endAnchor.getPosition()
 //       let unprocessedRange =
 //         new AceAjax.Range(
 //           lastEditStopPos.row, lastEditStopPos.column,
 //           endPos.row, endPos.column
-//         );
-//       let unprocessedText = doc.session.getTextRange(unprocessedRange);
+//         )
+//       let unprocessedText = doc.session.getTextRange(unprocessedRange)
 //       if (CoqStringUtils.coqTrimLeft(unprocessedText) === "") {
-//         return [];
+//         return []
 //       }
-//       let nextIndex = CoqStringUtils.next(unprocessedText);
-//       let newStopPos = doc.movePositionRight(lastEditStopPos, nextIndex);
-//       let query = unprocessedText.substring(0, nextIndex);
-//       let previousEdit = Global.coqDocument.edits.getLast();
-//       let stage = new Edit.ToProcess(Global.coqDocument, lastEditStopPos, newStopPos);
+//       let nextIndex = CoqStringUtils.next(unprocessedText)
+//       let newStopPos = doc.movePositionRight(lastEditStopPos, nextIndex)
+//       let query = unprocessedText.substring(0, nextIndex)
+//       let previousEdit = Global.coqDocument.edits.getLast()
+//       let stage = new Edit.ToProcess(Global.coqDocument, lastEditStopPos, newStopPos)
 //       let edit: ISentence<IToProcess> =
-//         doc.edits.createEdit(Global.coqDocument, lastEditStopPos, newStopPos, query, previousEdit, stage);
-//       return [edit];
+//         doc.edits.createEdit(Global.coqDocument, lastEditStopPos, newStopPos, query, previousEdit, stage)
+//       return [edit]
 //     })
 //     .share()
-//     ;
+//     
 // }
 
 /*
@@ -66,46 +66,46 @@ rejects if the command was rejected (the catch only cleans up, but
 throws the error again)
 */
 // function onNext(doc: CoqDocument): Promise<void> {
-//   //clearCoqtopTabs();
-//   let lastEditStopPos = doc.getLastEditStop();
-//   let endPos = doc.endAnchor.getPosition();
+//   //clearCoqtopTabs()
+//   let lastEditStopPos = doc.getLastEditStop()
+//   let endPos = doc.endAnchor.getPosition()
 //   let unprocessedRange =
 //     new AceRange(
 //       lastEditStopPos.row, lastEditStopPos.column,
 //       endPos.row, endPos.column
-//     );
-//   let unprocessedText = doc.session.getTextRange(unprocessedRange);
+//     )
+//   let unprocessedText = doc.session.getTextRange(unprocessedRange)
 //   if (CoqStringUtils.coqTrimLeft(unprocessedText) === "") {
-//     return;
+//     return
 //   }
-//   let nextIndex = CoqStringUtils.next(unprocessedText);
-//   let newStopPos = movePosRight(doc, lastEditStopPos, nextIndex);
-//   let query = unprocessedText.substring(0, nextIndex);
-//   let e1 = new EditToProcess(coqDocument, lastEditStopPos, newStopPos, query);
-//   doc.editsToProcess.push(e1);
-//   return doc.processEdits();
+//   let nextIndex = CoqStringUtils.next(unprocessedText)
+//   let newStopPos = movePosRight(doc, lastEditStopPos, nextIndex)
+//   let query = unprocessedText.substring(0, nextIndex)
+//   let e1 = new EditToProcess(coqDocument, lastEditStopPos, newStopPos, query)
+//   doc.editsToProcess.push(e1)
+//   return doc.processEdits()
 // }
 
-// type EditHandler = (q: string, sid: number, ls: Status, s: Status, g: Goals, c: PeaCoqContext) => void;
-// let editHandlers: EditHandler[] = [];
+// type EditHandler = (q: string, sid: number, ls: Status, s: Status, g: Goals, c: PeaCoqContext) => void
+// let editHandlers: EditHandler[] = []
 
 // TODO: there is a better way to rewind with the new STM machinery!
 // function rewindToPosition(
 //   doc: CoqDocument,
 //   targetPos: AceAjax.Position
 // ): Promise<any> {
-//   let lastEditStopPos = doc.getLastEditStop();
+//   let lastEditStopPos = doc.getLastEditStop()
 //   if (isAfter(Strictly.Yes, targetPos, lastEditStopPos)
 //     || coqDocument.editsToProcess.length > 0
 //     || isJust(coqDocument.editBeingProcessed)
 //   ) {
-//     return Promise.resolve();
+//     return Promise.resolve()
 //   } else {
-//     let cursorPosition = coqDocument.editor.selection.getCursor();
+//     let cursorPosition = coqDocument.editor.selection.getCursor()
 //     let editToRewindTo = _(coqDocument.editsProcessed).find(
 //       (e: ProcessedEdit) => e.containsPosition(cursorPosition)
-//     );
-//     return peaCoqEditAt(editToRewindTo.stateId);
+//     )
+//     return peaCoqEditAt(editToRewindTo.stateId)
 //   }
 // }
 
@@ -113,20 +113,20 @@ throws the error again)
 //   doc: CoqDocument,
 //   targetPos: AceAjax.Position
 // ): Promise<void> {
-//   let lastEditStopPos = doc.getLastEditStop();
+//   let lastEditStopPos = doc.getLastEditStop()
 //   if (isAfter(Strictly.Yes, lastEditStopPos, targetPos)) { return Promise.resolve(); }
 //
 //   // don't move forward if there is only spaces/comments
-//   let range = AceAjax.Range.fromPoints(lastEditStopPos, targetPos);
-//   let textRange = doc.session.getDocument().getTextRange(range);
+//   let range = AceAjax.Range.fromPoints(lastEditStopPos, targetPos)
+//   let textRange = doc.session.getDocument().getTextRange(range)
 //   if (CoqStringUtils.coqTrim(textRange) === "") { return Promise.resolve(); }
 //
-//   //console.log(lastEditStopPos, targetPos, coqTrim(textRange), textRange);
+//   //console.log(lastEditStopPos, targetPos, coqTrim(textRange), textRange)
 //
-//   //return onNext(doc).then(() => forwardToPosition(doc, targetPos));
+//   //return onNext(doc).then(() => forwardToPosition(doc, targetPos))
 //
-//   //onNext(doc);
-//   return forwardToPosition(doc, targetPos);
+//   //onNext(doc)
+//   return forwardToPosition(doc, targetPos)
 // }
 
 /*
@@ -137,85 +137,85 @@ TODO: Ideally, the cursor would not jump on completion of these edits
 // function onGoToCaret(doc: CoqDocument): Promise<void> {
 //   // first, check if this is going forward or backward from the end
 //   // of the last edit
-//   let cursorPos = doc.editor.getCursorPosition();
-//   let lastEditStopPos = doc.getLastEditStop();
+//   let cursorPos = doc.editor.getCursorPosition()
+//   let lastEditStopPos = doc.getLastEditStop()
 //   if (isAfter(Strictly.Yes, cursorPos, lastEditStopPos)) {
-//     return forwardToPosition(doc, cursorPos);
+//     return forwardToPosition(doc, cursorPos)
 //   } else if (isAfter(Strictly.Yes, lastEditStopPos, cursorPos)) {
-//     return rewindToPosition(doc, cursorPos);
+//     return rewindToPosition(doc, cursorPos)
 //   } else {
 //     // no need to move
-//     return;
+//     return
 //   }
 // }
 
 // function onPrevious(doc: CoqDocument): Promise<void> {
-//   //clearCoqtopTabs();
+//   //clearCoqtopTabs()
 //   if (isJust(doc.editBeingProcessed) || doc.editsToProcess.length > 0) {
-//     return Promise.resolve();
+//     return Promise.resolve()
 //   }
-//   let lastEdit = _.last(doc.editsProcessed);
+//   let lastEdit = _.last(doc.editsProcessed)
 //   if (!lastEdit) { return Promise.resolve(); }
 //   return (
 //     lastEdit.previousEdit
 //       .caseOf({
 //         nothing: () => resetCoqtop(),
 //         just: (pe) => {
-//           lastStatus = pe.status;
-//           return peaCoqEditAt(pe.stateId);
+//           lastStatus = pe.status
+//           return peaCoqEditAt(pe.stateId)
 //         },
 //       })
 //       .then(() => {
-//         lastEdit.remove();
-//         doc.session.selection.clearSelection();
-//         doc.editor.moveCursorToPosition(lastEdit.getStartPosition());
-//         doc.editor.scrollToLine(lastEdit.getStartPosition().row, true, true, () => { });
-//         doc.editor.focus();
-//         // let prevEdit = _.last(doc.edits);
+//         lastEdit.remove()
+//         doc.session.selection.clearSelection()
+//         doc.editor.moveCursorToPosition(lastEdit.getStartPosition())
+//         doc.editor.scrollToLine(lastEdit.getStartPosition().row, true, true, () => { })
+//         doc.editor.focus()
+//         // let prevEdit = _.last(doc.edits)
 //         // if (prevEdit !== undefined) {
-//         //   updateGoals(prevEdit);
-//         //   updatePretty(prevEdit);
+//         //   updateGoals(prevEdit)
+//         //   updatePretty(prevEdit)
 //         // }
 //       })
 //       .catch((vf: ValueFail) => {
-//         reportFailure(vf.message);
+//         reportFailure(vf.message)
 //         // Hopefully, the goals have not changed?
 //         /*
-//         let s = peaCoqStatus(false);
-//         let g = s.then(peaCoqGoal);
+//         let s = peaCoqStatus(false)
+//         let g = s.then(peaCoqGoal)
 //         return (
 //           Promise.all<any>([s, g])
 //             .then(
 //             ([s, g]: [Status, Goals]) => { return updateForeground(s, g); }
 //             )
-//           );
+//           )
 //         */
 //       })
-//   );
+//   )
 //
 // }
 
 // type AddResult = {
-//   response: any;
-//   status: IStatus;
-//   goals: IGoals;
-// };
+//   response: any
+//   status: IStatus
+//   goals: IGoals
+// }
 
 export function sameBodyAndType(hyp1: HTMLElement, hyp2: HTMLElement): boolean {
-  let children1 = $(hyp1).children().slice(1);
-  let children2 = $(hyp2).children().slice(1);
-  if (children1.length !== children2.length) { return false; }
+  let children1 = $(hyp1).children().slice(1)
+  let children2 = $(hyp2).children().slice(1)
+  if (children1.length !== children2.length) { return false }
   for (let i in _.range(children1.length)) {
     if ($(children1[i]).html() !== $(children2[i]).html()) {
-      return false;
+      return false
     }
   }
-  return true;
+  return true
 }
 
 // function killEditsAfterPosition(doc: CoqDocument, pos: AceAjax.Position) {
 //   // we will need to rewind to the state before the oldest edit we remove
-//   let editToRewindTo: Maybe<ProcessedEdit> = nothing();
+//   let editToRewindTo: Maybe<ProcessedEdit> = nothing()
 //   // we remove all the edits that are after the position that was edited
 //   doc.removeEdits(
 //     (edit: ProcessedEdit) => isAfter(Strictly.Yes, edit.getStopPosition(), pos),
@@ -228,21 +228,21 @@ export function sameBodyAndType(hyp1: HTMLElement, hyp2: HTMLElement): boolean {
 //             just: (e) => {
 //               if (pe.stateId < e.stateId) { editToRewindTo = just(pe); }
 //             },
-//           });
+//           })
 //         },
 //       })
 //     }
-//   );
+//   )
 //
 //   editToRewindTo.caseOf({
 //     nothing: () => { },
 //     just: (e) => { peaCoqEditAt(e.stateId); }
-//   });
+//   })
 //
 // }
 
 function capitalize(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
+  return s.charAt(0).toUpperCase() + s.slice(1)
 }
 
 /*
@@ -261,20 +261,20 @@ There are two ways to go:
 //     // need `concatMap` here to guarantee the commands are processed in
 //     // the correct order: add, goal, context, add, goal, context, add, ...
 //     .map(e => {
-//       let add = new CoqtopInput.AddPrime(e.query);
+//       let add = new CoqtopInput.AddPrime(e.query)
 //       add["callback"] = (io: ICoqtopOutput<ICoqtopInput, any>) => {
-//         const response = io.output.response;
+//         const response = io.output.response
 //         if (response.tag === "ValueGood") {
-//           const stateId = io.output.response.contents[0];
-//           const newStage = new Edit.BeingProcessed(e.stage, stateId);
-//           e.setStage(newStage);
+//           const stateId = io.output.response.contents[0]
+//           const newStage = new Edit.BeingProcessed(e.stage, stateId)
+//           e.setStage(newStage)
 //         } else if (response.tag === "ValueFail") {
 //           // TODO?
 //         } else {
-//           debugger;
+//           debugger
 //         }
-//       };
-//       return add;
+//       }
+//       return add
 //     })
-//     .share();
+//     .share()
 // }

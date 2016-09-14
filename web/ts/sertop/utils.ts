@@ -1,6 +1,6 @@
 
 export function coqLocationFromSexp(o: any): CoqLocation {
-  const [[, fName], [,lineNb], [, bolPos], [, lineNbLast], [, bolPosLast], [, bp], [, ep]] = o;
+  const [[, fName], [, lineNb], [, bolPos], [, lineNbLast], [, bolPosLast], [, bp], [, ep]] = o
   return {
     fName,
     lineNb,
@@ -9,5 +9,5 @@ export function coqLocationFromSexp(o: any): CoqLocation {
     bolPosLast,
     bp,
     ep,
-  };
+  }
 }

@@ -1,6 +1,6 @@
-import * as Exception from "./exception";
-import * as Tip from "../coq/tip";
-import * as SertopUtils from "./utils";
+import * as Exception from "./exception"
+import * as Tip from "../coq/tip"
+import * as SertopUtils from "./utils"
 
 export class Ack implements ISertop.IAck { }
 
@@ -10,7 +10,7 @@ export class CoqExn implements ISertop.ICoqExn {
   constructor(
     public exn: IException
   ) { }
-  getMessage(): string { return this.exn.getMessage(); }
+  public getMessage(): string { return this.exn.getMessage() }
 }
 
 export class StmAdded implements ISertop.IStmAdded {
@@ -19,7 +19,7 @@ export class StmAdded implements ISertop.IStmAdded {
     public location: CoqLocation,
     public tip: Tip.NewTip | Tip.Unfocus
   ) {
-    // console.log("StmAdded", stateId);
+    // console.log("StmAdded", stateId)
   }
 }
 
@@ -44,40 +44,40 @@ export class StmEdited implements ISertop.IStmEdited {
 export function create(o): ISertop.IAnswerKind {
   if (typeof o === "string") {
     switch (o) {
-      case "Ack": return new Ack();
-      case "Completed": return new Completed();
-      default: debugger;
+      case "Ack": return new Ack()
+      case "Completed": return new Completed()
+      default: debugger
     }
   }
-  const [kind, ...args] = o;
+  const [kind, ...args] = o
   switch (kind) {
 
     case "CoqExn":
-      return new CoqExn(Exception.create(args));
+      return new CoqExn(Exception.create(args))
 
     case "StmAdded": { // opening a scope prevents hoisted variable clashes
-      const [stateId, coqLocation, tip]: [string, string, string] = args;
-      return new StmAdded(+ stateId, SertopUtils.coqLocationFromSexp(coqLocation), tip);
+      const [stateId, coqLocation, tip]: [string, string, string] = args
+      return new StmAdded(+ stateId, SertopUtils.coqLocationFromSexp(coqLocation), tip)
     }
 
     case "StmCurId":
-      const [curId] = args;
-      return new StmCurId(curId);
+      const [curId] = args
+      return new StmCurId(curId)
 
     case "StmEdited":
-      const [tip] = args;
+      const [tip] = args
       if (tip === "NewTip") {
-        return new StmEdited(new Tip.NewTip());
+        return new StmEdited(new Tip.NewTip())
       } else {
-        debugger;
+        debugger
       }
 
     case "StmCanceled":
-      const [stateIds]: string[][] = args;
-      return new StmCanceled(_(stateIds).map(s => + s).value());
+      const [stateIds]: string[][] = args
+      return new StmCanceled(_(stateIds).map(s => + s).value())
 
-    default: debugger;
+    default: debugger
   }
 
-  throw "AnswerKind.create";
+  throw "AnswerKind.create"
 }

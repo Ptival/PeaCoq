@@ -1,29 +1,31 @@
-import { PpCmdBox, PpCmdPrint, PpCmdToken } from "../coq/ppcmd-token";
-import { PpCmd, PpCmds, str } from "../printing/coq-pretty-printer";
-import * as Pattern from "./pattern";
-import { StrDef } from "../coq/str-token";
+import { PpCmdBox, PpCmdPrint, PpCmdToken } from "../coq/ppcmd-token"
+import { PpCmd, PpCmds, str } from "../printing/coq-pretty-printer"
+import * as Pattern from "./pattern"
+import { StrDef } from "../coq/str-token"
 
 export function findPpCmdSuchThat(
   l: PpCmds,
   predicate: (_1: PpCmd) => boolean
 ): number {
-  return _.findIndex(l, predicate);
+  return _.findIndex(l, predicate)
 }
 
 export function ppCmdIsStringSuchThat(
   predicate: (_1: string) => boolean
 ): (_1: PpCmd) => boolean {
   return (token: PpCmd) => {
-    return (
-      token instanceof PpCmdPrint
-      && token.token instanceof StrDef
-      && predicate(token.token.string)
-    );
+    if (token instanceof PpCmdPrint) {
+      const t = token.token
+      if (t instanceof StrDef) {
+        return predicate(t.str)
+      }
+    }
+    return false
   }
 }
 
 export function ppCmdIsString(s: string): (_1: PpCmd) => boolean {
-  return ppCmdIsStringSuchThat((s1) => s === s1.trim());
+  return ppCmdIsStringSuchThat((s1) => s === s1.trim())
 }
 
 export function replacePpCmd(
@@ -31,13 +33,13 @@ export function replacePpCmd(
   replace: (_1: PpCmd) => PpCmds,
   l: PpCmds
 ): PpCmds {
-  let pos = findPpCmdSuchThat(l, match);
-  if (pos < 0) { return l; }
+  let pos = findPpCmdSuchThat(l, match)
+  if (pos < 0) { return l }
   return ([] as PpCmds).concat(
     l.slice(0, pos),
     replace(l[pos]),
     l.slice(pos + 1)
-  );
+  )
 }
 
 /*
@@ -49,24 +51,27 @@ export function replaceToken(s1: string, s2: string, l: PpCmds): PpCmds {
   return replacePpCmd(
     ppCmdIsString(s1),
     (t: PpCmdPrint<StrDef>) => {
-      return str(t.token.string.replace(s1, s2));
+      return str(t.token.str.replace(s1, s2))
     },
     l
-  );
+  )
 }
 
 function ppCmdsMatchGen(p: Pattern.Pattern[], l: PpCmds, o: Object): Maybe<Object> {
-  if (p.length !== l.length) { return nothing(); }
-  let zip = _.zip(p, l);
+  if (p.length !== l.length) { return nothing() }
+  let zip = _.zip(p, l)
   for (let index in zip) {
-    let [pat, cmd] = zip[index];
+    let [pat, cmd] = zip[index]
     let shortCircuit = ppCmdMatchGen(pat, cmd, o).caseOf({
-        nothing: () => true,
-        just: (newo) => { o = newo; return false; }
-    });
-    if (shortCircuit) { return nothing(); }
+      nothing: () => true,
+      just: (newo) => {
+        o = newo
+        return false
+      }
+    })
+    if (shortCircuit) { return nothing() }
   }
-  return just(o);
+  return just(o)
 }
 
 function reduceMaybe<IN, ACC>(
@@ -79,55 +84,55 @@ function reduceMaybe<IN, ACC>(
     (acc: Maybe<ACC>, elt: IN) => {
       return acc.caseOf({
         nothing: () => acc,
-        just: (acc) => f (acc, elt),
-      });
+        just: (acc) => f(acc, elt),
+      })
     },
     just(acc)
-  );
+  )
 }
 
 function ppCmdMatchGen(pat: Pattern.Pattern, p: PpCmd | any, o: Object): Maybe<Object> {
   if (pat instanceof Pattern.Anything) {
-    return just(o);
+    return just(o)
   } else if (pat instanceof Pattern.ArrayPattern) {
-    if (!(p instanceof Array)) { throw MatchFailure("ppCmdMatchGen > ArrayPattern", p); }
-    return ppCmdsMatchGen(pat.array, p, o);
+    if (!(p instanceof Array)) { throw MatchFailure("ppCmdMatchGen > ArrayPattern", p) }
+    return ppCmdsMatchGen(pat.array, p, o)
   } else if (pat instanceof Pattern.BinderPattern) {
-    let binder = pat.binder;
-    o[binder] = p;
-    return just(o);
+    let binder = pat.binder
+    o[binder] = p
+    return just(o)
   } else if (pat instanceof Pattern.Constructor) {
     if (p instanceof pat.name) {
       return reduceMaybe(
         Object.keys(pat.fields),
         (acc, field) => {
           if (field in p) {
-            return ppCmdMatchGen((<Pattern.Constructor>pat).fields[field], p[field], acc);
+            return ppCmdMatchGen((<Pattern.Constructor>pat).fields[field], p[field], acc)
           } else {
-            return nothing();
+            return nothing()
           }
         },
         o
-      );
+      )
     } else {
-      return nothing();
+      return nothing()
     }
   } else if (pat instanceof Pattern.StringPattern) {
     if (!(typeof p === "string")) {
-      throw MatchFailure("ppCmdMatchGen > StringPattern", p);
+      throw MatchFailure("ppCmdMatchGen > StringPattern", p)
     }
-    if (pat.string === p) {
-      return just(o);
+    if (pat.str === p) {
+      return just(o)
     } else {
-      return nothing();
+      return nothing()
     }
   } else {
-    throw MatchFailure("patternMatch > rec", pat);
+    throw MatchFailure("patternMatch > rec", pat)
   }
 }
 
 function ppCmdsMatch(p: Pattern.Pattern[], l: PpCmds): Maybe<Object> {
-  return ppCmdsMatchGen(p, l, {});
+  return ppCmdsMatchGen(p, l, {})
 }
 
 export function matchPattern(
@@ -138,5 +143,5 @@ export function matchPattern(
   return ppCmdsMatch(pat, l).caseOf({
     nothing: () => l,
     just: (m) => h(m),
-  });
+  })
 }

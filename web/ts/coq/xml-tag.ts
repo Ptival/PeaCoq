@@ -1,100 +1,100 @@
 abstract class CoqXMLTag { }
 
 function mkCoqXMLTag(t): CoqXMLTag {
-  let c = t.contents;
+  let c = t.contents
   switch (t.tag) {
     case "Apply":
-      return new Apply();
+      return new Apply()
     case "Constant":
-      return new Constant(c);
+      return new Constant(c)
     case "Definition":
-      return new Definition(c[0], c[1]);
+      return new Definition(c[0], c[1])
     case "Gallina":
-      return new Gallina();
+      return new Gallina()
     case "Ltac":
-      return new Ltac(c);
+      return new Ltac(c)
     case "Operator":
-      return new Operator(c[0], c[1]);
+      return new Operator(c[0], c[1])
     case "Proof":
-      return new Proof();
+      return new Proof()
     case "QED":
-      return new QED();
+      return new QED()
     case "Recurse":
-      return new Recurse();
+      return new Recurse()
     case "SectionSubsetDescr":
-      return new SectionSubsetDescr(c);
+      return new SectionSubsetDescr(c)
     case "Theorem":
-      return new Theorem(c[0], c[1]);
+      return new Theorem(c[0], c[1])
     case "Token":
-      return new Token(c);
+      return new Token(c)
     case "Typed":
-      return new Typed();
+      return new Typed()
     default:
-      throw ("Unknown CoqXMLTag: " + t.tag);
-  };
+      throw ("Unknown CoqXMLTag: " + t.tag)
+  }
 }
 
 class Apply extends CoqXMLTag {
-  toString() { return "Apply"; }
+  public toString() { return "Apply" }
 }
 
 class Constant extends CoqXMLTag {
-  constructor(public constant: string) { super(); }
-  toString() { return "Constant(" + this.constant + ")"; }
+  constructor(public constant: string) { super() }
+  public toString() { return "Constant(" + this.constant + ")" }
 }
 
 class Definition extends CoqXMLTag {
   constructor(public a: string, public b: string) {
-    super();
+    super()
   }
-  toString() {
-    return "Definition(" + this.a + ", " + this.b + ")";
+  public toString() {
+    return "Definition(" + this.a + ", " + this.b + ")"
   }
 }
 
 class Gallina extends CoqXMLTag {
-  toString = function() { return "Gallina"; }
+  public toString = function() { return "Gallina" }
 }
 
 class Ltac extends CoqXMLTag {
   constructor(public s: string) {
-    super();
+    super()
   }
-  toString() { return "Ltac(" + this.s + ")"; }
+  public toString() { return "Ltac(" + this.s + ")" }
 }
 
 class Operator extends CoqXMLTag {
-  constructor(public s: string, public ms: string) { super(); }
-  toString() { return "Operator(" + this.s + ", " + this.ms + ")"; }
+  constructor(public s: string, public ms: string) { super() }
+  public toString() { return "Operator(" + this.s + ", " + this.ms + ")" }
 }
 
 class Proof extends CoqXMLTag {
-  toString() { return "Proof"; }
+  public toString() { return "Proof" }
 }
 
 class QED extends CoqXMLTag {
-  toString() { return "QED"; }
+  public toString() { return "QED" }
 }
 
 class Recurse extends CoqXMLTag {
-  toString() { return "Recurse"; }
+  public toString() { return "Recurse" }
 }
 
 class SectionSubsetDescr extends CoqXMLTag {
-  constructor(public s: string) { super(); }
-  toString() { return "SectionSubsetDescr(" + this.s + ")"; }
+  constructor(public s: string) { super() }
+  public toString() { return "SectionSubsetDescr(" + this.s + ")" }
 }
 
 class Theorem extends CoqXMLTag {
-  constructor(public a: string, public b: string) { super(); }
-  toString() { return "Theorem(" + this.a + ", " + this.b + ")"; }
+  constructor(public a: string, public b: string) { super() }
+  public toString() { return "Theorem(" + this.a + ", " + this.b + ")" }
 }
 
 class Token extends CoqXMLTag {
-  constructor(public s: string) { super(); }
-  toString() { return "Token(" + this.s + ")"; }
+  constructor(public s: string) { super() }
+  public toString() { return "Token(" + this.s + ")" }
 }
 
 class Typed extends CoqXMLTag {
-  toString() { return "Typed"; }
+  public toString() { return "Typed" }
 }

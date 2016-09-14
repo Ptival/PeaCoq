@@ -1,5 +1,5 @@
-import * as Command from "../sertop/command";
-import * as ControlCommand from "../sertop/control-command";
+import * as Command from "../sertop/command"
+import * as ControlCommand from "../sertop/control-command"
 
 // For now, if we don't remove the sentences immediately, when the user does
 // Next right after editing somewhere, the Next grabs the sentence after the
@@ -28,18 +28,18 @@ export function setup(
           just: sid => [Rx.Observable.just(new Command.Control(new ControlCommand.StmCancel([sid])))],
         })
     )
-    .subscribe(cmd$ => doc.sendCommands(cmd$));
+    .subscribe(cmd$ => doc.sendCommands(cmd$))
 }
 
 function minPos(pos1: AceAjax.Position, pos2: AceAjax.Position): AceAjax.Position {
   if (pos1.row < pos2.row) {
-    return pos1;
+    return pos1
   }
   if (pos2.row < pos1.row) {
-    return pos2;
+    return pos2
   }
   if (pos1.column < pos2.column) {
-    return pos1;
+    return pos1
   }
-  return pos2;
+  return pos2
 }

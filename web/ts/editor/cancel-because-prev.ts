@@ -1,5 +1,5 @@
-import * as Command from "../sertop/command";
-import * as ControlCommand from "../sertop/control-command";
+import * as Command from "../sertop/command"
+import * as ControlCommand from "../sertop/control-command"
 
 export function setup(
   doc: ICoqDocument,
@@ -9,14 +9,14 @@ export function setup(
   const sentenceToCancelBecausePrev$: Rx.Observable<ISentence<IStage>> =
     prev$
       .flatMap(({}) => {
-        if (doc.getSentencesToProcess().length > 0) { return []; }
-        return [_.maxBy(doc.getAllSentences(), s => s.sentenceId)];
+        if (doc.getSentencesToProcess().length > 0) { return [] }
+        return [_.maxBy(doc.getAllSentences(), s => s.sentenceId)]
       })
-      .share();
+      .share()
 
   sentenceToCancelBecausePrev$.subscribe(s => {
-    doc.moveCursorToPositionAndCenter(s.startPosition);
-  });
+    doc.moveCursorToPositionAndCenter(s.startPosition)
+  })
 
   sentenceToCancelBecausePrev$
     .flatMap(s =>
@@ -26,6 +26,6 @@ export function setup(
       })
     )
     .map(sid => Rx.Observable.just(new Command.Control(new ControlCommand.StmCancel([sid]))))
-    .subscribe(cmd$ => doc.sendCommands(cmd$));
+    .subscribe(cmd$ => doc.sendCommands(cmd$))
 
 }

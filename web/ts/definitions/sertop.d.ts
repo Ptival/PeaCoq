@@ -2,21 +2,21 @@ type CommandTag = string
 type RouteId = number
 
 interface ToSexp {
-  toSexp(): string;
+  toSexp(): string
 }
 
 declare namespace ISertop {
 
   interface QueryOptions {
-    // preds?: QueryPred[];
-    // limit?: Maybe<number>;
-    sid?: StateId;
-    // pp?: PrintOptions;
-    route?: RouteId;
+    // preds?: QueryPred[]
+    // limit?: Maybe<number>
+    sid?: StateId
+    // pp?: PrintOptions
+    route?: RouteId
   }
 
   interface ICommand extends ToSexp {
-    tag: CommandTag;
+    tag: CommandTag
   }
 
   interface IControl<C extends IControlCommand> extends ICommand {
@@ -31,19 +31,19 @@ declare namespace ISertop {
 
   namespace IControlCommand {
     interface IStmAdd extends IControlCommand {
-      fromAutomation: boolean;
-      // addOptions: AddOptions;
-      sentence: string;
+      fromAutomation: boolean
+      // addOptions: AddOptions
+      sentence: string
     }
     interface IStmCancel extends IControlCommand { }
     interface IStmEditAt extends IControlCommand { }
     interface IStmObserve extends IControlCommand {
-      stateId: StateId;
+      stateId: StateId
     }
     interface IStmQuery extends IControlCommand {
-      fromAutomation: boolean;
-      query: string;
-      queryOptions: QueryOptions;
+      fromAutomation: boolean
+      query: string
+      queryOptions: QueryOptions
     }
   }
 
@@ -52,66 +52,66 @@ declare namespace ISertop {
   }
 
   interface IAnswer<K extends IAnswerKind> {
-    cmdTag: CommandTag;
-    answer: K;
+    cmdTag: CommandTag
+    answer: K
   }
 
   interface IAnswerKind { }
   interface IAck extends IAnswerKind { }
   interface ICompleted extends IAnswerKind { }
   interface ICoqExn extends IAnswerKind {
-    exn: IException;
-    getMessage(): string;
+    exn: IException
+    getMessage(): string
   }
   interface IStmAdded extends IAnswerKind {
-    stateId: StateId;
-    location: CoqLocation;
-    tip: INewTip | IUnfocus;
+    stateId: StateId
+    location: CoqLocation
+    tip: INewTip | IUnfocus
   }
   interface IStmCanceled extends IAnswerKind {
-    stateIds: number[];
+    stateIds: number[]
   }
   interface IStmCurId extends IAnswerKind { }
   interface IStmEdited extends IAnswerKind { }
 }
 
 interface IException {
-  getMessage(): string;
+  getMessage(): string
 }
 
 interface CoqtopOutputStreams {
   // all inputs/outputs
-  // input$: Rx.Observable<ICoqtopInput>;
-  // io$: Rx.Observable<ICoqtopOutput<ICoqtopInput, any>>;
-  // error$: Rx.Observable<ValueFail>;
+  // input$: Rx.Observable<ICoqtopInput>
+  // io$: Rx.Observable<ICoqtopOutput<ICoqtopInput, any>>
+  // error$: Rx.Observable<ValueFail>
   answer$s: {
-    completed$: Completed$;
-    coqExn$: CoqExn$;
-    stmAdded$: StmAdded$;
-    stmCanceled$: StmCanceled$;
+    completed$: Completed$
+    coqExn$: CoqExn$
+    stmAdded$: StmAdded$
+    stmCanceled$: StmCanceled$
   }
   feedback$s: {
     message$s: {
-      debug$: Rx.Observable<DebugMessageFeedback>;
-      error$: Error$;
-      info$: Rx.Observable<InfoMessageFeedback>;
-      notice$: Notice$;
-      warning$: Rx.Observable<WarningMessageFeedback>;
+      debug$: Rx.Observable<DebugMessageFeedback>
+      error$: Error$
+      info$: Rx.Observable<InfoMessageFeedback>
+      notice$: Notice$
+      warning$: Rx.Observable<WarningMessageFeedback>
     },
-  //   addedAxiom$: Rx.Observable<IFeedback<FeedbackContent.IAddedAxiom>>;
-  //   fileDependency$: Rx.Observable<IFeedback<FeedbackContent.IFileDependency>>;
-  //   fileLoaded$: Rx.Observable<IFeedback<FeedbackContent.IFileLoaded>>;
-    processed$: Processed$;
-  //   processingIn$: Rx.Observable<IFeedback<FeedbackContent.IProcessingIn>>;
-  };
-  // feedback$: Rx.Observable<IFeedback<IFeedbackContent>>;
-  // // response$: Rx.Observable<ICoqtopResponse<ICoqtopInput, any>>;
-  // message$: Rx.Observable<IMessage>;
-  // // stateId$: Rx.Observable<number>;
-  // valueFail$: Rx.Observable<IValueFail>;
+  //   addedAxiom$: Rx.Observable<IFeedback<FeedbackContent.IAddedAxiom>>
+  //   fileDependency$: Rx.Observable<IFeedback<FeedbackContent.IFileDependency>>
+  //   fileLoaded$: Rx.Observable<IFeedback<FeedbackContent.IFileLoaded>>
+    processed$: Processed$
+  //   processingIn$: Rx.Observable<IFeedback<FeedbackContent.IProcessingIn>>
+  }
+  // feedback$: Rx.Observable<IFeedback<IFeedbackContent>>
+  // // response$: Rx.Observable<ICoqtopResponse<ICoqtopInput, any>>
+  // message$: Rx.Observable<IMessage>
+  // // stateId$: Rx.Observable<number>
+  // valueFail$: Rx.Observable<IValueFail>
   // // Only contains responses from ValueGood
   // valueGood$s: {
-  //   add$: Rx.Observable<ICoqtopOutput<CoqtopInput.IAddPrime, CoqtopOutput.AddPrime>>;
-  //   editAt$: Rx.Observable<ICoqtopOutput<CoqtopInput.IEditAt, CoqtopOutput.EditAt>>;
+  //   add$: Rx.Observable<ICoqtopOutput<CoqtopInput.IAddPrime, CoqtopOutput.AddPrime>>
+  //   editAt$: Rx.Observable<ICoqtopOutput<CoqtopInput.IEditAt, CoqtopOutput.EditAt>>
   // }
 }

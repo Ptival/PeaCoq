@@ -1,46 +1,46 @@
-import { Control } from "../sertop/command";
-import { StmQuery } from "../sertop/control-command";
-import { SentenceMarker } from "./sentence-marker";
-import { getContextRoute } from "../peacoq/routes";
-import { theme } from "../peacoq/theme";
+import { Control } from "../sertop/command"
+import { StmQuery } from "../sertop/control-command"
+import { SentenceMarker } from "./sentence-marker"
+import { getContextRoute } from "../peacoq/routes"
+import { theme } from "../peacoq/theme"
 
 export class ToProcess implements IToProcess {
-  marker: ISentenceMarker;
+  public marker: ISentenceMarker
 
   constructor(
     doc: ICoqDocument,
     start: AceAjax.Position,
     stop: AceAjax.Position
   ) {
-    this.marker = new SentenceMarker(doc, start, stop);
+    this.marker = new SentenceMarker(doc, start, stop)
   }
 
-  getColor(): string { return theme.toprocess; }
+  public getColor(): string { return theme.toprocess }
 
-  getStateId() { return nothing(); }
+  public getStateId() { return nothing() }
 
-  nextStageMarker(): ISentenceMarker {
-    this.marker.markBeingProcessed();
-    return this.marker;
+  public nextStageMarker(): ISentenceMarker {
+    this.marker.markBeingProcessed()
+    return this.marker
   }
 }
 
 export class BeingProcessed implements IBeingProcessed {
-  marker: ISentenceMarker;
-  stateId: number;
+  public marker: ISentenceMarker
+  public stateId: number
 
   constructor(e: IToProcess, sid: number) {
-    this.marker = e.nextStageMarker();
-    this.stateId = sid;
+    this.marker = e.nextStageMarker()
+    this.stateId = sid
   }
 
-  getColor(): string { return theme.processing; }
+  public getColor(): string { return theme.processing }
 
-  getStateId() { return just(this.stateId); }
+  public getStateId() { return just(this.stateId) }
 
-  nextStageMarker(): ISentenceMarker {
-    this.marker.markProcessed();
-    return this.marker;
+  public nextStageMarker(): ISentenceMarker {
+    this.marker.markProcessed()
+    return this.marker
   }
 }
 
@@ -61,25 +61,25 @@ export class BeingProcessed implements IBeingProcessed {
 */
 
 export class Processed implements IProcessed {
-  private context: Promise<PeaCoqContext> | null;
-  private onFulfilled: ((c: PeaCoqContext) => void) | null;
-  marker: ISentenceMarker;
-  stateId: number;
+  private context: Promise<PeaCoqContext> | null
+  private onFulfilled: ((c: PeaCoqContext) => void) | null
+  public marker: ISentenceMarker
+  public stateId: number
 
   constructor(
     private doc: ICoqDocument,
     e: IBeingProcessed
   ) {
-    this.context = null; // created later
-    this.onFulfilled = null;
-    this.marker = e.nextStageMarker();
-    this.stateId = e.stateId;
+    this.context = null // created later
+    this.onFulfilled = null
+    this.marker = e.nextStageMarker()
+    this.stateId = e.stateId
   }
 
-  getColor() { return theme.processed; }
+  public getColor() { return theme.processed }
 
-  getContext(): Promise<PeaCoqContext> {
-    // console.log("GETTING CONTEXT FOR STATE ID", this.stateId);
+  public getContext(): Promise<PeaCoqContext> {
+    // console.log("GETTING CONTEXT FOR STATE ID", this.stateId)
     if (this.context === null) {
       this.context = new Promise(onFulfilled => {
         const query = new Control(new StmQuery(
@@ -89,23 +89,23 @@ export class Processed implements IProcessed {
           },
           "PeaCoqGetContext.",
           false
-        ));
-        this.onFulfilled = onFulfilled;
-        this.doc.sendCommands(Rx.Observable.just(query));
-      });
+        ))
+        this.onFulfilled = onFulfilled
+        this.doc.sendCommands(Rx.Observable.just(query))
+      })
     }
-    return this.context;
+    return this.context
   }
 
-  getStateId() { return just(this.stateId); }
+  public getStateId() { return just(this.stateId) }
 
-  setContext(c: PeaCoqContext) {
+  public setContext(c: PeaCoqContext) {
     if (this.onFulfilled === null) {
       // someone else than getContext must have called PeaCoqGetContext
-      debugger;
-      throw this;
+      debugger
+      throw this
     }
-    this.onFulfilled(c);
+    this.onFulfilled(c)
   }
 
 }

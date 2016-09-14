@@ -1,11 +1,10 @@
-import * as PeaCoq from "../peacoq/peacoq";
+import * as PeaCoq from "../peacoq/peacoq"
 
 export function createGetCompletions(
   doc: ICoqDocument,
   stopAutomationRound$: Rx.Observable<{}>
 ) {
-
-  doc.editor.execCommand("startAutocomplete");
+  doc.editor.execCommand("startAutocomplete")
 
   // There doesn't seem to be a way to attach a post-insertion handler, but
   // we can hack one together!
@@ -15,34 +14,34 @@ export function createGetCompletions(
         .filter(e => e.command.name === "insertstring")
         .take(1)
         .subscribe(() => {
-          doc.next();
-          editor.execCommand("insertstring", "\n");
-        });
-      return editor.completer.insertMatch();
+          doc.next()
+          editor.execCommand("insertstring", "\n")
+        })
+      return editor.completer.insertMatch()
     }
-  });
+  })
 
-  const popup = doc.editor.completer.getPopup();
+  const popup = doc.editor.completer.getPopup()
   // Ace sometimes triggers show and select like crazy, so debounce it a little
-  const show$ = Rx.Observable.fromEvent(popup, "show").debounce(0);
-  const hide$ = Rx.Observable.fromEvent(popup, "hide");
-  const select$ = Rx.Observable.fromEvent(popup, "select").debounce(0);
-  // show$.subscribe(() => console.log("show"));
-  // select$.subscribe(() => console.log("select"));
+  const show$ = Rx.Observable.fromEvent(popup, "show").debounce(0)
+  const hide$ = Rx.Observable.fromEvent(popup, "hide")
+  const select$ = Rx.Observable.fromEvent(popup, "select").debounce(0)
+  // show$.subscribe(() => console.log("show"))
+  // select$.subscribe(() => console.log("select"))
 
   show$
     .concatMap(() => select$.startWith({}).takeUntil(hide$))
     .map(() => {
-      const row = popup.getRow();
-      const data = popup.getData(row);
-      const sentence: ISentence<IStage> = data.sentence;
-      const context = sentence.completions[data.meta][data.caption];
-      return { context, sentence };
+      const row = popup.getRow()
+      const data = popup.getData(row)
+      const sentence: ISentence<IStage> = data.sentence
+      const context = sentence.completions[data.meta][data.caption]
+      return { context, sentence }
     })
     .subscribe(({ context, sentence }) => {
-      doc.contextPanel.display(context);
-      // console.log(data.caption, completion);
-    });
+      doc.contextPanel.display(context)
+      // console.log(data.caption, completion)
+    })
 
   hide$
     .concatMap(() => {
@@ -54,14 +53,14 @@ export function createGetCompletions(
         .caseOf({
           just: s => s,
           nothing: () => _.maxBy(doc.getAllSentences(), s => s.sentenceId),
-        });
+        })
       return (
         sentenceToDisplay === undefined
           ? Rx.Observable.just(PeaCoq.emptyContext)
           : sentenceToDisplay.getProcessed$().concatMap(stage => stage.getContext())
-      );
+      )
     })
-    .subscribe(context => doc.contextPanel.display(context));
+    .subscribe(context => doc.contextPanel.display(context))
 
   return function getCompletions(
     editor: AceAjax.Editor,
@@ -71,11 +70,11 @@ export function createGetCompletions(
     callback: (err: boolean, results: AceAjax.Completion[], keepPopupPosition: boolean) => void
   ): void {
 
-    const sentenceToComplete = _.maxBy(doc.getAllSentences(), s => s.sentenceId);
+    const sentenceToComplete = _.maxBy(doc.getAllSentences(), s => s.sentenceId)
 
-    if (sentenceToComplete === undefined) { return callback(false, [], true); }
+    if (sentenceToComplete === undefined) { return callback(false, [], true) }
 
-    const completions = sentenceToComplete.completions;
+    const completions = sentenceToComplete.completions
 
     const completionList =
       _.flatMap(
@@ -88,7 +87,7 @@ export function createGetCompletions(
             context: completions[group][tactic]
           })
         )
-      );
+      )
 
     callback(
       false,
@@ -100,15 +99,15 @@ export function createGetCompletions(
         sentence: sentenceToComplete,
       })),
       true
-    );
+    )
 
     sentenceToComplete.completionAdded$
       .takeUntil(stopAutomationRound$)
       .subscribe(({}) => {
         if (editor.completer && editor.completer.popup) {
-          const row = editor.completer.popup.getRow();
-          editor.completer.updateCompletions();
-          editor.completer.popup.setRow(row);
+          const row = editor.completer.popup.getRow()
+          editor.completer.updateCompletions()
+          editor.completer.popup.setRow(row)
         }
       })
 

@@ -1,5 +1,5 @@
-import * as FontSize from "./font-size";
-import { pickFile, saveFile, setupLoadFile, setupSaveFile } from "./toolbar";
+import * as FontSize from "./font-size"
+import { pickFile, saveFile, setupLoadFile, setupSaveFile } from "./toolbar"
 
 interface UserActionStreams {
   goTo$: Rx.Observable<{}>,
@@ -17,33 +17,33 @@ export function setup(
     Rx.Observable
       .merge(toolbarStreams.fontDecrease, shortcutsStreams.fontDecrease)
       .do(FontSize.decrement)
-      .share();
+      .share()
   const fontIncreasedStream =
     Rx.Observable
       .merge(toolbarStreams.fontIncrease, shortcutsStreams.fontIncrease)
       .do(FontSize.increment)
-      .share();
+      .share()
   Rx.Observable
     .merge(fontIncreasedStream, fontDecreasedStream)
-    .subscribe(() => { FontSize.update(doc); });
+    .subscribe(() => { FontSize.update(doc) })
   const goTo$ = Rx.Observable
-    .merge(toolbarStreams.goToCaret, shortcutsStreams.goToCaret);
+    .merge(toolbarStreams.goToCaret, shortcutsStreams.goToCaret)
   const next$ = Rx.Observable
-    .merge(toolbarStreams.next, shortcutsStreams.next);
+    .merge(toolbarStreams.next, shortcutsStreams.next)
   const prev$ = Rx.Observable
-    .merge(toolbarStreams.previous, shortcutsStreams.previous);
+    .merge(toolbarStreams.previous, shortcutsStreams.previous)
   Rx.Observable
     .merge(toolbarStreams.load, shortcutsStreams.load)
-    .subscribe(pickFile);
+    .subscribe(pickFile)
   Rx.Observable
     .merge(toolbarStreams.save, shortcutsStreams.save)
-    .subscribe(({}) => saveFile(doc));
-  const loadedFilesStream = setupLoadFile(doc);
-  setupSaveFile();
+    .subscribe(({}) => saveFile(doc))
+  const loadedFilesStream = setupLoadFile(doc)
+  setupSaveFile()
   return {
     goTo$: goTo$,
     loadedFile$: loadedFilesStream,
     next$: next$,
     prev$: prev$,
-  };
+  }
 }

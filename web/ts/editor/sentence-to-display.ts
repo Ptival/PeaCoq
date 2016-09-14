@@ -1,21 +1,21 @@
-import * as Command from "../sertop/command";
-import * as ControlCommand from "../sertop/control-command";
-import { isBefore } from "./editor-utils";
-import * as DebugFlags from "../peacoq/debug-flags";
-import { Strictly } from "../peacoq/strictly";
+import * as Command from "../sertop/command"
+import * as ControlCommand from "../sertop/control-command"
+import { isBefore } from "./editor-utils"
+import * as DebugFlags from "../peacoq/debug-flags"
+import { Strictly } from "../peacoq/strictly"
 
 export function setup(doc: ICoqDocument): Rx.Observable<ISentence<IStage>> {
 
-  const editor = doc.editor;
+  const editor = doc.editor
 
   const textCursorChangeEvent$ = Rx.Observable
     .create(observer => editor.selection.on("changeCursor", e => observer.onNext(e)))
-    .share();
+    .share()
 
   const textCursorPosition$ = textCursorChangeEvent$
     .map(() => editor.selection.getCursor())
-    .share();
-  if (DebugFlags.textCursorPosition) { textCursorPosition$.subscribe(p => console.log(p)); }
+    .share()
+  if (DebugFlags.textCursorPosition) { textCursorPosition$.subscribe(p => console.log(p)) }
 
   /*
   A sentence should be displayed if:
@@ -31,20 +31,20 @@ export function setup(doc: ICoqDocument): Rx.Observable<ISentence<IStage>> {
       .flatMap(pos => {
         // we want to display the last sentence whose stopPos is before `pos`
         const sentence = _(doc.getAllSentences())
-          .findLast(s => isBefore(Strictly.No, s.stopPosition, pos));
-        return sentence ? [sentence] : [];
+          .findLast(s => isBefore(Strictly.No, s.stopPosition, pos))
+        return sentence ? [sentence] : []
       })
       .distinctUntilChanged()
-      .share();
-  if (DebugFlags.sentenceToBeDisplayed) { sentenceToBeDisplayedBecauseUnderCursor$.subscribe(s => console.log(s)); }
+      .share()
+  if (DebugFlags.sentenceToBeDisplayed) { sentenceToBeDisplayedBecauseUnderCursor$.subscribe(s => console.log(s)) }
 
   const sentenceToBeDisplayedBecauseLastBeingProcessed$ =
     doc.sentenceBeingProcessed$
       .filter(s => {
-        const sentenceCount = doc.getSentencesToProcess().length + doc.getSentencesBeingProcessed().length;
-        return sentenceCount === 1; // this is the only sentence left, display it
+        const sentenceCount = doc.getSentencesToProcess().length + doc.getSentencesBeingProcessed().length
+        return sentenceCount === 1 // this is the only sentence left, display it
       })
-      .share();
+      .share()
 
   return Rx.Observable
     .merge([
@@ -53,6 +53,6 @@ export function setup(doc: ICoqDocument): Rx.Observable<ISentence<IStage>> {
     ])
     // prevents the same sentence from triggering because under cursor and last processed
     // this might turn problematic if the user wants to redisplay it, maybe debounce would be better?
-    .distinctUntilChanged();
+    .distinctUntilChanged()
 
 }

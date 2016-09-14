@@ -1,14 +1,14 @@
-import * as Sexp from "./sexp";
+import * as Sexp from "./sexp"
 
 function escapeQuotes(s: string): string {
-  return s.replace(/"/g, `\\"`);
+  return s.replace(/"/g, `\\"`)
 }
 
 interface AddOptions {
-  limit?: number;
-  ontop?: StateId;
-  newtip?: StateId;
-  verb?: boolean;
+  limit?: number
+  ontop?: StateId
+  newtip?: StateId
+  verb?: boolean
 }
 
 export class LibAdd implements ISertop.IControlCommand {
@@ -17,9 +17,9 @@ export class LibAdd implements ISertop.IControlCommand {
     public physicalPath: string,
     public containsML: boolean
   ) { }
-  toSexp() {
-    const qPath = `"${this.qualifiedPath.join(`" "`)}"`;
-    return `(LibAdd (${qPath}) "${this.physicalPath}" ${Sexp.boolToSexp(this.containsML)})`;
+  public toSexp() {
+    const qPath = `"${this.qualifiedPath.join(`" "`)}"`
+    return `(LibAdd (${qPath}) "${this.physicalPath}" ${Sexp.boolToSexp(this.containsML)})`
   }
 }
 
@@ -29,14 +29,14 @@ export class StmAdd implements ISertop.IControlCommand {
     public sentence: string,
     public readonly fromAutomation: boolean
   ) { }
-  toSexp() {
+  public toSexp() {
     const opts = "".concat(
       Sexp.optionalToSexp("limit", this.addOptions.limit),
       Sexp.optionalToSexp("ontop", this.addOptions.ontop),
       Sexp.optionalToSexp("newtip", this.addOptions.newtip),
       Sexp.optionalToSexp("verb", this.addOptions.verb, b => b ? "True" : "False")
-    );
-    const o1 = Sexp.optionalToSexp("limit", this.addOptions.limit);
+    )
+    const o1 = Sexp.optionalToSexp("limit", this.addOptions.limit)
     return `(StmAdd (${opts}) "${escapeQuotes(this.sentence)}")`
   }
 }
@@ -45,9 +45,9 @@ export class StmCancel implements ISertop.IControlCommand.IStmCancel {
   constructor(
     public stateIds: StateId[]
   ) { }
-  toSexp() {
-    const ids = this.stateIds.join(" ");
-    return `(StmCancel (${ids}))`;
+  public toSexp() {
+    const ids = this.stateIds.join(" ")
+    return `(StmCancel (${ids}))`
   }
 }
 
@@ -55,18 +55,18 @@ export class StmEditAt implements ISertop.IControlCommand {
   constructor(
     public stateId: StateId
   ) { }
-  toSexp() { return `(StmEditAt ${this.stateId})`; }
+  public toSexp() { return `(StmEditAt ${this.stateId})` }
 }
 
 // export class StmJoin implements Sertop.IControlCommand {
-//   toSexp() { return "StmJoin"; }
+//   toSexp() { return "StmJoin" }
 // }
 
 export class StmObserve implements ISertop.IControlCommand.IStmObserve {
   constructor(
     public stateId: StateId
   ) { }
-  toSexp() { return `(StmObserve ${this.stateId})`; }
+  public toSexp() { return `(StmObserve ${this.stateId})` }
 }
 
 export class StmQuery implements ISertop.IControlCommand.IStmQuery {
@@ -75,19 +75,19 @@ export class StmQuery implements ISertop.IControlCommand.IStmQuery {
     public query: string,
     public readonly fromAutomation: boolean
   ) { }
-  toSexp() {
+  public toSexp() {
     const opts = "".concat(
       Sexp.optionalToSexp("route", this.queryOptions.route, (r: RouteId) => r.toString()),
       Sexp.optionalToSexp("sid", this.queryOptions.sid, (s: StateId) => s.toString())
-    );
-    return `(StmQuery (${opts}) "${escapeQuotes(this.query)}")`;
+    )
+    return `(StmQuery (${opts}) "${escapeQuotes(this.query)}")`
   }
 }
 
 export class StmState implements ISertop.IControlCommand {
-  toSexp() { return "StmState"; }
+  public toSexp() { return "StmState" }
 }
 
 export class Quit implements ISertop.IControlCommand {
-  toSexp() { return "Quit"; }
+  public toSexp() { return "Quit" }
 }

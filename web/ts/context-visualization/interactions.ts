@@ -4,12 +4,12 @@ but this is for the sake of demonstrating this kind of feature easily.
 */
 
 export function setup(): void {
-  $.contextMenu("destroy");
-  equalsInteraction();
-  forallInteraction();
+  $.contextMenu("destroy")
+  equalsInteraction()
+  forallInteraction()
 }
 
-let idGenerator = 0;
+let idGenerator = 0
 
 function addInteraction(
   targetBox: Element,
@@ -21,12 +21,12 @@ function addInteraction(
     selector: ".box",
     trigger: "left",
     build: ($trigger, event) => {
-      const closestBox = $(event.target).closest(".box")[0];
+      const closestBox = $(event.target).closest(".box")[0]
       // prevent the menu if the clicked element is in a sub-box of the wanted one
-      if (closestBox !== targetBox) { return false; }
-      return { items: items($trigger) };
+      if (closestBox !== targetBox) { return false }
+      return { items: items($trigger) }
     }
-  });
+  })
 }
 
 function equalsInteraction(): void {
@@ -40,7 +40,7 @@ function equalsInteraction(): void {
         callback: () => { console.log("reflexivity.") }
       },
     })
-  );
+  )
 }
 
 function forallInteraction(): void {
@@ -49,7 +49,7 @@ function forallInteraction(): void {
       .filter((n, e) => $(e).text().includes("∀"))
       .closest(".box")[0],
     $trigger => {
-      let result = {};
+      let result = {}
       Rx.Observable
         //     0         1         2        3
         // <forall> (a b : ...) (c : ...) <body>
@@ -63,10 +63,10 @@ function forallInteraction(): void {
           _(prefixes(a))
             .reverse()
             .each(prefix => {
-              const s = `intros ${prefix.join(" ")}.`;
-              result[s] = { name: s, callback: () => { console.log(s) }};
-            });
-        });
-      return result;
-  });
+              const s = `intros ${prefix.join(" ")}.`
+              result[s] = { name: s, callback: () => { console.log(s) }}
+            })
+        })
+      return result
+  })
 }

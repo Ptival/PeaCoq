@@ -16,3 +16,4 @@ cd node_modules
 
 rm -rf ./js-of-ts
 ./tsc -p . --diagnostics
+./tslint --project .

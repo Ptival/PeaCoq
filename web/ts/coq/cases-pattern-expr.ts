@@ -1,5 +1,5 @@
-// import PrimToken from "./prim-token";
-// import Reference from "./reference";
+// import PrimToken from "./prim-token"
+// import Reference from "./reference"
 
 abstract class CasesPatternExpr { }
 
@@ -12,7 +12,7 @@ class CPatCstr extends CasesPatternExpr {
     public cases1: Maybe<CasesPatternExpr[]>,
     public cases2: CasesPatternExpr[]
   ) {
-    super();
+    super()
   }
 }
 
@@ -21,7 +21,7 @@ class CPatAtom extends CasesPatternExpr {
     public location: CoqLocation,
     public reference: Maybe<Reference>
   ) {
-    super();
+    super()
   }
 }
 
@@ -31,7 +31,7 @@ class CPatAtom extends CasesPatternExpr {
 type CasesPatternNotationSubstitution = [
   CasesPatternExpr[],
   CasesPatternExpr[][]
-];
+]
 
 class CPatNotation extends CasesPatternExpr {
   constructor(
@@ -42,7 +42,7 @@ class CPatNotation extends CasesPatternExpr {
     public precedence: number,
     public unparsing: Unparsing[]
   ) {
-    super();
+    super()
   }
 }
 // TODO CPatNotation
@@ -52,7 +52,7 @@ class CPatPrim extends CasesPatternExpr {
     public location: CoqLocation,
     public token: PrimToken
   ) {
-    super();
+    super()
   }
 }
 
@@ -61,9 +61,9 @@ class CPatPrim extends CasesPatternExpr {
 class CPatDelimiters extends CasesPatternExpr {
   constructor(
     public location: CoqLocation,
-    public string: string,
+    public str: string,
     public cases: CasesPatternExpr
   ) {
-    super();
+    super()
   }
 }

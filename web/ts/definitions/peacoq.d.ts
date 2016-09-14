@@ -31,20 +31,20 @@ declare const enum PeaCoqMessageLevel {
 }
 
 interface PeaCoqContextElement {
-  goal: IGoal;
-  ppgoal: IPeaCoqGoal;
+  goal: IGoal
+  ppgoal: IPeaCoqGoal
 }
 
 type PeaCoqContext = IGoals<PeaCoqContextElement>
 
 interface IPeaCoqGoal {
-  hyps: PeaCoqHyp[];
-  concl: IConstrExpr;
-  getHTML(): JQuery;
+  hyps: PeaCoqHyp[]
+  concl: IConstrExpr
+  getHTML(): JQuery
 }
 
 interface PeaCoqHyp {
-  name: string;
-  maybeTerm: Maybe<IConstrExpr>;
-  type: IConstrExpr;
+  name: string
+  maybeTerm: Maybe<IConstrExpr>
+  type: IConstrExpr
 }

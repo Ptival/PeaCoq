@@ -1,160 +1,160 @@
-import { ppCmdsSameShape, PpCmd as PpCmdType, PpCmds } from "../printing/coq-pretty-printer";
-import * as PpCmd from "../coq/ppcmd-token";
-import * as StrToken from "../coq/str-token";
-import { patterns } from "./visualizations";
+import { ppCmdsSameShape, PpCmd as PpCmdType, PpCmds } from "../printing/coq-pretty-printer"
+import * as PpCmd from "../coq/ppcmd-token"
+import * as StrToken from "../coq/str-token"
+import { patterns } from "./visualizations"
 
 function htmlPrintStrToken(t: StrToken.StrToken): string {
   if (t instanceof StrToken.StrDef) {
-    return (t.string);
+    return (t.str)
   }
   if (t instanceof StrToken.StrLen) {
-    return (t.string);
+    return (t.str)
   }
-  throw MatchFailure("htmlPrintStrToken", t);
+  throw MatchFailure("htmlPrintStrToken", t)
 }
 
 function markDifferent(s: string): string {
-  return `<span class="syntax peacoq-diff">${s}</span>`;
+  return `<span class="syntax peacoq-diff">${s}</span>`
 }
 
-function syntax(s: string): string { return `<span class="syntax">${s}</span>`; }
+function syntax(s: string): string { return `<span class="syntax">${s}</span>` }
 
 function htmlPrintPpCmdDiff(p: PpCmdType, old: PpCmdType): string {
   if (p.constructor !== old.constructor) {
-    return markDifferent(htmlPrintPpCmd(p));
+    return markDifferent(htmlPrintPpCmd(p))
   }
   if (p instanceof PpCmd.PpCmdPrint && old instanceof PpCmd.PpCmdPrint) {
-    let res = htmlPrintStrToken(p.token);
-    if (p.token.string !== old.token.string) { res = markDifferent(res); }
-    return res;
+    let res = htmlPrintStrToken(p.token)
+    if (p.token.string !== old.token.string) { res = markDifferent(res) }
+    return res
   }
   if (p instanceof PpCmd.PpCmdBox && old instanceof PpCmd.PpCmdBox) {
     // FIXME: use blockType
-    return syntax(htmlPrintPpCmdsDiff(p.contents, old.contents));
+    return syntax(htmlPrintPpCmdsDiff(p.contents, old.contents))
   }
   if (p instanceof PpCmd.PpCmdPrintBreak) {
-    return " ".repeat(p.nspaces);
+    return " ".repeat(p.nspaces)
   }
   if (p instanceof PpCmd.PpCmdSetTab) {
-    return "TODO: PpCmdSetTab";
+    return "TODO: PpCmdSetTab"
   }
   if (p instanceof PpCmd.PpCmdPrintTbreak) {
-    return "TODO: PpCmdPrintTbreak";
+    return "TODO: PpCmdPrintTbreak"
   }
   if (p instanceof PpCmd.PpCmdWhiteSpace) {
-    return "TODO: PpCmdWhiteSpace";
+    return "TODO: PpCmdWhiteSpace"
   }
   if (p instanceof PpCmd.PpCmdForceNewline) {
-    return "TODO: PpCmdForceNewline";
+    return "TODO: PpCmdForceNewline"
   }
   if (p instanceof PpCmd.PpCmdPrintIfBroken) {
-    return "TODO: PpCmdPrintIfBroken";
+    return "TODO: PpCmdPrintIfBroken"
   }
   if (p instanceof PpCmd.PpCmdOpenBox) {
-    return "TODO: PpCmdOpenBox";
+    return "TODO: PpCmdOpenBox"
   }
   if (p instanceof PpCmd.PpCmdCloseBox) {
-    return "TODO: PpCmdCloseBox";
+    return "TODO: PpCmdCloseBox"
   }
   if (p instanceof PpCmd.PpCmdCloseTBox) {
-    return "TODO: PpCmdCloseTBox";
+    return "TODO: PpCmdCloseTBox"
   }
   if (p instanceof PpCmd.PpCmdComment) {
-    return "TODO: PpCmdComment";
+    return "TODO: PpCmdComment"
   }
   if (p instanceof PpCmd.PpCmdOpenTag) {
-    return `<span class="tag-${p.tag}">`;
+    return `<span class="tag-${p.tag}">`
   }
   if (p instanceof PpCmd.PpCmdCloseTag) {
-    return "</span>";
+    return "</span>"
   }
-  throw MatchFailure("htmlPrintPpCmd", p);
+  throw MatchFailure("htmlPrintPpCmd", p)
 }
 
 function box<T>(p: PpCmdType, s: string): string {
-  return `<span class="box syntax">${s}</span>`;
+  return `<span class="box syntax">${s}</span>`
 }
 
 export function htmlPrintPpCmd(p: PpCmdType): string {
   if (p instanceof PpCmd.PpCmdPrint) {
-    return htmlPrintStrToken(p.token);
+    return htmlPrintStrToken(p.token)
   }
   if (p instanceof PpCmd.PpCmdBox) {
     // FIXME: use blockType
-    return box(p, htmlPrintPpCmds(p.contents));
+    return box(p, htmlPrintPpCmds(p.contents))
   }
   if (p instanceof PpCmd.PpCmdPrintBreak) {
-    return " ".repeat(p.nspaces);
+    return " ".repeat(p.nspaces)
   }
   if (p instanceof PpCmd.PpCmdSetTab) {
-    return "TODO: PpCmdSetTab";
+    return "TODO: PpCmdSetTab"
   }
   if (p instanceof PpCmd.PpCmdPrintTbreak) {
-    return "TODO: PpCmdPrintTbreak";
+    return "TODO: PpCmdPrintTbreak"
   }
   if (p instanceof PpCmd.PpCmdWhiteSpace) {
-    return "TODO: PpCmdWhiteSpace";
+    return "TODO: PpCmdWhiteSpace"
   }
   if (p instanceof PpCmd.PpCmdForceNewline) {
-    return "TODO: PpCmdForceNewline";
+    return "TODO: PpCmdForceNewline"
   }
   if (p instanceof PpCmd.PpCmdPrintIfBroken) {
-    return "TODO: PpCmdPrintIfBroken";
+    return "TODO: PpCmdPrintIfBroken"
   }
   if (p instanceof PpCmd.PpCmdOpenBox) {
-    return "TODO: PpCmdOpenBox";
+    return "TODO: PpCmdOpenBox"
   }
   if (p instanceof PpCmd.PpCmdCloseBox) {
-    return "TODO: PpCmdCloseBox";
+    return "TODO: PpCmdCloseBox"
   }
   if (p instanceof PpCmd.PpCmdCloseTBox) {
-    return "TODO: PpCmdCloseTBox";
+    return "TODO: PpCmdCloseTBox"
   }
   if (p instanceof PpCmd.PpCmdComment) {
-    return "TODO: PpCmdComment";
+    return "TODO: PpCmdComment"
   }
   if (p instanceof PpCmd.PpCmdOpenTag) {
-    return "<span class=tag-" + p.tag + ">";
+    return "<span class=tag-" + p.tag + ">"
   }
   if (p instanceof PpCmd.PpCmdCloseTag) {
-    return "</span>";
+    return "</span>"
   }
-  throw MatchFailure("htmlPrintPpCmd", p);
+  throw MatchFailure("htmlPrintPpCmd", p)
 }
 
 export function htmlPrintPpCmds(l: PpCmds): string {
   _(patterns).each(function(pattern) {
-    l = pattern(l);
-  });
+    l = pattern(l)
+  })
   return _.reduce(
     l,
-    (acc: string, p: PpCmdType) => { return acc + htmlPrintPpCmd(p); },
+    (acc: string, p: PpCmdType) => { return acc + htmlPrintPpCmd(p) },
     ""
-  );
+  )
 }
 
 export function htmlPrintPpCmdsDiff(l: PpCmds, old: PpCmds): string {
   _(patterns).each(function(pattern) {
-    l = pattern(l);
-    old = pattern(old);
-  });
+    l = pattern(l)
+    old = pattern(old)
+  })
   if (!ppCmdsSameShape(l, old)) {
     return markDifferent(
       _.reduce(
         l,
         (acc: string, p: PpCmdType) => {
-          return acc + htmlPrintPpCmd(p);
+          return acc + htmlPrintPpCmd(p)
         },
         ""
       )
-    );
+    )
   }
-  var z = _.zip(l, old);
+  const z = _.zip(l, old)
   return _.reduce(
     z,
     (acc: string, [p, oldP]: [PpCmdType, PpCmdType]) => {
-      return acc + htmlPrintPpCmdDiff(p, oldP);
+      return acc + htmlPrintPpCmdDiff(p, oldP)
     },
     ""
-  );
+  )
 }
