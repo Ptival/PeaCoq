@@ -41,7 +41,7 @@ export class StmEdited implements ISertop.IStmEdited {
   ) { }
 }
 
-export function create(o): ISertop.IAnswerKind {
+export function create(o: any): ISertop.IAnswerKind {
   if (typeof o === "string") {
     switch (o) {
       case "Ack": return new Ack()

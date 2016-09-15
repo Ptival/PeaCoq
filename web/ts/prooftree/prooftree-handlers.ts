@@ -112,7 +112,7 @@ export function onStmCanceled(
   const allGoals = activeProofTree.getAllGoals()
 
   _(allGoals).each(g => {
-    if (_(g.getStateIds()).some(s => _(sids).includes(s))) {
+    if (_(g.getStateIds()).some((s: StateId) => _(sids).includes(s))) {
       _(g.tacticGroups).each(g => { g.isProcessed = false })
     }
     g.removeStateIds(sids)

@@ -3,7 +3,7 @@ import * as Goals from "../coq/goals"
 import { PeaCoqGoal } from "../peacoq/goal"
 import { walkJSON } from "../peacoq/json"
 
-export function create(rawContext): PeaCoqContext {
+export function create(rawContext: string): PeaCoqContext {
   const safeContents = rawContext
     .replace(/\n/g, "\\n")
     .replace(/\r/g, "\\r")
@@ -41,7 +41,7 @@ export function isEqual(context1: PeaCoqContext, context2: PeaCoqContext): boole
   return _.every(
     _.zipWith(
       getAllGoals(context1), getAllGoals(context2),
-      (g1, g2) =>
+      (g1: IGoal, g2: IGoal) =>
         g1 !== undefined && g2 !== undefined // in case lengths differ
         && _.isEqual(g1.goalHyp, g2.goalHyp)
         && _.isEqual(g1.goalCcl, g2.goalCcl)

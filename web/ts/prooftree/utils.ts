@@ -62,11 +62,8 @@ function makeGoalNodePre() {
     .css("padding", 0)
 }
 
-export function swapXY(r: XY): XY {
-  let [x, y] = [r.x, r.y]
-  r.x = y
-  r.y = x
-  return r
+export function swapXY({ x, y }: XY): XY {
+  return { x: y, y: x }
 }
 
 export function byNodeId(d: IProofTreeNode): string { return d.id }
@@ -111,7 +108,7 @@ let centerLeftOffset = +10
 
 let centerRightOffset = -10
 
-function mkCenterLeft(x, y, h): XY {
+function mkCenterLeft(x: number, y: number, h: number): XY {
   return { x: x + centerLeftOffset, y: y + h / 2 }
 }
 
@@ -123,7 +120,7 @@ export function destinationCenterLeft(d: IProofTreeNode): XY {
   return mkCenterLeft(d.getDestinationScaledX(), d.getDestinationScaledY(), d.getHeight())
 }
 
-function mkCenterRight(x, y, w, h): XY {
+function mkCenterRight(x: number, y: number, w: number, h: number): XY {
   return { x: x + w + centerRightOffset, y: y + h / 2 }
 }
 

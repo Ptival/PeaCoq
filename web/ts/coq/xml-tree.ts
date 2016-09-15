@@ -3,10 +3,10 @@
 class CoqXMLTree {
   public rootLabel: Located<CoqXMLTag>
   public subForest: CoqXMLTree[]
-  constructor(t) {
+  constructor(t: [CoqLocation, ICoqtopResponse<any>]) {
     let [loc, xmltag] = t
     this.rootLabel = [loc, mkCoqXMLTag(xmltag)]
-    this.subForest = _(t[1]).map(function(t) {
+    this.subForest = _(t[1]).map(function(t: [CoqLocation, ICoqtopResponse<any>]) {
       return new CoqXMLTree(t)
     }).value()
   }

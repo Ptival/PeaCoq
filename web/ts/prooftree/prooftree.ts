@@ -797,64 +797,64 @@ export class ProofTree implements IProofTree {
     }
   }
 
-  private runTactic(t, groupToAttachTo) {
-    /*
-        let self = this
+  // private runTactic(t: string, groupToAttachTo) {
+  //   /*
+  //       let self = this
 
-        let parentGoal = getClosestGoal(groupToAttachTo)
-        let parentGoalRepr = goalNodeUnicityRepr(parentGoal)
+  //       let parentGoal = getClosestGoal(groupToAttachTo)
+  //       let parentGoalRepr = goalNodeUnicityRepr(parentGoal)
 
-        // if we correctly stored the last response in [parentGoal], we don't need
-        // to query for status at this moment
-        let beforeResponse = parentGoal.response
+  //       // if we correctly stored the last response in [parentGoal], we don't need
+  //       // to query for status at this moment
+  //       let beforeResponse = parentGoal.response
 
-        $("#loading-text").text(nbsp + nbsp + "Trying " + t)
+  //       $("#loading-text").text(nbsp + nbsp + "Trying " + t)
 
-        return asyncQueryAndUndo(t)
-          //.then(delayPromise(0))
-          .then(function(response) {
-            if (isGood(response)) {
+  //       return asyncQueryAndUndo(t)
+  //         //.then(delayPromise(0))
+  //         .then(function(response) {
+  //           if (isGood(response)) {
 
-              //let unfocusedBefore = getResponseUnfocused(beforeResponse)
-              //let unfocusedAfter = getResponseUnfocused(response)
-              let newChild = new Tactic(
-                t,
-                groupToAttachTo,
-                response
-              )
+  //             //let unfocusedBefore = getResponseUnfocused(beforeResponse)
+  //             //let unfocusedAfter = getResponseUnfocused(response)
+  //             let newChild = new Tactic(
+  //               t,
+  //               groupToAttachTo,
+  //               response
+  //             )
 
-              // only attach the newChild if it produces something
-              // unique from existing children
-              let newChildRepr = tacticUnicityRepr(newChild)
+  //             // only attach the newChild if it produces something
+  //             // unique from existing children
+  //             let newChildRepr = tacticUnicityRepr(newChild)
 
-              let resultAlreadyExists =
-                _(parentGoal.getTactics()).some(function(t) {
-                  return t.tactic === newChild.tactic
-                  //return (tacticUnicityRepr(t) === newChildRepr)
-                })
-                
+  //             let resultAlreadyExists =
+  //               _(parentGoal.getTactics()).some(function(t) {
+  //                 return t.tactic === newChild.tactic
+  //                 //return (tacticUnicityRepr(t) === newChildRepr)
+  //               })
 
-              let tacticIsUseless =
-                (newChild.goals.length === 1)
-                && (goalNodeUnicityRepr(newChild.goals[0])
-                  === parentGoalRepr)
-                
 
-              if (!resultAlreadyExists && !tacticIsUseless) {
-                groupToAttachTo.addTactic(newChild)
-                self.update()
-              }
+  //             let tacticIsUseless =
+  //               (newChild.goals.length === 1)
+  //               && (goalNodeUnicityRepr(newChild.goals[0])
+  //                 === parentGoalRepr)
 
-            } else {
 
-              //console.log("Bad response for", t, response)
+  //             if (!resultAlreadyExists && !tacticIsUseless) {
+  //               groupToAttachTo.addTactic(newChild)
+  //               self.update()
+  //             }
 
-            }
+  //           } else {
 
-          })
-          .catch(outputError)
-    */
-  }
+  //             //console.log("Bad response for", t, response)
+
+  //           }
+
+  //         })
+  //         .catch(outputError)
+  //   */
+  // }
 
   private shiftNextByTacticGroup(n: IGoalNode) {
     if (this.paused) { return }
@@ -1036,7 +1036,10 @@ export class ProofTree implements IProofTree {
 
 }
 
-function mkDiagonal(cL, cR): d3.svg.Diagonal<d3.svg.diagonal.Link<d3.svg.diagonal.Node>, d3.svg.diagonal.Node> {
+function mkDiagonal(
+  cL: (xy: XY) => XY,
+  cR: (xy: XY) => XY
+): d3.svg.Diagonal<d3.svg.diagonal.Link<d3.svg.diagonal.Node>, d3.svg.diagonal.Node> {
   return (
     d3.svg
       .diagonal()

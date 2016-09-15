@@ -7,7 +7,7 @@
     "experimentalDecorators": true,
     "module": "amd",
     "moduleResolution": "Node",
-    "noImplicitAny": false,
+    "noImplicitAny": true,
     "noLib": false,
     "outDir": "js-of-ts",
     "preserveConstEnums": true,

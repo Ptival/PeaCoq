@@ -26,7 +26,8 @@ export class Tab implements ITab {
     this.onClickHandlers = []
     this.onResizeHandlers = []
 
-    this.onClickHandlers.push(function (layout) {
+    this.onClickHandlers.push(function (layout: W2UI.W2Tabs) {
+      console.trace("me")
       layout.owner.html(panel, self.div[0])
     })
 
@@ -50,7 +51,7 @@ export class Tab implements ITab {
     this.tab.click(this.id)
   }
 
-  public onClick(layout) {
+  public onClick(layout: W2UI.W2Tabs) {
     this.captionShouldBeBold(false)
     _(this.onClickHandlers).each((h) => { h(layout) })
   }

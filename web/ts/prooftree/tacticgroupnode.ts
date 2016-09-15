@@ -163,7 +163,7 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
 
   public updateNode(): void {
     let jqBody = $(this.getHTMLElement())
-    let jQContents
+    let jQContents: JQuery
     let focusedTactic = this.tactics[this.tacticIndex]
     let nbTactics = this.tactics.length
 

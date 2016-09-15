@@ -111,7 +111,7 @@ export abstract class ProofTreeNode implements IProofTreeNode {
     })
   }
 
-  public isCurNodeAncestor() {
+  public isCurNodeAncestor(): boolean {
     let curNode = this.proofTree.curNode
     let common = ProofTreeUtils.commonAncestor(curNode, this)
     return this.id === common.id

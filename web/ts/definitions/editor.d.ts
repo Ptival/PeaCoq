@@ -43,7 +43,7 @@ interface IEditorTab extends ITab {
   resize(): void
   setFontSize(size: number): void
   setTheme(s: string): void
-  setValue(s: string, switchToTab: boolean)
+  setValue(s: string, switchToTab: boolean): void
 }
 
 interface IEditorError {

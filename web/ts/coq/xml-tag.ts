@@ -1,6 +1,6 @@
 abstract class CoqXMLTag { }
 
-function mkCoqXMLTag(t): CoqXMLTag {
+function mkCoqXMLTag(t: ICoqtopResponse<any>): CoqXMLTag {
   let c = t.contents
   switch (t.tag) {
     case "Apply":

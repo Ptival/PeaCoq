@@ -4,13 +4,13 @@ import { Control } from "../sertop/command"
 import { StmAdd, StmEditAt, StmQuery } from "../sertop/control-command"
 
 interface ProofTreeAutomationInput {
-  command$: Rx.Observer<Command$>
-  completed$
+  commandObserver: Rx.Observer<Command$>
+  completed$: Completed$
   doc: ICoqDocument
-  error$: Rx.Observable<ErrorMessageFeedback>
-  notice$: Rx.Observable<NoticeMessageFeedback>
+  error$: Error$
+  notice$: Notice$
   stmActionsInFlightCounter$: Rx.Observable<number>
-  stmAdded$: Rx.Observable<ISertop.IAnswer<ISertop.IStmAdded>>
+  stmAdded$: StmAdded$
   stopAutomationRound$: Rx.Observable<{}>
 }
 
@@ -234,7 +234,10 @@ function tacticsToTry(e: PeaCoqContextElement): TacticGroup[] {
 
 }
 
-function getTacticsForContext(context, sentence) {
+function getTacticsForContext(
+  context: PeaCoqContext,
+  sentence: ISentence<IProcessed>
+): CandidateInput[] {
   if (context.fgGoals.length === 0) { return [] }
   return (
     _(tacticsToTry(context.fgGoals[0]))
@@ -247,6 +250,13 @@ function getTacticsForContext(context, sentence) {
   )
 }
 
+interface CandidateInput {
+  context: PeaCoqContext
+  group: string
+  tactic: string
+  sentence: ISentence<IProcessed>
+}
+
 // We keep separate commands$ and done$ because we want the recipient to
 // be able to send commands$ (atomically) and then immediately send
 // other things without waiting for the responses. done$ is used to make
@@ -254,11 +264,11 @@ function getTacticsForContext(context, sentence) {
 // two trials.
 function makeCandidate(
   doc: ICoqDocument,
-  input,
-  completed$,
-  error$,
-  notice$,
-  stmAdded$
+  input: CandidateInput,
+  completed$: Completed$,
+  error$: Error$,
+  notice$: Notice$,
+  stmAdded$: StmAdded$
 ): {
     commands$: CommandStreamItem<ISertop.ICommand>
     done$: Rx.Observable<any>
@@ -340,7 +350,7 @@ function makeCandidate(
 // tactic-to-try when pairs are matched. We also regulate the
 // tactic-to-try flow so that only one tactic is being tried at a time,
 // so that we can interrupt the flow between any two attempts.
-function makePause$(stmActionsInFlightCounter$): Rx.Observable<boolean> {
+function makePause$(stmActionsInFlightCounter$: Rx.Observable<number>): Rx.Observable<boolean> {
 
   const pause$ = stmActionsInFlightCounter$
     // .do(c => console.log("COUNT", c))
@@ -353,7 +363,7 @@ function makePause$(stmActionsInFlightCounter$): Rx.Observable<boolean> {
     // subscription. Otherwise, when calling pausableBuffered, the
     // stream will assume false and pause, even though the last value of
     // pause$ was true.
-    .replay(1)
+    .replay(false, 1)
 
   pause$.connect() // make pause$ start running immediately
 

@@ -227,7 +227,7 @@ function prListSepLastSep<T>(
       if (noEmpty && isMt(e)) {
         return start(t)
       } else {
-        const aux: (l: T[]) => PpCmds = function aux(l: T[]) {
+        const aux: (l: T[]) => PpCmds = function aux(l: T[]): PpCmds {
           if (l.length === 0) {
             return mt()
           } else {
@@ -392,10 +392,11 @@ type PpResult = [PpCmds, number]
 // Here Coq would consult the notation table to figure [unpl] and [level] from
 // [s], but we have it already figured out.
 function prNotation(
-  pr,
-  prBinders,
+  pr: (_1: [number, ParenRelation], _2: ConstrExpr) => PpCmds,
+  prBinders: (_1: () => PpCmds, _2: boolean, _3: LocalBinder[]) => PpCmds,
   s: Notation,
   env: ConstrNotationSubstitution,
+  // these extra arguments are PeaCoq-specific
   unpl: Unparsing[],
   level: number
 ): PpResult {
@@ -453,7 +454,7 @@ function prOptNoSpc<T>(pr: (t: T) => PpCmds, x: Maybe<T>): PpCmds {
   })
 }
 
-function prUnivAnnot<T>(pr: (T) => PpCmds, x: T): PpCmds {
+function prUnivAnnot<T>(pr: (t: T) => PpCmds, x: T): PpCmds {
   return ([] as PpCmds).concat(str("@{"), pr(x), str("}"))
 }
 
@@ -483,11 +484,15 @@ function sepLast<T>(l: T[]): [T, T[]] {
 }
 
 function prProj(
-  pr: (_1, _2: ConstrExpr) => PpCmds,
-  prApp,
+  pr: (_1: ConstrExpr, _2: ConstrExpr) => PpCmds,
+  prApp: (
+    pr: (_1: PrecAssoc, _2: ConstrExpr) => PpCmds,
+    a: ConstrExpr,
+    l: AppArgs
+  ) => PpCmds,
   a: ConstrExpr,
-  f,
-  l
+  f: ConstrExpr,
+  l: AppArgs
 ): PpCmds {
   return ([] as PpCmds).concat(
     pr([lProj, new E()], a),
@@ -550,7 +555,7 @@ function prPrimToken(t: PrimToken): PpCmds {
   throw MatchFailure("prPrimToken", t)
 }
 
-function prUniv(l) {
+function prUniv(l: string[]) {
   if (l.length === 1) {
     return str(l[0])
   } else {
@@ -614,7 +619,7 @@ function casesPatternExprLoc(p: CasesPatternExpr): CoqLocation {
 
 function prWithComments(
   loc: CoqLocation,
-  pp
+  pp: PpCmds
 ): PpCmds {
   return prLocated(x => x, [loc, pp])
 }
@@ -745,7 +750,7 @@ function prPatt(
 
 function prAsin(
   pr: (_1: PrecAssoc, _2: ConstrExpr) => PpCmds,
-  [na, indnalopt]
+  [na, indnalopt]: [Maybe<[CoqLocation, NameBase]>, Maybe<ConstrExpr>]
 ): PpCmds {
   let prefix = na.caseOf({
     nothing: () => mt(),
@@ -773,7 +778,7 @@ function prAsin(
 
 function prCaseItem(
   pr: (_1: PrecAssoc, _2: ConstrExpr) => PpCmds,
-  [tm, asin]
+  [tm, asin]: [ConstrExpr, [Maybe<[CoqLocation, NameBase]>, Maybe<ConstrExpr>]]
 ): PpCmds {
   return hov(0, ([] as PpCmds).concat(
     pr([lCast, new E()], tm),
@@ -925,7 +930,7 @@ function prGen(
       return [tagConstrExpr(a, cmds), prec]
     }
 
-    let prmt = (x, y) => pr(mt, x, y)
+    let prmt = (x: [number, ParenRelation], y: ConstrExpr) => pr(mt, x, y)
 
     function match(a: ConstrExpr): PpResult {
 
@@ -972,7 +977,7 @@ function prGen(
         if (a.caseStyle instanceof LetPatternStyle) {
           throw "TODO: LetPatternStyle"
         }
-        let prDangling = (pa, c) => prDanglingWithFor(mt, pr, pa, c)
+        let prDangling = (pa: [number, ParenRelation], c: ConstrExpr) => prDanglingWithFor(mt, pr, pa, c)
         return ret(
           v(0, hv(0, ([] as PpCmds).concat(
             keyword("match"),
@@ -1135,8 +1140,8 @@ function prGen(
   }
 }
 
-function fix(f) {
-  return function (...x) {
+function fix(f: (a: any) => any): any {
+  return function (...x: any[]) {
     return f(fix(f))(...x)
   }
 }

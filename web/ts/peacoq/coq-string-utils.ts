@@ -2,7 +2,7 @@ namespace CoqStringUtils {
 
   let delimiters = ["."]
 
-  function my_index(str) {
+  function my_index(str: string): number {
     let index = +Infinity
     _(delimiters).each(function (delimiter) {
       let pos = str.indexOf(delimiter)
@@ -19,9 +19,9 @@ namespace CoqStringUtils {
 
   let bullets = ["{", "}", "+", "-", "*"]
 
-  export function isBullet(s) { return _(bullets).includes(s) }
+  export function isBullet(s: string): boolean { return _(bullets).includes(s) }
 
-  export function next(str) {
+  export function next(str: string): number {
     // if the very next thing is one of {, }, +, -, *, it is the next
     let trimmed = coqTrimLeft(str)
     if (_(bullets).includes(trimmed[0])) {
@@ -46,13 +46,13 @@ namespace CoqStringUtils {
   //   return coq_find_last_dot(coq_undot(str), 0) + 1
   // }
 
-  function count(str, pat) {
+  function count(str: string, pat: string) {
     let arr = str.split(pat)
     return (arr.length)
   }
 
   // highlight dot that are terminators as opposed to the others
-  function coq_undot(str) {
+  function coq_undot(str: string): string {
     str = str.replace(/[.][.][.]/g, "__.") // emphasize the last dot of ...
     str = str.replace(/[.][.]/g, "__") // hides .. in notations
     str = str.replace(/[.][a-zA-Z1-9_\(]/g, "__") // hides qualified identifiers
@@ -63,7 +63,7 @@ namespace CoqStringUtils {
     return str
   }
 
-  function coq_find_dot(str, toclose) {
+  function coq_find_dot(str: string, toclose: number): number {
     let index = my_index(str)
     if (index === -1) {
       return index
@@ -79,7 +79,7 @@ namespace CoqStringUtils {
     }
   }
 
-  function coq_get_last_dot(str) {
+  function coq_get_last_dot(str: string): number {
     let modified = str
     let index = -1
     while (my_index(modified) >= 0) {
@@ -90,7 +90,7 @@ namespace CoqStringUtils {
     return index
   }
 
-  function coq_find_last_dot(str, toopen) {
+  function coq_find_last_dot(str: string, toopen: number): number {
     let index = coq_get_last_dot(str)
     if (index === -1) {
       return index
@@ -105,7 +105,7 @@ namespace CoqStringUtils {
     }
   }
 
-  function stripComments(s) {
+  function stripComments(s: string): string {
     let output = ""
     let commentDepth = 0
     let pos = 0
@@ -127,14 +127,14 @@ namespace CoqStringUtils {
     return output
   }
 
-  export function coqTrim(s) {
+  export function coqTrim(s: string): string {
     if (s.length > 10000) {
       alert("WARNING: Performing coqTrim on large string")
     }
     return stripComments(s).trim()
   }
 
-  export function coqTrimLeft(s) {
+  export function coqTrimLeft(s: string): string {
     let commentDepth = 0
     let pos = 0
     while (pos < s.length) {

@@ -8,7 +8,7 @@ export class Answer implements ISertop.IAnswer<ISertop.IAnswerKind> {
   ) { }
 }
 
-export function create(o): Answer | Feedback.Feedback {
+export function create(o: any): Answer | Feedback.Feedback {
   const [name, ...args] = o
   switch (o[0]) {
     case "Answer":

@@ -9,7 +9,7 @@ export function createGetCompletions(
   // There doesn't seem to be a way to attach a post-insertion handler, but
   // we can hack one together!
   doc.editor.completer.keyboardHandler.bindKeys({
-    "Return": editor => {
+    "Return": (editor: AceAjax.Editor) => {
       Rx.Observable.fromEvent<any>(doc.editor.commands as any, "afterExec")
         .filter(e => e.command.name === "insertstring")
         .take(1)

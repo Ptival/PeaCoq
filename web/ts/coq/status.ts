@@ -3,7 +3,7 @@ export class Status {
   public statusProofName: string
   public statusAllProofs: string
   public statusProofNum: number
-  constructor(status) {
+  constructor(status: [string[], string, string, number]) {
     this.statusPath = status[0]
     this.statusProofName = status[1]
     this.statusAllProofs = status[2]

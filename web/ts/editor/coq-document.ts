@@ -1,3 +1,4 @@
+import { Anchor } from "./anchor"
 import * as Stage from "./stage"
 import { SentenceArray } from "./sentence-array"
 import { errorUnderlineClass, theme } from "../peacoq/theme"
@@ -15,13 +16,13 @@ function tipKey(t: Tip): number {
 
 export class CoqDocument implements ICoqDocument {
   public addsToProcess$: Rx.Observable<StmAdd$>
-  private beginAnchor: AceAjax.Anchor
+  private beginAnchor: Anchor
   private commandObserver: Rx.Observer<Command$>
   public command$: Rx.Observable<Command$>
   public contextPanel: IContextPanel
   public editorChange$: Rx.Observable<AceAjax.EditorChangeEvent>
   public sentences: ISentenceArray
-  private endAnchor: AceAjax.Anchor
+  private endAnchor: Anchor
   public input$: Command$
   private nextObserver: Rx.Observer<{}>
   public output$s: CoqtopOutputStreams
@@ -41,8 +42,8 @@ export class CoqDocument implements ICoqDocument {
     this.sentences = new SentenceArray(this)
     // WARNING: This line must stay over calls to mkAnchor
     this.session = editor.getSession()
-    this.beginAnchor = mkAnchor(this, 0, 0, "begin-marker", true)
-    this.endAnchor = mkAnchor(this, 0, 0, "end-marker", false)
+    this.beginAnchor = new Anchor(this, 0, 0, "begin-marker", true)
+    this.endAnchor = new Anchor(this, 0, 0, "end-marker", false)
     this.editorChange$ =
       Rx.Observable
         .create<AceAjax.EditorChangeEvent>(observer => {
@@ -133,7 +134,7 @@ export class CoqDocument implements ICoqDocument {
     return edit ? just(edit) : nothing()
   }
 
-  private getSentencesByStage(stage): ISentence<any>[] {
+  private getSentencesByStage(stage: any): ISentence<any>[] {
     return _(this.getAllSentences())
       .filter(e => { return e.stage instanceof stage })
       .value()
@@ -161,7 +162,7 @@ export class CoqDocument implements ICoqDocument {
 
   public getLastSentenceStop(): AceAjax.Position {
     return this.sentences.getLast().caseOf({
-      nothing: () => this.beginAnchor.getPosition(),
+      nothing: () => this.beginAnchor.anchor.getPosition(),
       just: last => last.stopPosition,
     })
   }
@@ -267,7 +268,7 @@ export class CoqDocument implements ICoqDocument {
     return next$
       .concatMap<ISentence<IToProcess>>(() => {
         let lastEditStopPos = this.getLastSentenceStop()
-        let endPos = this.endAnchor.getPosition()
+        let endPos = this.endAnchor.anchor.getPosition()
         let unprocessedRange =
           new AceAjax.Range(
             lastEditStopPos.row, lastEditStopPos.column,
@@ -347,33 +348,4 @@ export class CoqDocument implements ICoqDocument {
     this.tipSubject.onNext(tip)
   }
 
-}
-
-function mkAnchor(
-  doc: CoqDocument,
-  row: number, column: number,
-  klass: string, insertRight: boolean
-): AceAjax.Anchor {
-  const a = new AceAjax.Anchor(doc.session.getDocument(), row, column)
-  if (insertRight) { a.$insertRight = true }
-  const marker = doc.session.addDynamicMarker(
-    {
-      update: function (html, markerLayer, session, config) {
-        const screenPos = session.documentToScreenPosition(a)
-        const height = config.lineHeight
-        const width = config.characterWidth
-        const top = markerLayer.$getTop(screenPos.row, config)
-        const left = markerLayer.$padding + screenPos.column * width
-        html.push(
-          "<div class='", klass, "' style='",
-          "height:", height, "px",
-          "top:", top, "px",
-          "left:", left, "px width:", width, "px'></div>"
-        )
-      }
-    },
-    true
-  )
-  a.on("change", () => doc.session._signal("changeFrontMarker"))
-  return a
 }
