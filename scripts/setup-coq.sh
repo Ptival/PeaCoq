@@ -13,5 +13,5 @@ git checkout $commit
 if [ ! -f config/Makefile ]; then
   ./configure -local
 fi
-make -j2 || make clean && make -j2
+make -j$(nproc) || make clean && make -j$(nproc)
 make install
