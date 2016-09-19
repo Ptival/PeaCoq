@@ -2,7 +2,7 @@
 set -euv
 
 branch="master"
-commit="072d0f5"
+commit="b90df37951d3782b958687c08352114192525beb"
 
 if [ ! -d coq-serapi/.git ]; then
   git clone https://github.com/ejgallego/coq-serapi.git
