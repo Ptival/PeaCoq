@@ -10,14 +10,14 @@ export class Tab implements ITab {
   constructor(
     public id: string,
     public caption: string,
-    layout: string,
+    layoutName: string,
     public panel: string
   ) {
     this.caption = caption
     this.captionSuffix = ""
     this.id = id
     this.panel = panel
-    let w2uiId = layout + "_" + panel + "_tabs"
+    let w2uiId = layoutName + "_" + panel + "_tabs"
     this.tab = w2ui[w2uiId]
 
     let self = this
@@ -34,7 +34,7 @@ export class Tab implements ITab {
     this.tab.add({
       id: id,
       caption: caption,
-      onClick: function () { self.onClick(this) }
+      onClick: () => { self.onClick(this.tab) }
     })
 
     $(window).resize(() => {

@@ -34,7 +34,7 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
     this._tacticIndex = 0
   }
 
-  get tacticIndex() { return this._tacticIndex }
+  get tacticIndex(): number { return this._tacticIndex }
   set tacticIndex(ti: number) {
     if (ti >= this.tacticGroups.length) { debugger }
     this._tacticIndex = ti
@@ -144,7 +144,7 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
 
   public getFocusedTacticGroup(): TsMonad.Maybe<ITacticGroupNode> {
     let nonEmptyTacticGroups: ITacticGroupNode[] = _(this.tacticGroups)
-      .filter(function (group) { return (group.tactics.length > 0) })
+      .filter(group => group.tactics.length > 0)
       .value()
 
     if (nonEmptyTacticGroups.length === 0) { return TsMonad.Maybe.nothing() }
@@ -179,7 +179,7 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
 
   public getTactics(): ITactic[] {
     return _(this.tacticGroups)
-      .map(function (g) { return g.getTactics() })
+      .map(g => g.getTactics())
       .flatten<ITactic>(true)
       .value()
   }

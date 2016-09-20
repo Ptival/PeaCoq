@@ -174,8 +174,9 @@ function boxDropParentheses(p: PpCmd): PpCmd {
     let open = p.contents[0]
     let close = p.contents[2]
     if (open instanceof PpCmdPrint && open.token.string === "("
-      && close instanceof PpCmdPrint && close.token.string === ")")
+      && close instanceof PpCmdPrint && close.token.string === ")") {
       return p.contents[1]
+    }
   }
   return p
 }

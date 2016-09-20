@@ -120,9 +120,7 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
   public onChildSolvedAndUnfocused(sid: number): void {
     let focusedTactic = fromJust(this.getFocusedTactic())
     let unsolved = <IGoalNode | undefined>_(focusedTactic.goals)
-      .find(function (elt) {
-        return !elt.isSolved()
-      })
+      .find(elt => !elt.isSolved())
     // debugger
     // console.log("unsolved", unsolved)
     if (unsolved === undefined) {
@@ -181,7 +179,7 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
           $("<a>")
             .attr("href", "#")
             .text("◀")
-            .click(function (e) {
+            .click(e => {
               e.stopImmediatePropagation()
               this.shiftPrevInGroup()
             })
@@ -199,7 +197,7 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
           $("<a>")
             .attr("href", "#")
             .text("▶")
-            .click(function (e) {
+            .click(e => {
               e.stopImmediatePropagation()
               this.shiftNextInGroup()
             })

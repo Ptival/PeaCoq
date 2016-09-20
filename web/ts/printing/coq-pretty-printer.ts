@@ -209,6 +209,10 @@ function prFun(): PpCmds {
 
 let maxInt = 9007199254740991
 
+function yCombinator(le: any) {
+  return (f => f(f))((f: any) => le((x: any) => (f(f))(x)))
+}
+
 function prListSepLastSep<T>(
   noEmpty: boolean,
   sep: () => PpCmds,
@@ -216,35 +220,54 @@ function prListSepLastSep<T>(
   elem: (t: T) => PpCmds,
   l: T[]
 ): PpCmds {
-  function start(l: T[]): PpCmds {
-    if (l.length === 0) {
+  function start(ll: T[]): PpCmds {
+    if (ll.length === 0) {
       return mt()
     } else if (length === 1) {
-      return elem(l[0])
+      return elem(ll[0])
     } else {
-      let [h, t]: [T, T[]] = [l[0], _.tail(l)]
+      let [h, t]: [T, T[]] = [ll[0], _.tail(ll)]
       let e = elem(h)
       if (noEmpty && isMt(e)) {
         return start(t)
       } else {
-        const aux: (l: T[]) => PpCmds = function aux(l: T[]): PpCmds {
-          if (l.length === 0) {
-            return mt()
-          } else {
-            let [h, t]: [T, T[]] = [l[0], _.tail(l)]
-            let e = elem(h)
-            let r = aux(t)
-            if (noEmpty && isMt(e)) {
-              return r
+        const aux: (l: T[]) => PpCmds =
+          fix((aux: any) => (lll: T[]) => {
+            if (lll.length === 0) {
+              return mt()
             } else {
-              if (isMt(r)) {
-                return ([] as PpCmds).concat(lastSep(), e)
+              let [h, t]: [T, T[]] = [lll[0], _.tail(lll)]
+              let e = elem(h)
+              let r = aux(t)
+              if (noEmpty && isMt(e)) {
+                return r
               } else {
-                return ([] as PpCmds).concat(sep(), e, r)
+                if (isMt(r)) {
+                  return ([] as PpCmds).concat(lastSep(), e)
+                } else {
+                  return ([] as PpCmds).concat(sep(), e, r)
+                }
               }
             }
-          }
-        }
+          })
+        // const aux: (l: T[]) => PpCmds = function aux(l: T[]): PpCmds {
+        //   if (l.length === 0) {
+        //     return mt()
+        //   } else {
+        //     let [h, t]: [T, T[]] = [l[0], _.tail(l)]
+        //     let e = elem(h)
+        //     let r = aux(t)
+        //     if (noEmpty && isMt(e)) {
+        //       return r
+        //     } else {
+        //       if (isMt(r)) {
+        //         return ([] as PpCmds).concat(lastSep(), e)
+        //       } else {
+        //         return ([] as PpCmds).concat(sep(), e, r)
+        //       }
+        //     }
+        //   }
+        // }
         return ([] as PpCmds).concat(e, aux(t))
       }
     }
@@ -447,8 +470,8 @@ function prGlobSortInstance<T>(i: IGlobSortGen<T>): PpCmds {
   throw MatchFailure("prGlobSortInstance", i)
 }
 
-function prOptNoSpc<T>(pr: (t: T) => PpCmds, x: Maybe<T>): PpCmds {
-  return x.caseOf({
+function prOptNoSpc<T>(pr: (t: T) => PpCmds, mx: Maybe<T>): PpCmds {
+  return mx.caseOf({
     nothing: () => mt(),
     just: x => pr(x),
   })
@@ -505,9 +528,9 @@ function prProj(
 
 function prExplArgs(
   pr: (pa: PrecAssoc, ce: ConstrExpr) => PpCmds,
-  [a, expl]: AppArg
+  [a, mexpl]: AppArg
 ): PpCmds {
-  return expl.caseOf({
+  return mexpl.caseOf({
     nothing: () => pr([lApp, new L()], a),
     just: expl => {
       let e = expl.some[1]
@@ -630,22 +653,21 @@ function prPatt(
   p: ConstrExpr
 ): PpCmds {
 
-  function match(_p: ConstrExpr): [PpCmds, number] {
-    const p = _p // (cf. Microsoft/TypeScript/issues/7662)
+  function match(pp: ConstrExpr): [PpCmds, number] {
     // TODO CPatRecord
     // TODO CPatAlias
-    if (p instanceof CPatCstr) {
-      return p.cases1.caseOf<[PpCmds, number]>({
+    if (pp instanceof CPatCstr) {
+      return pp.cases1.caseOf<[PpCmds, number]>({
         nothing: () => {
-          if (p.cases2.length === 0) {
-            return [prReference(p.reference), lAtom]
+          if (pp.cases2.length === 0) {
+            return [prReference(pp.reference), lAtom]
           } else {
             return [
               ([] as PpCmds).concat(
-                prReference(p.reference),
+                prReference(pp.reference),
                 prList(
                   x => prPatt(spc, [lApp, new L()], x),
-                  p.cases2
+                  pp.cases2
                 )
               ),
               lApp
@@ -653,11 +675,11 @@ function prPatt(
           }
         },
         just: cases1 => {
-          if (p.cases2.length === 0) {
+          if (pp.cases2.length === 0) {
             return [
               ([] as PpCmds).concat(
                 str("@"),
-                prReference(p.reference),
+                prReference(pp.reference),
                 prList(
                   x => prPatt(spc, [lApp, new L()], x),
                   cases1
@@ -670,7 +692,7 @@ function prPatt(
             ([] as PpCmds).concat(
               surround(([] as PpCmds).concat(
                 str("@"),
-                prReference(p.reference),
+                prReference(pp.reference),
                 prList(
                   x => prPatt(spc, [lApp, new L()], x),
                   cases1
@@ -678,46 +700,46 @@ function prPatt(
               )),
               prList(
                 x => prPatt(spc, [lApp, new L()], x),
-                p.cases2
+                pp.cases2
               )
             ),
             lApp
           ]
         },
       })
-    } else if (p instanceof CPatAtom) {
-      let r = p.reference
+    } else if (pp instanceof CPatAtom) {
+      let r = pp.reference
       return r.caseOf<PpResult>({
         nothing: () => [str("_"), lAtom],
         just: r => [prReference(r), lAtom],
       })
       // } else if (p instanceof CPatOr) {
       // TODO
-    } else if (p instanceof CPatNotation) {
+    } else if (pp instanceof CPatNotation) {
       if (
-        p.notation === "( _ )"
-        && p.substitution[0].length === 1
-        && p.substitution[1].length === 0
-        && p.patterns.length === 0
+        pp.notation === "( _ )"
+        && pp.substitution[0].length === 1
+        && pp.substitution[1].length === 0
+        && pp.patterns.length === 0
       ) {
         return [
           ([] as PpCmds).concat(
-            prPatt(() => str("("), [Number.MAX_VALUE, new E()], p),
+            prPatt(() => str("("), [Number.MAX_VALUE, new E()], pp),
             str(")")
           )
           , lAtom
         ]
       } else {
-        const s = p.notation
-        const [l, ll] = p.substitution
-        const args = p.patterns
+        const s = pp.notation
+        const [l, ll] = pp.substitution
+        const args = pp.patterns
         const [strmNot, lNot] = prNotation(
           (x, y) => prPatt(mt, x, y),
           (x, y, z) => mt(),
           s,
           [l, ll, []],
-          p.unparsing,
-          p.precedence
+          pp.unparsing,
+          pp.precedence
         )
         const prefix =
           (args.length === 0 || precLess(lNot, [lApp, new L()]))
@@ -728,15 +750,15 @@ function prPatt(
           args.length === 0 ? lNot : lApp
         ]
       }
-    } else if (p instanceof CPatPrim) {
-      return [prPrimToken(p.token), lAtom]
-    } else if (p instanceof CPatDelimiters) {
+    } else if (pp instanceof CPatPrim) {
+      return [prPrimToken(pp.token), lAtom]
+    } else if (pp instanceof CPatDelimiters) {
       return [
-        prDelimiters(p.str, prPatt(mt, lSimplePatt, p.cases)),
+        prDelimiters(pp.str, prPatt(mt, lSimplePatt, pp.cases)),
         1
       ]
     } else {
-      throw MatchFailure("prPatt > match", p)
+      throw MatchFailure("prPatt > match", pp)
     }
   }
 
@@ -750,9 +772,9 @@ function prPatt(
 
 function prAsin(
   pr: (_1: PrecAssoc, _2: ConstrExpr) => PpCmds,
-  [na, indnalopt]: [Maybe<[CoqLocation, NameBase]>, Maybe<ConstrExpr>]
+  [mna, indnalopt]: [Maybe<[CoqLocation, NameBase]>, Maybe<ConstrExpr>]
 ): PpCmds {
-  let prefix = na.caseOf({
+  let prefix = mna.caseOf({
     nothing: () => mt(),
     just: na => ([] as PpCmds).concat(
       spc(),
@@ -832,10 +854,10 @@ function prSepCom(
 
 function prCaseType(
   pr: (_1: PrecAssoc, _2: ConstrExpr) => PpCmds,
-  po: Maybe<ConstrExpr>
+  mpo: Maybe<ConstrExpr>
 ): PpCmds {
   // TODO: po instanceof CHole with IntroAnonymous
-  return po.caseOf({
+  return mpo.caseOf({
     nothing: () => mt(),
     just: po => ([] as PpCmds).concat(
       spc(),
@@ -878,12 +900,12 @@ function prEqn(
 
 function prSimpleReturnType(
   pr: (_1: PrecAssoc, _2: ConstrExpr) => PpCmds,
-  na: Maybe<Located<Name>>,
+  mna: Maybe<Located<Name>>,
   po: Maybe<ConstrExpr>
 ): PpCmds {
   let res = ([] as PpCmds)
 
-  na.caseOf({
+  mna.caseOf({
     nothing: () => { res = res.concat(mt()) },
     just: na => {
       let name = na.some[1]
@@ -920,11 +942,11 @@ let prFunSep: PpCmds = ([] as PpCmds).concat(spc(), str("=>"))
 function prGen(
   pr: (_1: () => PpCmds, _2: PrecAssoc, _3: ConstrExpr) => PpCmds
 ): (_1: () => PpCmds, _2: PrecAssoc, _3: ConstrExpr) => PpCmds {
-  return function (
+  return (
     sep: () => PpCmds,
     inherited: PrecAssoc,
     a: ConstrExpr
-  ): PpCmds {
+  ) => {
 
     function ret(cmds: PpCmds, prec: number): PpResult {
       return [tagConstrExpr(a, cmds), prec]
@@ -932,20 +954,20 @@ function prGen(
 
     let prmt = (x: [number, ParenRelation], y: ConstrExpr) => pr(mt, x, y)
 
-    function match(a: ConstrExpr): PpResult {
+    function match(aa: ConstrExpr): PpResult {
 
-      if (a instanceof CApp) {
+      if (aa instanceof CApp) {
         // TODO: ldots_var
-        let pf = a.funct[0]
-        let f = a.funct[1]
+        let pf = aa.funct[0]
+        let f = aa.funct[1]
         return pf.caseOf<PpResult>({
           nothing: () => {
-            let b = <CApp>a // TS bug
+            let b = <CApp>aa // TS bug
             let [f, l] = [b.funct[1], b.args]
             return ret(prApp(prmt, f, l), lApp)
           },
           just: pf => {
-            let b = <CApp>a // TS bug
+            let b = <CApp>aa // TS bug
             let [i, f, l] = [pf, b.funct[1], b.args]
             let [l1, l2] = chop(i, l)
             let [c, rest] = sepLast(l1)
@@ -958,8 +980,8 @@ function prGen(
                 ([] as PpCmds).concat(
                   p,
                   prList(
-                    a => {
-                      return ([] as PpCmds).concat(spc(), prExplArgs(prmt, a))
+                    aaa => {
+                      return ([] as PpCmds).concat(spc(), prExplArgs(prmt, aaa))
                     },
                     l2
                   )
@@ -973,8 +995,8 @@ function prGen(
         })
       }
 
-      if (a instanceof CCases) {
-        if (a.caseStyle instanceof LetPatternStyle) {
+      if (aa instanceof CCases) {
+        if (aa.caseStyle instanceof LetPatternStyle) {
           throw "TODO: LetPatternStyle"
         }
         let prDangling = (pa: [number, ParenRelation], c: ConstrExpr) => prDanglingWithFor(mt, pr, pa, c)
@@ -986,15 +1008,15 @@ function prGen(
               prListWithSep(
                 sepV,
                 x => prCaseItem(prDangling, x),
-                a.cases
+                aa.cases
               )
             ),
-            prCaseType(prDangling, a.returnType),
+            prCaseType(prDangling, aa.returnType),
             spc(),
             keyword("with"),
             prList(
               (e: BranchExpr) => prEqn((x, y) => pr(mt, x, y), e),
-              a.branches
+              aa.branches
             ),
             spc(),
             keyword("end")
@@ -1003,16 +1025,16 @@ function prGen(
         )
       }
 
-      if (a instanceof CDelimiters) {
-        let [sc, e] = [a.str, a.expr]
+      if (aa instanceof CDelimiters) {
+        let [sc, e] = [aa.str, aa.expr]
         return ret(
           prDelimiters(sc, pr(mt, [lDelim, new E()], e)),
           lDelim
         )
       }
 
-      if (a instanceof CLambdaN) {
-        let [bl, a1] = extractLamBinders(a)
+      if (aa instanceof CLambdaN) {
+        let [bl, a1] = extractLamBinders(aa)
         return ret(
           hov(0, ([] as PpCmds).concat(
             hov(2, prDelimitedBinders(prFun, spc, x => pr(spc, lTop, x), bl)),
@@ -1023,47 +1045,47 @@ function prGen(
         )
       }
 
-      if (a instanceof CLetIn) {
-        let bound = a.bound
+      if (aa instanceof CLetIn) {
+        let bound = aa.bound
         if (bound instanceof CFix || bound instanceof CCoFix) {
           throw ("TODO: pr CLetIn with CFix/CcoFix")
         }
         return ret(
           hv(0, ([] as PpCmds).concat(
             hov(2, ([] as PpCmds).concat(
-              keyword("let"), spc(), prLName(a.name), str(" :="),
-              pr(spc, lTop, a.bound), spc(), keyword("in")
+              keyword("let"), spc(), prLName(aa.name), str(" :="),
+              pr(spc, lTop, aa.bound), spc(), keyword("in")
             )),
-            pr(spc, lTop, a.body)
+            pr(spc, lTop, aa.body)
           )),
           lLetIn
         )
       }
 
-      if (a instanceof CLetTuple) {
+      if (aa instanceof CLetTuple) {
         return ret(
           hv(0, ([] as PpCmds).concat(
             keyword("let"),
             spc(),
             hov(0, ([] as PpCmds).concat(
               str("("),
-              prListWithSep(sepV, prLName, a.names),
+              prListWithSep(sepV, prLName, aa.names),
               str(")"),
-              prSimpleReturnType(prmt, a.returnType[0], a.returnType[1]),
+              prSimpleReturnType(prmt, aa.returnType[0], aa.returnType[1]),
               str(" :="),
-              pr(spc, lTop, a.bound),
+              pr(spc, lTop, aa.bound),
               spc(),
               keyword("in")
             )),
-            pr(spc, lTop, a.body)
+            pr(spc, lTop, aa.body)
           )),
           lLetIn
         )
       }
 
-      if (a instanceof CNotation) {
-        if (a.notation === "(\u00A0_\u00A0)") {
-          let [[t], [], []] = a.substitution
+      if (aa instanceof CNotation) {
+        if (aa.notation === "(\u00A0_\u00A0)") {
+          let [[t], [], []] = aa.substitution
           return ret(
             ([] as PpCmds).concat(
               pr(
@@ -1076,27 +1098,27 @@ function prGen(
             lAtom
           )
         } else {
-          let [s, env]: [Notation, ConstrNotationSubstitution] = [a.notation, a.substitution]
+          let [s, env]: [Notation, ConstrNotationSubstitution] = [aa.notation, aa.substitution]
           return prNotation(
             (x, y) => pr(mt, x, y),
-            (x, y, z) => prBindersGen(x => pr(mt, lTop, x), x, y, z),
+            (x, y, z) => prBindersGen(w => pr(mt, lTop, w), x, y, z),
             s,
             env,
-            a.unparsing,
-            a.precedence
+            aa.unparsing,
+            aa.precedence
           )
         }
       }
 
-      if (a instanceof CPrim) {
+      if (aa instanceof CPrim) {
         return ret(
-          prPrimToken(a.token),
-          precOfPrimToken(a.token)
+          prPrimToken(aa.token),
+          precOfPrimToken(aa.token)
         )
       }
 
-      if (a instanceof CProdN) {
-        let [bl, aRest] = extractProdBinders(a)
+      if (aa instanceof CProdN) {
+        let [bl, aRest] = extractProdBinders(aa)
         return ret(
           ([] as PpCmds).concat(
             prDelimitedBinders(
@@ -1111,19 +1133,19 @@ function prGen(
         )
       }
 
-      if (a instanceof CRef) {
-        let [r, us] = [a.reference, a.universeInstance]
+      if (aa instanceof CRef) {
+        let [r, us] = [aa.reference, aa.universeInstance]
         return ret(
           prCRef(r, us),
           lAtom
         )
       }
 
-      if (a instanceof CSort) {
-        return ret(prGlobSort(a.globSort), lAtom)
+      if (aa instanceof CSort) {
+        return ret(prGlobSort(aa.globSort), lAtom)
       }
 
-      throw MatchFailure("pr > match", a)
+      throw MatchFailure("pr > match", aa)
 
     }
 
@@ -1141,7 +1163,7 @@ function prGen(
 }
 
 function fix(f: (a: any) => any): any {
-  return function (...x: any[]) {
+  return (...x: any[]) => {
     return f(fix(f))(...x)
   }
 }
@@ -1154,7 +1176,7 @@ function prHTMLGen(
   pr: (_1: () => PpCmds, _2: PrecAssoc, _3: ConstrExpr) => PpCmds
 ): (_1: () => PpCmds, _2: PrecAssoc, _3: ConstrExpr) => PpCmds {
   let recur = prGen(pr)
-  return function (sep: () => PpCmds, pa: PrecAssoc, e: ConstrExpr): PpCmds {
+  return (sep: () => PpCmds, pa: PrecAssoc, e: ConstrExpr) => {
     return ([] as PpCmds).concat(
       str(`<span class="ace_editor syntax">`),
       recur(sep, pa, e),

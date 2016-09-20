@@ -36,8 +36,6 @@ import { setup as setupProofTreeAutomation } from "./prooftree/automation"
 import { setup as setupProofTreePopulating } from "./prooftree/populating"
 import { setup as setupProofTree } from "./prooftree/setup"
 
-
-
 // import * as Promise from 'bluebird'
 // Promise.longStackTraces()
 // Promise.onUnhandledRejectionHandled((reason, promise) => {

@@ -12,7 +12,7 @@ export class Anchor {
     if (insertRight) { this.anchor.$insertRight = true }
     this.marker = doc.session.addDynamicMarker(
       {
-        update: function (html: string[], markerLayer: any, session: AceAjax.IEditSession, config: any) {
+        update: (html: string[], markerLayer: any, session: AceAjax.IEditSession, config: any) => {
           const { row, column } = this.anchor.getPosition() // they might have been updated since creation time?
           const screenPos = session.documentToScreenPosition(row, column)
           const height = config.lineHeight

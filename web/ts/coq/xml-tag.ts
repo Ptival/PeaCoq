@@ -53,7 +53,7 @@ class Definition extends CoqXMLTag {
 }
 
 class Gallina extends CoqXMLTag {
-  public toString = function() { return "Gallina" }
+  public toString() { return "Gallina" }
 }
 
 class Ltac extends CoqXMLTag {

@@ -4,7 +4,7 @@ namespace CoqStringUtils {
 
   function my_index(str: string): number {
     let index = +Infinity
-    _(delimiters).each(function (delimiter) {
+    _(delimiters).each(delimiter => {
       let pos = str.indexOf(delimiter)
       if (pos >= 0 && pos < index) {
         index = pos
@@ -46,7 +46,7 @@ namespace CoqStringUtils {
   //   return coq_find_last_dot(coq_undot(str), 0) + 1
   // }
 
-  function count(str: string, pat: string) {
+  function count(str: string, pat: string): number {
     let arr = str.split(pat)
     return (arr.length)
   }

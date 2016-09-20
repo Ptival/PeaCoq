@@ -1,4 +1,3 @@
-import * as Coq85 from "../editor/coq85"
 import { htmlPrintConstrExpr, htmlPrintHyps } from "../printing/html-printers"
 
 export default PeaCoqGoal
@@ -43,7 +42,7 @@ export class PeaCoqGoal implements IPeaCoqGoal {
       _.forEach(hyps, function(elt, ndx) {
         if (ndx === 0) { return }
         let prevElt = hyps[ndx - 1]
-        if (Coq85.sameBodyAndType(elt, prevElt)) {
+        if (sameBodyAndType(elt, prevElt)) {
           // prepend the names of the previous hyp, then delete previous
           let spanToPrependTo = $(elt).children("span")[0]
           let spanToPrependFrom = $(prevElt).children("span")[0]
@@ -60,4 +59,16 @@ export class PeaCoqGoal implements IPeaCoqGoal {
 
 function makeContextDivider() {
   return $("<hr>", { class: "context-divider" })
+}
+
+function sameBodyAndType(hyp1: HTMLElement, hyp2: HTMLElement): boolean {
+  let children1 = $(hyp1).children().slice(1)
+  let children2 = $(hyp2).children().slice(1)
+  if (children1.length !== children2.length) { return false }
+  for (let i in _.range(children1.length)) {
+    if ($(children1[i]).html() !== $(children2[i]).html()) {
+      return false
+    }
+  }
+  return true
 }

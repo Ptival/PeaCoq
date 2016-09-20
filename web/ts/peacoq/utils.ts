@@ -83,14 +83,14 @@ function parseSVGTransform(a: string): any {
   }
 }
 
-function MatchFailure(fn: string, o: Object) {
+function MatchFailure(fn: string, o: Object): string {
   debugger
   if (!o) { return "undefined discriminee" }
-  return (`Match failed in ${fn}, constructor: ${o.constructor.toString()}`)
+  return `Match failed in ${fn}, constructor: ${o.constructor.toString()}`
 }
 
-function MissingOverload(fn: string, o: Object) {
-  return (`Missing overload ${fn}, constructor: ${o.constructor.toString()}`)
+function MissingOverload(fn: string, o: Object): string {
+  return `Missing overload ${fn}, constructor: ${o.constructor.toString()}`
 }
 
 function isUpperCase(character: string): boolean {
@@ -113,7 +113,7 @@ function showDot(d: XY): string { return `${d.x} ${d.y}` }
   h_____g     f_____e
 
 */
-function connectRects(r1: ClientRect, r2: ClientRect, rightsLeft?: number) {
+function connectRects(r1: ClientRect, r2: ClientRect, rightsLeft?: number): string {
   // console.log("rect1", r1, "rect2", r2)
   if (rightsLeft === undefined) { rightsLeft = r2.left }
   let a = mkDot(r1.left, r1.top)
@@ -148,7 +148,7 @@ function byDiffId(d: Diff): string {
 }
 
 function sameNameAs(a: Hypothesis): (b: Hypothesis) => boolean {
-  return function (b: Hypothesis) { return a.hName === b.hName }
+  return (b: Hypothesis) => { return a.hName === b.hName }
 }
 
 interface Diff {
@@ -197,12 +197,12 @@ function computeDiffList(oldHypsOriginal: Hypothesis[], newHypsOriginal: Hypothe
   }
 
   // now register the remaining disappearing
-  _(oldHyps).each(function (oldHyp) {
+  _(oldHyps).each(oldHyp => {
     diffList.push({ "oldHyp": oldHyp, "newHyp": null, "isJump": false })
   })
 
   // now register the remaining appearing
-  _(newHyps).each(function (newHyp) {
+  _(newHyps).each(newHyp => {
     diffList.push({ "oldHyp": null, "newHyp": newHyp, "isJump": false })
   })
 

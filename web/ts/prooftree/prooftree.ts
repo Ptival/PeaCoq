@@ -16,30 +16,24 @@ let goalBodyPadding = 4
 let verticalSpacingBetweenNodes = 10
 
 export class ProofTree implements IProofTree {
-  private _curNode: IGoalNode
-  private updateSubject: Rx.Subject<{}>
+  public readonly curNode$: Rx.Subject<IGoalNode>
+  public rootNode: IGoalNode
+  public tacticWaiting: Maybe<string>
+  public xFactor: number
+  public yFactor: number
 
   private anchor: d3.Selection<HTMLElement>
-  /* whatever the client wants to store as meta-data */
-  private clientState: Object
-  public readonly curNode$: Rx.Subject<IGoalNode>
+  private _curNode: IGoalNode
   private descendantsOffset: number
-  // diagonal: d3.svg.Diagonal<ProofTreeLink, ProofTreeNode>
   private paused: boolean
-  /* true until the user uses their mouse */
-  private usingKeyboard: boolean
-  public rootNode: IGoalNode
-  // stateId: number
   private svgId: string
   private tactics: () => TacticGroup[]
   private tacticsWorklist: WorklistItem[]
-  public tacticWaiting: Maybe<string>
-  // tacticWaitingForContext: Maybe<TacticWaiting>
   private tree: d3.layout.Tree<IProofTreeNode>
+  private updateSubject: Rx.Subject<{}>
+  private usingKeyboard: boolean /* true until the user uses their mouse */
   private viewportX: number
   private viewportY: number
-  public xFactor: number
-  public yFactor: number
 
   private div: d3.Selection<HTMLElement>
   private svg: d3.Selection<HTMLElement>
@@ -71,7 +65,6 @@ export class ProofTree implements IProofTree {
     this.svgId = _.uniqueId()
     this.xFactor = this.width
     this.yFactor = this.height
-    this.clientState = {}
     this.usingKeyboard = true // true until the user moves their mouse
     this.tacticWaiting = nothing()
 
@@ -170,6 +163,141 @@ export class ProofTree implements IProofTree {
   public cleanup() {
     this.curNode$.onCompleted()
   }
+
+  public getAllGoals(): IGoalNode[] {
+    return ([] as IGoalNode[]).concat(
+      [this.rootNode],
+      this.rootNode.getAllGoalDescendants()
+    )
+  }
+
+
+  get curNode(): IGoalNode { return this._curNode }
+  set curNode(n: IGoalNode) {
+    if (n.id !== this._curNode.id) {
+      // debugger
+      // console.log("Switching current node to", n)
+      this._curNode = n
+      n.focus()
+      this.curNode$.onNext(n)
+    }
+  }
+
+
+  public getGoalWidth() {
+    let goalShare = 15 / 20
+    return Math.floor(this.width * (goalShare / 2))
+  }
+
+  public getTacticWidth() {
+    let tacticShare = 4 / 20
+    return Math.floor(this.width * (tacticShare / 2))
+  }
+
+
+  public isCurNode(n: IProofTreeNode): boolean { return n.id === this.curNode.id }
+
+  public isCurNodeAncestor(strictly: Strictly, n: IProofTreeNode): boolean {
+    let common = ProofTreeUtils.commonAncestor(n, this.curNode)
+    let commonAncestorIsNode = common.id === n.id
+    switch (strictly) {
+      case Strictly.Yes: return commonAncestorIsNode && !this.isCurNode(n)
+      case Strictly.No: return commonAncestorIsNode
+    }
+    throw "ProofTree.isCurNodeAncestor"
+  }
+
+
+  public requestNext(): void {
+    this.document.next()
+  }
+
+  public resize(width: number, height: number) {
+    this.width = Math.floor(width)
+    this.height = Math.floor(height)
+    this.svg
+      .style("width", `${this.width}px`)
+      .style("height", `${this.height}px`)
+      // also need these as attributes for svg_todataurl
+      .attr("width", `${this.width}px`)
+      .attr("height", `${this.height}px`)
+
+    this.scheduleUpdate()
+  }
+
+
+  public scheduleUpdate(): void {
+    this.updateSubject.onNext({})
+  }
+
+  public updateAndWait(): Promise<{}> {
+    // console.trace(new Date())
+    return new Promise((onFulfilled, onRejected) => {
+      this.updatePromise(
+        () => {
+          // console.log("UPDATE: DONE")
+          onFulfilled()
+        },
+        onRejected
+      )
+    })
+  }
+
+
+  public xOffset(d: IProofTreeNode): number {
+    return - d.getWidth() / 2 // position the center
+  }
+
+  public yOffset(d: IProofTreeNode): number {
+    let offset = - d.getHeight() / 2 // for the center
+    let focusedChild = this.curNode.getFocusedChild()
+
+    // all tactic nodes are shifted such that the current tactic is centered
+    // assert(isGoal(this.curNode), "yOffset assumes the current node is a goal!")
+    if (this.isCurGoalChild(d)) {
+      // assert(focusedChild !== undefined, "yOffset: focusedChild === undefined")
+      return offset + (
+        ProofTreeUtils.nodeY(fromJust(d.getParent())) - ProofTreeUtils.nodeY(fromJust(focusedChild))
+      ) * this.yFactor
+    }
+
+    // all goal grandchildren are shifted such that the context line of the
+    // current goal and the current suboal align
+    if (this.isCurGoalGrandChild(d)) {
+      return offset + this.descendantsOffset
+    }
+
+    // we center the curNode parent to its focused child
+    if (this.isCurNodeParent(d)) {
+      if (d instanceof TacticGroupNode) {
+        return offset + (
+          ProofTreeUtils.nodeY(this.curNode) - ProofTreeUtils.nodeY(d)
+        ) * this.yFactor
+      } else {
+        // This should not happen anymore (should not be a GoalNode)
+        debugger
+      }
+    }
+
+    // the other nodes (current goal and its ancestors) stay where they need
+    return offset
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   /*
     here we are looking for the descendant which should align with the current
@@ -281,24 +409,6 @@ export class ProofTree implements IProofTree {
     if (!Number.isFinite(this.yFactor)) { debugger }
   }
 
-  get curNode(): IGoalNode { return this._curNode }
-  set curNode(n: IGoalNode) {
-    if (n.id !== this._curNode.id) {
-      // debugger
-      // console.log("Switching current node to", n)
-      this._curNode = n
-      n.focus()
-      this.curNode$.onNext(n)
-    }
-  }
-
-  public getAllGoals(): IGoalNode[] {
-    return ([] as IGoalNode[]).concat(
-      [this.rootNode],
-      this.rootNode.getAllGoalDescendants()
-    )
-  }
-
   private getAllNodes(): IProofTreeNode[] { return this.rootNode.getAllDescendants() }
 
   private getCurrentGoal(): IGoalNode {
@@ -307,16 +417,6 @@ export class ProofTree implements IProofTree {
   }
 
   private getFocus() { $(":focus").blur() }
-
-  public getGoalWidth() {
-    let goalShare = 15 / 20
-    return Math.floor(this.width * (goalShare / 2))
-  }
-
-  public getTacticWidth() {
-    let tacticShare = 4 / 20
-    return Math.floor(this.width * (tacticShare / 2))
-  }
 
   private getCurrentScale() {
     return (<any>this.svg[0][0]).currentScale
@@ -346,18 +446,6 @@ export class ProofTree implements IProofTree {
 
   private isCurGoalGrandChild(n: IProofTreeNode): boolean {
     return n.hasParentSuchThat(p => this.isCurGoalChild(p))
-  }
-
-  public isCurNode(n: IProofTreeNode): boolean { return n.id === this.curNode.id }
-
-  public isCurNodeAncestor(strictly: Strictly, n: IProofTreeNode): boolean {
-    let common = ProofTreeUtils.commonAncestor(n, this.curNode)
-    let commonAncestorIsNode = common.id === n.id
-    switch (strictly) {
-      case Strictly.Yes: return commonAncestorIsNode && !this.isCurNode(n)
-      case Strictly.No: return commonAncestorIsNode
-    }
-    throw "ProofTree.isCurNodeAncestor"
   }
 
   private isCurNodeChild(n: IProofTreeNode): boolean {
@@ -767,23 +855,6 @@ export class ProofTree implements IProofTree {
     this.processTactics()
   }
 
-  public requestNext(): void {
-    this.document.next()
-  }
-
-  public resize(width: number, height: number) {
-    this.width = Math.floor(width)
-    this.height = Math.floor(height)
-    this.svg
-      .style("width", `${this.width}px`)
-      .style("height", `${this.height}px`)
-      // also need these as attributes for svg_todataurl
-      .attr("width", `${this.width}px`)
-      .attr("height", `${this.height}px`)
-
-    this.scheduleUpdate()
-  }
-
   private resetSVGTransform(): void {
     const transform = this.viewport.attr("transform")
     if (transform.length === 0) { return }
@@ -856,7 +927,7 @@ export class ProofTree implements IProofTree {
   //   */
   // }
 
-  private shiftNextByTacticGroup(n: IGoalNode) {
+  private shiftNextByTacticGroup(n: IGoalNode): void {
     if (this.paused) { return }
     if (n.isSolved()) { return }
     let viewChildren = n.getViewChildren()
@@ -867,7 +938,7 @@ export class ProofTree implements IProofTree {
     }
   }
 
-  private shiftPrevByTacticGroup(n: IGoalNode) {
+  private shiftPrevByTacticGroup(n: IGoalNode): void {
     if (this.paused) { return }
     if (n.isSolved()) { return }
     if (n.tacticIndex > 0) {
@@ -875,23 +946,6 @@ export class ProofTree implements IProofTree {
       // asyncLog("UPGROUP " + nodeString(n.getViewChildren()[n.tacticIndex]))
       this.scheduleUpdate()
     }
-  }
-
-  public scheduleUpdate(): void {
-    this.updateSubject.onNext({})
-  }
-
-  public updateAndWait(): Promise<{}> {
-    // console.trace(new Date())
-    return new Promise((onFulfilled, onRejected) => {
-      this.updatePromise(
-        () => {
-          // console.log("UPDATE: DONE")
-          onFulfilled()
-        },
-        onRejected
-      )
-    })
   }
 
   private updatePromise<T>(onFulfilled: () => void, onRejected: () => void): void {
@@ -995,45 +1049,6 @@ export class ProofTree implements IProofTree {
 
   }
 
-  public xOffset(d: IProofTreeNode): number {
-    return - d.getWidth() / 2 // position the center
-  }
-
-  public yOffset(d: IProofTreeNode): number {
-    let offset = - d.getHeight() / 2 // for the center
-    let focusedChild = this.curNode.getFocusedChild()
-
-    // all tactic nodes are shifted such that the current tactic is centered
-    // assert(isGoal(this.curNode), "yOffset assumes the current node is a goal!")
-    if (this.isCurGoalChild(d)) {
-      // assert(focusedChild !== undefined, "yOffset: focusedChild === undefined")
-      return offset + (
-        ProofTreeUtils.nodeY(fromJust(d.getParent())) - ProofTreeUtils.nodeY(fromJust(focusedChild))
-      ) * this.yFactor
-    }
-
-    // all goal grandchildren are shifted such that the context line of the
-    // current goal and the current suboal align
-    if (this.isCurGoalGrandChild(d)) {
-      return offset + this.descendantsOffset
-    }
-
-    // we center the curNode parent to its focused child
-    if (this.isCurNodeParent(d)) {
-      if (d instanceof TacticGroupNode) {
-        return offset + (
-          ProofTreeUtils.nodeY(this.curNode) - ProofTreeUtils.nodeY(d)
-        ) * this.yFactor
-      } else {
-        // This should not happen anymore (should not be a GoalNode)
-        debugger
-      }
-    }
-
-    // the other nodes (current goal and its ancestors) stay where they need
-    return offset
-  }
-
 }
 
 function mkDiagonal(
@@ -1057,7 +1072,7 @@ function mkDiagonal(
         // console.log("target", ProofTreeUtils.swapXY(cR(d.source)))
         return ProofTreeUtils.swapXY(cL(d.target))
       })
-      .projection(function (d) { return [d.y, d.x] })
+      .projection(d => [d.y, d.x])
   )
 }
 
