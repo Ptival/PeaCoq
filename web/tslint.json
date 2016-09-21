@@ -1,6 +1,7 @@
 {
     "rulesDirectory": [],
     "rules": {
+        "align": [true, "parameters", "statements"],
         "class-name": true,
         "comment-format": [
             true,
@@ -19,6 +20,7 @@
         //         "order": "fields-first"
         //     }
         // ],
+        "no-consecutive-blank-lines": true,
         "no-duplicate-key": true,
         "no-duplicate-variable": true,
         "no-eval": true,

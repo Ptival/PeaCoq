@@ -76,6 +76,5 @@ function updateProgressBar(doc: ICoqDocument): void {
       return `Sentence ID: ${d.sentenceId}, Command ID: ${commandId}, State ID: ${stateId}`
     })
 
-
   selection.exit().remove()
 }

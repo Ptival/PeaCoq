@@ -103,13 +103,11 @@ export class ProofTree implements IProofTree {
         }
       })
 
-
     this.div = this.anchor
       .insert("div", ":first-child")
       .attr("id", "pt-" + this.svgId)
       .classed("prooftree", true)
       .style("overflow", "hidden")
-
 
     this.svg = this.div
       .insert("svg", ":first-child")
@@ -128,16 +126,15 @@ export class ProofTree implements IProofTree {
     // for debugging, this is useful
     // .attr("viewBox", "0 -100 1000 400")
 
-
     this.viewport =
       this.svg
         .append("g")
         .attr("id", "viewport") // for SVGPan.js
         .attr("class", "viewport")
-        .attr("transform",
+        .attr(
+        "transform",
         "translate(" + this.getGoalWidth() + ", 0)"
         )
-
 
     // note: the order of these influence the display
     // from bottom layers
@@ -171,7 +168,6 @@ export class ProofTree implements IProofTree {
     )
   }
 
-
   get curNode(): IGoalNode { return this._curNode }
   set curNode(n: IGoalNode) {
     if (n.id !== this._curNode.id) {
@@ -183,7 +179,6 @@ export class ProofTree implements IProofTree {
     }
   }
 
-
   public getGoalWidth() {
     let goalShare = 15 / 20
     return Math.floor(this.width * (goalShare / 2))
@@ -193,7 +188,6 @@ export class ProofTree implements IProofTree {
     let tacticShare = 4 / 20
     return Math.floor(this.width * (tacticShare / 2))
   }
-
 
   public isCurNode(n: IProofTreeNode): boolean { return n.id === this.curNode.id }
 
@@ -206,7 +200,6 @@ export class ProofTree implements IProofTree {
     }
     throw "ProofTree.isCurNodeAncestor"
   }
-
 
   public requestNext(): void {
     this.document.next()
@@ -225,7 +218,6 @@ export class ProofTree implements IProofTree {
     this.scheduleUpdate()
   }
 
-
   public scheduleUpdate(): void {
     this.updateSubject.onNext({})
   }
@@ -242,7 +234,6 @@ export class ProofTree implements IProofTree {
       )
     })
   }
-
 
   public xOffset(d: IProofTreeNode): number {
     return - d.getWidth() / 2 // position the center
@@ -282,22 +273,6 @@ export class ProofTree implements IProofTree {
     // the other nodes (current goal and its ancestors) stay where they need
     return offset
   }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   /*
     here we are looking for the descendant which should align with the current
@@ -813,7 +788,6 @@ export class ProofTree implements IProofTree {
       })
         .value()
       
-
       // TODO: there should be no tactics!
       let groups = tacticsAndGroups.groups
       */
@@ -846,7 +820,6 @@ export class ProofTree implements IProofTree {
           .flatten<() => Promise<any>>(true)
           .value()
           
-
         // flushes the worklist and add the new sparks
         this.tacticsWorklist = groupSparks
     */
@@ -904,12 +877,10 @@ export class ProofTree implements IProofTree {
   //                 //return (tacticUnicityRepr(t) === newChildRepr)
   //               })
 
-
   //             let tacticIsUseless =
   //               (newChild.goals.length === 1)
   //               && (goalNodeUnicityRepr(newChild.goals[0])
   //                 === parentGoalRepr)
-
 
   //             if (!resultAlreadyExists && !tacticIsUseless) {
   //               groupToAttachTo.addTactic(newChild)

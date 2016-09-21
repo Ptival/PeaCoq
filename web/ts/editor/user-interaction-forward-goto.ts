@@ -28,5 +28,4 @@ export function setupUserInteractionForwardGoto(
     .delay(0) // this is needed to set up the feedback loop properly
     .subscribe(() => doc.next())
 
-
 }

@@ -69,7 +69,6 @@ export function setupLoadFile(doc: ICoqDocument): Rx.Observable<string> {
       })
       .share()
 
-
   let loadedFilesStream: Rx.Observable<string> =
     inputChangeStream
       .flatMap((file) => {
@@ -81,7 +80,6 @@ export function setupLoadFile(doc: ICoqDocument): Rx.Observable<string> {
         return Rx.Observable.fromPromise(promise)
       })
       .share()
-
 
   // TODO: This belongs somewhere else (document-related)
   loadedFilesStream.subscribe((text) => {

@@ -170,7 +170,6 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
       .css("padding", "4px")
       .css("text-align", "center")
 
-
     // prepend a tactic node selector if necessary
     if (nbTactics > 1) {
 

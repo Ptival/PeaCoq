@@ -495,9 +495,6 @@
 
 //     return res
 
-
-
-
 //     /*
 //         let topBinOp = this.isFullyAppliedBinaryOperator()
 //         // fully-applied infix binary operators
@@ -606,7 +603,6 @@
 //                 throw new Error("Unknown Term: " + this.right)
 //             }
 //           }
-
 
 //         } else {
 
