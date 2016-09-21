@@ -4,6 +4,7 @@ set -euv
 cd web
 
 npm --version
+npm prune
 # This won't install correctly with newest npm? (cf. peer dependencies)
 npm install typescript@2.1.0-dev.20160915 tslint
 npm install

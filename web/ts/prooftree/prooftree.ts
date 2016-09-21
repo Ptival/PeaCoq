@@ -10,10 +10,14 @@ import { TacticGroupNode } from "./tacticgroupnode"
 import { Strictly } from "../peacoq/strictly"
 import { debounceAndThrottle } from "../rxjs/operators"
 
-export type HTMLElementSelection = d3Selection.Selection<d3Selection.BaseType, {}, null, never>
-export type NodeSelection = d3Selection.Selection<d3Selection.BaseType, IProofTreeNode, null, never>
+export type HTMLElementSelection = d3Selection.Selection<d3Selection.BaseType, {}, any, never>
+export type NodeSelection = d3Selection.Selection<d3Selection.BaseType, IProofTreeNode, any, never>
 export type ProofTreeLink = d3Hierarchy.HierarchyLink<IProofTreeNode>
-export type LinkSelection = d3Selection.Selection<d3Selection.BaseType, ProofTreeLink, null, never>
+export type LinkSelection = d3Selection.Selection<d3Selection.BaseType, ProofTreeLink, any, never>
+// export type HTMLElementSelection = d3Selection.Selection<d3Selection.BaseType, {}, null, never>
+// export type NodeSelection = d3Selection.Selection<d3Selection.BaseType, IProofTreeNode, null, never>
+// export type ProofTreeLink = d3Hierarchy.HierarchyLink<IProofTreeNode>
+// export type LinkSelection = d3Selection.Selection<d3Selection.BaseType, ProofTreeLink, null, never>
 
 function byNodeId(d: IProofTreeNode): string { return d.id }
 function byLinkId(d: ProofTreeLink): string { return `${d.source.id}, ${d.target.id}` }
