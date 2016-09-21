@@ -1,5 +1,3 @@
-type ProofTreeLink = d3.svg.diagonal.Link<IProofTreeNode>
-
 interface TacticGroup {
   name: string
   tactics: string[]

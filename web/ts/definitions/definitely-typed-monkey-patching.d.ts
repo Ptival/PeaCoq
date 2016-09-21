@@ -67,12 +67,16 @@ declare var sexpParse: (o: any) => any
 //   }
 // }
 
-declare namespace d3 {
-  export function select(selector: Object): Selection<any>
-}
+// declare namespace d3 {
+//   export function select(selector: Object): Selection<any>
+// }
 
 declare namespace W2UI {
   interface W2Tabs extends W2Common, W2OnClickable {
     owner: W2UI.W2Layout
   }
 }
+
+// declare module 'd3-hierarchy' {
+//   export function tree<T>(root: T, children: (t: T) => T[] | null): Tree<T>;
+// }

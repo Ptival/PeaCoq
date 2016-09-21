@@ -25,8 +25,8 @@ export function fromSertop(o: any): IFeedbackContent {
       const [level, maybeLocation, message] = args
       const location = (
         maybeLocation.length === 0
-        ? nothing()
-        : just(SertopUtils.coqLocationFromSexp(maybeLocation[0]))
+          ? nothing()
+          : just(SertopUtils.coqLocationFromSexp(maybeLocation[0]))
       )
       return new Message(
         MessageLevel.create(level),
@@ -54,7 +54,7 @@ export class FileDependency implements IFeedbackContent.IFileDependency {
 export class FileLoaded implements IFeedbackContent.IFileLoaded {
   constructor(
     qualifiedModuleName: string,
-      path: string
+    path: string
   ) { }
 }
 

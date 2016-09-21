@@ -1,3 +1,5 @@
+import * as d3Scale from "d3-scale"
+
 /*
   Stuff that is somewhat general but mostly useful for the proof tree.
  */
@@ -65,9 +67,6 @@ function makeGoalNodePre() {
 export function swapXY({ x, y }: XY): XY {
   return { x: y, y: x }
 }
-
-export function byNodeId(d: IProofTreeNode): string { return d.id }
-export function byLinkId(d: ProofTreeLink): string { return `${d.source.id}, ${d.target.id}` }
 
 // transposition accessors
 export function nodeX(d: IProofTreeNode): number {
@@ -269,7 +268,7 @@ let diffColor = (function () {
     "#ce6dbd",
     "#de9ed6",
   ]
-  let scale = d3.scale.ordinal<number, string>().range(colors)
+  let scale = d3Scale.scaleOrdinal<number, string>(colors)
   return function (n: number) {
     return scale(n)
   }

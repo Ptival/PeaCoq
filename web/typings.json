@@ -3,7 +3,6 @@
   "globalDependencies": {
     "ace": "registry:dt/ace#0.0.0+20160630235124",
     "bluebird": "registry:dt/bluebird#3.0.0+20160811111256",
-    "d3": "registry:dt/d3#0.0.0+20160727131401",
     "es6-shim": "registry:dt/es6-shim#0.31.2+20160602141504",
     "jquery": "registry:dt/jquery#1.10.0+20160704162008",
     "jquery.contextmenu": "registry:dt/jquery.contextmenu#1.7.0+20160705153350",

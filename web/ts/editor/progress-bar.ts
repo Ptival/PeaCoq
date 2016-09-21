@@ -1,3 +1,4 @@
+import * as d3Selection from "d3-selection"
 import * as DebugFlags from "../peacoq/debug-flags"
 import * as Theme from "../peacoq/theme"
 import { debounceAndThrottle } from "../rxjs/operators"
@@ -30,29 +31,35 @@ export function setupProgressBar(doc: ICoqDocument): void {
     e => $(e.target).css("background-color", `${Theme.theme.highlight}`)
   )
   barMouseOut$.subscribe(e => {
-    let targetEdit: ISentence<any> = d3.select(e.target).data()[0]
-    $(e.target).css("background-color", `${targetEdit.getColor()}`)
+    debugger
+    // let targetEdit: ISentence<any> = d3Selection.select(e.target).data()[0]
+    // $(e.target).css("background-color", `${targetEdit.getColor()}`)
   })
   barMouseOver$.subscribe(e => {
-    let targetEdit: ISentence<any> = d3.select(e.target).data()[0]
-    targetEdit.highlight()
+    debugger
+    // let targetEdit: ISentence<any> = d3Selection.select(e.target).data()[0]
+    // targetEdit.highlight()
   })
   barMouseOut$.subscribe(e => {
-    let targetEdit: ISentence<any> = d3.select(e.target).data()[0]
-    targetEdit.unhighlight()
+    debugger
+    // let targetEdit: ISentence<any> = d3Selection.select(e.target).data()[0]
+    // targetEdit.unhighlight()
   })
   barClick$.subscribe(e => {
-    let targetEdit: ISentence<any> = d3.select(e.target).data()[0]
-    doc.moveCursorToPositionAndCenter(targetEdit.stopPosition)
-    doc.editor.focus()
+    debugger
+    // let targetEdit: ISentence<any> = d3Selection.select(e.target).data()[0]
+    // doc.moveCursorToPositionAndCenter(targetEdit.stopPosition)
+    // doc.editor.focus()
   })
 }
 
 function updateProgressBar(doc: ICoqDocument): void {
   let allEdits = doc.getAllSentences()
+
   let selection =
-    d3.select(`#${progressBarId}`)
-      .selectAll("div")
+    d3Selection
+      .select(`#${progressBarId}`)
+      .selectAll<HTMLElement, ISentence<IStage>>("div")
       .data(allEdits, e => `${e.sentenceId}`)
   // for now we can append, eventually we might need sorting
   selection.enter().append("div")
