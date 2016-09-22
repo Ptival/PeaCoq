@@ -7,6 +7,7 @@
     "experimentalDecorators": true,
     "module": "amd",
     "moduleResolution": "Node",
+    "noFallthroughCasesInSwitch": true,
     "noImplicitAny": true,
     "noLib": false,
     "outDir": "js-of-ts",

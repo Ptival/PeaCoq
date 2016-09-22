@@ -16,7 +16,7 @@ export function htmlPrintConstrExprDiff(c: IConstrExpr, old: IConstrExpr): strin
 }
 
 export function htmlPrintHyp(h: PeaCoqHyp): string {
-  const result = `<span><span class="tag-variable">${h.name}</span></span>`
+  let result = `<span><span class="tag-variable">${h.name}</span></span>`
   const maybeTerm = h.maybeTerm
   result += maybeTerm.caseOf({
     nothing: () => "",

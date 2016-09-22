@@ -17,18 +17,19 @@ export abstract class ProofTreeNode implements IProofTreeNode {
     parent: Maybe<IProofTreeNode>
   ) {
     this.body = undefined
+    // this.depth = parent.fmap(p => p.depth + 1).defaulting(0)
     this.depth = parent.caseOf({
       nothing: () => 0,
-      just: (parent) => parent.depth + 1,
+      just: parent => parent.depth + 1,
     })
     this.id = _.uniqueId()
     this.currentScaledX = parent.caseOf({
       nothing: () => 0,
-      just: (parent) => parent.currentScaledX,
+      just: parent => parent.currentScaledX,
     })
     this.currentScaledY = parent.caseOf({
       nothing: () => 0,
-      just: (parent) => parent.currentScaledY,
+      just: parent => parent.currentScaledY,
     })
   }
 
@@ -90,7 +91,7 @@ export abstract class ProofTreeNode implements IProofTreeNode {
   public getViewGrandChildren(): IProofTreeNode[] {
     return (
       _(this.getViewChildren())
-        .map(function (e) { return e.getViewChildren() })
+        .map(e => e.getViewChildren())
         .flatten<ProofTreeNode>(true)
         .value()
     )
@@ -99,7 +100,7 @@ export abstract class ProofTreeNode implements IProofTreeNode {
   public abstract getWidth(): number
 
   public hasGrandParent(): boolean {
-    return this.hasParentSuchThat((p) => p.hasParent())
+    return this.hasParentSuchThat(p => p.hasParent())
   }
 
   public hasParent(): boolean { return this.hasParentSuchThat(() => true) }
@@ -107,7 +108,7 @@ export abstract class ProofTreeNode implements IProofTreeNode {
   public hasParentSuchThat(pred: (_1: IProofTreeNode) => boolean): boolean {
     return this.getParent().caseOf({
       nothing: () => false,
-      just: (p) => pred(p),
+      just: p => pred(p),
     })
   }
 

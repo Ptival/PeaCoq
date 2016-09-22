@@ -3,18 +3,11 @@ namespace CoqStringUtils {
   const delimiters = ["."]
 
   function my_index(str: string): number {
-    const index = +Infinity
-    _(delimiters).each(delimiter => {
+    const index: number = delimiters.reduce((indexAcc, delimiter) => {
       const pos = str.indexOf(delimiter)
-      if (pos >= 0 && pos < index) {
-        index = pos
-      }
-    })
-    if (index !== +Infinity) {
-      return index
-    } else {
-      return -1
-    }
+      return (pos >= 0 && pos < index) ? pos : indexAcc
+    }, +Infinity)
+    return (index === +Infinity) ? -1 : index
   }
 
   const bullets = ["{", "}", "+", "-", "*"]
@@ -79,9 +72,10 @@ namespace CoqStringUtils {
     }
   }
 
+  // TODO: rewrite this in functional style
   function coq_get_last_dot(str: string): number {
-    const modified = str
-    const index = -1
+    let modified = str
+    let index = -1
     while (my_index(modified) >= 0) {
       index = my_index(modified)
       modified = modified.substring(0, index) + " " +
@@ -105,10 +99,11 @@ namespace CoqStringUtils {
     }
   }
 
+  // TODO: rewrite this in functional style
   function stripComments(s: string): string {
-    const output = ""
-    const commentDepth = 0
-    const pos = 0
+    let output = ""
+    let commentDepth = 0
+    let pos = 0
     while (pos < s.length) {
       const sub = s.substring(pos)
       if (sub.startsWith("(*")) {
@@ -134,9 +129,10 @@ namespace CoqStringUtils {
     return stripComments(s).trim()
   }
 
+  // TODO: rewrite this in functional style
   export function coqTrimLeft(s: string): string {
-    const commentDepth = 0
-    const pos = 0
+    let commentDepth = 0
+    let pos = 0
     while (pos < s.length) {
       const sub = s.substring(pos)
       if (sub.startsWith("(*")) {
@@ -156,9 +152,10 @@ namespace CoqStringUtils {
     return ""
   }
 
+  // TODO: rewrite this in functional style
   function coqTrimRight(s: string): string {
-    const commentDepth = 0
-    const pos = s.length - 1
+    let commentDepth = 0
+    let pos = s.length - 1
     while (pos > 0) {
       const sub = s.substring(0, pos)
       const lastChar = sub[sub.length - 1]

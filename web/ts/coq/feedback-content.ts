@@ -16,7 +16,9 @@ export function fromSertop(o: any): IFeedbackContent {
       switch (depends.length) {
         case 0: return new FileDependency(nothing(), file)
         case 1: return new FileDependency(just(depends[0]), file)
-        default: debugger
+        default:
+          debugger
+          throw "FileDependency"
       }
     case "FileLoaded":
       const [qualifiedModuleName, path] = args
@@ -36,10 +38,10 @@ export function fromSertop(o: any): IFeedbackContent {
     case "ProcessingIn":
       const [branch] = args
       return new ProcessingIn(branch)
-    default: debugger
+    default:
+      debugger
+      throw "ProcessingIn"
   }
-  debugger
-  return <any>undefined // to shut up TypeScript for now
 }
 
 export class AddedAxiom implements IFeedbackContent.IAddedAxiom { }

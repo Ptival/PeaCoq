@@ -30,9 +30,9 @@ export function precLess(child: number, parent: PrecAssoc) {
   if (parentPrec < 0 && child === lProd) {
     return true
   }
-  parentPrec = Math.abs(parentPrec)
-  if (parentAssoc instanceof E) { return child <= parentPrec }
-  if (parentAssoc instanceof L) { return child < parentPrec }
+  const absParentPrec = Math.abs(parentPrec)
+  if (parentAssoc instanceof E) { return child <= absParentPrec }
+  if (parentAssoc instanceof L) { return child < absParentPrec }
   if (parentAssoc instanceof Prec) { return child <= parentAssoc.precedence }
   if (parentAssoc instanceof Any) { return true }
 }
@@ -352,8 +352,6 @@ function printHunks(
     return ([] as PpCmds).concat(tagUnparsing(unp, pp1), pp2)
   }
   function aux(ul: Unparsing[]): PpCmds {
-    const pp1: PpCmds
-    const pp2: PpCmds
     if (ul.length === 0) {
       return mt()
     }
@@ -362,43 +360,43 @@ function printHunks(
     if (unp instanceof UnpMetaVar) {
       const prec = unp.parenRelation
       const c = pop(env)
-      pp2 = aux(l)
-      pp1 = pr([n, prec], c)
+      const pp2 = aux(l)
+      const pp1 = pr([n, prec], c)
       return ret(unp, pp1, pp2)
     }
     if (unp instanceof UnpListMetaVar) {
       const [prec, sl]: [ParenRelation, Unparsing[]] = [unp.parenRelation, unp.unparsing]
       const cl = pop(envlist)
-      pp1 = prListWithSep(
+      const pp1 = prListWithSep(
         () => aux(sl),
         x => pr([n, prec], x),
         cl
       )
-      pp2 = aux(l)
+      const pp2 = aux(l)
       return ret(unp, pp1, pp2)
     }
     if (unp instanceof UnpBinderListMetaVar) {
       const [isOpen, sl]: [boolean, Unparsing[]] = [unp.isOpen, unp.unparsing]
       const cl = pop(bll)
-      pp2 = aux(l)
-      pp1 = prBinders(() => aux(sl), isOpen, cl)
+      const pp2 = aux(l)
+      const pp1 = prBinders(() => aux(sl), isOpen, cl)
       return ret(unp, pp1, pp2)
     }
     if (unp instanceof UnpTerminal) {
       const s = unp.terminal
-      pp2 = aux(l)
-      pp1 = str(s)
+      const pp2 = aux(l)
+      const pp1 = str(s)
       return ret(unp, pp1, pp2)
     }
     if (unp instanceof UnpBox) {
       const [b, sub]: [PpBox, Unparsing[]] = [unp.box, unp.unparsing]
-      pp1 = PpCmdOfBox(b, aux(sub))
-      pp2 = aux(l)
+      const pp1 = PpCmdOfBox(b, aux(sub))
+      const pp2 = aux(l)
       return ret(unp, pp1, pp2)
     }
     if (unp instanceof UnpCut) {
-      pp2 = aux(l)
-      pp1 = PpCmdOfCut(unp.cut)
+      const pp2 = aux(l)
+      const pp1 = PpCmdOfCut(unp.cut)
       return ret(unp, pp1, pp2)
     }
     throw MatchFailure("printHunks", unp)
@@ -435,15 +433,14 @@ function prQualid(sp: QualId): PpCmds {
   const [sl0, id0] = reprQualid(sp)
   const id = tagRef(str(id0))
   const rev = sl0.slice(0).reverse()
-  const sl: PpCmd[]
-  if (rev.length === 0) {
-    sl = mt()
-  } else {
-    sl = prList(
-      (dir: string) => ([] as PpCmds).concat(tagPath(str(dir)), str(".")),
-      sl0
-    )
-  }
+  const sl: PpCmd[] = (
+    (rev.length === 0)
+      ? mt()
+      : prList(
+        (dir: string) => ([] as PpCmds).concat(tagPath(str(dir)), str(".")),
+        sl0
+      )
+  )
   return ([] as PpCmds).concat(sl, id)
 }
 
@@ -899,7 +896,7 @@ function prSimpleReturnType(
   mna: Maybe<Located<Name>>,
   po: Maybe<ConstrExpr>
 ): PpCmds {
-  const res = ([] as PpCmds)
+  let res = ([] as PpCmds)
 
   mna.caseOf({
     nothing: () => { res = res.concat(mt()) },
@@ -1147,12 +1144,11 @@ function prGen(
 
     const [strm, prec] = match(a)
 
-    const result = sep()
-    if (precLess(prec, inherited)) {
-      result = result.concat(strm)
-    } else {
-      result = result.concat(surround(strm))
-    }
+    let result = (
+      precLess(prec, inherited)
+        ? sep().concat(strm)
+        : sep().concat(surround(strm))
+    )
     return result
 
   }

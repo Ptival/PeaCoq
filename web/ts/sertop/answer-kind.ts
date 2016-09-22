@@ -70,14 +70,15 @@ export function create(o: any): ISertop.IAnswerKind {
         return new StmEdited(new Tip.NewTip())
       } else {
         debugger
+        throw "StmEdited"
       }
 
     case "StmCanceled":
       const [stateIds]: string[][] = args
       return new StmCanceled(_(stateIds).map(s => + s).value())
 
-    default: debugger
+    default:
+      debugger
+      throw "AnswerKind.create"
   }
-
-  throw "AnswerKind.create"
 }
