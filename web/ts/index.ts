@@ -72,7 +72,6 @@ $(document).ready(() => {
 
   const tabsAreReadyPromise = new Promise(onFulfilled => {
     rightLayoutRenderedStream.take(1).subscribe(() => {
-      const tabs: ITabs = <any>{}
       // top panes
       contextTabs.click("pretty")
       doc.contextPanel = new ContextPanel(doc, rightLayoutName)

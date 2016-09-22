@@ -22,7 +22,7 @@ export class PeaCoqGoal implements IPeaCoqGoal {
     if (this.html === null) {
       this.html = $("<div>")
       // TODO: htmlPrintHypsDiff
-      let hypsDiv = $("<div>").html(htmlPrintHyps(this.hyps))
+      const hypsDiv = $("<div>").html(htmlPrintHyps(this.hyps))
       this.html.append(hypsDiv)
       this.html.append(makeContextDivider())
       // TODO: htmlPrintConstrExprDiff
@@ -37,15 +37,15 @@ export class PeaCoqGoal implements IPeaCoqGoal {
           a, b: nat
       */
 
-      let hyps = hypsDiv.children(".hyp")
+      const hyps = hypsDiv.children(".hyp")
       // if the previous hyp has the same body/type, merge it in
-      _.forEach(hyps, function(elt, ndx) {
+      _.forEach(hyps, (elt, ndx) => {
         if (ndx === 0) { return }
-        let prevElt = hyps[ndx - 1]
+        const prevElt = hyps[ndx - 1]
         if (sameBodyAndType(elt, prevElt)) {
           // prepend the names of the previous hyp, then delete previous
-          let spanToPrependTo = $(elt).children("span")[0]
-          let spanToPrependFrom = $(prevElt).children("span")[0]
+          const spanToPrependTo = $(elt).children("span")[0]
+          const spanToPrependFrom = $(prevElt).children("span")[0]
           $(spanToPrependTo).html($(spanToPrependFrom).html() + ", " + $(spanToPrependTo).html())
           $(prevElt).remove()
         }
@@ -62,10 +62,10 @@ function makeContextDivider() {
 }
 
 function sameBodyAndType(hyp1: HTMLElement, hyp2: HTMLElement): boolean {
-  let children1 = $(hyp1).children().slice(1)
-  let children2 = $(hyp2).children().slice(1)
+  const children1 = $(hyp1).children().slice(1)
+  const children2 = $(hyp2).children().slice(1)
   if (children1.length !== children2.length) { return false }
-  for (let i in _.range(children1.length)) {
+  for (const i in _.range(children1.length)) {
     if ($(children1[i]).html() !== $(children2[i]).html()) {
       return false
     }

@@ -7,26 +7,26 @@ export type PpCmds = PpCmd[]
 
 export type PrecAssoc = [number, ParenRelation]
 
-let lAtom = 0
-let lProd = 200
-let lLambda = 200
-let lIf = 200
-let lLetIn = 200
-let lLetPattern = 200
-let lFix = 200
-let lCast = 100
-let lArg = 9
-let lApp = 10
-let lPosInt = 0
-let lNegInt = 35
-let lTop: PrecAssoc = [200, new E()]
-let lProj = 1
-let lDelim = 1
-let lSimpleConstr: PrecAssoc = [8, new E()]
-let lSimplePatt: PrecAssoc = [1, new E()]
+const lAtom = 0
+const lProd = 200
+const lLambda = 200
+const lIf = 200
+const lLetIn = 200
+const lLetPattern = 200
+const lFix = 200
+const lCast = 100
+const lArg = 9
+const lApp = 10
+const lPosInt = 0
+const lNegInt = 35
+const lTop: PrecAssoc = [200, new E()]
+const lProj = 1
+const lDelim = 1
+const lSimpleConstr: PrecAssoc = [8, new E()]
+const lSimplePatt: PrecAssoc = [1, new E()]
 
 export function precLess(child: number, parent: PrecAssoc) {
-  let [parentPrec, parentAssoc] = parent
+  const [parentPrec, parentAssoc] = parent
   if (parentPrec < 0 && child === lProd) {
     return true
   }
@@ -145,15 +145,15 @@ function prBinder(
   [nal, k, t]: [Array<Located<NameBase>>, BinderKind, ConstrExpr]
 ): PpCmds {
   if (k instanceof Generalized) {
-    let [b, bp, tp] = [k.kind1, k.kind2, k.b]
+    const [b, bp, tp] = [k.kind1, k.kind2, k.b]
     throw "TODO: prBinder Generalized"
   }
   if (k instanceof Default) {
-    let b = k.kind
+    const b = k.kind
     if (t instanceof CHole) {
       throw "TODO: prBinder CHole"
     } else {
-      let s = ([] as PpCmds).concat(
+      const s = ([] as PpCmds).concat(
         prListWithSep(spc, prLName, nal),
         str(" : "),
         pr(t)
@@ -174,12 +174,12 @@ function prDelimitedBinders(
   prC: (t: ConstrExpr) => PpCmds,
   bl: LocalBinder[]
 ): PpCmds {
-  let n = beginOfBinders(bl)
+  const n = beginOfBinders(bl)
   if (bl.length === 0) { throw "prDelimitedBinders: bl should not be empty" }
-  let bl0 = bl[0]
+  const bl0 = bl[0]
   if (bl0 instanceof LocalRawAssum) {
     if (bl.length === 1) {
-      let [nal, k, t]: [Array<Located<NameBase>>, BinderKind, ConstrExpr] = [bl0.names, bl0.binderKind, bl0.term]
+      const [nal, k, t]: [Array<Located<NameBase>>, BinderKind, ConstrExpr] = [bl0.names, bl0.binderKind, bl0.term]
       return (([] as PpCmds).concat(prComAt(n), kw(), prBinder(false, prC, [nal, k, t])))
     } else {
       return (([] as PpCmds).concat(prComAt(n), kw(), prUndelimitedBinders(sep, prC, bl)))
@@ -207,11 +207,7 @@ function prFun(): PpCmds {
   return ([] as PpCmds).concat(keyword("fun"), spc())
 }
 
-let maxInt = 9007199254740991
-
-function yCombinator(le: any) {
-  return (f => f(f))((f: any) => le((x: any) => (f(f))(x)))
-}
+const maxInt = 9007199254740991
 
 function prListSepLastSep<T>(
   noEmpty: boolean,
@@ -226,8 +222,8 @@ function prListSepLastSep<T>(
     } else if (length === 1) {
       return elem(ll[0])
     } else {
-      let [h, t]: [T, T[]] = [ll[0], _.tail(ll)]
-      let e = elem(h)
+      const [h, t]: [T, T[]] = [ll[0], _.tail(ll)]
+      const e = elem(h)
       if (noEmpty && isMt(e)) {
         return start(t)
       } else {
@@ -236,9 +232,9 @@ function prListSepLastSep<T>(
             if (lll.length === 0) {
               return mt()
             } else {
-              let [h, t]: [T, T[]] = [lll[0], _.tail(lll)]
-              let e = elem(h)
-              let r = aux(t)
+              const [h, t]: [T, T[]] = [lll[0], _.tail(lll)]
+              const e = elem(h)
+              const r = aux(t)
               if (noEmpty && isMt(e)) {
                 return r
               } else {
@@ -254,9 +250,9 @@ function prListSepLastSep<T>(
         //   if (l.length === 0) {
         //     return mt()
         //   } else {
-        //     let [h, t]: [T, T[]] = [l[0], _.tail(l)]
-        //     let e = elem(h)
-        //     let r = aux(t)
+        //     const [h, t]: [T, T[]] = [l[0], _.tail(l)]
+        //     const e = elem(h)
+        //     const r = aux(t)
         //     if (noEmpty && isMt(e)) {
         //       return r
         //     } else {
@@ -284,12 +280,12 @@ function prBinderAmongMany(
   b: LocalBinder
 ): PpCmds {
   if (b instanceof LocalRawAssum) {
-    let [nal, k, t]: [Array<Located<NameBase>>, BinderKind, ConstrExpr] = [b.names, b.binderKind, b.term]
+    const [nal, k, t]: [Array<Located<NameBase>>, BinderKind, ConstrExpr] = [b.names, b.binderKind, b.term]
     return prBinder(true, prC, [nal, k, t])
   }
   if (b instanceof LocalRawDef) {
-    let [na, c]: [Located<NameBase>, ConstrExpr] = [b.binderName, b.binderType]
-    // let cp, topt
+    const [na, c]: [Located<NameBase>, ConstrExpr] = [b.binderName, b.binderType]
+    // const cp, topt
 
     /* TODO:
     if (c instanceof CCast) {
@@ -341,9 +337,9 @@ function printHunks(
   [terms, termlists, binders]: ConstrNotationSubstitution,
   unps: Unparsing[]
 ): PpCmds {
-  let env: ConstrExpr[] = terms.slice(0)
-  let envlist: ConstrExpr[][] = termlists.slice(0)
-  let bll: LocalBinder[][] = binders.slice(0)
+  const env: ConstrExpr[] = terms.slice(0)
+  const envlist: ConstrExpr[][] = termlists.slice(0)
+  const bll: LocalBinder[][] = binders.slice(0)
   function pop<T>(a: T[]): T {
     const res = a.shift()
     if (res === undefined) {
@@ -356,23 +352,23 @@ function printHunks(
     return ([] as PpCmds).concat(tagUnparsing(unp, pp1), pp2)
   }
   function aux(ul: Unparsing[]): PpCmds {
-    let pp1: PpCmds
-    let pp2: PpCmds
+    const pp1: PpCmds
+    const pp2: PpCmds
     if (ul.length === 0) {
       return mt()
     }
-    let unp = ul[0]
-    let l = _.tail(ul)
+    const unp = ul[0]
+    const l = _.tail(ul)
     if (unp instanceof UnpMetaVar) {
-      let prec = unp.parenRelation
-      let c = pop(env)
+      const prec = unp.parenRelation
+      const c = pop(env)
       pp2 = aux(l)
       pp1 = pr([n, prec], c)
       return ret(unp, pp1, pp2)
     }
     if (unp instanceof UnpListMetaVar) {
-      let [prec, sl]: [ParenRelation, Unparsing[]] = [unp.parenRelation, unp.unparsing]
-      let cl = pop(envlist)
+      const [prec, sl]: [ParenRelation, Unparsing[]] = [unp.parenRelation, unp.unparsing]
+      const cl = pop(envlist)
       pp1 = prListWithSep(
         () => aux(sl),
         x => pr([n, prec], x),
@@ -382,20 +378,20 @@ function printHunks(
       return ret(unp, pp1, pp2)
     }
     if (unp instanceof UnpBinderListMetaVar) {
-      let [isOpen, sl]: [boolean, Unparsing[]] = [unp.isOpen, unp.unparsing]
-      let cl = pop(bll)
+      const [isOpen, sl]: [boolean, Unparsing[]] = [unp.isOpen, unp.unparsing]
+      const cl = pop(bll)
       pp2 = aux(l)
       pp1 = prBinders(() => aux(sl), isOpen, cl)
       return ret(unp, pp1, pp2)
     }
     if (unp instanceof UnpTerminal) {
-      let s = unp.terminal
+      const s = unp.terminal
       pp2 = aux(l)
       pp1 = str(s)
       return ret(unp, pp1, pp2)
     }
     if (unp instanceof UnpBox) {
-      let [b, sub]: [PpBox, Unparsing[]] = [unp.box, unp.unparsing]
+      const [b, sub]: [PpBox, Unparsing[]] = [unp.box, unp.unparsing]
       pp1 = PpCmdOfBox(b, aux(sub))
       pp2 = aux(l)
       return ret(unp, pp1, pp2)
@@ -436,10 +432,10 @@ function prList<T>(pr: (t: T) => PpCmds, l: T[]): PpCmds {
 }
 
 function prQualid(sp: QualId): PpCmds {
-  let [sl0, id0] = reprQualid(sp)
-  let id = tagRef(str(id0))
-  let rev = sl0.slice(0).reverse()
-  let sl: PpCmd[]
+  const [sl0, id0] = reprQualid(sp)
+  const id = tagRef(str(id0))
+  const rev = sl0.slice(0).reverse()
+  const sl: PpCmd[]
   if (rev.length === 0) {
     sl = mt()
   } else {
@@ -502,7 +498,7 @@ function chop<T>(i: number, l: T[]): [T[], T[]] {
 }
 
 function sepLast<T>(l: T[]): [T, T[]] {
-  let len = l.length
+  const len = l.length
   return [l[len - 1], l.slice(0, len - 1)]
 }
 
@@ -533,7 +529,7 @@ function prExplArgs(
   return mexpl.caseOf({
     nothing: () => pr([lApp, new L()], a),
     just: expl => {
-      let e = expl.some[1]
+      const e = expl.some[1]
       if (e instanceof ExplByPos) {
         throw "Anomaly: Explicitation by position not implemented"
       }
@@ -708,7 +704,7 @@ function prPatt(
         },
       })
     } else if (pp instanceof CPatAtom) {
-      let r = pp.reference
+      const r = pp.reference
       return r.caseOf<PpResult>({
         nothing: () => [str("_"), lAtom],
         just: r => [prReference(r), lAtom],
@@ -762,8 +758,8 @@ function prPatt(
     }
   }
 
-  let [strm, prec]: [PpCmds, number] = match(p)
-  let loc = casesPatternExprLoc(p)
+  const [strm, prec]: [PpCmds, number] = match(p)
+  const loc = casesPatternExprLoc(p)
   return prWithComments(loc, ([] as PpCmds).concat(
     sep(),
     precLess(prec, inh) ? strm : surround(strm)
@@ -774,7 +770,7 @@ function prAsin(
   pr: (_1: PrecAssoc, _2: ConstrExpr) => PpCmds,
   [mna, indnalopt]: [Maybe<[CoqLocation, NameBase]>, Maybe<ConstrExpr>]
 ): PpCmds {
-  let prefix = mna.caseOf({
+  const prefix = mna.caseOf({
     nothing: () => mt(),
     just: na => ([] as PpCmds).concat(
       spc(),
@@ -783,7 +779,7 @@ function prAsin(
       prLName(na)
     ),
   })
-  let suffix = indnalopt.caseOf({
+  const suffix = indnalopt.caseOf({
     nothing: () => mt(),
     just: i => ([] as PpCmds).concat(
       spc(),
@@ -812,7 +808,7 @@ function sepV(): PpCmds { return ([] as PpCmds).concat(str(","), spc()) }
 
 function constrLoc(c: ConstrExpr): CoqLocation {
   if (c instanceof CRef) {
-    let ref = c.reference
+    const ref = c.reference
     if (ref instanceof Ident) {
       return ref.id[0]
     }
@@ -875,7 +871,7 @@ function prEqn(
   pr: (_1: PrecAssoc, _2: ConstrExpr) => PpCmds,
   [loc, pl0, rhs]: BranchExpr
 ): PpCmds {
-  let pl1 = _(pl0).map((located: Located<Array<CasesPatternExpr>>) => located[1]).value()
+  const pl1 = _(pl0).map((located: Located<Array<CasesPatternExpr>>) => located[1]).value()
   return ([] as PpCmds).concat(
     spc(),
     hov(4,
@@ -903,12 +899,12 @@ function prSimpleReturnType(
   mna: Maybe<Located<Name>>,
   po: Maybe<ConstrExpr>
 ): PpCmds {
-  let res = ([] as PpCmds)
+  const res = ([] as PpCmds)
 
   mna.caseOf({
     nothing: () => { res = res.concat(mt()) },
     just: na => {
-      let name = na.some[1]
+      const name = na.some[1]
       if (name instanceof Name) {
         res = res.concat(spc(), keyword("as"), spc(), prId(name.id))
       } else {
@@ -927,9 +923,9 @@ function extractLamBinders(a: ConstrExpr): [LocalBinder[], ConstrExpr] {
     if (a.binders.length === 0) {
       return extractLamBinders(a.body)
     } else {
-      let [nal, bk, t] = a.binders[0]
-      let [bl, c] = extractLamBinders(a.body)
-      let res: LocalBinder[] = [new LocalRawAssum(nal, bk, t)]
+      const [nal, bk, t] = a.binders[0]
+      const [bl, c] = extractLamBinders(a.body)
+      const res: LocalBinder[] = [new LocalRawAssum(nal, bk, t)]
       return [res.concat(bl), c]
     }
   } else {
@@ -937,7 +933,7 @@ function extractLamBinders(a: ConstrExpr): [LocalBinder[], ConstrExpr] {
   }
 }
 
-let prFunSep: PpCmds = ([] as PpCmds).concat(spc(), str("=>"))
+const prFunSep: PpCmds = ([] as PpCmds).concat(spc(), str("=>"))
 
 function prGen(
   pr: (_1: () => PpCmds, _2: PrecAssoc, _3: ConstrExpr) => PpCmds
@@ -952,27 +948,27 @@ function prGen(
       return [tagConstrExpr(a, cmds), prec]
     }
 
-    let prmt = (x: [number, ParenRelation], y: ConstrExpr) => pr(mt, x, y)
+    const prmt = (x: [number, ParenRelation], y: ConstrExpr) => pr(mt, x, y)
 
     function match(aa: ConstrExpr): PpResult {
 
       if (aa instanceof CApp) {
         // TODO: ldots_var
-        let pf = aa.funct[0]
-        let f = aa.funct[1]
+        const pf = aa.funct[0]
+        const f = aa.funct[1]
         return pf.caseOf<PpResult>({
           nothing: () => {
-            let b = <CApp>aa // TS bug
-            let [f, l] = [b.funct[1], b.args]
+            const b = <CApp>aa // TS bug
+            const [f, l] = [b.funct[1], b.args]
             return ret(prApp(prmt, f, l), lApp)
           },
           just: pf => {
-            let b = <CApp>aa // TS bug
-            let [i, f, l] = [pf, b.funct[1], b.args]
-            let [l1, l2] = chop(i, l)
-            let [c, rest] = sepLast(l1)
+            const b = <CApp>aa // TS bug
+            const [i, f, l] = [pf, b.funct[1], b.args]
+            const [l1, l2] = chop(i, l)
+            const [c, rest] = sepLast(l1)
             // TODO: assert c[1] is empty option?
-            let p = prProj(prmt, prApp, c[0], f, rest)
+            const p = prProj(prmt, prApp, c[0], f, rest)
             // TODO: it might be nice if we could highlight the structure
             // nested applications, rather than having a flat n-ary one
             if (l2.length > 0) {
@@ -999,7 +995,7 @@ function prGen(
         if (aa.caseStyle instanceof LetPatternStyle) {
           throw "TODO: LetPatternStyle"
         }
-        let prDangling = (pa: [number, ParenRelation], c: ConstrExpr) => prDanglingWithFor(mt, pr, pa, c)
+        const prDangling = (pa: [number, ParenRelation], c: ConstrExpr) => prDanglingWithFor(mt, pr, pa, c)
         return ret(
           v(0, hv(0, ([] as PpCmds).concat(
             keyword("match"),
@@ -1026,7 +1022,7 @@ function prGen(
       }
 
       if (aa instanceof CDelimiters) {
-        let [sc, e] = [aa.str, aa.expr]
+        const [sc, e] = [aa.str, aa.expr]
         return ret(
           prDelimiters(sc, pr(mt, [lDelim, new E()], e)),
           lDelim
@@ -1034,7 +1030,7 @@ function prGen(
       }
 
       if (aa instanceof CLambdaN) {
-        let [bl, a1] = extractLamBinders(aa)
+        const [bl, a1] = extractLamBinders(aa)
         return ret(
           hov(0, ([] as PpCmds).concat(
             hov(2, prDelimitedBinders(prFun, spc, x => pr(spc, lTop, x), bl)),
@@ -1046,7 +1042,7 @@ function prGen(
       }
 
       if (aa instanceof CLetIn) {
-        let bound = aa.bound
+        const bound = aa.bound
         if (bound instanceof CFix || bound instanceof CCoFix) {
           throw ("TODO: pr CLetIn with CFix/CcoFix")
         }
@@ -1085,7 +1081,7 @@ function prGen(
 
       if (aa instanceof CNotation) {
         if (aa.notation === "(\u00A0_\u00A0)") {
-          let [[t], [], []] = aa.substitution
+          const [[t], [], []] = aa.substitution
           return ret(
             ([] as PpCmds).concat(
               pr(
@@ -1098,7 +1094,7 @@ function prGen(
             lAtom
           )
         } else {
-          let [s, env]: [Notation, ConstrNotationSubstitution] = [aa.notation, aa.substitution]
+          const [s, env]: [Notation, ConstrNotationSubstitution] = [aa.notation, aa.substitution]
           return prNotation(
             (x, y) => pr(mt, x, y),
             (x, y, z) => prBindersGen(w => pr(mt, lTop, w), x, y, z),
@@ -1118,7 +1114,7 @@ function prGen(
       }
 
       if (aa instanceof CProdN) {
-        let [bl, aRest] = extractProdBinders(aa)
+        const [bl, aRest] = extractProdBinders(aa)
         return ret(
           ([] as PpCmds).concat(
             prDelimitedBinders(
@@ -1134,7 +1130,7 @@ function prGen(
       }
 
       if (aa instanceof CRef) {
-        let [r, us] = [aa.reference, aa.universeInstance]
+        const [r, us] = [aa.reference, aa.universeInstance]
         return ret(
           prCRef(r, us),
           lAtom
@@ -1149,9 +1145,9 @@ function prGen(
 
     }
 
-    let [strm, prec] = match(a)
+    const [strm, prec] = match(a)
 
-    let result = sep()
+    const result = sep()
     if (precLess(prec, inherited)) {
       result = result.concat(strm)
     } else {
@@ -1162,12 +1158,6 @@ function prGen(
   }
 }
 
-function fix(f: (a: any) => any): any {
-  return (...x: any[]) => {
-    return f(fix(f))(...x)
-  }
-}
-
 export function prConstrExpr(a: ConstrExpr): PpCmds {
   return fix(prGen)(mt, lTop, a)
 }
@@ -1175,7 +1165,7 @@ export function prConstrExpr(a: ConstrExpr): PpCmds {
 function prHTMLGen(
   pr: (_1: () => PpCmds, _2: PrecAssoc, _3: ConstrExpr) => PpCmds
 ): (_1: () => PpCmds, _2: PrecAssoc, _3: ConstrExpr) => PpCmds {
-  let recur = prGen(pr)
+  const recur = prGen(pr)
   return (sep: () => PpCmds, pa: PrecAssoc, e: ConstrExpr) => {
     return ([] as PpCmds).concat(
       str(`<span class="ace_editor syntax">`),

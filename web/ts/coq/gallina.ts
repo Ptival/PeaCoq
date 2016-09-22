@@ -8,7 +8,7 @@
 // }
 
 // function assign(t, a) {
-//   let res = {}
+//   const res = {}
 //   assignThis(res, t, a)
 //   return res
 // }
@@ -30,7 +30,7 @@
 //   )
 // }
 
-// let binaryOperations = [
+// const binaryOperations = [
 //   "and",
 //   "andb",
 //   "concat",
@@ -81,7 +81,7 @@
 // }
 
 // function quantifierHTML(quantifier, binders, body) {
-//   let res = mkTermHTML(this)
+//   const res = mkTermHTML(this)
 //   res
 //     .append(mkSyntax("∀"))
 //     .append(" ")
@@ -98,57 +98,57 @@
 //   return res
 // }
 
-// let prec = 0
-// let precMin = prec++
+// const prec = 0
+// const precMin = prec++
 
-// let precEquiv = prec++
-// let precArrow = prec++
-// let precOr = prec++
-// let precAnd = prec++
-// let precEqual = prec++
-// let precNotEqual = precEqual // same
-// let precNeg = prec++
-// let precEq = prec++
-// let precNeq = precEq
-// let precCons = prec++
-// let precAppend = prec++
-// let precOrB = prec++
-// let precAndB = prec++
-// let precConcat = prec++
-// let precOrb = prec++
-// let precAndb = prec++
-// let precLt = prec++
-// let precGt = precLt
-// let precLe = precLt
-// let precGe = precLt
-// let precPlus = prec++
-// let precMinus = precPlus
-// let precMult = prec++
-// let precLParen = prec++
-// let precRParen = precLParen
-// let precLBrace = prec++
-// let precRBrace = precLBrace
-// let precVar = prec++
-// let precForall = precVar
-// let precExists = precVar
-// let precLambda = precVar
-// let precMatch = precVar
-// let precLet = precVar
-// let precApp = prec++
+// const precEquiv = prec++
+// const precArrow = prec++
+// const precOr = prec++
+// const precAnd = prec++
+// const precEqual = prec++
+// const precNotEqual = precEqual // same
+// const precNeg = prec++
+// const precEq = prec++
+// const precNeq = precEq
+// const precCons = prec++
+// const precAppend = prec++
+// const precOrB = prec++
+// const precAndB = prec++
+// const precConcat = prec++
+// const precOrb = prec++
+// const precAndb = prec++
+// const precLt = prec++
+// const precGt = precLt
+// const precLe = precLt
+// const precGe = precLt
+// const precPlus = prec++
+// const precMinus = precPlus
+// const precMult = prec++
+// const precLParen = prec++
+// const precRParen = precLParen
+// const precLBrace = prec++
+// const precRBrace = precLBrace
+// const precVar = prec++
+// const precForall = precVar
+// const precExists = precVar
+// const precLambda = precVar
+// const precMatch = precVar
+// const precconst = precVar
+// const precApp = prec++
 
-// let precMax = prec++
+// const precMax = prec++
 
-// let assocEquiv = "left"
-// let assocArrow = "right"
-// let assocOr = "right"
-// let assocAnd = "right"
-// let assocCons = "right"
-// let assocConcat = "right"
-// let assocOrb = "left"
-// let assocAndb = "left"
-// let assocPlus = "left"
-// let assocMinus = "left"
-// let assocMult = "left"
+// const assocEquiv = "left"
+// const assocArrow = "right"
+// const assocOr = "right"
+// const assocAnd = "right"
+// const assocCons = "right"
+// const assocConcat = "right"
+// const assocOrb = "left"
+// const assocAndb = "left"
+// const assocPlus = "left"
+// const assocMinus = "left"
+// const assocMult = "left"
 
 // function mkTerm(t: any): Term {
 //   switch (t.tag) {
@@ -266,7 +266,7 @@
 
 //   constructor(t) {
 //     super()
-//     let c = t.contents
+//     const c = t.contents
 //     this.binders = _(c.binders).map(function (binder) {
 //       return new Binder(binder)
 //     }).value()
@@ -303,7 +303,7 @@
 
 //   constructor(t) {
 //     super()
-//     let c = t.contents
+//     const c = t.contents
 //     this.binders = _(c.binders).map(function (binder) {
 //       return new Binder(binder)
 //     }).value()
@@ -340,7 +340,7 @@
 
 //   constructor(t) {
 //     super()
-//     let c = t.contents
+//     const c = t.contents
 //     this.left = mkTerm(c.left)
 //     this.right = mkTerm(c.right)
 //   }
@@ -350,7 +350,7 @@
 //   }
 
 //   public toString() {
-//     let res = ""
+//     const res = ""
 
 //     switch (this.left.constructor) {
 //       // need parentheses
@@ -404,14 +404,14 @@
 
 //   constructor(t) {
 //     super()
-//     let c = t.contents
+//     const c = t.contents
 //     this.left = mkTerm(c.left)
 //     this.right = mkTerm(c.right)
 //   }
 
 //   public getPrecedence(): number {
 //     /* fully-applied infix binary operators */
-//     let binOp = getInfixBinaryOperation(this)
+//     const binOp = getInfixBinaryOperation(this)
 //     if (binOp) {
 //       switch (binOp.name) {
 //         case "or": return precOr
@@ -443,14 +443,14 @@
 //   }
 
 //   public toString() {
-//     let res = ""
+//     const res = ""
 
-//     let thisPrec = this.getPrecedence()
-//     let topBinOp = getInfixBinaryOperation(this)
+//     const thisPrec = this.getPrecedence()
+//     const topBinOp = getInfixBinaryOperation(this)
 //     if (topBinOp) {
 
-//       let left = <App>this.left
-//       let leftBinOp = getInfixBinaryOperation(left.right)
+//       const left = <App>this.left
+//       const leftBinOp = getInfixBinaryOperation(left.right)
 //       if (leftBinOp) {
 //         if (leftBinOp.name === topBinOp.name) {
 //           // same nested infix binary operators, use associativity
@@ -466,7 +466,7 @@
 
 //       res += " " + binOpString(topBinOp.name) + " "
 
-//       let rightBinOp = getInfixBinaryOperation(this.right)
+//       const rightBinOp = getInfixBinaryOperation(this.right)
 //       if (rightBinOp) {
 //         if (rightBinOp.name === topBinOp.name) {
 //           // same nested infix binary operators, use associativity
@@ -481,8 +481,8 @@
 
 //     } else if (isNeq(this)) { // not (eq a b) should print a ≠ b
 
-//       let right = <App>this.right
-//       let rightleft = <App>right.left
+//       const right = <App>this.right
+//       const rightleft = <App>right.left
 //       res += par(rightleft.right, this)
 //       res += " ≠ "
 //       res += par(right.right, this)
@@ -496,13 +496,13 @@
 //     return res
 
 //     /*
-//         let topBinOp = this.isFullyAppliedBinaryOperator()
+//         const topBinOp = this.isFullyAppliedBinaryOperator()
 //         // fully-applied infix binary operators
 //         if (topBinOp) {
 
-//           let leftBinOp = this.left.right.isFullyAppliedBinaryOperator()
+//           const leftBinOp = this.left.right.isFullyAppliedBinaryOperator()
 //           if (leftBinOp && leftBinOp.name === topBinOp.name) {
-//             let assoc = leftBinOp.getAssociativity()
+//             const assoc = leftBinOp.getAssociativity()
 //             switch (assoc) {
 //               case "left":
 //                 // no need for parentheses
@@ -519,8 +519,8 @@
 //             // nested but different operators, precedence matters
 //             // namely, if the precedence of the inner operator is
 //           // lower, then we need to put parentheses
-//             let outerPrec = topBinOp.getPrecedence()
-//             let innerPrec = this.left.right.left.left.getPrecedence()
+//             const outerPrec = topBinOp.getPrecedence()
+//             const innerPrec = this.left.right.left.left.getPrecedence()
 //             if (innerPrec <= outerPrec) {
 //               // need parentheses
 //               res += "(" + this.left.right.toString() + ")"
@@ -553,9 +553,9 @@
 
 //           res += " " + binOpString(topBinOp.name) + " "
 
-//           let rightBinOp = this.right.isFullyAppliedBinaryOperator()
+//           const rightBinOp = this.right.isFullyAppliedBinaryOperator()
 //           if (rightBinOp && rightBinOp.name === topBinOp.name) {
-//             let assoc = rightBinOp.getAssociativity()
+//             const assoc = rightBinOp.getAssociativity()
 //             switch (assoc) {
 //               case "left":
 //                 // need parentheses
@@ -572,8 +572,8 @@
 //             // nested but different operators, precedence matters
 //             // namely, if the precedence of the inner operator is
 //             // lower, then we need to put parentheses
-//             let outerPrec = topBinOp.getPrecedence()
-//             let innerPrec = this.right.left.left.getPrecedence()
+//             const outerPrec = topBinOp.getPrecedence()
+//             const innerPrec = this.right.left.left.getPrecedence()
 //             if (innerPrec <= outerPrec) {
 //               // need parentheses
 //               res += "(" + this.right.toString() + ")"
@@ -681,8 +681,8 @@
 // }
 
 // function par(term: Term, parentTerm: Term): string {
-//   let parentPrec = parentTerm.getPrecedence()
-//   let termPrec = term.getPrecedence()
+//   const parentPrec = parentTerm.getPrecedence()
+//   const termPrec = term.getPrecedence()
 //   /* namely, if the precedence of the inner operator is lower, then
 //    * we need to put parentheses */
 //   if (termPrec <= parentPrec) {
@@ -693,9 +693,9 @@
 // }
 
 // function parAssoc(term: Term): string {
-//   let left = <App>(<App>term).left
-//   let leftleft = <Var>left.left
-//   let assoc = leftleft.getAssociativity()
+//   const left = <App>(<App>term).left
+//   const leftleft = <Var>left.left
+//   const assoc = leftleft.getAssociativity()
 //   switch (assoc) {
 //     case "left":
 //       // no need for parentheses
@@ -715,7 +715,7 @@
 
 //   constructor(t) {
 //     super()
-//     let c = t.contents
+//     const c = t.contents
 //     this.equations = c.equations
 //     this.items = c.items
 //     this.maybeType = t.maybeType ? mkTerm(this.maybeType) : undefined
@@ -731,7 +731,7 @@
 
 // }
 
-// class Let extends Term {
+// class const extends Term {
 //   public bindee: Term
 //   public binders: Binder[]
 //   public body: Term
@@ -740,7 +740,7 @@
 
 //   constructor(t) {
 //     super()
-//     let c = t.contents
+//     const c = t.contents
 //     this.bindee = mkTerm(c.bindee)
 //     this.binders = c.binders
 //     this.body = mkTerm(c.body)
@@ -753,7 +753,7 @@
 //   }
 
 //   public toString(): string {
-//     return "let ... = ... in ..."
+//     return "const ... = ... in ..."
 //   }
 
 // }
@@ -766,7 +766,7 @@
 
 //   constructor(t) {
 //     super()
-//     let c = t.contents
+//     const c = t.contents
 //     this.bindee = mkTerm(c.bindee)
 //     this.body = mkTerm(c.body)
 //     this.names = c.names
@@ -778,7 +778,7 @@
 //   }
 
 //   public toString(): string {
-//     return "let (...) = ... in ..."
+//     return "const (...) = ... in ..."
 //   }
 // }
 
@@ -806,7 +806,7 @@
 //   }
 
 //   public toString(): string {
-//     let res = ""
+//     const res = ""
 
 //     _(this.maybeNames).each(function (maybeName, ndx) {
 //       if (ndx > 0) { res += " " }

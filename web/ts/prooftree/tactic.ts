@@ -10,20 +10,20 @@ export class Tactic {
     // this.addReturn = waiting.addReturn
     this.goalIndex = 0
 
-    // let focusedBefore = getResponseFocused(parent.parent.response)
-    // let focusedAfter = getResponseFocused(response)
+    // const focusedBefore = getResponseFocused(parent.parent.response)
+    // const focusedAfter = getResponseFocused(response)
 
-    // let unfocusedBefore = getResponseUnfocused(parent.parent.response)
-    // let unfocusedAfter = getResponseUnfocused(response)
+    // const unfocusedBefore = getResponseUnfocused(parent.parent.response)
+    // const unfocusedAfter = getResponseUnfocused(response)
 
-    // let remainingSubgoals
+    // const remainingSubgoals
     /*
     if (_.isEqual(unfocusedAfter, unfocusedBefore)) {
       if (focusedBefore.length > 1
         && focusedAfter[0].gId === focusedBefore[1].gId) {
         remainingSubgoals = []
       } else {
-        let focusDelta = focusedAfter.length - focusedBefore.length
+        const focusDelta = focusedAfter.length - focusedBefore.length
         remainingSubgoals = response.rGoals.focused.slice(0, focusDelta + 1)
       }
     } else {

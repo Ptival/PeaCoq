@@ -62,13 +62,13 @@ export function createGetCompletions(
     })
     .subscribe(context => doc.contextPanel.display(context))
 
-  return function getCompletions(
+  return (
     editor: AceAjax.Editor,
     session: AceAjax.IEditSession,
     position: AceAjax.Position,
     prefix: string,
     callback: (err: boolean, results: AceAjax.Completion[], keepPopupPosition: boolean) => void
-  ): void {
+  ): void => {
 
     const sentenceToComplete = _.maxBy(doc.getAllSentences(), s => s.sentenceId)
 

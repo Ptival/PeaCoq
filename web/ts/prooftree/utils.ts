@@ -18,10 +18,10 @@ import * as d3Scale from "d3-scale"
  * within which [elmt] lives.
  */
 function elmtRect(node: IProofTreeNode, elmt: HTMLElement) {
-  let rect = elmt.getBoundingClientRect()
-  let containerRect = $(elmt).parents("foreignObject")[0].getBoundingClientRect()
-  let left = node.getDestinationScaledX() + deltaX(containerRect, rect)
-  let top = node.getDestinationScaledY() + deltaY(containerRect, rect)
+  const rect = elmt.getBoundingClientRect()
+  const containerRect = $(elmt).parents("foreignObject")[0].getBoundingClientRect()
+  const left = node.getDestinationScaledX() + deltaX(containerRect, rect)
+  const top = node.getDestinationScaledY() + deltaY(containerRect, rect)
   return {
     "left": left, "right": left + rect.width, "width": rect.width,
     "top": top, "bottom": top + rect.height, "height": rect.height,
@@ -29,10 +29,10 @@ function elmtRect(node: IProofTreeNode, elmt: HTMLElement) {
 }
 
 // function elmtRect0(node: IProofTreeNode, elmt: HTMLElement) {
-//   let rect = elmt.getBoundingClientRect()
-//   let containerRect = $(elmt).parents("foreignObject")[0].getBoundingClientRect()
-//   let left = node.cX0 + deltaX(containerRect, rect)
-//   let top = node.cY0 + deltaY(containerRect, rect)
+//   const rect = elmt.getBoundingClientRect()
+//   const containerRect = $(elmt).parents("foreignObject")[0].getBoundingClientRect()
+//   const left = node.cX0 + deltaX(containerRect, rect)
+//   const top = node.cY0 + deltaY(containerRect, rect)
 //   return {
 //     "left": left, "right": left + rect.width, "width": rect.width,
 //     "top": top, "bottom": top + rect.height, "height": rect.height,
@@ -103,9 +103,9 @@ export function nodeY(d: IProofTreeNode): number {
 //   )
 // }
 
-let centerLeftOffset = +10
+const centerLeftOffset = +10
 
-let centerRightOffset = -10
+const centerRightOffset = -10
 
 function mkCenterLeft(x: number, y: number, h: number): XY {
   return { x: x + centerLeftOffset, y: y + h / 2 }
@@ -145,8 +145,8 @@ lines return an object of lists. Disabled for now.
 //
 //   function rec(before, after) {
 //
-//     let nbBefore = before.children().length
-//     let nbAfter = after.children().length
+//     const nbBefore = before.children().length
+//     const nbAfter = after.children().length
 //     if (nbBefore !== nbAfter) {
 //       return [{
 //         "removed": before,
@@ -154,7 +154,7 @@ lines return an object of lists. Disabled for now.
 //       }]
 //     }
 //
-//     let nbChildren = nbBefore
+//     const nbChildren = nbBefore
 //     if (nbChildren === 0) { // both leaves
 //       if (before.html() !== after.html()) {
 //         return [{
@@ -166,10 +166,10 @@ lines return an object of lists. Disabled for now.
 //       }
 //     }
 //
-//     let everyChildChanged = true
+//     const everyChildChanged = true
 //
-//     let childrenChanges = _.range(nbChildren).reduce(function(acc, i) {
-//       let tmp = rec($(before.children()[i]), $(after.children()[i]))
+//     const childrenChanges = _.range(nbChildren).reduce(function(acc, i) {
+//       const tmp = rec($(before.children()[i]), $(after.children()[i]))
 //       if (tmp.length === 0) { everyChildChanged = false; }
 //       return acc.concat(tmp)
 //     }, [])
@@ -186,8 +186,8 @@ lines return an object of lists. Disabled for now.
 //
 //   }
 //
-//   let removed = []
-//   let added = []
+//   const removed = []
+//   const added = []
 //
 //   _(rec($(before).children(), $(after).children())).each(function(pair, ndx) {
 //     pair.removed.css("background-color", diffColor(ndx))
@@ -204,7 +204,7 @@ lines return an object of lists. Disabled for now.
   [currentY]
 */
 function destinationEmptyRect(node: IProofTreeNode, currentY: number): Rectangle {
-  let delta = 1 // how big to make the empty rectangle
+  const delta = 1 // how big to make the empty rectangle
   return $.extend(
     {
       "left": node.getDestinationScaledX(),
@@ -220,7 +220,7 @@ function destinationEmptyRect(node: IProofTreeNode, currentY: number): Rectangle
 }
 
 function currentEmptyRect(node: IProofTreeNode, currentY: number): Rectangle {
-  let delta = 1 // how big to make the empty rectangle
+  const delta = 1 // how big to make the empty rectangle
   return $.extend(
     {
       "left": node.currentScaledX,
@@ -254,8 +254,8 @@ export function commonAncestor(n1: IProofTreeNode, n2: IProofTreeNode): IProofTr
   })
 }
 
-let diffColor = (function () {
-  let colors = [
+const diffColor = (() => {
+  const colors = [
     "#ffbb78",
     "#f7b6d2",
     "#dbdb8d",
@@ -268,8 +268,5 @@ let diffColor = (function () {
     "#ce6dbd",
     "#de9ed6",
   ]
-  let scale = d3Scale.scaleOrdinal<number, string>(colors)
-  return function (n: number) {
-    return scale(n)
-  }
+  return d3Scale.scaleOrdinal<number, string>(colors)
 })()

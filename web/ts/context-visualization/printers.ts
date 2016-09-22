@@ -123,7 +123,7 @@ export function htmlPrintPpCmd(p: PpCmdType): string {
 }
 
 export function htmlPrintPpCmds(l: PpCmds): string {
-  _(patterns).each(function(pattern) {
+  _(patterns).each(pattern => {
     l = pattern(l)
   })
   return _.reduce(
@@ -134,7 +134,7 @@ export function htmlPrintPpCmds(l: PpCmds): string {
 }
 
 export function htmlPrintPpCmdsDiff(l: PpCmds, old: PpCmds): string {
-  _(patterns).each(function(pattern) {
+  _(patterns).each(pattern => {
     l = pattern(l)
     old = pattern(old)
   })

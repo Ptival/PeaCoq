@@ -171,13 +171,13 @@ class CSort extends ConstrExpr {
 
 function extractProdBinders(a: ConstrExpr): [LocalBinder[], ConstrExpr] {
   if (a instanceof CProdN) {
-    let [loc, bl, c]: [any, any[], any] = [a.location, a.binderList, a.returnExpr]
+    const [loc, bl, c]: [any, any[], any] = [a.location, a.binderList, a.returnExpr]
     if (bl.length === 0) {
       return extractProdBinders(a.returnExpr)
     } else {
-      let [nal, bk, t] = bl[0]
-      let [blrec, cRest] = extractProdBinders(new CProdN(loc, _.tail(bl), c))
-      let l: LocalBinder[] = [new LocalRawAssum(nal, bk, t)]
+      const [nal, bk, t] = bl[0]
+      const [blrec, cRest] = extractProdBinders(new CProdN(loc, _.tail(bl), c))
+      const l: LocalBinder[] = [new LocalRawAssum(nal, bk, t)]
       return [l.concat(blrec), cRest]
     }
   }

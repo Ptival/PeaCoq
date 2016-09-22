@@ -33,7 +33,7 @@ export function setup(): any {
   const rightLayout = w2ui[rightLayoutName]
   const bottomLayout = w2ui[bottomLayoutName]
   const contextTabs = w2ui[rightLayoutName + "_main_tabs"]
-  contextTabs.onClick = function (event: W2UI.W2Event) { $("#myTabsContent").html(event.target) }
+  contextTabs.onClick = (event: W2UI.W2Event) => { $("#myTabsContent").html(event.target) }
   const coqtopTabs = w2ui[rightLayoutName + "_bottom_tabs"]
 
   const rightLayoutRenderedStream = Rx.Observable

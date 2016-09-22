@@ -18,7 +18,7 @@ export class Feedback implements IFeedback<IFeedbackContent> {
 
 // export function fromCoqtop(f) {
 //   const [{ tag: es, contents: esid }, fc, rid] = f
-//   let editOrState
+//   const editOrState
 //   switch (es) {
 //     case "edit": editOrState = EditOrState.Edit
 //       break

@@ -267,23 +267,23 @@ export class CoqDocument implements ICoqDocument {
   public nextSentence(next$: Rx.Observable<{}>): Rx.Observable<ISentence<IToProcess>> {
     return next$
       .concatMap<ISentence<IToProcess>>(() => {
-        let lastEditStopPos = this.getLastSentenceStop()
-        let endPos = this.endAnchor.anchor.getPosition()
-        let unprocessedRange =
+        const lastEditStopPos = this.getLastSentenceStop()
+        const endPos = this.endAnchor.anchor.getPosition()
+        const unprocessedRange =
           new AceAjax.Range(
             lastEditStopPos.row, lastEditStopPos.column,
             endPos.row, endPos.column
           )
-        let unprocessedText = this.session.getTextRange(unprocessedRange)
+        const unprocessedText = this.session.getTextRange(unprocessedRange)
         if (CoqStringUtils.coqTrimLeft(unprocessedText) === "") {
           return []
         }
-        let nextIndex = CoqStringUtils.next(unprocessedText)
-        let newStopPos = this.movePositionRight(lastEditStopPos, nextIndex)
-        let query = unprocessedText.substring(0, nextIndex)
-        let previousEdit = this.sentences.getLast()
-        let stage = new Stage.ToProcess(this, lastEditStopPos, newStopPos)
-        let edit: ISentence<IToProcess> =
+        const nextIndex = CoqStringUtils.next(unprocessedText)
+        const newStopPos = this.movePositionRight(lastEditStopPos, nextIndex)
+        const query = unprocessedText.substring(0, nextIndex)
+        const previousEdit = this.sentences.getLast()
+        const stage = new Stage.ToProcess(this, lastEditStopPos, newStopPos)
+        const edit: ISentence<IToProcess> =
           this.sentences.createSentence(this, lastEditStopPos, newStopPos, query, previousEdit, stage)
         // debugger
         return [edit]

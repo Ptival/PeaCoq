@@ -3,7 +3,7 @@ import { Strictly } from "../peacoq/strictly"
 import * as Command from "../sertop/command"
 import * as ControlCommand from "../sertop/control-command"
 
-let userTacticsGroupName = "PeaCoq user tactics"
+const userTacticsGroupName = "PeaCoq user tactics"
 
 export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
   public isProcessed: boolean
@@ -55,14 +55,14 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
   }
 
   public getAllDescendants(): IProofTreeNode[] {
-    let children: IGoalNode[] = _(this.tactics).map(t => t.goals).flatten<IGoalNode>().value()
-    let descendants: IProofTreeNode[] = _(children).map(c => c.getAllDescendants()).flatten<IProofTreeNode>().value()
+    const children: IGoalNode[] = _(this.tactics).map(t => t.goals).flatten<IGoalNode>().value()
+    const descendants: IProofTreeNode[] = _(children).map(c => c.getAllDescendants()).flatten<IProofTreeNode>().value()
     return ([] as IProofTreeNode[]).concat(children, descendants)
   }
 
   public getAllGoalDescendants(): IGoalNode[] {
-    let children: IGoalNode[] = _(this.tactics).map(t => t.goals).flatten<IGoalNode>().value()
-    let descendants: IGoalNode[] = _(children).map(c => c.getAllGoalDescendants()).flatten<IGoalNode>().value()
+    const children: IGoalNode[] = _(this.tactics).map(t => t.goals).flatten<IGoalNode>().value()
+    const descendants: IGoalNode[] = _(children).map(c => c.getAllGoalDescendants()).flatten<IGoalNode>().value()
     return ([] as IGoalNode[]).concat(children, descendants)
   }
 
@@ -84,7 +84,7 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
   public getGoalAncestor(): Maybe<IGoalNode> { return just(this.parentGoal) }
 
   public getHeight(): number {
-    let rect = this.getHTMLElement().getBoundingClientRect()
+    const rect = this.getHTMLElement().getBoundingClientRect()
     return Math.ceil(rect.height)
   }
 
@@ -102,7 +102,7 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
       return []
     }
     if (this.tactics.length === 0) { return [] }
-    let focusedTactic = this.tactics[this.tacticIndex]
+    const focusedTactic = this.tactics[this.tacticIndex]
     return focusedTactic.goals
   }
 
@@ -118,8 +118,8 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
   }
 
   public onChildSolvedAndUnfocused(sid: number): void {
-    let focusedTactic = fromJust(this.getFocusedTactic())
-    let unsolved = <IGoalNode | undefined>_(focusedTactic.goals)
+    const focusedTactic = fromJust(this.getFocusedTactic())
+    const unsolved = <IGoalNode | undefined>_(focusedTactic.goals)
       .find(elt => !elt.isSolved())
     // debugger
     // console.log("unsolved", unsolved)
@@ -160,10 +160,10 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
   }
 
   public updateNode(): void {
-    let jqBody = $(this.getHTMLElement())
+    const jqBody = $(this.getHTMLElement())
     let jQContents: JQuery
-    let focusedTactic = this.tactics[this.tacticIndex]
-    let nbTactics = this.tactics.length
+    const focusedTactic = this.tactics[this.tacticIndex]
+    const nbTactics = this.tactics.length
 
     this.span = $("<div>")
       .addClass("tacticNode")

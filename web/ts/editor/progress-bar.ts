@@ -3,8 +3,8 @@ import * as DebugFlags from "../peacoq/debug-flags"
 import * as Theme from "../peacoq/theme"
 import { debounceAndThrottle } from "../rxjs/operators"
 
-let barItemClass = "progress-bar-item"
-let progressBarId = "progress-bar"
+const barItemClass = "progress-bar-item"
+const progressBarId = "progress-bar"
 
 export function setupProgressBar(doc: ICoqDocument): void {
   // TODO: progress bar should update when command ID is assigned
@@ -17,14 +17,14 @@ export function setupProgressBar(doc: ICoqDocument): void {
     // 250ms of silence following an emission
     .let(debounceAndThrottle(250))
     .subscribe(() => updateProgressBar(doc))
-  let barClick$: Rx.Observable<Event> =
+  const barClick$: Rx.Observable<Event> =
     Rx.Observable.fromEvent<Event>(document, "click")
       .filter(e => $(e.target).hasClass(barItemClass))
   if (DebugFlags.progressBarClick) { barClick$.subscribe(c => console.log(c)) }
-  let barMouseOver$: Rx.Observable<Event> =
+  const barMouseOver$: Rx.Observable<Event> =
     Rx.Observable.fromEvent<Event>(document, "mouseover")
       .filter(e => $(e.target).hasClass(barItemClass))
-  let barMouseOut$: Rx.Observable<Event> =
+  const barMouseOut$: Rx.Observable<Event> =
     Rx.Observable.fromEvent<Event>(document, "mouseout")
       .filter(e => $(e.target).hasClass(barItemClass))
   barMouseOver$.subscribe(
@@ -32,31 +32,31 @@ export function setupProgressBar(doc: ICoqDocument): void {
   )
   barMouseOut$.subscribe(e => {
     debugger
-    // let targetEdit: ISentence<any> = d3Selection.select(e.target).data()[0]
+    // const targetEdit: ISentence<any> = d3Selection.select(e.target).data()[0]
     // $(e.target).css("background-color", `${targetEdit.getColor()}`)
   })
   barMouseOver$.subscribe(e => {
     debugger
-    // let targetEdit: ISentence<any> = d3Selection.select(e.target).data()[0]
+    // const targetEdit: ISentence<any> = d3Selection.select(e.target).data()[0]
     // targetEdit.highlight()
   })
   barMouseOut$.subscribe(e => {
     debugger
-    // let targetEdit: ISentence<any> = d3Selection.select(e.target).data()[0]
+    // const targetEdit: ISentence<any> = d3Selection.select(e.target).data()[0]
     // targetEdit.unhighlight()
   })
   barClick$.subscribe(e => {
     debugger
-    // let targetEdit: ISentence<any> = d3Selection.select(e.target).data()[0]
+    // const targetEdit: ISentence<any> = d3Selection.select(e.target).data()[0]
     // doc.moveCursorToPositionAndCenter(targetEdit.stopPosition)
     // doc.editor.focus()
   })
 }
 
 function updateProgressBar(doc: ICoqDocument): void {
-  let allEdits = doc.getAllSentences()
+  const allEdits = doc.getAllSentences()
 
-  let selection =
+  const selection =
     d3Selection
       .select(`#${progressBarId}`)
       .selectAll<HTMLElement, ISentence<IStage>>("div")
@@ -67,7 +67,7 @@ function updateProgressBar(doc: ICoqDocument): void {
     .style("height", "100%")
     .style("display", "inline-block")
 
-  let eltWidth = $(`#${progressBarId}`).width() / allEdits.length
+  const eltWidth = $(`#${progressBarId}`).width() / allEdits.length
   selection
     .style("width", `${eltWidth}px`)
     .style("background-color", (d: ISentence<any>) => d.getColor())

@@ -1,11 +1,11 @@
 namespace CoqStringUtils {
 
-  let delimiters = ["."]
+  const delimiters = ["."]
 
   function my_index(str: string): number {
-    let index = +Infinity
+    const index = +Infinity
     _(delimiters).each(delimiter => {
-      let pos = str.indexOf(delimiter)
+      const pos = str.indexOf(delimiter)
       if (pos >= 0 && pos < index) {
         index = pos
       }
@@ -17,13 +17,13 @@ namespace CoqStringUtils {
     }
   }
 
-  let bullets = ["{", "}", "+", "-", "*"]
+  const bullets = ["{", "}", "+", "-", "*"]
 
   export function isBullet(s: string): boolean { return _(bullets).includes(s) }
 
   export function next(str: string): number {
     // if the very next thing is one of {, }, +, -, *, it is the next
-    let trimmed = coqTrimLeft(str)
+    const trimmed = coqTrimLeft(str)
     if (_(bullets).includes(trimmed[0])) {
       return str.length - trimmed.length + 1
     }
@@ -35,10 +35,10 @@ namespace CoqStringUtils {
   // function prev(str) {
   //   // remove the last delimiter, since we are looking for the previous one
   //   str = str.substring(0, str.length - 1)
-  //   let lastDotPosition = coq_find_last_dot(coq_undot(str), 0)
-  //   // now, it could be the case that there is a bullet after that dot
-  //   let strAfterDot = str.substring(lastDotPosition + 1, str.length)
-  //   let firstCharAfterDot = coqTrimLeft(strAfterDot)[0]
+  //   const lastDotPosition = coq_find_last_dot(coq_undot(str), 0)
+  //   // now, it could be the case that there is a bulconst after that dot
+  //   const strAfterDot = str.substring(lastDotPosition + 1, str.length)
+  //   const firstCharAfterDot = coqTrimLeft(strAfterDot)[0]
   //   if (_(bullets).includes(firstCharAfterDot)) {
   //     return lastDotPosition + 1 + strAfterDot.indexOf(firstCharAfterDot) + 1
   //   }
@@ -47,7 +47,7 @@ namespace CoqStringUtils {
   // }
 
   function count(str: string, pat: string): number {
-    let arr = str.split(pat)
+    const arr = str.split(pat)
     return (arr.length)
   }
 
@@ -64,24 +64,24 @@ namespace CoqStringUtils {
   }
 
   function coq_find_dot(str: string, toclose: number): number {
-    let index = my_index(str)
+    const index = my_index(str)
     if (index === -1) {
       return index
     }
-    let tocheck = str.substring(0, index)
-    let opened = count(tocheck, "(*") + toclose - count(tocheck, "*)")
+    const tocheck = str.substring(0, index)
+    const opened = count(tocheck, "(*") + toclose - count(tocheck, "*)")
     if (opened <= 0) {
       return index
     } else {
-      let newindex = coq_find_dot(str.substring(index + 1), opened)
+      const newindex = coq_find_dot(str.substring(index + 1), opened)
       if (newindex === -1) { return -1 }
       return index + newindex + 1
     }
   }
 
   function coq_get_last_dot(str: string): number {
-    let modified = str
-    let index = -1
+    const modified = str
+    const index = -1
     while (my_index(modified) >= 0) {
       index = my_index(modified)
       modified = modified.substring(0, index) + " " +
@@ -91,26 +91,26 @@ namespace CoqStringUtils {
   }
 
   function coq_find_last_dot(str: string, toopen: number): number {
-    let index = coq_get_last_dot(str)
+    const index = coq_get_last_dot(str)
     if (index === -1) {
       return index
     }
-    let tocheck = str.substring(index + 1)
-    let closed = count(tocheck, "*)") + toopen - count(tocheck, "(*")
+    const tocheck = str.substring(index + 1)
+    const closed = count(tocheck, "*)") + toopen - count(tocheck, "(*")
     if (closed <= 0) {
       return index
     } else {
-      let newindex = coq_find_last_dot(str.substring(0, index), closed)
+      const newindex = coq_find_last_dot(str.substring(0, index), closed)
       return newindex
     }
   }
 
   function stripComments(s: string): string {
-    let output = ""
-    let commentDepth = 0
-    let pos = 0
+    const output = ""
+    const commentDepth = 0
+    const pos = 0
     while (pos < s.length) {
-      let sub = s.substring(pos)
+      const sub = s.substring(pos)
       if (sub.startsWith("(*")) {
         commentDepth++
         pos += 2
@@ -135,10 +135,10 @@ namespace CoqStringUtils {
   }
 
   export function coqTrimLeft(s: string): string {
-    let commentDepth = 0
-    let pos = 0
+    const commentDepth = 0
+    const pos = 0
     while (pos < s.length) {
-      let sub = s.substring(pos)
+      const sub = s.substring(pos)
       if (sub.startsWith("(*")) {
         commentDepth++
         pos += 2
@@ -157,11 +157,11 @@ namespace CoqStringUtils {
   }
 
   function coqTrimRight(s: string): string {
-    let commentDepth = 0
-    let pos = s.length - 1
+    const commentDepth = 0
+    const pos = s.length - 1
     while (pos > 0) {
-      let sub = s.substring(0, pos)
-      let lastChar = sub[sub.length - 1]
+      const sub = s.substring(0, pos)
+      const lastChar = sub[sub.length - 1]
       if (sub.endsWith("*)")) {
         commentDepth++
         pos -= 2

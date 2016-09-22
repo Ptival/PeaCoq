@@ -96,13 +96,13 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
   public click(): void { return }
 
   // findOrCreateGroup(groupName: string): ITacticGroupNode {
-  //   let found = <ITacticGroupNode | undefined>_(this.tacticGroups)
+  //   const found = <ITacticGroupNode | undefined>_(this.tacticGroups)
   //     .find(function(tacticGroup) {
   //       return tacticGroup.name === groupName
   //     })
   //   if (found !== undefined) { return found; }
   //   // else, create it
-  //   let groupNode = new TacticGroupNode(this.proofTree, this, groupName)
+  //   const groupNode = new TacticGroupNode(this.proofTree, this, groupName)
   //   this.tacticGroups.push(groupNode)
   //   return groupNode
   // }
@@ -121,15 +121,15 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
   }
 
   public getAllDescendants(): IProofTreeNode[] {
-    let children: ITacticGroupNode[] = this.tacticGroups
-    let descendants: IProofTreeNode[] = _(children).map(c => c.getAllDescendants()).flatten<IProofTreeNode>().value()
+    const children: ITacticGroupNode[] = this.tacticGroups
+    const descendants: IProofTreeNode[] = _(children).map(c => c.getAllDescendants()).flatten<IProofTreeNode>().value()
     return ([] as IProofTreeNode[]).concat(children, descendants)
   }
 
   public getAllGoalDescendants(): GoalNode[] {
-    let children: ITacticGroupNode[] = this.tacticGroups
-    let descendants: GoalNode[] = _(children).map(c => c.getAllGoalDescendants()).flatten<GoalNode>().value()
-    let result: GoalNode[] = [this]
+    const children: ITacticGroupNode[] = this.tacticGroups
+    const descendants: GoalNode[] = _(children).map(c => c.getAllGoalDescendants()).flatten<GoalNode>().value()
+    const result: GoalNode[] = [this]
     return result.concat(descendants)
   }
 
@@ -143,7 +143,7 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
   }
 
   public getFocusedTacticGroup(): TsMonad.Maybe<ITacticGroupNode> {
-    let nonEmptyTacticGroups: ITacticGroupNode[] = _(this.tacticGroups)
+    const nonEmptyTacticGroups: ITacticGroupNode[] = _(this.tacticGroups)
       .filter(group => group.tactics.length > 0)
       .value()
 
@@ -166,8 +166,8 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
   }
 
   public getHeight(): number {
-    let node = this.getHTMLElement()
-    let rect = node.getBoundingClientRect()
+    const node = this.getHTMLElement()
+    const rect = node.getBoundingClientRect()
     return Math.ceil(rect.height)
   }
 
@@ -194,7 +194,7 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
       && !this.proofTree.isCurNodeAncestor(Strictly.Yes, this)) {
       return []
     }
-    // let nonEmptyTacticGroups = _(this.tacticGroups)
+    // const nonEmptyTacticGroups = _(this.tacticGroups)
     //   .filter(function(group) { return (group.tactics.length > 0); })
     //   .value()
     //   
@@ -214,7 +214,7 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
 
   public isSolved(): boolean {
     if (this.proofTree.isCurNodeAncestor(Strictly.Yes, this)) { return false }
-    let focusedTacticGroup = this.getFocusedTacticGroup()
+    const focusedTacticGroup = this.getFocusedTacticGroup()
     return this.getFocusedTacticGroup().caseOf({
       nothing: () => false,
       just: tg => tg.isSolved(),

@@ -17,16 +17,16 @@ export class Tab implements ITab {
     this.captionSuffix = ""
     this.id = id
     this.panel = panel
-    let w2uiId = layoutName + "_" + panel + "_tabs"
+    const w2uiId = layoutName + "_" + panel + "_tabs"
     this.tab = w2ui[w2uiId]
 
-    let self = this
+    const self = this
 
     this.div = $("<div>", { id: id + "-content", style: "height: 100%", text: "" })
     this.onClickHandlers = []
     this.onResizeHandlers = []
 
-    this.onClickHandlers.push(function (layout: W2UI.W2Tabs) {
+    this.onClickHandlers.push((layout: W2UI.W2Tabs) => {
       console.trace("me")
       layout.owner.html(panel, self.div[0])
     })
@@ -61,7 +61,7 @@ export class Tab implements ITab {
   }
 
   public refresh(): void {
-    let captionText = `${this.caption} ${this.captionSuffix}`
+    const captionText = `${this.caption} ${this.captionSuffix}`
     this.tab.set(this.id, {
       caption: this._captionShouldBeBold ? `<b>${captionText}</b>` : captionText
     })

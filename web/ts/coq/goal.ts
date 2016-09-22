@@ -13,10 +13,10 @@ export class Goal implements IGoal {
 
   public toString(): string {
     let res = "" // "Goal " + this.goalId + "\n\n"
-    _(this.goalHyp).each(function (h) {
+    _(this.goalHyp).each((h) => {
       res += h + "\n"
     })
-    _(_.range(80)).each(function () { res += "-" })
+    _(_.range(80)).each(() => { res += "-" })
     res += "\n" + this.goalCcl
     return res
   }

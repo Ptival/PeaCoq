@@ -4,7 +4,7 @@ import * as Pattern from "./pattern"
 import { StrDef } from "../coq/str-token"
 import { findPpCmdSuchThat, matchPattern, ppCmdIsString, ppCmdIsStringSuchThat, replacePpCmd, replaceToken } from "./utils"
 
-let anyPattern = new Pattern.Anything()
+const anyPattern = new Pattern.Anything()
 
 function patternScopeDelimiters(l: PpCmds): PpCmds {
   return replacePpCmd(
@@ -84,7 +84,7 @@ CloseTag
 ...
 */
 function patternPow(l: PpCmds): PpCmds {
-  let pos = findPpCmdSuchThat(l, ppCmdIsString("^"))
+  const pos = findPpCmdSuchThat(l, ppCmdIsString("^"))
   if (pos > 0) {
     return ([] as PpCmds).concat(
       l.slice(0, pos - 2),
@@ -136,7 +136,7 @@ function patternZSquare(l: PpCmds): PpCmds {
   )
 }
 
-let anything: any = undefined
+const anything: any = undefined
 
 function box(contents: Pattern.Pattern[]): Pattern.Pattern {
   return new Pattern.Constructor(PpCmdBox, { contents: new Pattern.ArrayPattern(contents) })
@@ -171,8 +171,8 @@ function patternZOfNat(l: PpCmds): PpCmds {
 
 function boxDropParentheses(p: PpCmd): PpCmd {
   if (p instanceof PpCmdBox && p.contents.length === 3) {
-    let open = p.contents[0]
-    let close = p.contents[2]
+    const open = p.contents[0]
+    const close = p.contents[2]
     if (open instanceof PpCmdPrint && open.token.string === "("
       && close instanceof PpCmdPrint && close.token.string === ")") {
       return p.contents[1]
@@ -267,7 +267,7 @@ function patternSum(l: PpCmds): PpCmds {
   )
 }
 
-export let patterns: Array<(_1: PpCmds) => PpCmds> = [
+export const patterns: Array<(_1: PpCmds) => PpCmds> = [
   patternPow,
   patternForall,
   patternExists,

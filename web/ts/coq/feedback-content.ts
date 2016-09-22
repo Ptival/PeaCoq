@@ -83,7 +83,7 @@ export class WorkerStatus implements IFeedbackContent.IWorkerStatus {
   public id: string
   public status: string
   constructor(c: [string, string]) {
-    let [id, status] = c
+    const [id, status] = c
     this.id = id
     this.status = status
   }

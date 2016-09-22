@@ -33,7 +33,7 @@ export function replacePpCmd(
   replace: (_1: PpCmd) => PpCmds,
   l: PpCmds
 ): PpCmds {
-  let pos = findPpCmdSuchThat(l, match)
+  const pos = findPpCmdSuchThat(l, match)
   if (pos < 0) { return l }
   return ([] as PpCmds).concat(
     l.slice(0, pos),
@@ -59,10 +59,10 @@ export function replaceToken(s1: string, s2: string, l: PpCmds): PpCmds {
 
 function ppCmdsMatchGen(p: Pattern.Pattern[], l: PpCmds, o: Object): Maybe<Object> {
   if (p.length !== l.length) { return nothing() }
-  let zip = _.zip(p, l)
-  for (let index in zip) {
-    let [pat, cmd] = zip[index]
-    let shortCircuit = ppCmdMatchGen(pat, cmd, o).caseOf({
+  const zip = _.zip(p, l)
+  for (const index in zip) {
+    const [pat, cmd] = zip[index]
+    const shortCircuit = ppCmdMatchGen(pat, cmd, o).caseOf({
       nothing: () => true,
       just: (newo) => {
         o = newo
@@ -98,7 +98,7 @@ function ppCmdMatchGen(pat: Pattern.Pattern, p: PpCmd | any, o: Object): Maybe<O
     if (!(p instanceof Array)) { throw MatchFailure("ppCmdMatchGen > ArrayPattern", p) }
     return ppCmdsMatchGen(pat.array, p, o)
   } else if (pat instanceof Pattern.BinderPattern) {
-    let binder = pat.binder
+    const binder = pat.binder
     o[binder] = p
     return just(o)
   } else if (pat instanceof Pattern.Constructor) {

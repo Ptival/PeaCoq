@@ -63,7 +63,7 @@ export abstract class ProofTreeNode implements IProofTreeNode {
   //
   // getOriginalScaledY(): number {
   //   // return this.getScaledY()
-  //   let tree = this.proofTree
+  //   const tree = this.proofTree
   //   return this.getGoalAncestor().caseOf({
   //     // the root needs to spawn somewhere arbitrary: (0, 0.5)
   //     nothing: () => 0.5 * tree.xOffset(this) + tree.yOffset(this),
@@ -76,12 +76,12 @@ export abstract class ProofTreeNode implements IProofTreeNode {
   public abstract getParent(): Maybe<IProofTreeNode>
 
   public getDestinationScaledX(): number {
-    let tree = this.proofTree
+    const tree = this.proofTree
     return ProofTreeUtils.nodeX(this) * tree.xFactor + tree.xOffset(this)
   }
 
   public getDestinationScaledY(): number {
-    let tree = this.proofTree
+    const tree = this.proofTree
     return ProofTreeUtils.nodeY(this) * tree.yFactor + tree.yOffset(this)
   }
 
@@ -112,8 +112,8 @@ export abstract class ProofTreeNode implements IProofTreeNode {
   }
 
   public isCurNodeAncestor(): boolean {
-    let curNode = this.proofTree.curNode
-    let common = ProofTreeUtils.commonAncestor(curNode, this)
+    const curNode = this.proofTree.curNode
+    const common = ProofTreeUtils.commonAncestor(curNode, this)
     return this.id === common.id
   }
 

@@ -1,10 +1,10 @@
 /*
 DO NOT TURN THIS FILE INTO A MODULE AS SOME NON-MODULE FILES USE IT!
 */
-let tup1: [number, number] = [1, 2, 3]
+const tup1: [number, number] = [1, 2, 3]
 
-let tup2: [number, number] = <any>[1, 2, "foo"]
-let nbsp = "\u00A0"
+const tup2: [number, number] = <any>[1, 2, "foo"]
+const nbsp = "\u00A0"
 
 function unbsp(s: string): string {
   return s.replace(/ /g, " ")
@@ -19,8 +19,8 @@ function replaceNBSPWithSpaces(s: string): string {
 }
 
 type Maybe<T> = TsMonad.Maybe<T>
-let nothing = TsMonad.Maybe.nothing
-let just = TsMonad.Maybe.just
+const nothing = TsMonad.Maybe.nothing
+const just = TsMonad.Maybe.just
 
 function fromJust<T>(m: Maybe<T>): T {
   return m.caseOf({
@@ -65,11 +65,11 @@ function assert(condition: boolean, message: string): void {
 function avg(n1: number, n2: number): number { return (n1 + n2) / 2 }
 
 function parseSVGTransform(a: string): any {
-  let b = {}
-  let m = a.match(/(\w+\((\-?\d+\.?\d*,? ?)+\))+/g)
+  const b = {}
+  const m = a.match(/(\w+\((\-?\d+\.?\d*,? ?)+\))+/g)
   if (m !== null) {
-    for (let i in m) {
-      let c = m[i].match(/[\w\.\-]+/g)
+    for (const i in m) {
+      const c = m[i].match(/[\w\.\-]+/g)
       if (c !== null) {
         const next = c.shift()
         if (next !== undefined) {
@@ -116,19 +116,19 @@ function showDot(d: XY): string { return `${d.x} ${d.y}` }
 function connectRects(r1: ClientRect, r2: ClientRect, rightsLeft?: number): string {
   // console.log("rect1", r1, "rect2", r2)
   if (rightsLeft === undefined) { rightsLeft = r2.left }
-  let a = mkDot(r1.left, r1.top)
-  let b = mkDot(r1.right, r1.top)
-  let c = mkDot(rightsLeft, r2.top)
-  let d = mkDot(r2.right, r2.top)
-  let e = mkDot(r2.right, r2.bottom)
-  let f = mkDot(rightsLeft, r2.bottom)
-  let g = mkDot(r1.right, r1.bottom)
-  let h = mkDot(r1.left, r1.bottom)
+  const a = mkDot(r1.left, r1.top)
+  const b = mkDot(r1.right, r1.top)
+  const c = mkDot(rightsLeft, r2.top)
+  const d = mkDot(r2.right, r2.top)
+  const e = mkDot(r2.right, r2.bottom)
+  const f = mkDot(rightsLeft, r2.bottom)
+  const g = mkDot(r1.right, r1.bottom)
+  const h = mkDot(r1.left, r1.bottom)
 
-  let cp1 = mkDot(avg(b.x, c.x), b.y)
-  let cp2 = mkDot(avg(f.x, g.x), c.y)
-  let cp3 = mkDot(avg(f.x, g.x), f.y)
-  let cp4 = mkDot(avg(f.x, g.x), g.y)
+  const cp1 = mkDot(avg(b.x, c.x), b.y)
+  const cp2 = mkDot(avg(f.x, g.x), c.y)
+  const cp3 = mkDot(avg(f.x, g.x), f.y)
+  const cp4 = mkDot(avg(f.x, g.x), g.y)
 
   // console.log("M", a, b, c, d, e, f, g, h)
 
@@ -158,15 +158,15 @@ interface Diff {
 }
 
 function computeDiffList(oldHypsOriginal: Hypothesis[], newHypsOriginal: Hypothesis[]): Diff[] {
-  let diffList: Diff[] = []
+  const diffList: Diff[] = []
 
   // slice() creates a shallow copy, since we will mutate this
-  let oldHyps = oldHypsOriginal.slice()
-  let newHyps = newHypsOriginal.slice()
+  const oldHyps = oldHypsOriginal.slice()
+  const newHyps = newHypsOriginal.slice()
 
   while (oldHyps.length > 0 && newHyps.length > 0) {
-    let oldHyp = oldHyps[0]
-    let newHyp = newHyps[0]
+    const oldHyp = oldHyps[0]
+    const newHyp = newHyps[0]
     // either the first two match
     if (oldHyp.hName === newHyp.hName) {
       diffList.push({ "oldHyp": oldHyp, "newHyp": newHyp, "isJump": false })
@@ -176,7 +176,7 @@ function computeDiffList(oldHypsOriginal: Hypothesis[], newHypsOriginal: Hypothe
     }
     // Note: <Hypothesis | undefined> is to allow === under strictNullChecks
     // until TypeScript#843aa6c1effe8365bb461a4a953d55eeb5dfa7cf gets to npm
-    let matchesOld = <Hypothesis | undefined>_(newHyps).find(sameNameAs(oldHyp))
+    const matchesOld = <Hypothesis | undefined>_(newHyps).find(sameNameAs(oldHyp))
     // or the first old has disappeared
     if (matchesOld === undefined) {
       diffList.push({ "oldHyp": oldHyp, "newHyp": null, "isJump": false })
@@ -184,7 +184,7 @@ function computeDiffList(oldHypsOriginal: Hypothesis[], newHypsOriginal: Hypothe
       continue
     }
     // or the first old has moved, but the first new has appeared
-    let matchesNew = <Hypothesis | undefined>_(oldHyps).find(sameNameAs(newHyp))
+    const matchesNew = <Hypothesis | undefined>_(oldHyps).find(sameNameAs(newHyp))
     if (matchesNew === undefined) {
       diffList.push({ "oldHyp": null, "newHyp": newHyp, "isJump": false })
       newHyps.shift()
@@ -221,4 +221,10 @@ function prefixes<T>(a: T[]): T[][] {
         : ([] as T[][]).concat(acc, [([] as T[]).concat(_(acc).last(), elt)]),
     []
   )
+}
+
+function fix(f: (a: any) => any): any {
+  return (...x: any[]) => {
+    return f(fix(f))(...x)
+  }
 }

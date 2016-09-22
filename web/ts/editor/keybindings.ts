@@ -24,9 +24,9 @@ to both the page and each editor...
 //   },
 // ]
 
-let jQueryPrefix = "alt+ctrl+"
-let aceWindowsPrefix = "Alt-Ctrl-"
-let aceMacPrefix = "Option-Command-"
+const jQueryPrefix = "alt+ctrl+"
+const aceWindowsPrefix = "Alt-Ctrl-"
+const aceMacPrefix = "Option-Command-"
 
 function createBindingForKey(doc: ICoqDocument, key: string): Rx.Observable<{}> {
   return Rx.Observable

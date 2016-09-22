@@ -9,8 +9,6 @@ export function setup(): void {
   forallInteraction()
 }
 
-let idGenerator = 0
-
 function addInteraction(
   targetBox: Element,
   items: (trigger: JQuery) => any
@@ -49,7 +47,7 @@ function forallInteraction(): void {
       .filter((n, e) => $(e).text().includes("∀"))
       .closest(".box")[0],
     $trigger => {
-      let result = {}
+      const result = {}
       Rx.Observable
         //     0         1         2        3
         // <forall> (a b : ...) (c : ...) <body>

@@ -1,7 +1,11 @@
 {
     "rulesDirectory": [],
     "rules": {
-        "align": [true, "parameters", "statements"],
+        "align": [
+            true,
+            "parameters",
+            "statements"
+        ],
         "class-name": true,
         "comment-format": [
             true,
@@ -39,7 +43,10 @@
             "check-whitespace"
         ],
         // I would do this but jquery and d3 like to bind "this" so much...
-        // "only-arrow-functions": [true, "allow-declarations"],
+        "only-arrow-functions": [
+            true,
+            "allow-declarations"
+        ],
         "quotemark": [
             true,
             "double"
