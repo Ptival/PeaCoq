@@ -42,15 +42,12 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
   }
 
   public focus() {
-    this.parentGoal.getFocusedChild().caseOf({
-      nothing: () => { },
-      just: focused => {
-        if (focused.id === this.id) { return }
-        const thisIndex = _.findIndex(this.parentGoal.tacticGroups, t => t.id === this.id)
-        if (thisIndex === -1) { debugger }
-        this.parentGoal.tacticIndex = thisIndex
-        this.parentGoal.focus()
-      }
+    this.parentGoal.getFocusedChild().fmap(focused => {
+      if (focused.id === this.id) { return }
+      const thisIndex = _.findIndex(this.parentGoal.tacticGroups, t => t.id === this.id)
+      if (thisIndex === -1) { debugger }
+      this.parentGoal.tacticIndex = thisIndex
+      this.parentGoal.focus()
     })
   }
 
@@ -111,10 +108,9 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
   }
 
   public isSolved(): boolean {
-    return this.getFocusedTactic().caseOf({
-      nothing: () => false,
-      just: t => this.isProcessed && t.isSolved(),
-    })
+    return this.getFocusedTactic()
+      .fmap(t => this.isProcessed && t.isSolved())
+      .valueOr(false)
   }
 
   public onChildSolvedAndUnfocused(sid: number): void {

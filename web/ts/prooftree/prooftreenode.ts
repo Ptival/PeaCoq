@@ -17,20 +17,10 @@ export abstract class ProofTreeNode implements IProofTreeNode {
     parent: Maybe<IProofTreeNode>
   ) {
     this.body = undefined
-    // this.depth = parent.fmap(p => p.depth + 1).defaulting(0)
-    this.depth = parent.caseOf({
-      nothing: () => 0,
-      just: parent => parent.depth + 1,
-    })
-    this.id = _.uniqueId()
-    this.currentScaledX = parent.caseOf({
-      nothing: () => 0,
-      just: parent => parent.currentScaledX,
-    })
-    this.currentScaledY = parent.caseOf({
-      nothing: () => 0,
-      just: parent => parent.currentScaledY,
-    })
+    this.depth = parent.fmap(p => p.depth + 1).valueOr(0)
+    const foo = parent.fmap(p => p.currentScaledX).valueOr(0)
+    this.currentScaledX = parent.fmap(p => p.currentScaledX).valueOr(0)
+    this.currentScaledY = parent.fmap(p => p.currentScaledY).valueOr(0)
   }
 
   public abstract click(): void
@@ -106,10 +96,7 @@ export abstract class ProofTreeNode implements IProofTreeNode {
   public hasParent(): boolean { return this.hasParentSuchThat(() => true) }
 
   public hasParentSuchThat(pred: (_1: IProofTreeNode) => boolean): boolean {
-    return this.getParent().caseOf({
-      nothing: () => false,
-      just: p => pred(p),
-    })
+    return this.getParent().fmap(pred).valueOr(false)
   }
 
   public isCurNodeAncestor(): boolean {
