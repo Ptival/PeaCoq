@@ -5,7 +5,7 @@ namespace CoqStringUtils {
   function my_index(str: string): number {
     const index: number = delimiters.reduce((indexAcc, delimiter) => {
       const pos = str.indexOf(delimiter)
-      return (pos >= 0 && pos < index) ? pos : indexAcc
+      return (pos >= 0 && pos < indexAcc) ? pos : indexAcc
     }, +Infinity)
     return (index === +Infinity) ? -1 : index
   }
