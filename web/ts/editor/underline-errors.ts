@@ -7,7 +7,7 @@ export function setup(
 
   errorMsg$.subscribe(e => {
     // debugger
-    let failedEdit: Maybe<ISentence<IStage>> = nothing()
+    let failedEdit = nothing<ISentence<IStage>>()
     switch (e.editOrState) {
       case EditOrState.Edit:
         failedEdit = just(doc.getSentencesToProcess()[0])

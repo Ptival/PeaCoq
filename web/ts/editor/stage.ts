@@ -17,7 +17,7 @@ export class ToProcess implements IToProcess {
 
   public getColor(): string { return theme.toprocess }
 
-  public getStateId() { return nothing() }
+  public getStateId() { return nothing<StateId>() }
 
   public nextStageMarker(): ISentenceMarker {
     this.marker.markBeingProcessed()

@@ -34,7 +34,7 @@ function fromJust<T>(m: Maybe<T>): T {
 }
 
 function isNothing<T>(m: Maybe<T>): boolean {
-  return m.equals(nothing())
+  return m.equals(nothing<T>())
 }
 
 function isJust<T>(m: Maybe<T>): boolean {

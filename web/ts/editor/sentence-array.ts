@@ -52,8 +52,8 @@ export class SentenceArray implements ISentenceArray {
 
   public getAll(): ISentence<any>[] { return this.sentences }
 
-  public getLast(): Maybe<ISentence<any>> {
-    return this.sentences.length === 0 ? nothing() : just(_(this.sentences).last())
+  public getLast(): Maybe<ISentence<IStage>> {
+    return this.sentences.length === 0 ? nothing<ISentence<IStage>>() : just(_(this.sentences).last())
   }
 
   public remove(r: ISentence<any>) {

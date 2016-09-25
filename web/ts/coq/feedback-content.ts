@@ -14,7 +14,7 @@ export function fromSertop(o: any): IFeedbackContent {
     case "FileDependency":
       const [depends, file] = args
       switch (depends.length) {
-        case 0: return new FileDependency(nothing(), file)
+        case 0: return new FileDependency(nothing<string>(), file)
         case 1: return new FileDependency(just(depends[0]), file)
         default:
           debugger
@@ -27,7 +27,7 @@ export function fromSertop(o: any): IFeedbackContent {
       const [level, maybeLocation, message] = args
       const location = (
         maybeLocation.length === 0
-          ? nothing()
+          ? nothing<CoqLocation>()
           : just(SertopUtils.coqLocationFromSexp(maybeLocation[0]))
       )
       return new Message(

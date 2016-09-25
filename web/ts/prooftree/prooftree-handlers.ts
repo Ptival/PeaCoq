@@ -27,7 +27,7 @@ export function proofTreeOnEdit(
           $("#prooftree")[0],
           $("#prooftree").parent().width(),
           $("#prooftree").parent().height(),
-          nothing(),
+          nothing<ITacticGroupNode>(),
           context,
           0,
           doc
@@ -105,7 +105,7 @@ export function onStmCanceled(
   const curNode = activeProofTree.curNode
 
   // clean up necessary for tactics waiting
-  activeProofTree.tacticWaiting = nothing()
+  activeProofTree.tacticWaiting = nothing<string>()
 
   // first, get rid of all stored stateIds > sid
   // and mark their children tactic groups unprocessed

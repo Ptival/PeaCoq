@@ -81,7 +81,7 @@ export class ProofTree implements IProofTree {
     this.xFactor = this.width
     this.yFactor = this.height
     this.usingKeyboard = true // true until the user moves their mouse
-    this.tacticWaiting = nothing()
+    this.tacticWaiting = nothing<string>()
 
     this.rootNode = new GoalNode(this, parent, context, index)
 
@@ -292,7 +292,7 @@ export class ProofTree implements IProofTree {
 
     const centeredDescendant =
       this.curNode.getFocusedChild().caseOf<Maybe<IProofTreeNode>>({
-        nothing: () => nothing(),
+        nothing: () => nothing<IProofTreeNode>(),
         just: fc => fc.getFocusedChild().caseOf<Maybe<IProofTreeNode>>({
           nothing: () => just(fc),
           just: (fgc) => just(fgc),
@@ -1083,7 +1083,11 @@ const currentDiagonal = mkDiagonal(ProofTreeUtils.currentCenterLeft, ProofTreeUt
 const destinationDiagonal = mkDiagonal(ProofTreeUtils.destinationCenterLeft, ProofTreeUtils.destinationCenterRight)
 
 function getHierarchyGoalAncestor(d: d3Hierarchy.HierarchyNode<IProofTreeNode>): Maybe<d3Hierarchy.HierarchyNode<IGoalNode>> {
-  if (d.parent === null) { return nothing() }
-  if (d.parent.data instanceof GoalNode) { return just(d.parent) }
+  if (d.parent === null) { return nothing<d3Hierarchy.HierarchyNode<IGoalNode>>() }
+  if (isGoalNodeHierarchyNode(d.parent)) { return just(d.parent) }
   return getHierarchyGoalAncestor(d.parent)
+}
+
+function isGoalNodeHierarchyNode(d: d3Hierarchy.HierarchyNode<IProofTreeNode>): d is d3Hierarchy.HierarchyNode<IGoalNode> {
+  return d.data instanceof GoalNode
 }

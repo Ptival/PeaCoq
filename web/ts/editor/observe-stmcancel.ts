@@ -17,7 +17,7 @@ export function setup(
       stmCanceledFiltered$.onNext(a)
       doc.removeSentencesByStateIds(removedStateIds)
       const tip = _.maxBy(doc.getAllSentences(), s => s.sentenceId)
-      doc.setTip(tip ? just(tip) : nothing())
+      doc.setTip(tip ? just(tip) : nothing<ISentence<IStage>>())
     })
 
   return stmCanceledFiltered$

@@ -64,16 +64,16 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
   }
 
   public getFocusedChild(): Maybe<IGoalNode> {
-    if (this.tactics.length === 0) { return nothing() }
+    if (this.tactics.length === 0) { return nothing<IGoalNode>() }
     const focusedTactic = this.tactics[this.tacticIndex]
-    if (focusedTactic.goals.length === 0) { return nothing() }
+    if (focusedTactic.goals.length === 0) { return nothing<IGoalNode>() }
     return just(focusedTactic.goals[focusedTactic.goalIndex])
   }
 
   public getFocusedTactic(): Maybe<ITactic> {
     return (
       this.tactics.length === 0
-        ? nothing()
+        ? nothing<ITactic>()
         : just(this.tactics[this.tacticIndex])
     )
   }

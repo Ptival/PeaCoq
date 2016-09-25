@@ -107,49 +107,43 @@ export class CoqDocument implements ICoqDocument {
     return (
       this.proofTrees.length > 0
         ? just(this.proofTrees.peek())
-        : nothing()
+        : nothing<IProofTree>()
     )
   }
 
-  public getAllSentences(): ISentence<any>[] { return this.sentences.getAll() }
+  public getAllSentences(): ISentence<IStage>[] { return this.sentences.getAll() }
 
-  public getSentenceAtPosition(pos: AceAjax.Position): Maybe<ISentence<any>> {
+  public getSentenceAtPosition(pos: AceAjax.Position): Maybe<ISentence<IStage>> {
     const edit = _(this.getAllSentences()).find(e => e.containsPosition(pos))
-    return edit ? just(edit) : nothing()
+    return edit ? just(edit) : nothing<ISentence<IStage>>()
   }
 
-  public getSentenceByStateId(id: StateId): Maybe<ISentence<any>> {
+  public getSentenceByStateId(id: StateId): Maybe<ISentence<IStage>> {
     const edit = _(this.getAllSentences()).find(e => e.getStateId().caseOf({
       nothing: () => false,
       just: s => s === id,
     }))
-    return edit ? just(edit) : nothing()
+    return edit ? just(edit) : nothing<ISentence<IStage>>()
   }
 
-  public getSentenceByTag(tag: CommandTag): Maybe<ISentence<any>> {
+  public getSentenceByTag(tag: CommandTag): Maybe<ISentence<IStage>> {
     const edit = _(this.getAllSentences()).find(e => e.commandTag.caseOf({
       nothing: () => false,
       just: s => s === tag,
     }))
-    return edit ? just(edit) : nothing()
-  }
-
-  private getSentencesByStage(stage: any): ISentence<any>[] {
-    return _(this.getAllSentences())
-      .filter(e => { return e.stage instanceof stage })
-      .value()
+    return edit ? just(edit) : nothing<ISentence<IStage>>()
   }
 
   public getSentencesBeingProcessed(): ISentence<IBeingProcessed>[] {
-    return this.getSentencesByStage(Stage.BeingProcessed)
+    return <any>this.getAllSentences().filter(e => e.stage instanceof Stage.BeingProcessed)
   }
 
   public getSentencesToProcess(): ISentence<IToProcess>[] {
-    return this.getSentencesByStage(Stage.ToProcess)
+    return <any>this.getAllSentences().filter(e => e.stage instanceof Stage.ToProcess)
   }
 
   public getProcessedSentences(): ISentence<IProcessed>[] {
-    return this.getSentencesByStage(Stage.Processed)
+    return <any>this.getAllSentences().filter(e => e.stage instanceof Stage.Processed)
   }
 
   // getStopPositions(): AceAjax.Position[] {

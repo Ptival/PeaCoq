@@ -133,8 +133,8 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
     return result.concat(descendants)
   }
 
-  public getFocusedChild(): Maybe<TacticGroupNode> {
-    if (this.tacticGroups.length === 0) { return nothing() }
+  public getFocusedChild(): Maybe<ITacticGroupNode> {
+    if (this.tacticGroups.length === 0) { return nothing<ITacticGroupNode>() }
     return just(this.tacticGroups[this.tacticIndex])
   }
 
@@ -147,7 +147,7 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
       .filter(group => group.tactics.length > 0)
       .value()
 
-    if (nonEmptyTacticGroups.length === 0) { return TsMonad.Maybe.nothing() }
+    if (nonEmptyTacticGroups.length === 0) { return TsMonad.Maybe.nothing<ITacticGroupNode>() }
     return TsMonad.Maybe.just(nonEmptyTacticGroups[this.tacticIndex])
   }
 
@@ -160,7 +160,7 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
 
   public getGrandParent(): Maybe<IGoalNode> {
     return this.parentGroup.caseOf({
-      nothing: () => nothing(),
+      nothing: () => nothing<IGoalNode>(),
       just: (p: ITacticGroupNode) => p.getParent(),
     })
   }

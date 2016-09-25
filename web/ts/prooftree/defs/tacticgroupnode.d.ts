@@ -7,6 +7,7 @@ interface ITacticGroupNode extends IProofTreeNode {
   tactics: ITactic[];
   getFocusedChild(): Maybe<IGoalNode>;
   getFocusedTactic(): Maybe<ITactic>;
+  getParent(): Maybe<IGoalNode>;
   getTactics(): ITactic[];
   onChildSolvedAndUnfocused(sid: number): void;
   shiftNextInGroup(): void;

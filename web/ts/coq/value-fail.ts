@@ -4,7 +4,7 @@ export class ValueFail implements IValueFail {
   public message: string
   constructor(v: [number, [number, number] | undefined, string]) {
     this.stateId = v[0]
-    this.location = nothing()
+    this.location = nothing<ErrorLocation>()
     const loc = v[1]
     if (loc !== undefined) {
       const [startPos, stopPos] = loc

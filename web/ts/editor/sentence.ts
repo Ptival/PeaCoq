@@ -31,7 +31,7 @@ export class Sentence<S extends IStage> implements ISentence<S> {
     public previousSentence: Maybe<ISentence<any>>,
     stage: IToProcess
   ) {
-    this.commandTag = nothing() // filled when Add command is created
+    this.commandTag = nothing<string>() // filled when Add command is created
     this.sentenceId = freshSentenceId()
     this.stage$ = new Rx.ReplaySubject<any>()
     const beingProcessedSubject = new Rx.AsyncSubject<IBeingProcessed>()
