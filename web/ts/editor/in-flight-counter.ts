@@ -1,4 +1,3 @@
-
 function makeCounter<T>(s: Command$, completed$: Completed$): Rx.Observable<number> {
   return Rx.Observable
     .merge([

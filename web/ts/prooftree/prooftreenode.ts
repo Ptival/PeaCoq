@@ -7,9 +7,9 @@ export abstract class ProofTreeNode implements IProofTreeNode {
   public depth: number
   public id: string
   public label: string
-  public x: number
+  // public x: number
   // x0: number
-  public y: number
+  // public y: number
   // y0: number
 
   constructor(
@@ -66,15 +66,16 @@ export abstract class ProofTreeNode implements IProofTreeNode {
 
   public abstract getParent(): Maybe<IProofTreeNode>
 
-  public getDestinationScaledX(): number {
-    const tree = this.proofTree
-    return ProofTreeUtils.nodeX(this) * tree.xFactor + tree.xOffset(this)
-  }
+  // public getDestinationScaledX(): number {
+  //   const tree = this.proofTree
+  //   debugger
+  //   return ProofTreeUtils.nodeX(this) * tree.xFactor + tree.xOffset(this)
+  // }
 
-  public getDestinationScaledY(): number {
-    const tree = this.proofTree
-    return ProofTreeUtils.nodeY(this) * tree.yFactor + tree.yOffset(this)
-  }
+  // public getDestinationScaledY(): number {
+  //   const tree = this.proofTree
+  //   return ProofTreeUtils.nodeY(this) * tree.yFactor + tree.yOffset(this)
+  // }
 
   public abstract getViewChildren(): IProofTreeNode[]
 
@@ -97,6 +98,10 @@ export abstract class ProofTreeNode implements IProofTreeNode {
 
   public hasParentSuchThat(pred: (_1: IProofTreeNode) => boolean): boolean {
     return this.getParent().fmap(pred).valueOr(false)
+  }
+
+  public isCurNode(): boolean {
+    return this.id === this.proofTree.curNode.id
   }
 
   public isCurNodeAncestor(): boolean {

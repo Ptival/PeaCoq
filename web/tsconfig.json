@@ -16,7 +16,20 @@
     "rootDir": "ts",
     "strictNullChecks": false,
     "suppressImplicitAnyIndexErrors": true,
-    "target": "es5"
+    "target": "es5",
+    "types": [
+      "ace",
+      "d3-hierarchy",
+      "d3-selection",
+      "es6-shim",
+      "jquery",
+      "jquery.contextmenu",
+      "jss",
+      "lodash",
+      "rx",
+      "tsmonad",
+      "w2ui"
+    ]
   },
   "include": [
     "**/*.ts"

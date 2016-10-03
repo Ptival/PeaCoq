@@ -1,3 +1,10 @@
+const tantrum = {} // used to throw a tantrum
+
+function thisShouldNotHappen(): never {
+  debugger
+  throw tantrum
+}
+
 /*
 DO NOT TURN THIS FILE INTO A MODULE AS SOME NON-MODULE FILES USE IT!
 */

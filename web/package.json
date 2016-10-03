@@ -26,13 +26,14 @@
     "s-expression": "^3.0.3",
     "tslint": "^3.15.1",
     "tsmonad": "^0.6.1",
-    "typescript": "2.1.0-dev.20160915",
+    "typescript": "2.1.0-dev.20161003",
     "typings": "^1.4.0",
     "w2ui": "^1.4.3"
   },
   "devDependencies": {
     "@types/ace": "0.0.32",
     "@types/bluebird": "^3.0.33",
+    "@types/d3": "^3.5.36",
     "@types/d3-hierarchy": "^1.0.4",
     "@types/d3-interpolate": "^1.1.5",
     "@types/d3-path": "^1.0.4",

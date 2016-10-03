@@ -31,22 +31,22 @@ export function setupProgressBar(doc: ICoqDocument): void {
     e => $(e.target).css("background-color", `${Theme.theme.highlight}`)
   )
   barMouseOut$.subscribe(e => {
-    debugger
+    console.trace("FIXME", e)
     // const targetEdit: ISentence<any> = d3Selection.select(e.target).data()[0]
     // $(e.target).css("background-color", `${targetEdit.getColor()}`)
   })
   barMouseOver$.subscribe(e => {
-    debugger
+    console.log("FIXME")
     // const targetEdit: ISentence<any> = d3Selection.select(e.target).data()[0]
     // targetEdit.highlight()
   })
   barMouseOut$.subscribe(e => {
-    debugger
+    console.log("FIXME")
     // const targetEdit: ISentence<any> = d3Selection.select(e.target).data()[0]
     // targetEdit.unhighlight()
   })
   barClick$.subscribe(e => {
-    debugger
+    console.log("FIXME")
     // const targetEdit: ISentence<any> = d3Selection.select(e.target).data()[0]
     // doc.moveCursorToPositionAndCenter(targetEdit.stopPosition)
     // doc.editor.focus()

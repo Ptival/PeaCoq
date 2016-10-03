@@ -1,32 +1,11 @@
+import * as d3Hierarchy from "d3-hierarchy"
+import * as d3Path from "d3-path"
 import * as d3Scale from "d3-scale"
+import * as HierarchyNodeUtils from "./hierarchy-node-utils"
 
 /*
   Stuff that is somewhat general but mostly useful for the proof tree.
  */
-
-// export function getActiveProofTree(): Maybe<IProofTree> {
-//   return (
-//     Global.proofTrees.length > 0
-//       ? just(Global.proofTrees[0])
-//       : nothing()
-//   )
-// }
-
-/*
- * Returns a rect of the absolute position of [elmt] within the canvas. It needs
- * [node] in order to return absolute values, where [node] is the node element
- * within which [elmt] lives.
- */
-function elmtRect(node: IProofTreeNode, elmt: HTMLElement) {
-  const rect = elmt.getBoundingClientRect()
-  const containerRect = $(elmt).parents("foreignObject")[0].getBoundingClientRect()
-  const left = node.getDestinationScaledX() + deltaX(containerRect, rect)
-  const top = node.getDestinationScaledY() + deltaY(containerRect, rect)
-  return {
-    "left": left, "right": left + rect.width, "width": rect.width,
-    "top": top, "bottom": top + rect.height, "height": rect.height,
-  }
-}
 
 // function elmtRect0(node: IProofTreeNode, elmt: HTMLElement) {
 //   const rect = elmt.getBoundingClientRect()
@@ -46,10 +25,10 @@ type Rectangle = {
   top: number
 }
 
-function deltaX(rect1: Rectangle, rect2: Rectangle): number {
+export function deltaX(rect1: Rectangle, rect2: Rectangle): number {
   return rect2.left - rect1.left
 }
-function deltaY(rect1: Rectangle, rect2: Rectangle): number {
+export function deltaY(rect1: Rectangle, rect2: Rectangle): number {
   return rect2.top - rect1.top
 }
 
@@ -69,11 +48,11 @@ export function swapXY({ x, y }: XY): XY {
 }
 
 // transposition accessors
-export function nodeX(d: IProofTreeNode): number {
+export function nodeX(d: ProofTreeTypes.Node): number {
   return d.y
 }
 
-export function nodeY(d: IProofTreeNode): number {
+export function nodeY(d: ProofTreeTypes.Node): number {
   return d.x
 }
 
@@ -111,24 +90,24 @@ function mkCenterLeft(x: number, y: number, h: number): XY {
   return { x: x + centerLeftOffset, y: y + h / 2 }
 }
 
-export function currentCenterLeft(d: IProofTreeNode): XY {
-  return mkCenterLeft(d.currentScaledX, d.currentScaledY, d.getHeight())
+export function currentCenterLeft(d: ProofTreeTypes.Node): XY {
+  return mkCenterLeft(d.data.currentScaledX, d.data.currentScaledY, d.data.getHeight())
 }
 
-export function destinationCenterLeft(d: IProofTreeNode): XY {
-  return mkCenterLeft(d.getDestinationScaledX(), d.getDestinationScaledY(), d.getHeight())
+export function destinationCenterLeft(d: ProofTreeTypes.Node): XY {
+  return mkCenterLeft(HierarchyNodeUtils.getDestinationScaledX(d), HierarchyNodeUtils.getDestinationScaledY(d), d.data.getHeight())
 }
 
 function mkCenterRight(x: number, y: number, w: number, h: number): XY {
   return { x: x + w + centerRightOffset, y: y + h / 2 }
 }
 
-export function currentCenterRight(d: IProofTreeNode): XY {
-  return mkCenterRight(d.currentScaledX, d.currentScaledY, d.getWidth(), d.getHeight())
+export function currentCenterRight(d: ProofTreeTypes.Node): XY {
+  return mkCenterRight(d.data.currentScaledX, d.data.currentScaledY, d.data.getWidth(), d.data.getHeight())
 }
 
-export function destinationCenterRight(d: IProofTreeNode): XY {
-  return mkCenterRight(d.getDestinationScaledX(), d.getDestinationScaledY(), d.getWidth(), d.getHeight())
+export function destinationCenterRight(d: ProofTreeTypes.Node): XY {
+  return mkCenterRight(HierarchyNodeUtils.getDestinationScaledX(d), HierarchyNodeUtils.getDestinationScaledY(d), d.data.getWidth(), d.data.getHeight())
 }
 
 /*
@@ -203,13 +182,13 @@ lines return an object of lists. Disabled for now.
   creates an empty rectangle in the same column as [node], at vertical position
   [currentY]
 */
-function destinationEmptyRect(node: IProofTreeNode, currentY: number): Rectangle {
+function destinationEmptyRect(node: ProofTreeTypes.Node, currentY: number): Rectangle {
   const delta = 1 // how big to make the empty rectangle
   return $.extend(
     {
-      "left": node.getDestinationScaledX(),
-      "right": node.getDestinationScaledX() + node.getWidth(),
-      "width": node.getWidth()
+      "left": HierarchyNodeUtils.getDestinationScaledX(node),
+      "right": HierarchyNodeUtils.getDestinationScaledX(node) + node.data.getWidth(),
+      "width": node.data.getWidth()
     },
     {
       "top": currentY - delta,
@@ -270,3 +249,35 @@ const diffColor = (() => {
   ]
   return d3Scale.scaleOrdinal<number, string>(colors)
 })()
+
+function mkDiagonal(
+  cL: (xy: XY) => XY,
+  cR: (xy: XY) => XY
+): (d: ProofTreeTypes.Link) => string {
+  return d => {
+    const srcNode = d.source
+    const tgtNode = d.target
+    const src = swapXY(cR(srcNode))
+    const tgt = swapXY(cL(tgtNode))
+    const path = d3Path.path()
+    path.moveTo(src.x, src.y)
+    const midX = Math.floor((src.x + tgt.x) / 2)
+    // const midY = Math.floor((src.y + tgt.y) / 2)
+    path.bezierCurveTo(midX, src.y, midX, tgt.y, tgt.x, tgt.y)
+    return path.toString()
+  }
+}
+
+export const currentDiagonal = mkDiagonal(currentCenterLeft, currentCenterRight)
+export const destinationDiagonal = mkDiagonal(destinationCenterLeft, destinationCenterRight)
+
+export function makeTreeFromHierarchy(hierarchyRoot: d3Hierarchy.HierarchyNode<IProofTreeNode>): d3Hierarchy.HierarchyPointNode<IProofTreeNode> {
+  return d3Hierarchy.tree<IProofTreeNode>()
+    .separation(d => {
+      // TODO: now that I put fake nodes, still need this?
+      // TODO: this just won't work, need invisible children
+      // for tactics without children
+      return 1 / (1 + Math.pow(d.depth, 3))
+    })
+    (hierarchyRoot)
+}

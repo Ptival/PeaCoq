@@ -5,20 +5,18 @@ import * as d3Selection from "d3-selection"
 import * as d3Transition from "d3-transition"
 import { FakeNode } from "./fakenode"
 import { GoalNode } from "./goalnode"
+import * as HierarchyNodeUtils from "./hierarchy-node-utils"
 import * as ProofTreeUtils from "./utils"
 import { TacticGroupNode } from "./tacticgroupnode"
 import { Strictly } from "../peacoq/strictly"
 import { debounceAndThrottle } from "../rxjs/operators"
 
+type HTMLElementSelection = ProofTreeTypes.HTMLElementSelection
+
 d3Transition // forces the import
 
-export type HTMLElementSelection = d3Selection.Selection<d3Selection.BaseType, {}, any, never>
-export type NodeSelection = d3Selection.Selection<d3Selection.BaseType, IProofTreeNode, any, never>
-export type ProofTreeLink = d3Hierarchy.HierarchyLink<IProofTreeNode>
-export type LinkSelection = d3Selection.Selection<d3Selection.BaseType, ProofTreeLink, any, never>
-
-function byNodeId(d: IProofTreeNode): string { return d.id }
-function byLinkId(d: ProofTreeLink): string { return `${d.source.id}, ${d.target.id}` }
+function byNodeId(d: ProofTreeTypes.Node): string { return d.data.id }
+function byLinkId(d: ProofTreeTypes.Link): string { return `${d.source.data.id}, ${d.target.data.id}` }
 
 /* Globals to be configured */
 const animationDuration = 800
@@ -31,20 +29,21 @@ const goalBodyPadding = 4
 const verticalSpacingBetweenNodes = 10
 
 export class ProofTree implements IProofTree {
+  public descendantsOffset: number
   public readonly curNode$: Rx.Subject<IGoalNode>
   public rootNode: IGoalNode
   public tacticWaiting: Maybe<string>
   public xFactor: number
   public yFactor: number
 
-  private anchor: HTMLElementSelection
+  private anchor: ProofTreeTypes.HTMLElementSelection
   private _curNode: IGoalNode
-  private descendantsOffset: number
   private paused: boolean
   private svgId: string
   private tactics: () => TacticGroup[]
   private tacticsWorklist: WorklistItem[]
   private hierarchyRoot: d3Hierarchy.HierarchyNode<IProofTreeNode>
+  private treeRoot: d3Hierarchy.HierarchyPointNode<IProofTreeNode>
   private updateSubject: Rx.Subject<{}>
   private usingKeyboard: boolean /* true until the user uses their mouse */
   private viewportX: number
@@ -103,6 +102,7 @@ export class ProofTree implements IProofTree {
         return viewChildren
       }
     )
+    this.treeRoot = ProofTreeUtils.makeTreeFromHierarchy(this.hierarchyRoot)
 
     d3Selection.select("body")
       .on("keydown", () => {
@@ -135,6 +135,7 @@ export class ProofTree implements IProofTree {
     // for debugging, this is useful
     // .attr("viewBox", "0 -100 1000 400")
 
+    debugger
     this.viewport =
       this.svg
         .append("g")
@@ -193,6 +194,15 @@ export class ProofTree implements IProofTree {
     return Math.floor(this.width * (goalShare / 2))
   }
 
+  public getHierarchyCurNode(): ProofTreeTypes.Node {
+    const found = this.treeRoot.descendants().find(d => d.data.id === this.curNode.id)
+    if (found === undefined) {
+      debugger
+      throw tantrum
+    }
+    return found
+  }
+
   public getTacticWidth() {
     const tacticShare = 4 / 20
     return Math.floor(this.width * (tacticShare / 2))
@@ -244,43 +254,52 @@ export class ProofTree implements IProofTree {
     })
   }
 
-  public xOffset(d: IProofTreeNode): number {
-    return - d.getWidth() / 2 // position the center
-  }
+  // public xOffset(d: ProofTreeTypes.Node): number {
+  //   return - d.data.getWidth() / 2 // position the center
+  // }
 
-  public yOffset(d: IProofTreeNode): number {
-    const offset = - d.getHeight() / 2 // for the center
-    const focusedChild = this.curNode.getFocusedChild()
+  // public yOffset(d: ProofTreeTypes.Node): number {
+  //   const offset = - d.data.getHeight() / 2 // for the center
+  //   const focusedChild = this.curNode.getFocusedChild()
 
-    // all tactic nodes are shifted such that the current tactic is centered
-    // assert(isGoal(this.curNode), "yOffset assumes the current node is a goal!")
-    if (this.isCurGoalChild(d)) {
-      // assert(focusedChild !== undefined, "yOffset: focusedChild === undefined")
-      return offset + (
-        ProofTreeUtils.nodeY(fromJust(d.getParent())) - ProofTreeUtils.nodeY(fromJust(focusedChild))
-      ) * this.yFactor
+  //   // all tactic nodes are shifted such that the current tactic is centered
+  //   // assert(isGoal(this.curNode), "yOffset assumes the current node is a goal!")
+  //   if (this.isCurGoalChild(d.data)) {
+  //     // assert(focusedChild !== undefined, "yOffset: focusedChild === undefined")
+  //     return offset + (
+  //       ProofTreeUtils.nodeY(d.parent) - ProofTreeUtils.nodeY(fromJust(focusedChild))
+  //     ) * this.yFactor
+  //   }
+
+  //   // all goal grandchildren are shifted such that the context line of the
+  //   // current goal and the current suboal align
+  //   if (this.isCurGoalGrandChild(d.data)) {
+  //     return offset + this.descendantsOffset
+  //   }
+
+  //   // we center the curNode parent to its focused child
+  //   if (this.isCurNodeParent(d.data)) {
+  //     if (d instanceof TacticGroupNode) {
+  //       return offset + (
+  //         ProofTreeUtils.nodeY(this.curNode) - ProofTreeUtils.nodeY(d)
+  //       ) * this.yFactor
+  //     } else {
+  //       // This should not happen anymore (should not be a GoalNode)
+  //       debugger
+  //     }
+  //   }
+
+  //   // the other nodes (current goal and its ancestors) stay where they need
+  //   return offset
+  // }
+
+  private findNodeInTree<T extends IProofTreeNode>(n: T): d3Hierarchy.HierarchyPointNode<T> {
+    const found = this.treeRoot.descendants().find(d => d.data.id === n.id)
+    if (found === undefined) {
+      debugger
+      throw "findNodeInTree"
     }
-
-    // all goal grandchildren are shifted such that the context line of the
-    // current goal and the current suboal align
-    if (this.isCurGoalGrandChild(d)) {
-      return offset + this.descendantsOffset
-    }
-
-    // we center the curNode parent to its focused child
-    if (this.isCurNodeParent(d)) {
-      if (d instanceof TacticGroupNode) {
-        return offset + (
-          ProofTreeUtils.nodeY(this.curNode) - ProofTreeUtils.nodeY(d)
-        ) * this.yFactor
-      } else {
-        // This should not happen anymore (should not be a GoalNode)
-        debugger
-      }
-    }
-
-    // the other nodes (current goal and its ancestors) stay where they need
-    return offset
+    return found as any
   }
 
   /*
@@ -288,7 +307,7 @@ export class ProofTree implements IProofTree {
     node. it used to be at the top of the view, now it's centered.
   */
   private computeDescendantsOffset() {
-    const curNode = this.curNode
+    const curNode = this.findNodeInTree(this.curNode)
 
     const centeredDescendant =
       this.curNode.getFocusedChild().caseOf<Maybe<IProofTreeNode>>({
@@ -302,18 +321,19 @@ export class ProofTree implements IProofTree {
     centeredDescendant.caseOf({
       nothing: () => { this.descendantsOffset = 0 },
       just: d => {
+        const treeD = this.findNodeInTree(d)
         if (d instanceof GoalNode) {
           // computing the difference in height between the <hr> is not
           // obvious...
-          const hrDelta = curNode.html[0].offsetTop - d.html[0].offsetTop
+          const hrDelta = curNode.data.html[0].offsetTop - d.html[0].offsetTop
           this.descendantsOffset = (
-            this.yFactor * (ProofTreeUtils.nodeY(curNode) - ProofTreeUtils.nodeY(d))
-            - (curNode.getHeight() - d.getHeight()) / 2
+            this.yFactor * (ProofTreeUtils.nodeY(curNode) - ProofTreeUtils.nodeY(treeD))
+            - (curNode.data.getHeight() - d.getHeight()) / 2
             + hrDelta
           )
         } else {
           this.descendantsOffset =
-            this.yFactor * (ProofTreeUtils.nodeY(curNode) - ProofTreeUtils.nodeY(d))
+            this.yFactor * (ProofTreeUtils.nodeY(curNode) - ProofTreeUtils.nodeY(treeD))
 
         }
       }
@@ -322,24 +342,24 @@ export class ProofTree implements IProofTree {
   }
 
   private computeXYFactors() {
-    const curGoal = this.curNode
-    const visibleChildren = _(curGoal.getViewChildren())
-    const visibleGrandChildren = _(curGoal.getViewGrandChildren())
-    const emptyNodeArray: IProofTreeNode[] = []
-    let visibleNodes = _(emptyNodeArray)
-    curGoal.getParent().fmap(p => {
-      visibleNodes = visibleNodes.concat([p])
-    })
-    visibleNodes = visibleNodes.concat([curGoal])
-    visibleNodes = visibleNodes.concat(visibleChildren.value())
-    visibleNodes = visibleNodes.concat(visibleGrandChildren.value())
+    const curGoal = this.getHierarchyCurNode()
+    const visibleChildren = curGoal.children
+    const visibleGrandChildren = visibleChildren.reduce((acc, elt) => acc.concat(elt.children), [])
+    const visibleNodes = [].concat(
+      curGoal.parent !== undefined ? [curGoal.parent] : [],
+      [curGoal],
+      visibleChildren,
+      visibleGrandChildren
+    )
 
     // xFactor is now fixed, so that the user experience is more stable
     const rootViewChildren = this.rootNode.getViewChildren()
     if (rootViewChildren.length === 0) {
       this.xFactor = this.width
     } else {
-      const xDistance = ProofTreeUtils.nodeX(rootViewChildren[0]) - ProofTreeUtils.nodeX(this.rootNode)
+      const treeFirstChildren = this.findNodeInTree(rootViewChildren[0])
+      const treeRootNode = this.findNodeInTree(this.rootNode)
+      const xDistance = ProofTreeUtils.nodeX(treeFirstChildren) - ProofTreeUtils.nodeX(treeRootNode)
       /* width = 4 * xDistance * xFactor */
       this.xFactor = this.width / (4 * xDistance)
     }
@@ -352,15 +372,15 @@ export class ProofTree implements IProofTree {
       when they don't have their own children to separate them)
     */
     const gcSiblings = _.zip(
-      visibleGrandChildren.value(),
-      visibleGrandChildren.tail().value()
+      visibleGrandChildren,
+      visibleGrandChildren.slice(1) // tail
     )
     gcSiblings.pop() // removes the [last, undefined] pair at the end
     const cSiblings = _.zip(
-      visibleChildren.value(),
-      visibleChildren.tail().value()
+      visibleChildren,
+      visibleChildren.slice(1) // tail
     )
-    cSiblings.pop()
+    cSiblings.pop() // removes the [last, undefined] pair at the end
     // also, the current node should not overlap its siblings
     let currentSiblings: IProofTreeNode[][] = []
     if (this.curNode instanceof GoalNode && this.curNode.hasParent()) {
@@ -539,7 +559,7 @@ export class ProofTree implements IProofTree {
 
   }
 
-  private linkWidth(d: ProofTreeLink): string {
+  private linkWidth(d: ProofTreeTypes.Link): string {
     const src = d.source
     const tgt = d.target
     const thin = "2px"
@@ -599,148 +619,6 @@ export class ProofTree implements IProofTree {
     //   throw this.curNode
     // }
 
-  }
-
-  private onLinkEnter(s: LinkSelection): void {
-    s.append("path")
-      .classed("link", true)
-      .attr("fill", "none")
-      .attr("d", currentDiagonal)
-    // .style("opacity", 0)
-
-  }
-
-  private onLinkExit(s: LinkSelection): void {
-    s.transition()
-      .attr("d", d => {
-        d.source.parent
-        return getHierarchyGoalAncestor(d.source).caseOf<string>({
-          nothing: () => currentDiagonal({ source: d.source, target: d.source }),
-          just: g => currentDiagonal({ source: g, target: g })
-        })
-      })
-      // .style("opacity", "0")
-      .remove()
-  }
-
-  private onLinkUpdatePostMerge(s: LinkSelection): void {
-    s.transition()
-      // .style("opacity", 1)
-      .attr("d", d => {
-        return destinationDiagonal({ "source": d.source, "target": d.target })
-      })
-      .attr("stroke-width", this.linkWidth.bind(this))
-  }
-
-  private onRectEnter(s: NodeSelection): void {
-    s
-      .append("rect")
-      .classed("goal", d => d instanceof GoalNode)
-      .classed("tactic", d => d instanceof TacticGroupNode)
-      .attr("x", d => d.currentScaledX)
-      .attr("y", d => d.currentScaledY)
-      .attr("width", d => d.getWidth())
-      .attr("height", d => d.getHeight())
-      .attr("rx", d => d instanceof GoalNode ? 0 : 10)
-    // .style("opacity", 0)
-  }
-
-  private onRectExit(s: NodeSelection): void {
-    s.transition()
-      .attr("x", d =>
-        d.getGoalAncestor().caseOf({
-          nothing: () => d.getDestinationScaledX(),
-          just: gp => gp.getDestinationScaledX(),
-        })
-      )
-      .attr("y", d =>
-        d.getGoalAncestor().caseOf({
-          nothing: () => d.getDestinationScaledY(),
-          just: gp => gp.getDestinationScaledY(),
-        })
-      )
-      // .style("opacity", "0")
-      .remove()
-  }
-
-  private onRectUpdatePostMerge(s: NodeSelection): void {
-    s
-      .classed("currentnode", d => this.isCurNode(d))
-      .classed("solved", d => d.isSolved())
-      .transition()
-      .attr("width", d => d.getWidth())
-      .attr("height", d => d.getHeight())
-      .attrTween("x", (d, i, a) => {
-        const interpolator = d3Interpolate.interpolateRound(d.currentScaledX, d.getDestinationScaledX())
-        return t => { return d.currentScaledX = interpolator(t) }
-      })
-      .attrTween("y", (d, i, a) => {
-        const interpolator = d3Interpolate.interpolateRound(d.currentScaledY, d.getDestinationScaledY())
-        return t => { return d.currentScaledY = interpolator(t) }
-      })
-    // .attr("y", d => d.getDestinationScaledY())
-    // .style("opacity", 1)
-  }
-
-  private onTextEnter(s: NodeSelection): void {
-    s
-      // .each(d => console.log("enter", d.id))
-      .attr("x", d => d.currentScaledX)
-      .attr("y", d => d.currentScaledY)
-      .attr("width", d => d.getWidth())
-      .attr("height", d => d.getHeight())
-    // .style("opacity", 0)
-  }
-
-  private onTextExit(s: NodeSelection): void {
-    s
-      .transition()
-      .attrTween("x", d => {
-        const destinationScaledX = d.getGoalAncestor().caseOf({
-          nothing: () => d.getDestinationScaledX(),
-          just: gp => gp.getDestinationScaledX(),
-        })
-        const interpolator = d3Interpolate.interpolateRound(d.currentScaledX, destinationScaledX)
-        return t => { return d.currentScaledX = interpolator(t) }
-      })
-      .attrTween("y", d => {
-        const destinationScaledY = d.getGoalAncestor().caseOf({
-          nothing: () => d.getDestinationScaledY(),
-          just: gp => gp.getDestinationScaledY(),
-        })
-        const interpolator = d3Interpolate.interpolateRound(d.currentScaledY, destinationScaledY)
-        return t => { return d.currentScaledY = interpolator(t) }
-      })
-      // .style("opacity", "0")
-      .remove()
-  }
-
-  private onTextUpdatePostMerge(s: NodeSelection): void {
-    s
-      .each(d => { if (d instanceof TacticGroupNode) { d.updateNode() } })
-      .transition()
-      // .style("opacity", "1")
-      // Note: we use attrTween to be able to update currentScaledX and currentScaledY
-      .attrTween("x", (d, i, a) => {
-        const interpolator = d3Interpolate.interpolateRound(d.currentScaledX, d.getDestinationScaledX())
-        return t => { return d.currentScaledX = interpolator(t) }
-      })
-      .attrTween("y", (d, i, a) => {
-        const interpolator = d3Interpolate.interpolateRound(d.currentScaledY, d.getDestinationScaledY())
-        return t => { return d.currentScaledY = interpolator(t) }
-      })
-      // the width must be updated (when resizing window horizontally)
-      .attr("width", d => d.getWidth())
-      .attr("height", d => d.getHeight())
-      // .style("opacity", 1)
-      .on("end", (d, i, nodes) => {
-        // this is in "end" so that it does not trigger before nodes are positioned
-        d3Selection.select<d3Selection.BaseType, IProofTreeNode>(nodes[i])
-          .on("click", dd => {
-            // asyncLog("CLICK " + nodeString(dd))
-            dd.click()
-          })
-      })
   }
 
   private processTactics(): Promise<any> {
@@ -920,7 +798,7 @@ export class ProofTree implements IProofTree {
 
     this.resetSVGTransform() // cancel view transformations
 
-    const tree = d3Hierarchy.tree<IProofTreeNode>()
+    this.treeRoot = d3Hierarchy.tree<IProofTreeNode>()
       .separation(d => {
         // TODO: now that I put fake nodes, still need this?
         // TODO: this just won't work, need invisible children
@@ -928,8 +806,8 @@ export class ProofTree implements IProofTree {
         return 1 / (1 + Math.pow(d.depth, 3))
       })
       (this.hierarchyRoot)
-    const allNodes = tree.descendants()
-    const allLinks = d3Hierarchy.tree<IProofTreeNode>()(this.hierarchyRoot).links()
+    const allNodes = this.treeRoot.descendants()
+    const allLinks = this.treeRoot.links()
 
     // now remove all fake nodes
     const nodes = _(allNodes)
@@ -944,10 +822,10 @@ export class ProofTree implements IProofTree {
 
     // we build the foreignObject first, as its dimensions will guide the others
     const textSelection = this.textLayer
-      .selectAll<Element, IProofTreeNode>((d, i, nodes) => {
+      .selectAll<Element, ProofTreeTypes.Node>((d, i, nodes) => {
         return (nodes[i] as Element).getElementsByTagName("foreignObject")
       })
-      .data<IProofTreeNode>(nodes.map(d => d.data), d => d.id)
+      .data<ProofTreeTypes.Node>(nodes, d => d.id)
 
     // Here we need select({}) because d3 transitions are exclusive and
     // without it, concurrent selections will not each call their "end"
@@ -959,8 +837,8 @@ export class ProofTree implements IProofTree {
       .each(() => {
 
         const textEnter = textSelection.enter().append("foreignObject")
-        const rectSelection = this.rectLayer.selectAll("rect").data<IProofTreeNode>(nodes.map(n => n.data), byNodeId)
-        const linkSelection = this.linkLayer.selectAll("path").data<ProofTreeLink>(links, byLinkId)
+        const rectSelection = this.rectLayer.selectAll("rect").data<ProofTreeTypes.Node>(nodes, byNodeId)
+        const linkSelection = this.linkLayer.selectAll("path").data<ProofTreeTypes.Link>(links, byLinkId)
 
         /*
         Here, we must rely on the DOM to compute the height of nodes, so
@@ -981,44 +859,50 @@ export class ProofTree implements IProofTree {
             const self = nodes[i]
             debugger
             const body = d3Selection.select(self as Element).node()
-            d.setHTMLElement(<HTMLElement><any>body)
+            d.data.setHTMLElement(<HTMLElement><any>body)
             if (d instanceof GoalNode) { $(body).append(d.html) }
             if (d instanceof TacticGroupNode) { d.updateNode() }
             // $(body).prepend(d.id)
           })
-        textEnter.attr("width", d => d.getWidth())
+        textEnter.attr("width", d => d.data.getWidth())
 
         // nodes now have a size, we can compute zooming factors
         this.computeXYFactors()
         // compute how much descendants must be moved to center current
         this.computeDescendantsOffset()
 
-        this.onTextEnter(textEnter)
-        this.onRectEnter(rectSelection.enter())
-        this.onLinkEnter(linkSelection.enter())
+        console.log("FIXME!!!")
 
-        this.onRectUpdatePostMerge(rectSelection)
-        this.onTextUpdatePostMerge(textSelection)
+        // this.onTextEnter(textEnter)
+        // this.onRectEnter(rectSelection.enter())
+        // this.onLinkEnter(linkSelection.enter())
 
-        this.onLinkUpdatePostMerge(linkSelection)
+        // this.onRectUpdatePostMerge(rectSelection)
+        // this.onTextUpdatePostMerge(textSelection)
 
-        this.onTextExit(textSelection.exit<IProofTreeNode>())
-        this.onRectExit(rectSelection.exit<IProofTreeNode>())
-        this.onLinkExit(linkSelection.exit<ProofTreeLink>())
+        // this.onLinkUpdatePostMerge(linkSelection)
+
+        // this.onTextExit(textSelection.exit<HierarchyNodeUtils.HierarchyProofTreeNode>())
+        // this.onRectExit(rectSelection.exit<HierarchyNodeUtils.HierarchyProofTreeNode>())
+        // this.onLinkExit(linkSelection.exit<ProofTreeLink>())
+
+        const hierarchyCurNode = nodes.find(n => n.data.id === curNode.id)
+        if (hierarchyCurNode === undefined) { debugger }
+        const hierarchyCurNodeParent = hierarchyCurNode.parent
 
         this.viewportX = - (
-          curNode.getParent().caseOf({
-            nothing: () => curNode.getDestinationScaledX(),
-            just: p => p.getDestinationScaledX(),
-          })
+          (hierarchyCurNodeParent === null)
+            ? HierarchyNodeUtils.getDestinationScaledX(hierarchyCurNode)
+            : HierarchyNodeUtils.getDestinationScaledX(hierarchyCurNodeParent)
         )
 
         this.viewportY = - (
-          curNode.getDestinationScaledY()
+          HierarchyNodeUtils.getDestinationScaledY(hierarchyCurNode)
           + curNode.getHeight() / 2
           - this.height / 2
         )
 
+        debugger
         this.viewport
           .transition()
           .attr(
@@ -1031,63 +915,4 @@ export class ProofTree implements IProofTree {
 
   }
 
-}
-
-// function mkDiagonal(
-//   cL: (xy: XY) => XY,
-//   cR: (xy: XY) => XY
-// ): d3.svg.Diagonal<d3.svg.diagonal.Link<d3.svg.diagonal.Node>, d3.svg.diagonal.Node> {
-//   return (
-//     d3.svg
-//       .diagonal()
-//       .source((d: ProofTreeLink, i: number) => {
-//         if (!Number.isFinite(d.source.x)) { debugger }
-//         if (!Number.isFinite(d.source.y)) { debugger }
-//         const centerRight = cR(d.source)
-//         if (!Number.isFinite(centerRight.x)) { debugger }
-//         if (!Number.isFinite(centerRight.y)) { debugger }
-//         return ProofTreeUtils.swapXY(centerRight)
-//       })
-//       .target((d: ProofTreeLink, i: number) => {
-//         if (!Number.isFinite(d.target.x)) { debugger }
-//         if (!Number.isFinite(d.target.y)) { debugger }
-//         // console.log("target", ProofTreeUtils.swapXY(cR(d.source)))
-//         return ProofTreeUtils.swapXY(cL(d.target))
-//       })
-//       .projection(d => [d.y, d.x])
-//   )
-// }
-
-// const currentDiagonal = mkDiagonal(ProofTreeUtils.currentCenterLeft, ProofTreeUtils.currentCenterRight)
-// const destinationDiagonal = mkDiagonal(ProofTreeUtils.destinationCenterLeft, ProofTreeUtils.destinationCenterRight)
-
-function mkDiagonal(
-  cL: (xy: XY) => XY,
-  cR: (xy: XY) => XY
-): (d: d3Hierarchy.HierarchyLink<IProofTreeNode>) => string {
-  return d => {
-    const srcNode = d.source.data
-    const tgtNode = d.target.data
-    const src = ProofTreeUtils.swapXY(cR(srcNode))
-    const tgt = ProofTreeUtils.swapXY(cL(tgtNode))
-    const path = d3Path.path()
-    path.moveTo(src.x, src.y)
-    const midX = Math.floor((src.x + tgt.x) / 2)
-    // const midY = Math.floor((src.y + tgt.y) / 2)
-    path.bezierCurveTo(midX, src.y, midX, tgt.y, tgt.x, tgt.y)
-    return path.toString()
-  }
-}
-
-const currentDiagonal = mkDiagonal(ProofTreeUtils.currentCenterLeft, ProofTreeUtils.currentCenterRight)
-const destinationDiagonal = mkDiagonal(ProofTreeUtils.destinationCenterLeft, ProofTreeUtils.destinationCenterRight)
-
-function getHierarchyGoalAncestor(d: d3Hierarchy.HierarchyNode<IProofTreeNode>): Maybe<d3Hierarchy.HierarchyNode<IGoalNode>> {
-  if (d.parent === null) { return nothing<d3Hierarchy.HierarchyNode<IGoalNode>>() }
-  if (isGoalNodeHierarchyNode(d.parent)) { return just(d.parent) }
-  return getHierarchyGoalAncestor(d.parent)
-}
-
-function isGoalNodeHierarchyNode(d: d3Hierarchy.HierarchyNode<IProofTreeNode>): d is d3Hierarchy.HierarchyNode<IGoalNode> {
-  return d.data instanceof GoalNode
 }
