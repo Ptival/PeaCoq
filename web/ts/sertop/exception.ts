@@ -41,6 +41,14 @@ export function create(args: any): IException {
     case 1:
       const [error] = args[0]
       return new Exception(error)
+    case 3: {
+      const error = args[2][1][1]
+      if (error instanceof String) {
+        return new Exception(error.toString())
+      } else {
+        return thisShouldNotHappen()
+      }
+    }
     default: debugger
   }
   // const [[kind, ...o]] = args
