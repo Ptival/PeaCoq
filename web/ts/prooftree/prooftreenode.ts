@@ -1,4 +1,4 @@
-import * as ProofTreeUtils from "./utils"
+import { commonAncestor } from "./common-ancestor"
 
 export abstract class ProofTreeNode implements IProofTreeNode {
   private body: HTMLElement | undefined
@@ -106,7 +106,7 @@ export abstract class ProofTreeNode implements IProofTreeNode {
 
   public isCurNodeAncestor(): boolean {
     const curNode = this.proofTree.curNode
-    const common = ProofTreeUtils.commonAncestor(curNode, this)
+    const common = commonAncestor(curNode, this)
     return this.id === common.id
   }
 

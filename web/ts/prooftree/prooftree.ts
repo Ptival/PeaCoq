@@ -3,6 +3,7 @@ import * as d3Interpolate from "d3-interpolate"
 import * as d3Path from "d3-path"
 import * as d3Selection from "d3-selection"
 import * as d3Transition from "d3-transition"
+import { commonAncestor } from "./common-ancestor"
 import { FakeNode } from "./fakenode"
 import { GoalNode } from "./goalnode"
 import * as HierarchyNodeUtils from "./hierarchy-node-utils"
@@ -211,7 +212,7 @@ export class ProofTree implements IProofTree {
   public isCurNode(n: IProofTreeNode): boolean { return n.id === this.curNode.id }
 
   public isCurNodeAncestor(strictly: Strictly, n: IProofTreeNode): boolean {
-    const common = ProofTreeUtils.commonAncestor(n, this.curNode)
+    const common = commonAncestor(n, this.curNode)
     const commonAncestorIsNode = common.id === n.id
     switch (strictly) {
       case Strictly.Yes: return commonAncestorIsNode && !this.isCurNode(n)
@@ -457,7 +458,7 @@ export class ProofTree implements IProofTree {
   }
 
   private isCurNodeDescendant(strictly: Strictly, n: IProofTreeNode): boolean {
-    const common = ProofTreeUtils.commonAncestor(n, this.curNode)
+    const common = commonAncestor(n, this.curNode)
     const commonAncestorIsCurNode = common.id === this.curNode.id
     switch (strictly) {
       case Strictly.Yes: return commonAncestorIsCurNode && !this.isCurNode(n)
