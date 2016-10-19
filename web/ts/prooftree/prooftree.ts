@@ -7,9 +7,12 @@ import { commonAncestor } from "./common-ancestor"
 import { FakeNode } from "./fakenode"
 import { GoalNode } from "./goalnode"
 import * as HierarchyNodeUtils from "./hierarchy-node-utils"
-import * as ProofTreeUtils from "./utils"
+import * as LinkSelection from "./link-selection"
+import * as RectSelection from "./rect-selection"
 import { TacticGroupNode } from "./tacticgroupnode"
+import * as TextSelection from "./text-selection"
 import { Strictly } from "../peacoq/strictly"
+import * as ProofTreeUtils from "./utils"
 import { debounceAndThrottle } from "../rxjs/operators"
 
 type HTMLElementSelection = ProofTreeTypes.HTMLElementSelection
@@ -88,6 +91,7 @@ export class ProofTree implements IProofTree {
     this._curNode = this.rootNode
     this.curNode$ = new Rx.BehaviorSubject(this.rootNode)
 
+    // debugger
     this.hierarchyRoot = d3Hierarchy.hierarchy(
       this.rootNode,
       (node: IProofTreeNode) => {
@@ -99,6 +103,9 @@ export class ProofTree implements IProofTree {
         // children to tactic nodes that solve their goal
         if (node instanceof TacticGroupNode && viewChildren.length === 0) {
           return [new FakeNode(this, node)]
+        }
+        if (viewChildren === undefined) {
+          debugger
         }
         return viewChildren
       }
@@ -136,7 +143,7 @@ export class ProofTree implements IProofTree {
     // for debugging, this is useful
     // .attr("viewBox", "0 -100 1000 400")
 
-    debugger
+    // debugger
     this.viewport =
       this.svg
         .append("g")
@@ -860,7 +867,7 @@ export class ProofTree implements IProofTree {
           .append("xhtml:body")
           .each((d, i, nodes) => {
             const self = nodes[i]
-            debugger
+            // debugger
             const body = d3Selection.select(self as Element).node()
             if (body === null) {
               debugger
@@ -878,20 +885,20 @@ export class ProofTree implements IProofTree {
         // compute how much descendants must be moved to center current
         this.computeDescendantsOffset()
 
-        console.log("FIXME!!!")
+        // console.log("FIXME!!!")
 
-        // this.onTextEnter(textEnter)
-        // this.onRectEnter(rectSelection.enter())
-        // this.onLinkEnter(linkSelection.enter())
+        TextSelection.onTextEnter(textEnter)
+        RectSelection.onRectEnter(rectSelection.enter())
+        LinkSelection.onLinkEnter(linkSelection.enter())
 
-        // this.onRectUpdatePostMerge(rectSelection)
-        // this.onTextUpdatePostMerge(textSelection)
+        RectSelection.onRectUpdatePostMerge(rectSelection)
+        TextSelection.onTextUpdatePostMerge(textSelection)
 
-        // this.onLinkUpdatePostMerge(linkSelection)
+        LinkSelection.onLinkUpdatePostMerge(linkSelection)
 
-        // this.onTextExit(textSelection.exit<HierarchyNodeUtils.HierarchyProofTreeNode>())
-        // this.onRectExit(rectSelection.exit<HierarchyNodeUtils.HierarchyProofTreeNode>())
-        // this.onLinkExit(linkSelection.exit<ProofTreeLink>())
+        TextSelection.onTextExit(textSelection.exit<ProofTreeTypes.Node>())
+        RectSelection.onRectExit(rectSelection.exit<ProofTreeTypes.Node>())
+        LinkSelection.onLinkExit(linkSelection.exit<ProofTreeTypes.Link>())
 
         const hierarchyCurNode = nodes.find(n => n.data.id === curNode.id)
         if (hierarchyCurNode === undefined) { debugger }
