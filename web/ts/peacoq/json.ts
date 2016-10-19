@@ -11,6 +11,10 @@ export function walkJSON(input: any): any {
     if (input.hasOwnProperty("constructorName")) {
       const processedArgs = _(input.constructorArgs).map(walkJSON).value()
       switch (input.constructorName) {
+        case "CApp": {
+          const [a, b, c] = processedArgs
+          return new CApp(a, b, c)
+        }
         case "CNotation": {
           const [a, b, c, d, e] = processedArgs
           return new CNotation(a, b, c, d, e)

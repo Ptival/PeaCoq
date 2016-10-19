@@ -344,10 +344,13 @@ export class ProofTree implements IProofTree {
 
   private computeXYFactors() {
     const curGoal = this.getHierarchyCurNode()
-    const visibleChildren = curGoal.children
-    const visibleGrandChildren = visibleChildren.reduce((acc, elt) => acc.concat(elt.children), [])
-    const visibleNodes = [].concat(
-      curGoal.parent !== undefined ? [curGoal.parent] : [],
+    // huh cf. https://github.com/DefinitelyTyped/DefinitelyTyped/issues/11365
+    const visibleChildren = curGoal.children || []
+    const visibleGrandChildren = visibleChildren.reduce<ProofTreeTypes.Node[]>(
+      (acc, elt) => acc.concat(elt.children || []), []
+    )
+    const visibleNodes = ([] as ProofTreeTypes.Node[]).concat(
+      (curGoal.parent !== null) ? [curGoal.parent] : [],
       [curGoal],
       visibleChildren,
       visibleGrandChildren
@@ -383,12 +386,13 @@ export class ProofTree implements IProofTree {
     )
     cSiblings.pop() // removes the [last, undefined] pair at the end
     // also, the current node should not overlap its siblings
-    let currentSiblings: IProofTreeNode[][] = []
-    if (this.curNode instanceof GoalNode && this.curNode.hasParent()) {
-      const curNodeSiblings = _(fromJust(this.curNode.getParent()).getViewChildren())
+    let currentSiblings: ProofTreeTypes.Node[][] = []
+    const curParent = curGoal.parent
+    if (this.curNode instanceof GoalNode && curParent !== null) {
+      const curNodeSiblings = curParent.children || []
       currentSiblings = _.zip(
-        curNodeSiblings.value(),
-        curNodeSiblings.tail().value()
+        curNodeSiblings,
+        curNodeSiblings.slice(1) // tail
       )
       currentSiblings.pop()
     }
@@ -402,7 +406,7 @@ export class ProofTree implements IProofTree {
           debugger
           return 1
         }
-        const wantedSpacing = ((a.getHeight() + b.getHeight()) / 2) + verticalSpacingBetweenNodes
+        const wantedSpacing = ((a.data.getHeight() + b.data.getHeight()) / 2) + verticalSpacingBetweenNodes
         return wantedSpacing / yDistance
       })
       .value()
@@ -811,13 +815,11 @@ export class ProofTree implements IProofTree {
     const allLinks = this.treeRoot.links()
 
     // now remove all fake nodes
-    const nodes = _(allNodes)
+    const nodes = allNodes
       .filter(node => !(node instanceof FakeNode))
-      .value()
 
-    const links = _(allLinks)
+    const links = allLinks
       .filter(link => !(link.source instanceof FakeNode || link.target instanceof FakeNode))
-      .value()
 
     const nodeArray = nodes.entries
 
@@ -826,7 +828,7 @@ export class ProofTree implements IProofTree {
       .selectAll<Element, ProofTreeTypes.Node>((d, i, nodes) => {
         return (nodes[i] as Element).getElementsByTagName("foreignObject")
       })
-      .data<ProofTreeTypes.Node>(nodes, d => d.id)
+      .data(nodes, d => d.data.id)
 
     // Here we need select({}) because d3 transitions are exclusive and
     // without it, concurrent selections will not each call their "end"
@@ -860,6 +862,10 @@ export class ProofTree implements IProofTree {
             const self = nodes[i]
             debugger
             const body = d3Selection.select(self as Element).node()
+            if (body === null) {
+              debugger
+              return thisShouldNotHappen()
+            }
             d.data.setHTMLElement(<HTMLElement><any>body)
             if (d instanceof GoalNode) { $(body).append(d.html) }
             if (d instanceof TacticGroupNode) { d.updateNode() }
