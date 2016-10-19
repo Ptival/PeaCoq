@@ -12,6 +12,7 @@ interface IProofTree {
   getGoalWidth(): number
   getHierarchyCurNode(): d3.HierarchyPointNode<IProofTreeNode>
   getTacticWidth(): number
+  linkWidth(d: ProofTreeTypes.Link): string
   isCurNode(n: IProofTreeNode): boolean
   isCurNodeAncestor(strictly: IStrictly, n: IProofTreeNode): boolean
   requestNext(): void

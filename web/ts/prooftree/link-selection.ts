@@ -30,5 +30,5 @@ export function onLinkEnter(s: ProofTreeTypes.LinkSelection): void {
       .attr("d", d => {
         return ProofTreeUtils.destinationDiagonal({ "source": d.source, "target": d.target })
       })
-      .attr("stroke-width", this.linkWidth.bind(this))
+      .attr("stroke-width", d => d.source.data.proofTree.linkWidth(d))
   }

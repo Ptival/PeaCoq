@@ -571,7 +571,7 @@ export class ProofTree implements IProofTree {
 
   }
 
-  private linkWidth(d: ProofTreeTypes.Link): string {
+  public linkWidth(d: ProofTreeTypes.Link): string {
     const src = d.source
     const tgt = d.target
     const thin = "2px"
