@@ -36,7 +36,7 @@ export function onRectExit(s: ProofTreeTypes.NodeSelection): void {
 
 export function onRectUpdatePostMerge(s: ProofTreeTypes.NodeSelection): void {
   s
-    .classed("currentnode", d => this.isCurNode(d.data))
+    .classed("currentnode", d => d.data.proofTree.isCurNode(d.data))
     .classed("solved", d => d.data.isSolved())
     .transition()
     .attr("width", d => d.data.getWidth())

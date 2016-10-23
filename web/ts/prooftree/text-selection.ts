@@ -11,7 +11,7 @@ export function onTextEnter(s: ProofTreeTypes.NodeSelection): void {
     .attr("width", d => d.data.getWidth())
     .attr("height", d => d.data.getHeight())
     .each(d => console.log("entered", d.x, d.y))
-  // .style("opacity", 0)
+    // .style("opacity", 0)
 }
 
 export function onTextExit(s: ProofTreeTypes.NodeSelection): void {

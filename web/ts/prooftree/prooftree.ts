@@ -874,8 +874,10 @@ export class ProofTree implements IProofTree {
               return thisShouldNotHappen()
             }
             d.data.setHTMLElement(<HTMLElement><any>body)
-            if (d instanceof GoalNode) { $(body).append(d.html) }
-            if (d instanceof TacticGroupNode) { d.updateNode() }
+            const node = d.data
+            // debugger
+            if (node instanceof GoalNode) { $(body).append(node.html) }
+            if (node instanceof TacticGroupNode) { node.updateNode() }
             // $(body).prepend(d.id)
           })
         textEnter.attr("width", d => d.data.getWidth())
@@ -916,7 +918,6 @@ export class ProofTree implements IProofTree {
           - this.height / 2
         )
 
-        debugger
         this.viewport
           .transition()
           .attr(
