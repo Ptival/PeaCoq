@@ -6,13 +6,13 @@ import { TacticGroupNode } from "./tacticgroupnode"
 export function onRectEnter(s: ProofTreeTypes.NodeSelection): void {
   s
     .append("rect")
-    .classed("goal", d => d instanceof GoalNode)
-    .classed("tactic", d => d instanceof TacticGroupNode)
+    .classed("goal", d => d.data instanceof GoalNode)
+    .classed("tactic", d => d.data instanceof TacticGroupNode)
     .attr("x", d => d.data.currentScaledX)
     .attr("y", d => d.data.currentScaledY)
     .attr("width", d => d.data.getWidth())
     .attr("height", d => d.data.getHeight())
-    .attr("rx", d => d instanceof GoalNode ? 0 : 10)
+    .attr("rx", d => d.data instanceof GoalNode ? 0 : 10)
   // .style("opacity", 0)
 }
 

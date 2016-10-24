@@ -45,7 +45,7 @@ export function onTextExit(s: ProofTreeTypes.NodeSelection): void {
 
 export function onTextUpdatePostMerge(s: ProofTreeTypes.NodeSelection): void {
   s
-    .each(d => { if (d instanceof TacticGroupNode) { d.updateNode() } })
+    .each(d => { if (d.data instanceof TacticGroupNode) { d.data.updateNode() } })
     .transition()
     // .style("opacity", "1")
     // Note: we use attrTween to be able to update currentScaledX and currentScaledY
