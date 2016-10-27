@@ -1,12 +1,14 @@
 import { commonAncestor } from "./common-ancestor"
 
+let nodeId = 0
+
 export abstract class ProofTreeNode implements IProofTreeNode {
   private body: HTMLElement | undefined
   public currentScaledX: number
   public currentScaledY: number
-  public depth: number
-  public id: string
-  public label: string
+  public readonly depth: number
+  public readonly id: string
+  // public label: string
   // public x: number
   // x0: number
   // public y: number
@@ -21,6 +23,7 @@ export abstract class ProofTreeNode implements IProofTreeNode {
     const foo = parent.fmap(p => p.currentScaledX).valueOr(0)
     this.currentScaledX = parent.fmap(p => p.currentScaledX).valueOr(0)
     this.currentScaledY = parent.fmap(p => p.currentScaledY).valueOr(0)
+    this.id = `${nodeId++}` // used to be taken care of by d3
   }
 
   public abstract click(): void

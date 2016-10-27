@@ -3,7 +3,7 @@ interface IProofTreeNode {
   currentScaledY: number
   depth: number
   id: string
-  label: string
+  // label: string
   proofTree: IProofTree
   // x: number
   // x0: number
