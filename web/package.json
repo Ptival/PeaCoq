@@ -26,7 +26,7 @@
     "s-expression": "^3.0.3",
     "tslint": "^3.15.1",
     "tsmonad": "^0.6.1",
-    "typescript": "2.1.0-dev.20161003",
+    "typescript": "2.0.6",
     "typings": "^1.4.0",
     "w2ui": "^1.4.3"
   },
