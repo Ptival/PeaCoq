@@ -1,7 +1,9 @@
 import * as d3Hierarchy from "d3-hierarchy"
 import * as d3Path from "d3-path"
 import * as d3Scale from "d3-scale"
+import { FakeNode } from "./fakenode"
 import * as HierarchyNodeUtils from "./hierarchy-node-utils"
+import { TacticGroupNode } from "./tacticgroupnode"
 
 /*
   Stuff that is somewhat general but mostly useful for the proof tree.
@@ -252,7 +254,26 @@ function mkDiagonal(
 export const currentDiagonal = mkDiagonal(currentCenterLeft, currentCenterRight)
 export const destinationDiagonal = mkDiagonal(destinationCenterLeft, destinationCenterRight)
 
-export function makeTreeFromHierarchy(hierarchyRoot: d3Hierarchy.HierarchyNode<IProofTreeNode>): d3Hierarchy.HierarchyPointNode<IProofTreeNode> {
+export function makeHierarchyTree(t: IProofTree): d3Hierarchy.HierarchyPointNode<IProofTreeNode> {
+  const hierarchyRoot = d3Hierarchy.hierarchy(
+    t.rootNode,
+    (node: IProofTreeNode) => {
+      console.log("Computing some children")
+      // fake nodes are used to trick the layout engine into spacing
+      // childrenless nodes appropriately
+      if (node instanceof FakeNode) { return [] }
+      const viewChildren = node.getViewChildren()
+      // in order to trick d3 into displaying tactics better add fake
+      // children to tactic nodes that solve their goal
+      if (node instanceof TacticGroupNode && viewChildren.length === 0) {
+        return [new FakeNode(t, node)]
+      }
+      if (viewChildren === undefined) {
+        debugger
+      }
+      return viewChildren
+    }
+  )
   return d3Hierarchy.tree<IProofTreeNode>()
     .separation(d => {
       // TODO: now that I put fake nodes, still need this?

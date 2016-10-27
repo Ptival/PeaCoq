@@ -92,25 +92,7 @@ export class ProofTree implements IProofTree {
     this.curNode$ = new Rx.BehaviorSubject(this.rootNode)
 
     // debugger
-    this.hierarchyRoot = d3Hierarchy.hierarchy(
-      this.rootNode,
-      (node: IProofTreeNode) => {
-        // fake nodes are used to trick the layout engine into spacing
-        // childrenless nodes appropriately
-        if (node instanceof FakeNode) { return [] }
-        const viewChildren = node.getViewChildren()
-        // in order to trick d3 into displaying tactics better add fake
-        // children to tactic nodes that solve their goal
-        if (node instanceof TacticGroupNode && viewChildren.length === 0) {
-          return [new FakeNode(this, node)]
-        }
-        if (viewChildren === undefined) {
-          debugger
-        }
-        return viewChildren
-      }
-    )
-    this.treeRoot = ProofTreeUtils.makeTreeFromHierarchy(this.hierarchyRoot)
+    this.treeRoot = ProofTreeUtils.makeHierarchyTree(this)
 
     d3Selection.select("body")
       .on("keydown", () => {
@@ -168,7 +150,12 @@ export class ProofTree implements IProofTree {
     // }
 
     this.updateSubject = new Rx.Subject()
+
+    // Why?
     Rx.Observable.interval(2000).subscribe(() => this.updateSubject.onNext({}))
+
+    // TODO: figure out why I was doing this and whether I can avoid it
+    // this updates the display every second
     this.updateSubject
       .let(debounceAndThrottle(1000))
       .subscribe(() => this.updateAndWait())
@@ -302,6 +289,7 @@ export class ProofTree implements IProofTree {
   // }
 
   private findNodeInTree<T extends IProofTreeNode>(n: T): d3Hierarchy.HierarchyPointNode<T> {
+    if (n.id === undefined) { debugger } // this happened before...
     const found = this.treeRoot.descendants().find(d => d.data.id === n.id)
     if (found === undefined) {
       debugger
@@ -371,6 +359,9 @@ export class ProofTree implements IProofTree {
       const treeFirstChildren = this.findNodeInTree(rootViewChildren[0])
       const treeRootNode = this.findNodeInTree(this.rootNode)
       const xDistance = ProofTreeUtils.nodeX(treeFirstChildren) - ProofTreeUtils.nodeX(treeRootNode)
+      if (xDistance === 0) {
+        debugger
+      }
       /* width = 4 * xDistance * xFactor */
       this.xFactor = this.width / (4 * xDistance)
     }
@@ -806,18 +797,12 @@ export class ProofTree implements IProofTree {
   }
 
   private updatePromise<T>(onFulfilled: () => void, onRejected: () => void): void {
+    console.trace("updatePromise")
     const curNode = this.curNode
 
     this.resetSVGTransform() // cancel view transformations
 
-    this.treeRoot = d3Hierarchy.tree<IProofTreeNode>()
-      .separation(d => {
-        // TODO: now that I put fake nodes, still need this?
-        // TODO: this just won't work, need invisible children
-        // for tactics without children
-        return 1 / (1 + Math.pow(d.depth, 3))
-      })
-      (this.hierarchyRoot)
+    this.treeRoot = ProofTreeUtils.makeHierarchyTree(this)
     const allNodes = this.treeRoot.descendants()
     const allLinks = this.treeRoot.links()
 
