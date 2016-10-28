@@ -306,7 +306,7 @@ export class ProofTree implements IProofTree {
     const curNode = this.findNodeInTree(this.curNode)
 
     const centeredDescendant =
-      this.curNode.getFocusedChild().caseOf<Maybe<IProofTreeNode>>({
+      this.curNode.getViewFocusedChild().caseOf<Maybe<IProofTreeNode>>({
         nothing: () => nothing<IProofTreeNode>(),
         just: fc => fc.getFocusedChild().caseOf<Maybe<IProofTreeNode>>({
           nothing: () => just(fc),

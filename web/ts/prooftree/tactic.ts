@@ -1,4 +1,4 @@
-export class Tactic {
+export class Tactic implements ITactic {
   // addReturn: AddReturn
   public goalIndex: number
 
@@ -41,6 +41,11 @@ export class Tactic {
     if (tacticIndex === -1) { debugger }
     this.parentGroup.tacticIndex = tacticIndex
     this.parentGroup.focus()
+  }
+
+  public getFocusedGoal(): Maybe<IGoalNode> {
+    if (this.goals.length === 0) { return nothing<IGoalNode>() }
+    return just(this.goals[this.goalIndex])
   }
 
   public isSolved(): boolean {

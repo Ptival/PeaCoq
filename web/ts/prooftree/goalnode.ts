@@ -208,6 +208,16 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
     }
   }
 
+  public getViewFocusedChild(): Maybe<ITacticGroupNode> {
+    const viewChildren = this.getViewChildren()
+    return this.getFocusedTacticGroup()
+      .bind(tacticGroup => {
+        const found = viewChildren.find(e => e.id === tacticGroup.id)
+        if (found === undefined) { return nothing<ITacticGroupNode>() }
+        return just(found)
+      })
+  }
+
   public getWidth(): number {
     return this.proofTree.getGoalWidth()
   }

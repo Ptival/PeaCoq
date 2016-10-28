@@ -76,6 +76,20 @@ function getFocusedChild(n: ProofTreeTypes.Node): Maybe<ProofTreeTypes.Node> {
   })
 }
 
+function getViewFocusedChild(n: ProofTreeTypes.Node): Maybe<ProofTreeTypes.Node> {
+  // const node = n.data
+  return n.data.getViewFocusedChild().caseOf({
+    nothing: () => nothing<ProofTreeTypes.Node>(),
+    just: (focusedChild: IProofTreeNode) => {
+      const children = n.children
+      if (children === undefined) { return thisShouldNotHappen() }
+      const found = children.find(c => c.data.id === focusedChild.id)
+      if (found === undefined) { return thisShouldNotHappen() }
+      return just(found)
+    }
+  })
+}
+
 function isCurNodeParent(d: ProofTreeTypes.Node): boolean {
   const curNode = d.data.proofTree.getHierarchyCurNode()
   return (
@@ -87,7 +101,7 @@ function isCurNodeParent(d: ProofTreeTypes.Node): boolean {
 function yOffset(d: ProofTreeTypes.Node): number {
   const tree = d.data.proofTree
   const offset = - d.data.getHeight() / 2 // for the center
-  const focusedChild = getFocusedChild(d)
+  const focusedChild = getViewFocusedChild(d)
 
   // all tactic nodes are shifted such that the current tactic is centered
   // assert(isGoal(tree.curNode), "yOffset assumes the current node is a goal!")

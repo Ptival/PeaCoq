@@ -23,6 +23,7 @@ interface IProofTreeNode {
   // getDestinationScaledX(): number
   // getDestinationScaledY(): number
   getViewChildren(): IProofTreeNode[]
+  getViewFocusedChild(): Maybe<IProofTreeNode>
   getViewGrandChildren(): IProofTreeNode[]
   getWidth(): number
   hasParent(): boolean

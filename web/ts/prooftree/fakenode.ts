@@ -1,6 +1,6 @@
 import { ProofTreeNode } from "./prooftreenode"
 
-function fake(f: FakeNode): any {
+function fake(f: FakeNode): never {
   debugger
   throw f
 }
@@ -19,6 +19,7 @@ export class FakeNode extends ProofTreeNode implements IFakeNode {
   public getHeight(): number { return fake(this) }
   public getParent(): Maybe<IProofTreeNode> { return fake(this) }
   public getViewChildren(): IProofTreeNode[] { return fake(this) }
+  public getViewFocusedChild(): Maybe<IProofTreeNode> { return fake(this) }
   public getWidth(): number { return fake(this) }
   public isSolved(): boolean { return fake(this) }
 }

@@ -103,6 +103,17 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
     return focusedTactic.goals
   }
 
+  public getViewFocusedChild(): Maybe<IGoalNode> {
+    const viewChildren = this.getViewChildren()
+    return this.getFocusedTactic()
+      .bind(tactic => tactic.getFocusedGoal())
+      .bind(goal => {
+        const found = viewChildren.find(e => e.id === goal.id)
+        if (found === undefined) { return nothing<IGoalNode>() }
+        return just(found)
+      })
+  }
+
   public getWidth(): number {
     return this.proofTree.getTacticWidth()
   }

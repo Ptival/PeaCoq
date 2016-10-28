@@ -82,6 +82,8 @@ export abstract class ProofTreeNode implements IProofTreeNode {
 
   public abstract getViewChildren(): IProofTreeNode[]
 
+  public abstract getViewFocusedChild(): Maybe<IProofTreeNode>
+
   public getViewGrandChildren(): IProofTreeNode[] {
     return (
       _(this.getViewChildren())
