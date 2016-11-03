@@ -52,9 +52,9 @@ else
   ghc-pkg unregister peacoqtop || true
 fi
 
+check-and-clone "peacoq-plugin"
 ./scripts/setup-coq.sh
 ./scripts/setup-coq-serapi.sh
-check-and-clone "peacoq-plugin"
 (PATH=../coq/bin:$PATH && cd peacoq-plugin && make clean && make)
 
 log "Installing front-end dependencies"
