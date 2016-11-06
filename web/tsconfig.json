@@ -14,7 +14,9 @@
     "preserveConstEnums": true,
     "removeComments": true,
     "rootDir": "ts",
-    "strictNullChecks": false,
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "strictNullChecks": true,
     "suppressImplicitAnyIndexErrors": true,
     "target": "es5",
     "types": [
