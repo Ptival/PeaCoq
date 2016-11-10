@@ -1,3 +1,5 @@
+import * as _ from "lodash"
+
 import * as Stage from "./stage"
 
 export function setup(

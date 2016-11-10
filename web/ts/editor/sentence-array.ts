@@ -1,3 +1,5 @@
+import * as _ from "lodash"
+
 import * as DebugFlags from "../peacoq/debug-flags"
 import * as Filters from "../peacoq/filters"
 import { BeingProcessed, Processed } from "./stage"

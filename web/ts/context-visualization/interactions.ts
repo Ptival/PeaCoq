@@ -1,3 +1,5 @@
+import * as _ from "lodash"
+
 /*
 Note: this is not the way this should work in the end, as it is pretty brittle,
 but this is for the sake of demonstrating this kind of feature easily.

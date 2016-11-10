@@ -1,3 +1,5 @@
+import * as _ from "lodash"
+
 import { GoalNode } from "./goalnode"
 import { ProofTree } from "./prooftree"
 import { Tactic } from "./tactic"

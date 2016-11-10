@@ -1,3 +1,5 @@
+import * as _ from "lodash"
+
 import { commonAncestor } from "./common-ancestor"
 
 let nodeId = 0

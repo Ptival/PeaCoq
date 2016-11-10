@@ -1,3 +1,5 @@
+import * as _ from "lodash"
+
 import * as Context from "../editor/context"
 import { tacticAutomationRoute } from "../peacoq/routes"
 import { Control } from "../sertop/command"

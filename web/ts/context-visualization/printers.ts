@@ -1,3 +1,5 @@
+import * as _ from "lodash"
+
 import { ppCmdsSameShape, PpCmd as PpCmdType, PpCmds } from "../printing/coq-pretty-printer"
 import * as PpCmd from "../coq/ppcmd-token"
 import * as StrToken from "../coq/str-token"

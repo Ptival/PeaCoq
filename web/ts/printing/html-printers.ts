@@ -27,7 +27,8 @@ export function htmlPrintHyp(h: PeaCoqHyp): string {
 }
 
 export function htmlPrintHyps(hyps: PeaCoqHyp[]): string {
-  return _.reduce(hyps, (acc, elt) => {
-    return acc + `<div class="hyp">${htmlPrintHyp(elt)}</div>`
-  }, "")
+  return hyps.reduce(
+    (acc, elt) => `${acc}<div class="hyp">${htmlPrintHyp(elt)}</div>`,
+    ""
+  )
 }

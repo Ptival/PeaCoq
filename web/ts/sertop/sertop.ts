@@ -96,7 +96,7 @@ function sendPing(): Promise<ISertop.IAnswer<ISertop.IAnswerKind>[]> {
     url: "ping",
     data: {},
     async: true,
-  }).then(r => _(r).map(sexpParse).map(Answer.create).value())
+  }).then(r => r.map(sexpParse).map(Answer.create))
 }
 
 function sendCommand(cmd: ISertop.ICommand): Promise<ISertop.IAnswer<ISertop.IAnswerKind>[]> {
@@ -108,6 +108,6 @@ function sendCommand(cmd: ISertop.ICommand): Promise<ISertop.IAnswer<ISertop.IAn
     async: true,
   }).then(r => {
     // console.log("RECV", r)
-    return _(r).map(sexpParse).map(Answer.create).value()
+    return r.map(sexpParse).map(Answer.create)
   })
 }

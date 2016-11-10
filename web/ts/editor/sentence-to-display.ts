@@ -1,3 +1,5 @@
+import * as _ from "lodash"
+
 import * as Command from "../sertop/command"
 import * as ControlCommand from "../sertop/control-command"
 import { isBefore } from "./editor-utils"

@@ -1,3 +1,5 @@
+import * as _ from "lodash"
+
 import { PpCmdBox, PpCmdPrint, PpCmdToken } from "../coq/ppcmd-token"
 import { PpCmd, PpCmds, str } from "../printing/coq-pretty-printer"
 import * as Pattern from "./pattern"

@@ -1,3 +1,5 @@
+import * as _ from "lodash"
+
 export class Tactic implements ITactic {
   // addReturn: AddReturn
   public goalIndex: number

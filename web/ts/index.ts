@@ -1,3 +1,5 @@
+import * as _ from "lodash"
+
 import { setup as setupCancelBecauseBackwardGoTo } from "./editor/cancel-because-backward-goto"
 import { setup as setupCancelBecausePrev } from "./editor/cancel-because-prev"
 import { createGetCompletions } from "./editor/completion"

@@ -1,3 +1,5 @@
+import * as _ from "lodash"
+
 import { htmlPrintConstrExpr, htmlPrintHyps } from "../printing/html-printers"
 
 export default PeaCoqGoal

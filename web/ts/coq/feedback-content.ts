@@ -102,5 +102,5 @@ function collectPCData(o: any): string {
   ) {
     return o[1]
   }
-  return _.reduce(o, (acc, elt) => `${acc}${collectPCData(elt)}`, "")
+  return o.reduce((acc: string, elt: any) => `${acc}${collectPCData(elt)}`, "")
 }

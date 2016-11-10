@@ -1,3 +1,5 @@
+import * as _ from "lodash"
+
 import { Tactic } from "./tactic"
 import { TacticGroupNode } from "./tacticgroupnode"
 import { ProofTreeNode } from "./prooftreenode"

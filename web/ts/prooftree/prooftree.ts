@@ -8,6 +8,7 @@ import { FakeNode } from "./fakenode"
 import { GoalNode } from "./goalnode"
 import * as HierarchyNodeUtils from "./hierarchy-node-utils"
 import * as LinkSelection from "./link-selection"
+import * as _ from "lodash"
 import * as RectSelection from "./rect-selection"
 import { TacticGroupNode } from "./tacticgroupnode"
 import * as TextSelection from "./text-selection"
@@ -888,7 +889,9 @@ export class ProofTree implements IProofTree {
         LinkSelection.onLinkExit(linkSelection.exit<ProofTreeTypes.Link>())
 
         const hierarchyCurNode = nodes.find(n => n.data.id === curNode.id)
-        if (hierarchyCurNode === undefined) { debugger }
+        if (hierarchyCurNode === undefined) {
+          return thisShouldNotHappen()
+        }
         const hierarchyCurNodeParent = hierarchyCurNode.parent
 
         this.viewportX = - (

@@ -1,3 +1,5 @@
+import * as _ from "lodash"
+
 export class Tab implements ITab {
   private _captionShouldBeBold: boolean
   private captionSuffix: string

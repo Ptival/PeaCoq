@@ -1,3 +1,5 @@
+import * as _ from "lodash"
+
 export class Goal implements IGoal {
   public goalId: number
   public goalHyp: string[]
@@ -13,10 +15,10 @@ export class Goal implements IGoal {
 
   public toString(): string {
     let res = "" // "Goal " + this.goalId + "\n\n"
-    _(this.goalHyp).each((h) => {
+    this.goalHyp.forEach(h => {
       res += h + "\n"
     })
-    _(_.range(80)).each(() => { res += "-" })
+    _.range(80).forEach(() => { res += "-" })
     res += "\n" + this.goalCcl
     return res
   }

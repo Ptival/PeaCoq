@@ -1,3 +1,5 @@
+import * as _ from "lodash"
+
 import { ProofTreeNode } from "./prooftreenode"
 import { Strictly } from "../peacoq/strictly"
 import * as Command from "../sertop/command"

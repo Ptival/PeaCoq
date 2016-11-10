@@ -75,7 +75,7 @@ export function create(o: any): ISertop.IAnswerKind {
 
     case "StmCanceled":
       const [stateIds]: string[][] = args
-      return new StmCanceled(_(stateIds).map(s => + s).value())
+      return new StmCanceled(stateIds.map(s => + s))
 
     default:
       debugger

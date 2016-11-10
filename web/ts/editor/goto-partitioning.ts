@@ -1,3 +1,5 @@
+import * as _ from "lodash"
+
 import { isBefore } from "./editor-utils"
 import { Strictly } from "../peacoq/strictly"
 

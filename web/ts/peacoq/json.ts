@@ -9,7 +9,7 @@ export function walkJSON(input: any): any {
   // console.log(input)
   if (typeof input === "object") {
     if (input.hasOwnProperty("constructorName")) {
-      const processedArgs = _(input.constructorArgs).map(walkJSON).value()
+      const processedArgs = input.constructorArgs.map(walkJSON)
       switch (input.constructorName) {
         case "CApp": {
           const [a, b, c] = processedArgs
@@ -78,7 +78,7 @@ export function walkJSON(input: any): any {
       // return new (eval(input.constructorName))(...processedArgs)
     }
     if (Array.isArray(input)) {
-      return _(input).map(walkJSON).value()
+      return input.map(walkJSON)
     }
     const output: any = {}
     for (const k in input) {
@@ -86,7 +86,7 @@ export function walkJSON(input: any): any {
     }
     return output
   }
-  if (_(["boolean", "number", "string"]).includes(typeof input)) {
+  if (["boolean", "number", "string"].includes(typeof input)) {
     return input
   }
   debugger

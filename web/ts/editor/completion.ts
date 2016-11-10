@@ -1,3 +1,5 @@
+import * as _ from "lodash"
+
 import * as PeaCoq from "../peacoq/peacoq"
 
 export function createGetCompletions(

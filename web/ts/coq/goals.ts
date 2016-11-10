@@ -2,13 +2,13 @@ import { Goal } from "./goal"
 
 export function apply<A, B>(f: (a: A) => B, g: IGoals<A>): IGoals<B> {
   return {
-    fgGoals: _(g.fgGoals).map(f).value(),
-    bgGoals: _(g.bgGoals).map(bg => ({
-      before: _(bg.before).map(f).value(),
-      after: _(bg.after).map(f).value(),
-    })).value(),
-    shelvedGoals: _(g.shelvedGoals).map(f).value(),
-    givenUpGoals: _(g.givenUpGoals).map(f).value(),
+    fgGoals: g.fgGoals.map(f),
+    bgGoals: g.bgGoals.map(bg => ({
+      before: bg.before.map(f),
+      after: bg.after.map(f),
+    })),
+    shelvedGoals: g.shelvedGoals.map(f),
+    givenUpGoals: g.givenUpGoals.map(f),
   }
 }
 

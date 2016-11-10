@@ -1,3 +1,5 @@
+import * as _ from "lodash"
+
 import { Goal } from "../coq/goal"
 import * as Goals from "../coq/goals"
 import { PeaCoqGoal } from "../peacoq/goal"

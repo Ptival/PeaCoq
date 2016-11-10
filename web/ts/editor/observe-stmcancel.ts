@@ -1,3 +1,5 @@
+import * as _ from "lodash"
+
 export function setup(
   doc: ICoqDocument,
   stmCancel$: StmCancel$,

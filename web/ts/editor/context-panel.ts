@@ -1,3 +1,5 @@
+import * as _ from "lodash"
+
 import { EditorTab } from "./editor-tab"
 import { Tab } from "./tab"
 import * as VisualizationInteractions from "../context-visualization/interactions"

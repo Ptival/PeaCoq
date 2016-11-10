@@ -1,3 +1,5 @@
+import * as _ from "lodash"
+
 import { Anchor } from "./anchor"
 import * as Stage from "./stage"
 import { SentenceArray } from "./sentence-array"
