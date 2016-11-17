@@ -15,13 +15,9 @@ nixpkgs.stdenv.mkDerivation {
     #cabal-install
     #coq_8_5
     ghc
-    # ocaml # need 4.0.1 to work with camlp5
-    # ocamlPackages.camlp5_6_strict
-    # ocamlPackages.lablgtk
     # gnome3.gtk
     haskellPackages.zlib
-    nodejs-5_x
-    opam
+    nodejs
     zlib
     zlibStatic
 
@@ -30,7 +26,17 @@ nixpkgs.stdenv.mkDerivation {
     #snap-server
     #snap
     peacoq-server
-  ]);
+  ] ++ (with ocamlPackages_4_02; [
+      ocaml
+      findlib
+      camlp5_6_strict
+      lablgtk
+      ppx_import
+      cmdliner
+      core_kernel
+      sexplib
+    ])
+  );
   nativeBuildInputs = (with nixpkgs; [
     zlib
     zlibStatic
@@ -38,7 +44,6 @@ nixpkgs.stdenv.mkDerivation {
   shellHook = ''
     export NIXSHELL="$NIXSHELL\[PeaCoq\]"
     export SSL_CERT_FILE="/etc/ssl/certs/ca-bundle.crt"
-    eval `opam config env`
     echo -e "\nRemember to run setup.sh again\n"
     # ./setup.sh
   '';
