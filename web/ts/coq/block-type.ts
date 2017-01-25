@@ -1,5 +1,3 @@
-export default BlockType
-
 export abstract class BlockType { }
 
 export class PpHBox extends BlockType {

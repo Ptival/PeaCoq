@@ -2,7 +2,7 @@ import * as _ from "lodash"
 
 import { htmlPrintConstrExpr, htmlPrintHyps } from "../printing/html-printers"
 
-export default PeaCoqGoal
+// export default PeaCoqGoal
 
 // TODO: maybe add a mechanism to cache different renderings based on
 // some settings, for instance, whether to show diff, whether to merge

@@ -25,7 +25,7 @@ export function setup(
   // and writes to coqtop are not atomic, so burst of messages become
   // intertwined!...
   const slowedCmd$ =
-    Rx.Observable.zip(
+    Rx.Observable.zip<ISertop.ICommand, number>(
       cmd$,
       cmdOutputSubject
     )

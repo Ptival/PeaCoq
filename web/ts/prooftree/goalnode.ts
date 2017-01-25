@@ -53,10 +53,13 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
       return found
     }
 
-    let tacticGroup = _.find(this.tacticGroups, tg => tg.name === groupName)
-    if (tacticGroup === undefined) {
+    const maybeTacticGroup = _.find(this.tacticGroups, tg => tg.name === groupName)
+    let tacticGroup: ITacticGroupNode
+    if (maybeTacticGroup === undefined) {
       tacticGroup = new TacticGroupNode(this.proofTree, this, groupName)
       this.tacticGroups.push(tacticGroup)
+    } else {
+      tacticGroup = maybeTacticGroup
     }
 
     /*

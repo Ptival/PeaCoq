@@ -13,7 +13,7 @@ export function setup(
   Feedback comes back untagged, so need the zip to keep track of the relationship
   between input PeaCoqGetContext and the output context...
   */
-  Rx.Observable.zip(
+  Rx.Observable.zip<ISertop.IControl<ISertop.IControlCommand.IStmQuery>, NoticeMessageFeedback>(
     // We want only PeaCoqGetContext happening because a sentence is processed
     stmQuery$
       .filter(q => q.controlCommand.query === "PeaCoqGetContext.")

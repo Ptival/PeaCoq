@@ -1,5 +1,3 @@
-export default StrToken
-
 export abstract class StrToken { }
 
 export class StrDef extends StrToken {

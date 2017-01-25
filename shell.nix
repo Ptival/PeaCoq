@@ -18,6 +18,7 @@ nixpkgs.stdenv.mkDerivation {
     # gnome3.gtk
     haskellPackages.zlib
     nodejs
+    opam
     zlib
     zlibStatic
 
@@ -27,14 +28,14 @@ nixpkgs.stdenv.mkDerivation {
     #snap
     peacoq-server
   ] ++ (with ocamlPackages_4_02; [
-      ocaml
-      findlib
-      camlp5_6_strict
-      lablgtk
-      ppx_import
-      cmdliner
-      core_kernel
-      sexplib
+      #ocaml
+      #findlib
+      #camlp5_6_strict
+      #lablgtk
+      #ppx_import
+      #cmdliner
+      #core_kernel
+      #sexplib
     ])
   );
   nativeBuildInputs = (with nixpkgs; [

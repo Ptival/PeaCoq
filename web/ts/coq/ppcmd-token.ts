@@ -1,4 +1,4 @@
-import BlockType from "./block-type"
+import { BlockType } from "./block-type"
 
 export abstract class PpCmdToken<T> { }
 

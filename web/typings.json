@@ -1,13 +1,5 @@
 {
   "resolution": "ts/typings",
   "globalDependencies": {
-    "rx.async-lite": "registry:dt/rx.async-lite#0.0.0+20160316171810",
-    "rx.backpressure-lite": "registry:dt/rx.backpressure-lite#0.0.0+20160316171810",
-    "rx.binding-lite": "registry:dt/rx.binding-lite#0.0.0+20160316171810",
-    "rx.coincidence": "registry:dt/rx.coincidence#2.2.28+20160317120654",
-    "rx.coincidence-lite": "registry:dt/rx.coincidence-lite#0.0.0+20160412135432",
-    "rx.experimental": "registry:dt/rx.experimental#2.2.28+20160317120654",
-    "rx.time": "registry:dt/rx.time#2.2.28+20160317120654",
-    "rx.time-lite": "registry:dt/rx.time-lite#0.0.0+20160316171810"
   }
 }
