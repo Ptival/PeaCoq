@@ -33,6 +33,10 @@ export function walkJSON(input: any): any {
           return new Ident(a)
         }
         case "L": return new L()
+        case "Name": {
+          const [name] = processedArgs
+          return new Name(name)
+        }
         case "nothing": return nothing()
         case "Numeral": {
           const [a] = processedArgs

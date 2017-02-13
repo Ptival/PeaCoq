@@ -24,11 +24,11 @@
         //         "order": "fields-first"
         //     }
         // ],
-        "no-consecutive-blank-lines": true,
+        "no-consecutive-blank-lines": [true],
         // "no-duplicate-key": true,
         "no-duplicate-variable": true,
         "no-eval": true,
-        "no-inferrable-types": true,
+        "no-inferrable-types": [true],
         "no-internal-module": true,
         // I would do this but jquery and d3 like to bind "this" so much...
         "no-invalid-this": [true, "check-function-in-method"],

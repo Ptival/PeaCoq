@@ -29,7 +29,7 @@ export class Tab implements ITab {
     this.onResizeHandlers = []
 
     this.onClickHandlers.push((layout: W2UI.W2Tabs) => {
-      console.trace("me")
+      // console.trace("me")
       layout.owner.html(panel, self.div[0])
     })
 

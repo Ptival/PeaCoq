@@ -42,12 +42,11 @@ export function create(args: any): IException {
       const [error] = args[0]
       return new Exception(error)
     case 3: {
-      const error = args[2][1][1]
-      if (error instanceof String) {
-        return new Exception(error.toString())
-      } else {
-        return thisShouldNotHappen()
+      // Case: [..., ..., ["ExplainErr.EvaluatedError", "..."]]
+      if (args[2][0] === "ExplainErr.EvaluatedError") {
+        return new Exception(args[2][1].toString())
       }
+      return thisShouldNotHappen()
     }
     default: debugger
   }
