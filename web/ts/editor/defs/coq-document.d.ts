@@ -4,15 +4,16 @@ interface ICoqDocument {
   addsToProcess$: Rx.Observable<StmAdd$>
   command$: Rx.Observable<Command$>
   contextPanel: IContextPanel
-  editor: AceAjax.Editor
-  editorChange$: Rx.Observable<AceAjax.EditorChangeEvent>
+  // editor: AceAjax.Editor
+  editor: CodeMirror.Editor
+  // editorChange$: Rx.Observable<AceAjax.EditorChangeEvent>
   sentences: ISentenceArray
   // endAnchor: AceAjax.Anchor
   proofTrees: IProofTreeStack
   sentencesChanged$: Rx.Observable<{}>
   sentenceBeingProcessed$: Rx.Observable<ISentence<IBeingProcessed>>
   sentenceProcessed$: Rx.Observable<ISentence<IProcessed>>
-  session: AceAjax.IEditSession
+  // session: AceAjax.IEditSession
   debouncedTip$: Rx.Observable<Tip>
   tip$: Rx.Observable<Tip>
   input$: Command$
@@ -20,17 +21,19 @@ interface ICoqDocument {
 
   getActiveProofTree(): Maybe<IProofTree>
   getAllSentences(): ISentence<IStage>[]
+  getPositionEnd(): IPosition
+  getTextRange(range: IEditorRange): string
   getSentenceByStateId(s: StateId): Maybe<ISentence<IStage>>
   getSentenceByTag(tag: CommandTag): Maybe<ISentence<IStage>>
-  getSentenceAtPosition(pos: AceAjax.Position): Maybe<ISentence<IStage>>
+  getSentenceAtPosition(pos: IPosition): Maybe<ISentence<IStage>>
   getSentencesBeingProcessed(): ISentence<IBeingProcessed>[]
   getSentencesToProcess(): ISentence<IToProcess>[]
   getProcessedSentences(): ISentence<IProcessed>[]
   // getLastSentence(): Maybe<ISentence<IEditStage>>
-  getLastSentenceStop(): AceAjax.Position
-  markError(range: AceAjax.Range, clear$: Rx.Observable<{}>): void
-  moveCursorToPositionAndCenter(pos: AceAjax.Position): void
-  movePositionRight(pos: AceAjax.Position, n: number): AceAjax.Position
+  getLastSentenceStop(): IPosition
+  markError(range: IEditorRange, clear$: Rx.Observable<{}>): void
+  moveCursorToPositionAndCenter(pos: IPosition): void
+  movePositionRight(pos: IPosition, n: number): IPosition
   next(): void
   // nextSentence(next$: Rx.Observable<{}>): Rx.Observable<ISentence<IToProcess>>
   removeAllSentences(): void

@@ -1,6 +1,6 @@
 import * as _ from "lodash"
 
-import { Anchor } from "./anchor"
+// import { Anchor } from "./anchor"
 import * as Stage from "./stage"
 import { SentenceArray } from "./sentence-array"
 import { errorUnderlineClass, theme } from "../peacoq/theme"
@@ -18,13 +18,13 @@ function tipKey(t: Tip): number {
 
 export class CoqDocument implements ICoqDocument {
   public addsToProcess$: Rx.Observable<StmAdd$>
-  private beginAnchor: Anchor
+  // private beginAnchor: Anchor
   private commandObserver: Rx.Observer<Command$>
   public command$: Rx.Observable<Command$>
   public contextPanel: IContextPanel
-  public editorChange$: Rx.Observable<AceAjax.EditorChangeEvent>
+  // public editorChange$: Rx.Observable<AceAjax.EditorChangeEvent>
   public sentences: ISentenceArray
-  private endAnchor: Anchor
+  // private endAnchor: Anchor
   public input$: Command$
   private nextObserver: Rx.Observer<{}>
   public output$s: CoqtopOutputStreams
@@ -32,26 +32,27 @@ export class CoqDocument implements ICoqDocument {
   public sentencesChanged$: Rx.Observable<{}>
   public sentenceBeingProcessed$: Rx.Observable<ISentence<IBeingProcessed>>
   public sentenceProcessed$: Rx.Observable<ISentence<IProcessed>>
-  public session: AceAjax.IEditSession
+  // public session: AceAjax.IEditSession
   private tipSubject: Rx.Subject<Tip>
   public debouncedTip$: Rx.Observable<Tip>
   public tip$: Rx.Observable<Tip>
 
   constructor(
-    public editor: AceAjax.Editor
+    // public editor: AceAjax.Editor
+    public editor: CodeMirror.Editor
   ) {
     const self = this
     this.sentences = new SentenceArray(this)
     // WARNING: This line must stay over calls to mkAnchor
-    this.session = editor.getSession()
-    this.beginAnchor = new Anchor(this, 0, 0, "begin-marker", true)
-    this.endAnchor = new Anchor(this, 0, 0, "end-marker", false)
-    this.editorChange$ =
-      Rx.Observable
-        .create<AceAjax.EditorChangeEvent>(observer => {
-          self.session.on("change", (e) => observer.onNext(e))
-        })
-        .share()
+    // this.session = editor.getSession()
+    // this.beginAnchor = new Anchor(this, 0, 0, "begin-marker", true)
+    // this.endAnchor = new Anchor(this, 0, 0, "end-marker", false)
+    // this.editorChange$ =
+    //   Rx.Observable
+    //     .create<AceAjax.EditorChangeEvent>(observer => {
+    //       self.session.on("change", (e) => observer.onNext(e))
+    //     })
+    //     .share()
     this.sentencesChanged$ = Rx.Observable.merge(
       this.sentences.sentenceCreated$,
       this.sentences.sentenceChangedStage$,
@@ -115,7 +116,15 @@ export class CoqDocument implements ICoqDocument {
 
   public getAllSentences(): ISentence<IStage>[] { return this.sentences.getAll() }
 
-  public getSentenceAtPosition(pos: AceAjax.Position): Maybe<ISentence<IStage>> {
+  public getPositionEnd(): IPosition {
+    return thisShouldNotHappen()
+  }
+
+  public getTextRange(r: IEditorRange): string {
+    return thisShouldNotHappen()
+  }
+
+  public getSentenceAtPosition(pos: IPosition): Maybe<ISentence<IStage>> {
     const edit = _(this.getAllSentences()).find(e => e.containsPosition(pos))
     return edit ? just(edit) : nothing<ISentence<IStage>>()
   }
@@ -156,38 +165,44 @@ export class CoqDocument implements ICoqDocument {
   //   return this.edits.getLast()
   // }
 
-  public getLastSentenceStop(): AceAjax.Position {
-    return this.sentences.getLast().caseOf({
-      nothing: () => this.beginAnchor.anchor.getPosition(),
-      just: last => last.stopPosition,
-    })
+  public getLastSentenceStop(): IPosition {
+    console.log("FIXME getLastSentenceStop")
+    return thisShouldNotHappen()
+    // return this.sentences.getLast().caseOf({
+    //   nothing: () => this.beginAnchor.anchor.getPosition(),
+    //   just: last => last.stopPosition,
+    // })
   }
 
-  public moveCursorToPositionAndCenter(pos: AceAjax.Position): void {
+  public moveCursorToPositionAndCenter(pos: IPosition): void {
+    console.log("FIXME moveCursorToPositionAndCenter")
+    return thisShouldNotHappen()
     // this prevents the editor from marking selected the region jumped
-    this.editor.session.selection.clearSelection()
-    this.editor.moveCursorToPosition(pos)
-    this.editor.scrollToLine(pos.row, true, true, () => { })
+    // this.editor.session.selection.clearSelection()
+    // this.editor.moveCursorToPosition(pos)
+    // this.editor.scrollToLine(pos.row, true, true, () => { })
   }
 
-  public movePositionRight(pos: AceAjax.Position, n: number): AceAjax.Position {
-    if (n === 0) { return pos }
-    const row = pos.row
-    const column = pos.column
-    const line = this.session.getLine(row)
-    if (column < line.length) {
-      return this.movePositionRight({
-        "row": row,
-        "column": column + 1
-      }, n - 1)
-    } else if (row < this.session.getLength()) {
-      return this.movePositionRight({
-        "row": row + 1,
-        "column": 0
-      }, n - 1)
-    } else {
-      return pos
-    }
+  public movePositionRight(pos: IPosition, n: number): IPosition {
+    console.log("FIXME movePositionRight")
+    return thisShouldNotHappen()
+    // if (n === 0) { return pos }
+    // const row = pos.row
+    // const column = pos.column
+    // const line = this.session.getLine(row)
+    // if (column < line.length) {
+    //   return this.movePositionRight({
+    //     "row": row,
+    //     "column": column + 1
+    //   }, n - 1)
+    // } else if (row < this.session.getLength()) {
+    //   return this.movePositionRight({
+    //     "row": row + 1,
+    //     "column": 0
+    //   }, n - 1)
+    // } else {
+    //   return pos
+    // }
   }
 
   // onProcessEditsFailure(vf: ValueFail): Promise<any> {
@@ -242,18 +257,20 @@ export class CoqDocument implements ICoqDocument {
   // }
 
   public markError(
-    range: AceAjax.Range,
+    range: IEditorRange,
     clear$: Rx.Observable<{}>
   ): void {
-    const markerId = this.session.addMarker(range, errorUnderlineClass, "text", false)
-    this.moveCursorToPositionAndCenter(range.start)
-    const markerChanged$ = this.editorChange$
-      .filter(e => range.contains(e.start.row, e.start.column) || range.contains(e.end.row, e.end.column))
-      .take(1)
-    Rx.Observable.merge(
-      markerChanged$,
-      clear$
-    ).subscribe(() => this.session.removeMarker(markerId))
+    console.log("FIXME markError")
+    return thisShouldNotHappen()
+    // const markerId = this.session.addMarker(range, errorUnderlineClass, "text", false)
+    // this.moveCursorToPositionAndCenter(range.start)
+    // const markerChanged$ = this.editorChange$
+    //   .filter(e => range.contains(e.start.row, e.start.column) || range.contains(e.end.row, e.end.column))
+    //   .take(1)
+    // Rx.Observable.merge(
+    //   markerChanged$,
+    //   clear$
+    // ).subscribe(() => this.session.removeMarker(markerId))
   }
 
   public next(): void {
@@ -261,16 +278,18 @@ export class CoqDocument implements ICoqDocument {
   }
 
   public nextSentence(next$: Rx.Observable<{}>): Rx.Observable<ISentence<IToProcess>> {
+    // console.log("FIXME nextSentence")
+    // return thisShouldNotHappen()
     return next$
       .concatMap<ISentence<IToProcess>>(() => {
         const lastEditStopPos = this.getLastSentenceStop()
-        const endPos = this.endAnchor.anchor.getPosition()
-        const unprocessedRange =
-          new AceAjax.Range(
-            lastEditStopPos.row, lastEditStopPos.column,
-            endPos.row, endPos.column
+        const endPos = this.getPositionEnd()
+        const unprocessedRange: IEditorRange =
+          new EditorRange(
+            lastEditStopPos.row, lastEditStopPos.col,
+            endPos.row, endPos.col
           )
-        const unprocessedText = this.session.getTextRange(unprocessedRange)
+        const unprocessedText = this.getTextRange(unprocessedRange)
         if (CoqStringUtils.coqTrimLeft(unprocessedText) === "") {
           return []
         }
@@ -285,18 +304,21 @@ export class CoqDocument implements ICoqDocument {
         return [edit]
       })
       .share()
-
   }
 
   public recenterEditor() {
-    const pos = this.editor.getCursorPosition()
-    this.editor.scrollToLine(pos.row, true, true, () => { })
+    console.log("FIXME recenterEditor")
+    return thisShouldNotHappen()
+    // const pos = this.editor.getCursorPosition()
+    // this.editor.scrollToLine(pos.row, true, true, () => { })
   }
 
   public resetEditor(text: string) {
-    this.session.setValue(text)
-    this.editor.focus()
-    this.editor.scrollToLine(0, true, true, () => { })
+    console.log("FIXME resetEditor")
+    return thisShouldNotHappen()
+    // this.session.setValue(text)
+    // this.editor.focus()
+    // this.editor.scrollToLine(0, true, true, () => { })
   }
 
   public removeAllSentences(): void { this.sentences.removeAll() }

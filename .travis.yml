@@ -9,7 +9,6 @@ matrix:
 
 cache:
   directories:
-    - $TRAVIS_BUILD_DIR/web/js/peacoq-ts/typings
     - $TRAVIS_BUILD_DIR/web/node_modules
 
 before_install:

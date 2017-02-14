@@ -1,15 +1,24 @@
 html, html>body, #interface {
   height: 100%;
   margin: 0;
-  overflow: hidden;
+  /*overflow: hidden;*/
 }
+#editor, #context {
+  float: left;
+  height: 100%;
+  width: 50%;
+}
+.CodeMirror {
+  border: 0px solid #000000;
+  height: 100%;
+}
+
+/*
 #interface, #main, #main-right, #context, #context-tabs, #coqtop, #coqtop-tabs {
   display: flex;
-  /* Flex container */
 }
 #interface, #main-right, #context, #coqtop {
   flex-direction: column;
-  /* Column layout */
 }
 a, button {
   border-radius: 0 !important;
@@ -28,26 +37,14 @@ a, button {
   position: absolute;
   z-index: 5;
 }
-/*.begin-marker {
-  position: absolute;
-  border-left: 2px solid green;
-}*/
 .marker {
   position: absolute;
-  /*border-left: 2px solid blue;*/
 }
-/*.end-marker {
-  position: absolute;
-  border-left: 2px solid red;
-}*/
 .processing, .processed, .toprocess, .highlight {
   border-radius: 0 !important;
   position: absolute;
   z-index: 5;
 }
-
-/* Visualization */
-
 #pretty-content {
   display: inline-block;
   font-family: monospace;
@@ -56,7 +53,6 @@ a, button {
 }
 .syntax {
   display: inline-block;
-  /*vertical-align: middle;*/
 }
 .hyp {
   display: flex;
@@ -79,3 +75,4 @@ svg body {
 li.context-menu-item {
   font-family: monospace;
 }
+*/

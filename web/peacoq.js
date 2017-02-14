@@ -55,10 +55,9 @@ const startRequire = Date.now()
 requirejs(
   [
     // "ace/ace", // ~ 500ms
-    // "bluebird", // ~ 100ms
-    "codemirror", // ~100ms
-    // "s-expression", // ~ 30ms
-    // "jquery", // ~ 100ms
+    "bluebird", // ~ 100ms
+    "s-expression", // ~ 30ms
+    "jquery", // ~ 100ms
   ],
   (
     // ace,
@@ -78,28 +77,29 @@ requirejs(
     window.sexpParse = sexpParse;
     requirejs(
       [
-        "bootstrap", // ~50ms
+        // "bootstrap", // ~50ms
+        "codemirror", // ~100ms
         "jquery.hotkeys", // ~20ms
-        "jquery-contextmenu", // ~40ms
+        // "jquery-contextmenu", // ~40ms
         // "jquery-ui",
         "jss", // ~ 20ms
         "lodash", // ~60ms
-        "MathJax", // ~40ms
+        // "MathJax", // ~40ms
         // "polymer-ts",
         "rx", // ~60ms
         "tsmonad", // ~100ms
         // "webcomponents",
-        "w2ui", // ~80ms
+        // "w2ui", // ~80ms
       ],
       () => {
         const pass2 = Date.now()
         console.log(`Required 2nd pass: ${pass2 - pass1}ms`)
         require(
           [
-            "ace/ext/language_tools",
-            "ace/mode/ocaml",
-            "js/highlight-coq",
-            "js/mode-coq",
+            // "ace/ext/language_tools",
+            // "ace/mode/ocaml",
+            // "js/highlight-coq",
+            // "js/mode-coq",
             // Unfortunately, at the moment, all these have been written as non-modules
             "js-of-ts/coq/binder-kind",
             "js-of-ts/coq/case-style",

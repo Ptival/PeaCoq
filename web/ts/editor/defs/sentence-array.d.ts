@@ -6,8 +6,8 @@ interface ISentenceArray {
   sentenceRemoved$: Rx.Observable<ISentence<IStage>>;
   createSentence(
     document: ICoqDocument,
-    startPosition: AceAjax.Position,
-    stopPosition: AceAjax.Position,
+    startPosition: IPosition,
+    stopPosition: IPosition,
     query: string,
     previousSentence: Maybe<ISentence<any>>,
     stage: IToProcess

@@ -28,30 +28,33 @@ const jQueryPrefix = "alt+ctrl+"
 const aceWindowsPrefix = "Alt-Ctrl-"
 const aceMacPrefix = "Option-Command-"
 
-function createBindingForKey(doc: ICoqDocument, key: string): Rx.Observable<{}> {
+function createBindingForKey(
+  // doc: ICoqDocument,
+  key: string
+): Rx.Observable<{}> {
   return Rx.Observable
     .create(observer => {
       $(document).bind("keydown", jQueryPrefix + key, () => observer.onNext({}))
       // TODO: should probably add shortcuts to all Ace editors
       // since they don't bubble up :(
-      doc.editor.commands.addCommand({
-        name: key,
-        bindKey: { win: aceWindowsPrefix + key, mac: aceMacPrefix + key },
-        exec: () => observer.onNext({}),
-      })
+      // doc.editor.commands.addCommand({
+      //   name: key,
+      //   bindKey: { win: aceWindowsPrefix + key, mac: aceMacPrefix + key },
+      //   exec: () => observer.onNext({}),
+      // })
     })
     .share()
 
 }
 
-export function setup(doc: ICoqDocument): ShortcutsStreams {
+export function setup(): ShortcutsStreams {
   return {
-    fontDecrease: createBindingForKey(doc, "-"),
-    fontIncrease: createBindingForKey(doc, "="),
-    goToCaret: createBindingForKey(doc, "right"),
-    load: createBindingForKey(doc, "l"),
-    next: createBindingForKey(doc, "down"),
-    previous: createBindingForKey(doc, "up"),
-    save: createBindingForKey(doc, "s"),
+    fontDecrease: createBindingForKey("-"),
+    fontIncrease: createBindingForKey("="),
+    goToCaret: createBindingForKey("right"),
+    load: createBindingForKey("l"),
+    next: createBindingForKey("down"),
+    previous: createBindingForKey("up"),
+    save: createBindingForKey("s"),
   }
 }

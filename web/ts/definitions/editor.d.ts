@@ -1,3 +1,7 @@
+interface IEditor {
+  
+}
+
 type CommandStream<T extends ISertop.ICommand> = Rx.Observable<CommandStreamItem<T>>
 type CommandStreamItem<T extends ISertop.ICommand> = Rx.Observable<T>
 
