@@ -5,7 +5,7 @@ requirejs.config({
     "ace": `${nodePath}/ace-code-editor/lib/ace`,
     "bluebird": `${nodePath}/bluebird/js/browser/bluebird`,
     "bootstrap": `${nodePath}/bootstrap/dist/js/bootstrap`,
-    "codemirror": `${nodePath}/codemirror/lib/codemirror`,
+    // "codemirror": `${nodePath}/codemirror/lib/codemirror`,
     "d3-array": `${nodePath}/d3-array/build/d3-array`,
     "d3-collection": `${nodePath}/d3-collection/build/d3-collection`,
     "d3-color": `${nodePath}/d3-color/build/d3-color`,
@@ -54,31 +54,31 @@ const startRequire = Date.now()
 // first, the ones that need binding
 requirejs(
   [
-    // "ace/ace", // ~ 500ms
-    // "bluebird", // ~ 100ms
-    "codemirror", // ~100ms
-    // "s-expression", // ~ 30ms
-    // "jquery", // ~ 100ms
+    "ace/ace", // ~ 500ms
+    "bluebird", // ~ 100ms
+    "s-expression", // ~ 30ms
+    "jquery", // ~ 100ms
   ],
   (
-    // ace,
+    ace,
     bluebird,
     sexpParse
   ) => {
     const pass1 = Date.now()
     console.log(`Required 1st pass: ${pass1 - startRequire}ms`)
-    // window.ace = ace;
+    window.ace = ace;
     window.Promise = bluebird;
     // not sure how else this is usually done
-    // aceRequires = [
-    //   ace.require("ace/anchor"),
-    //   ace.require("ace/range"),
-    // ];
-    // window.AceAjax = $.extend({}, ...aceRequires);
+    aceRequires = [
+      ace.require("ace/anchor"),
+      ace.require("ace/range"),
+    ];
+    window.AceAjax = $.extend({}, ...aceRequires);
     window.sexpParse = sexpParse;
     requirejs(
       [
         "bootstrap", // ~50ms
+        // "codemirror", // ~100ms
         "jquery.hotkeys", // ~20ms
         "jquery-contextmenu", // ~40ms
         // "jquery-ui",

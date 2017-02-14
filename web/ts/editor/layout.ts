@@ -6,10 +6,10 @@ export function setup(): any {
   $("#interface").w2layout({
     name: "layout",
     panels: [
-      { type: "top", size: 34, resizable: false, content: $("<div>", { id: "toolbar" }) },
+      // { type: "top", size: 34, resizable: false, content: $("<div>", { id: "toolbar" }) },
       { type: "left", size: "50%", overflow: "hidden", resizable: true, content: $("<div>", { id: "editor", style: "height: 100%" }) },
       { type: "main", size: "50%", overflow: "hidden", content: $("<div>", { id: "right" }) },
-      { type: "bottom", size: "50%", overflow: "hidden", resizable: false, content: $("<div>", { id: "bottom" }) },
+      // { type: "bottom", size: "50%", overflow: "hidden", resizable: false, content: $("<div>", { id: "bottom" }) },
     ]
   })
 
