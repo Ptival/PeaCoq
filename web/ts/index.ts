@@ -1,5 +1,6 @@
 // import * as _ from "lodash"
 
+import { KeyBindings } from "./editor/keybindings"
 import * as Sertop from "./sertop/sertop"
 import { Workspace } from "./editor/workspace"
 
@@ -14,7 +15,7 @@ import { Workspace } from "./editor/workspace"
 // import { update as fontSizeUpdate } from "./editor/font-size"
 // import { setup as setupGoToPartitioning } from "./editor/goto-partitioning"
 // import { setup as setupInFlightCounter } from "./editor/in-flight-counter"
-import { setup as setupKeybindings } from "./editor/keybindings"
+// import { setup as setupKeybindings } from "./editor/keybindings"
 // import { setup as setupLayout, rightLayoutName } from "./editor/layout"
 // import { setup as setupNamesInScope } from "./editor/names-in-scope"
 // import { setup as setupObserveContext } from "./editor/observe-context"
@@ -30,7 +31,7 @@ import { setup as setupKeybindings } from "./editor/keybindings"
 // import { setupTextCursorPositionUpdate } from "./editor/text-cursor-position"
 // import { setup as setupToolbar } from "./editor/toolbar"
 // import { setup as setupUnderlineError } from "./editor/underline-errors"
-// import { setup as setupUserActions } from "./editor/user-actions"
+import { setup as setupUserActions } from "./editor/user-actions"
 // import { setupUserInteractionForwardGoto } from "./editor/user-interaction-forward-goto"
 
 // import * as Filters from "./peacoq/filters"
@@ -63,10 +64,14 @@ $(document).ready(() => {
 
   const readyStartTime = Date.now()
 
-  const toplevel: IToplevel = new Sertop.Sertop()
-  const workspace = new Workspace(toplevel)
+  const keybindings = new KeyBindings()
+  const keybinding$s = keybindings.getStreams()
 
-  setupKeybindings()
+  const toplevel: IToplevel = new Sertop.Sertop()
+  const workspace = new Workspace(toplevel, keybindings)
+
+  keybinding$s.load$.subscribe(() => console.log("LOAD!"))
+  keybinding$s.next$.subscribe(() => console.log("NEXT!"))
 
   // const {
   //   bottomLayout,

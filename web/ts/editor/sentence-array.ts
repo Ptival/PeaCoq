@@ -17,7 +17,7 @@ export class SentenceArray implements ISentenceArray {
   public sentenceRemoved$: Rx.Subject<ISentence<IStage>>
 
   constructor(
-    public document: ICoqDocument
+    // public document: ICoqDocument
   ) {
     this.sentences = []
 
@@ -39,8 +39,8 @@ export class SentenceArray implements ISentenceArray {
 
   public createSentence(
     document: ICoqDocument,
-    startPosition: AceAjax.Position,
-    stopPosition: AceAjax.Position,
+    startPosition: IPosition,
+    stopPosition: IPosition,
     query: string,
     previousSentence: Maybe<ISentence<any>>,
     stage: IToProcess

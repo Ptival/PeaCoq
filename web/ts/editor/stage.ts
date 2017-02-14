@@ -1,6 +1,6 @@
 import { Control } from "../sertop/command"
 import { StmQuery } from "../sertop/control-command"
-import { SentenceMarker } from "./sentence-marker"
+// import { SentenceMarker } from "./sentence-marker"
 import { getContextRoute } from "../peacoq/routes"
 import { theme } from "../peacoq/theme"
 
@@ -8,11 +8,12 @@ export class ToProcess implements IToProcess {
   public marker: ISentenceMarker
 
   constructor(
-    doc: ICoqDocument,
-    start: AceAjax.Position,
-    stop: AceAjax.Position
+    buffer: IBuffer,
+    // doc: ICoqDocument,
+    start: IPosition,
+    stop: IPosition
   ) {
-    this.marker = new SentenceMarker(doc, start, stop)
+    this.marker = new SentenceMarker(buffer, start, stop)
   }
 
   public getColor(): string { return theme.toprocess }

@@ -5,7 +5,7 @@ interface ICoqDocument {
   command$: Rx.Observable<Command$>
   contextPanel: IContextPanel
   // editor: AceAjax.Editor
-  editor: CodeMirror.Editor
+  editor: IEditor
   // editorChange$: Rx.Observable<AceAjax.EditorChangeEvent>
   sentences: ISentenceArray
   // endAnchor: AceAjax.Anchor

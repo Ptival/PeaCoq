@@ -1,41 +1,46 @@
-export class SentenceMarker implements ISentenceMarker {
-  public klass: string
-  public markerId: number
-  public markerRange: AceAjax.Range
+// export class SentenceMarker implements ISentenceMarker {
+//   private marker: CodeMirror.TextMarker
 
-  constructor(
-    public document: ICoqDocument,
-    public startPosition: AceAjax.Position,
-    public stopPosition: AceAjax.Position
-  ) {
-    this.klass = "toprocess"
-    this.markerRange = new AceAjax.Range(startPosition.row, startPosition.column, stopPosition.row, stopPosition.column)
-    this.markerId = document.session.addMarker(this.markerRange, this.klass, "text", false)
-  }
+//   public klass: string
+//   public markerRange: IEditorRange
 
-  public highlight(): void { this.updateWith("highlight") }
+//   constructor(
+//     private editor: IEditor,
+//     // public document: ICoqDocument,
+//     public startPosition: IPosition,
+//     public stopPosition: IPosition
+//   ) {
+//     this.klass = "toprocess"
+//     this.markerRange = new EditorRange(startPosition.row, startPosition.col, stopPosition.row, stopPosition.col)
+//     this.marker = editor.markText(
+//       this.markerRange,
+//       this.klass
+//     )
+//   }
 
-  public markBeingProcessed(): void {
-    this.klass = "processing"
-    this.update()
-  }
+//   public highlight(): void { this.updateWith("highlight") }
 
-  public markProcessed(): void {
-    this.klass = "processed"
-    this.update()
-  }
+//   public markBeingProcessed(): void {
+//     this.klass = "processing"
+//     this.update()
+//   }
 
-  public remove(): void {
-    this.document.session.removeMarker(this.markerId)
-  }
+//   public markProcessed(): void {
+//     this.klass = "processed"
+//     this.update()
+//   }
 
-  public unhighlight(): void { this.update() }
+//   public remove(): void {
+//     this.marker.clear()
+//   }
 
-  private update(): void { this.updateWith(this.klass) }
+//   public unhighlight(): void { this.update() }
 
-  private updateWith(klass: string): void {
-    this.document.session.removeMarker(this.markerId)
-    this.markerId = this.document.session.addMarker(this.markerRange, klass, "text", false)
-  }
+//   private update(): void { this.updateWith(this.klass) }
 
-}
+//   private updateWith(klass: string): void {
+//     this.marker.clear()
+//     this.marker = this.buffer.addMarker(this.markerRange, klass, "text", false)
+//   }
+
+// }

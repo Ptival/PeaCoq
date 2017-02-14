@@ -1,5 +1,13 @@
 interface IEditor {
-  
+  getPositionBegin(): IPosition
+  getPositionEnd(): IPosition
+  getTextRange(r: IEditorRange): string
+  markText(r: IEditorRange, klass: string): ITextMarker
+  movePositionRight(p: IPosition, n: number): IPosition
+}
+
+interface ITextMarker {
+  clear(): void
 }
 
 type CommandStream<T extends ISertop.ICommand> = Rx.Observable<CommandStreamItem<T>>
