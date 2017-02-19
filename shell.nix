@@ -12,30 +12,19 @@ nixpkgs.stdenv.mkDerivation {
   name = "peacoq";
   jailbreak = true;
   buildInputs = (with nixpkgs; [
-    #cabal-install
-    #coq_8_5
     ghc
-    # gnome3.gtk
     haskellPackages.zlib
     nodejs
-    opam
     zlib
     zlibStatic
-
-    #heist
-    #snap-core
-    #snap-server
-    #snap
     peacoq-server
   ] ++ (with ocamlPackages_4_02; [
-      #ocaml
-      #findlib
-      #camlp5_6_strict
-      #lablgtk
-      #ppx_import
-      #cmdliner
-      #core_kernel
-      #sexplib
+      # Coq:
+      camlp5_6_strict ocaml findlib
+      # CoqIDE:
+      lablgtk
+      # SerAPI:
+      camlp4 cmdliner ocamlbuild ppx_import ppx_sexp_conv sexplib
     ])
   );
   nativeBuildInputs = (with nixpkgs; [
