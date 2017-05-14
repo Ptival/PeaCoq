@@ -1,15 +1,16 @@
-{ nixpkgs ? import <nixpkgs> {}, compiler ? "ghc802" }:
+{ nixpkgs  ? import <nixpkgs> {}
+, compiler ? "ghc802"
+}:
 let callPackage = nixpkgs.pkgs.haskell.packages.${compiler}.callPackage; in
-let peacoq-server = callPackage peacoq-server/peacoq-server.nix {}; in
+# We call default.nix because it has some overrides
+let peacoq-server = callPackage peacoq-server/default.nix {
+  inherit compiler;
+}; in
 nixpkgs.stdenv.mkDerivation {
   name = "peacoq";
-  #jailbreak = true;
   buildInputs = (with nixpkgs; [
     ghc
-    haskellPackages.zlib
     nodejs
-    zlib
-    zlibStatic
     peacoq-server
   ] ++ (with ocamlPackages_4_02; [
       # Coq:
@@ -22,8 +23,6 @@ nixpkgs.stdenv.mkDerivation {
     ])
   );
   nativeBuildInputs = (with nixpkgs; [
-    zlib
-    zlibStatic
   ]);
   shellHook = ''
     export NIXSHELL="$NIXSHELL\[PeaCoq\]"

@@ -22,12 +22,14 @@
     "jss-browserify": "^0.6.0",
     "lodash": "^4.17.4",
     "mathjax": "^2.7.0-beta.0",
-    "npm-check-updates": "2.10.2",
+    "npm-check-updates": "2.11.1",
+    "react": "^15.5.4",
+    "react-dom": "^15.5.4",
     "requirejs": "^2.3.2",
     "rx": "^4.1.0",
     "s-expression": "^3.0.3",
-    "tslint": "^4.4.2",
-    "tsmonad": "^0.6.1",
+    "tslint": "^5.2.0",
+    "tsmonad": "^0.7.2",
     "typescript": "^2.1.5",
     "typings": "^2.1.0",
     "w2ui": "^1.4.3"
@@ -35,7 +37,7 @@
   "devDependencies": {
     "@types/ace": "0.0.32",
     "@types/bluebird": "^3.0.37",
-    "@types/codemirror": "0.0.38",
+    "@types/codemirror": "0.0.40",
     "@types/d3": "^4.4.1",
     "@types/d3-hierarchy": "^1.0.4",
     "@types/d3-interpolate": "^1.1.5",
@@ -48,8 +50,17 @@
     "@types/jss": "^0.6.27",
     "@types/lodash": "^4.14.50",
     "@types/mathjax": "0.0.31",
+    "@types/react": "^15.0.24",
+    "@types/react-dom": "^15.5.0",
     "@types/rx": "^4.1.1",
-    "@types/tsmonad": "0.0.29",
-    "@types/w2ui": "^1.4.30"
+    "@types/tsmonad": "0.5.0",
+    "@types/w2ui": "^1.4.30",
+    "react-scripts": "0.9.5"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject"
   }
 }

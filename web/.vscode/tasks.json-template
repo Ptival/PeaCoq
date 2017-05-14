@@ -7,9 +7,10 @@
   "args": [
     "-w",
     "-p",
+    // "--jsx", "Preserve",
     "."
   ],
   "showOutput": "silent",
-  "isWatching": true,
+  "isBackground": true,
   "problemMatcher": "$tsc-watch"
 }

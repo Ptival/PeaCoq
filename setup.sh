@@ -28,7 +28,8 @@ if [ -f /etc/NIXOS ]; then
   if [ -z "${NIXSHELL+x}" ]; then
     (
       cd peacoq-server
-      ./snap-framework.sh clone
+      cabal2nix --jailbreak git://github.com/snapframework/snap.git > snap.nix
+      cabal2nix . > peacoq-server.nix
     ) || exit 1
     log "This seems to be NixOS, use nix-shell before calling setup.sh or set NIXSHELL"
     exit 1
