@@ -22,6 +22,7 @@ function check-and-clone {
 }
 
 check-and-clone "peacoq-server"
+check-and-clone "peacoq-frontend"
 
 if [ -f /etc/NIXOS ]; then
   # should change this test to something portable, like testing for peacoq-server

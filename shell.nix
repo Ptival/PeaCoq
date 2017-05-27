@@ -25,7 +25,6 @@ nixpkgs.stdenv.mkDerivation {
   nativeBuildInputs = (with nixpkgs; [
   ]);
   shellHook = ''
-    export NIXSHELL="$NIXSHELL\[PeaCoq\]"
     export SSL_CERT_FILE="/etc/ssl/certs/ca-bundle.crt"
     echo -e "\nRemember to run setup.sh again\n"
     # ./setup.sh
