@@ -26,7 +26,7 @@ check-and-clone "peacoq-frontend"
 
 if [ -f /etc/NIXOS ]; then
   # should change this test to something portable, like testing for peacoq-server
-  if [ -z "${NIXSHELL+x}" ]; then
+  if [ "${name+x}" != "peacoq" ]; then
     (
       cd peacoq-server
       cabal2nix --jailbreak git://github.com/snapframework/snap.git > snap.nix
