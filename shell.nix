@@ -13,6 +13,7 @@ nixpkgs.stdenv.mkDerivation {
     nodejs
     peacoq-server
   ] ++ (with ocamlPackages_4_02; [
+      ncurses
       # Coq:
       camlp5_6_strict ocaml findlib
       # CoqIDE:
