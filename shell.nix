@@ -1,25 +1,28 @@
 { nixpkgs  ? import <nixpkgs> {}
-, compiler ? "ghc802"
+#, compiler ? "ghc802"
 }:
-let callPackage = nixpkgs.pkgs.haskell.packages.${compiler}.callPackage; in
+#let callPackage = nixpkgs.pkgs.haskell.packages.${compiler}.callPackage; in
 # We call default.nix because it has some overrides
-let peacoq-server = callPackage peacoq-server/default.nix {
-  inherit compiler;
-}; in
+# let peacoq-server = callPackage peacoq-server/default.nix {
+#   inherit compiler;
+# }; in
 nixpkgs.stdenv.mkDerivation {
   name = "peacoq";
   buildInputs = (with nixpkgs; [
-    ghc
+    #ghc
     nodejs
-    peacoq-server
-  ] ++ (with ocamlPackages_4_02; [
+    # peacoq-server
+  ] ++ (with ocamlPackages;
+    [
       # Coq:
       camlp5_6_strict ocaml findlib
       # CoqIDE:
       lablgtk
       # SerAPI:
-      camlp4 cmdliner ocamlbuild ppx_import ppx_sexp_conv sexplib
+      camlp4 cmdliner
       ocamlbuild opam
+      ppx_driver ppx_import ppx_sexp_conv
+      sexplib
     ])
   );
   nativeBuildInputs = (with nixpkgs; [

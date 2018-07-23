@@ -26,11 +26,6 @@ check-and-clone "peacoq-server"
 if [ -f /etc/NIXOS ]; then
   # should change this test to something portable, like testing for peacoq-server
   if [ -z "${NIXSHELL+x}" ]; then
-    (
-      cd peacoq-server
-      cabal2nix --jailbreak git://github.com/snapframework/snap.git > snap.nix
-      cabal2nix . > peacoq-server.nix
-    ) || exit 1
     log "This seems to be NixOS, use nix-shell before calling setup.sh or set NIXSHELL"
     exit 1
   fi
