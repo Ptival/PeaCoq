@@ -11,4 +11,5 @@ git fetch origin $branch
 git checkout $branch
 # Slower:
 # SERAPI_COQ_HOME="$PWD/../coq/" COQBIN="../coq/bin" (make clean; make)
-SERAPI_COQ_HOME="$PWD/../coq/" COQBIN="../coq/bin" make
+SERAPI_COQ_HOME="$PWD/../coq/" COQBIN="../coq/bin" make sertop
+#OCAMLPATH=$OCAMLPATH SERAPI_COQ_HOME="$PWD/../coq/" COQBIN="../coq/bin" make sertop

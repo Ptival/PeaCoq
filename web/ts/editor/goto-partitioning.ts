@@ -1,17 +1,17 @@
-import * as _ from "lodash"
+import * as _ from 'lodash'
 
-import { isBefore } from "./editor-utils"
-import { Strictly } from "../peacoq/strictly"
+import { isBefore } from './editor-utils'
+import { Strictly } from '../peacoq/strictly'
 
 interface GoToPositions {
-  destinationPos: AceAjax.Position
-  lastEditStopPos: AceAjax.Position
+  destinationPos : AceAjax.Position
+  lastEditStopPos : AceAjax.Position
 }
 
 export function setup(
-  doc: ICoqDocument,
-  goTo$: Rx.Observable<{}>
-): [Rx.Observable<AceAjax.Position>, Rx.Observable<AceAjax.Position>] {
+  doc : ICoqDocument,
+  goTo$ : Rx.Observable<{}>
+) : [Rx.Observable<AceAjax.Position>, Rx.Observable<AceAjax.Position>] {
   const [forward, backward] = goTo$
     // filter out when position is already reached
     .flatMap<GoToPositions>(() => {
@@ -20,7 +20,7 @@ export function setup(
       return (
         _.isEqual(lastEditStopPos, destinationPos)
           ? []
-          : [{ destinationPos: destinationPos, lastEditStopPos: lastEditStopPos, }]
+          : [{ destinationPos : destinationPos, lastEditStopPos : lastEditStopPos, }]
       )
     })
     // partition on the direction of the goTo

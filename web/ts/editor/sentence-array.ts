@@ -1,30 +1,30 @@
-import * as _ from "lodash"
+import * as _ from 'lodash'
 
-import * as DebugFlags from "../peacoq/debug-flags"
-import * as Filters from "../peacoq/filters"
-import { BeingProcessed, Processed } from "./stage"
-import { isBefore } from "./editor-utils"
-import { Sentence } from "./sentence"
-import { Strictly } from "../peacoq/strictly"
+import * as DebugFlags from '../peacoq/debug-flags'
+import * as Filters from '../peacoq/filters'
+import { BeingProcessed, Processed } from './stage'
+import { isBefore } from './editor-utils'
+import { Sentence } from './sentence'
+import { Strictly } from '../peacoq/strictly'
 
 export class SentenceArray implements ISentenceArray {
-  private sentences: ISentence<IStage>[]
+  private sentences : ISentence<IStage>[]
 
-  public sentenceChangedStage$: Rx.Subject<ISentence<IStage>>
-  public sentenceCreated$: Rx.Subject<ISentence<IStage>>
-  public sentenceBeingProcessed$: Rx.Observable<ISentence<IBeingProcessed>>
-  public sentenceProcessed$: Rx.Observable<ISentence<IProcessed>>
-  public sentenceRemoved$: Rx.Subject<ISentence<IStage>>
+  public sentenceChangedStage$ : Rx.Subject<ISentence<IStage>>
+  public sentenceCreated$ : Rx.Subject<ISentence<IStage>>
+  public sentenceBeingProcessed$ : Rx.Observable<ISentence<IBeingProcessed>>
+  public sentenceProcessed$ : Rx.Observable<ISentence<IProcessed>>
+  public sentenceRemoved$ : Rx.Subject<ISentence<IStage>>
 
   constructor(
-    public document: ICoqDocument
+    public document : ICoqDocument
   ) {
     this.sentences = []
 
     this.sentenceChangedStage$ = new Rx.Subject<any>()
     if (DebugFlags.sentenceChangedStage) {
       this.sentenceChangedStage$.subscribe(e =>
-        console.log("sentence changed stage", e.stage, e)
+        console.log('sentence changed stage', e.stage, e)
       )
     }
     this.sentenceBeingProcessed$ =
@@ -32,19 +32,19 @@ export class SentenceArray implements ISentenceArray {
     this.sentenceProcessed$ =
       this.sentenceChangedStage$.let(Filters.sentenceProcessed)
     this.sentenceCreated$ = new Rx.Subject<any>()
-    if (DebugFlags.sentenceCreated) { this.sentenceCreated$.subscribe(s => console.log("sentence created", s)) }
+    if (DebugFlags.sentenceCreated) { this.sentenceCreated$.subscribe(s => console.log('sentence created', s)) }
     this.sentenceRemoved$ = new Rx.Subject<any>()
-    if (DebugFlags.sentenceRemoved) { this.sentenceRemoved$.subscribe(s => console.log("sentence removed", s)) }
+    if (DebugFlags.sentenceRemoved) { this.sentenceRemoved$.subscribe(s => console.log('sentence removed', s)) }
   }
 
   public createSentence(
-    document: ICoqDocument,
-    startPosition: AceAjax.Position,
-    stopPosition: AceAjax.Position,
-    query: string,
-    previousSentence: Maybe<ISentence<any>>,
-    stage: IToProcess
-  ): ISentence<IToProcess> {
+    document : ICoqDocument,
+    startPosition : AceAjax.Position,
+    stopPosition : AceAjax.Position,
+    query : string,
+    previousSentence : Maybe<ISentence<any>>,
+    stage : IToProcess
+  ) : ISentence<IToProcess> {
     const sentence = new Sentence(this, startPosition, stopPosition, query, previousSentence, stage)
     this.sentences.push(sentence)
     this.sentenceCreated$.onNext(sentence)
@@ -52,21 +52,22 @@ export class SentenceArray implements ISentenceArray {
     return <any>sentence
   }
 
-  public getAll(): ISentence<any>[] { return this.sentences }
+  public getAll() : ISentence<any>[] { return this.sentences }
 
-  public getLast(): Maybe<ISentence<IStage>> {
-    return this.sentences.length === 0 ? nothing<ISentence<IStage>>() : just(_(this.sentences).last())
+  public getLast() : Maybe<ISentence<IStage>> {
+    const last = _(this.sentences).last()
+    return last === undefined ? nothing<ISentence<IStage>>() : just(last)
   }
 
-  public remove(r: ISentence<any>) {
+  public remove(r : ISentence<any>) {
     this.removeSentences(e => e.sentenceId === r.sentenceId)
   }
 
-  public removeAll(): void {
+  public removeAll() : void {
     this.removeSentences(_ => true)
   }
 
-  // private removeEditsFromIndex(i: number): void {
+  // private removeEditsFromIndex(i : number) : void {
   //   if (i < 0) { debugger; }
   //   const editsToKeep = _(this.edits).slice(0, i).value()
   //   const editsToRemove = _(this.edits).slice(i, this.edits.length).value()
@@ -77,17 +78,17 @@ export class SentenceArray implements ISentenceArray {
   //   })
   // }
   //
-  // removeEditAndFollowingOnes(r: ISentence<any>): void {
+  // removeEditAndFollowingOnes(r : ISentence<any>) : void {
   //   const editIndex = _(this.edits).findIndex(r)
   //   this.removeEditsFromIndex(editIndex)
   // }
   //
-  // removeFollowingEdits(r: ISentence<any>): void {
+  // removeFollowingEdits(r : ISentence<any>) : void {
   //   const editIndex = _(this.edits).findIndex(r)
   //   this.removeEditsFromIndex(editIndex + 1)
   // }
 
-  public removeSentences(pred: (e: ISentence<any>) => boolean): void {
+  public removeSentences(pred : (e : ISentence<any>) => boolean) : void {
     const removedSentences = ([] as ISentence<IStage>[])
     _.remove(this.sentences, e => {
       const cond = pred(e)

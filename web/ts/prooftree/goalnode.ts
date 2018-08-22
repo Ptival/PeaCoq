@@ -1,32 +1,32 @@
-import * as _ from "lodash"
+import * as _ from 'lodash'
 
-import { Tactic } from "./tactic"
-import { TacticGroupNode } from "./tacticgroupnode"
-import { ProofTreeNode } from "./prooftreenode"
-import { Strictly } from "../peacoq/strictly"
+import { Tactic } from './tactic'
+import { TacticGroupNode } from './tacticgroupnode'
+import { ProofTreeNode } from './prooftreenode'
+import { Strictly } from '../peacoq/strictly'
 
 export class GoalNode extends ProofTreeNode implements IGoalNode {
-  // DO NOT USE "children" AS D3 WILL OVERWRITE
-  private closedBraces: number
-  public html: JQuery
-  private openBraces: number
-  // DO NOT USE "parent" AS D3 WILL OVERWRITE
-  private parentGroup: Maybe<ITacticGroupNode>
-  private stateIds: number[]
-  public tacticGroups: ITacticGroupNode[]
-  private _tacticIndex: number
+  // DO NOT USE 'children' AS D3 WILL OVERWRITE
+  private closedBraces : number
+  public html : JQuery
+  private openBraces : number
+  // DO NOT USE 'parent' AS D3 WILL OVERWRITE
+  private parentGroup : Maybe<ITacticGroupNode>
+  private stateIds : number[]
+  public tacticGroups : ITacticGroupNode[]
+  private _tacticIndex : number
 
   constructor(
-    proofTree: IProofTree,
-    parent: Maybe<ITacticGroupNode>,
-    public context: PeaCoqContext,
-    public fgIndex: number
+    proofTree : IProofTree,
+    parent : Maybe<ITacticGroupNode>,
+    public context : PeaCoqContext,
+    public fgIndex : number
   ) {
     super(proofTree, parent)
     // debugger
     this.closedBraces = 0
-    this.html = $("<div>")
-      .attr("id", _.uniqueId())
+    this.html = $('<div>')
+      .attr('id', _.uniqueId())
       .append(this.context.fgGoals[this.fgIndex].ppgoal.getHTML())
 
     this.openBraces = 0
@@ -36,25 +36,25 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
     this._tacticIndex = 0
   }
 
-  get tacticIndex(): number { return this._tacticIndex }
-  set tacticIndex(ti: number) {
+  get tacticIndex() : number { return this._tacticIndex }
+  set tacticIndex(ti : number) {
     if (ti >= this.tacticGroups.length) { debugger }
     this._tacticIndex = ti
   }
 
-  public addStateId(s: StateId): void {
-    // console.log("Adding state ID", s)
+  public addStateId(s : StateId) : void {
+    // console.log('Adding state ID', s)
     this.stateIds.push(s)
   }
 
-  public addTactic(tacticName: string, groupName: string, context: PeaCoqContext, stateId: StateId): ITactic {
+  public addTactic(tacticName : string, groupName : string, context : PeaCoqContext, stateId : StateId) : ITactic {
     const found = _.find(this.getTactics(), t => t.tactic === tacticName)
     if (found !== undefined) {
       return found
     }
 
     const maybeTacticGroup = _.find(this.tacticGroups, tg => tg.name === groupName)
-    let tacticGroup: ITacticGroupNode
+    let tacticGroup : ITacticGroupNode
     if (maybeTacticGroup === undefined) {
       tacticGroup = new TacticGroupNode(this.proofTree, this, groupName)
       this.tacticGroups.push(tacticGroup)
@@ -77,10 +77,10 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
         : goalsAfter.fgGoals.length
     const relevantGoals = context.fgGoals.slice(0, nbRelevantGoals)
 
-    // console.log("nbRelevantGoals", nbRelevantGoals)
+    // console.log('nbRelevantGoals', nbRelevantGoals)
     // debugger
 
-    const goalNodes: IGoalNode[] =
+    const goalNodes : IGoalNode[] =
       _(_.range(nbRelevantGoals))
         .map(ndx =>
           new GoalNode(
@@ -98,9 +98,9 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
 
   }
 
-  public click(): void { return }
+  public click() : void { return }
 
-  // findOrCreateGroup(groupName: string): ITacticGroupNode {
+  // findOrCreateGroup(groupName : string) : ITacticGroupNode {
   //   const found = <ITacticGroupNode | undefined>_(this.tacticGroups)
   //     .find(function(tacticGroup) {
   //       return tacticGroup.name === groupName
@@ -112,7 +112,7 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
   //   return groupNode
   // }
 
-  public focus(): void {
+  public focus() : void {
     this.parentGroup.fmap(tg => {
       const tacticIndex = _.findIndex(tg.tactics, t => _.some(t.goals, g => g.id === this.id))
       if (tacticIndex === -1) { debugger }
@@ -125,30 +125,35 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
     })
   }
 
-  public getAllDescendants(): IProofTreeNode[] {
-    const children: ITacticGroupNode[] = this.tacticGroups
-    const descendants: IProofTreeNode[] = _(children).map(c => c.getAllDescendants()).flatten<IProofTreeNode>().value()
+  public getAllDescendants() : IProofTreeNode[] {
+    const children : ITacticGroupNode[] = this.tacticGroups
+    const descendants : IProofTreeNode[] = _(children).map(c => c.getAllDescendants()).flatten<IProofTreeNode>().value()
     return ([] as IProofTreeNode[]).concat(children, descendants)
   }
 
-  public getAllGoalDescendants(): GoalNode[] {
-    const children: ITacticGroupNode[] = this.tacticGroups
-    const descendants: GoalNode[] = _(children).map(c => c.getAllGoalDescendants()).flatten<GoalNode>().value()
-    const result: GoalNode[] = [this]
+  public getAllGoalDescendants() : IGoalNode[] {
+    const children : ITacticGroupNode[] = this.tacticGroups
+    const descendants : IGoalNode[] = (
+      _(children)
+        .map(c => c.getAllGoalDescendants())
+        .flatten<IGoalNode>()
+        .value()
+    )
+    const result : IGoalNode[] = [this]
     return result.concat(descendants)
   }
 
-  public getFocusedChild(): Maybe<ITacticGroupNode> {
+  public getFocusedChild() : Maybe<ITacticGroupNode> {
     if (this.tacticGroups.length === 0) { return nothing<ITacticGroupNode>() }
     return just(this.tacticGroups[this.tacticIndex])
   }
 
-  public getGoalAncestor(): Maybe<IGoalNode> {
+  public getGoalAncestor() : Maybe<IGoalNode> {
     return this.parentGroup.bind(g => g.getGoalAncestor())
   }
 
-  public getFocusedTacticGroup(): TsMonad.Maybe<ITacticGroupNode> {
-    const nonEmptyTacticGroups: ITacticGroupNode[] = _(this.tacticGroups)
+  public getFocusedTacticGroup() : Maybe<ITacticGroupNode> {
+    const nonEmptyTacticGroups : ITacticGroupNode[] = _(this.tacticGroups)
       .filter(group => group.tactics.length > 0)
       .value()
 
@@ -156,36 +161,36 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
     return TsMonad.Maybe.just(nonEmptyTacticGroups[this.tacticIndex])
   }
 
-  public getGoalAncestors(): IGoalNode[] {
+  public getGoalAncestors() : IGoalNode[] {
     return this.getGrandParent().caseOf<IGoalNode[]>({
-      nothing: () => [this],
-      just: gp => ([] as IGoalNode[]).concat([this], gp.getGoalAncestors()),
+      nothing : () => [this],
+      just : gp => ([] as IGoalNode[]).concat([this], gp.getGoalAncestors()),
     })
   }
 
-  public getGrandParent(): Maybe<IGoalNode> {
+  public getGrandParent() : Maybe<IGoalNode> {
     return this.parentGroup.caseOf({
-      nothing: () => nothing<IGoalNode>(),
-      just: (p: ITacticGroupNode) => p.getParent(),
+      nothing : () => nothing<IGoalNode>(),
+      just : (p : ITacticGroupNode) => p.getParent(),
     })
   }
 
-  public getHeight(): number {
+  public getHeight() : number {
     const node = this.getHTMLElement()
     const rect = node.getBoundingClientRect()
     return Math.ceil(rect.height)
   }
 
-  public getParent(): Maybe<ITacticGroupNode> { return this.parentGroup }
+  public getParent() : Maybe<ITacticGroupNode> { return this.parentGroup }
 
-  public getStateIds(): StateId[] {
+  public getStateIds() : StateId[] {
     return this.stateIds
   }
 
-  public getTactics(): ITactic[] {
+  public getTactics() : ITactic[] {
     return _(this.tacticGroups)
       .map(g => g.getTactics())
-      .flatten<ITactic>(true)
+      .flattenDeep<ITactic>()
       .value()
   }
 
@@ -194,7 +199,7 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
    * view. If the node is collapsed, it needs to have one child if it is an
    * ancestor of the current node, so that the current node is reachable.
    */
-  public getViewChildren(): ITacticGroupNode[] {
+  public getViewChildren() : ITacticGroupNode[] {
     if (this.isSolved()
       && !this.proofTree.isCurNodeAncestor(Strictly.Yes, this)) {
       return []
@@ -202,7 +207,7 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
     // const nonEmptyTacticGroups = _(this.tacticGroups)
     //   .filter(function(group) { return (group.tactics.length > 0); })
     //   .value()
-    //   
+    //
     if (this.tacticGroups.length === 0) { return [] }
     if (this.proofTree.isCurNode(this)) {
       return this.tacticGroups
@@ -213,7 +218,7 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
     }
   }
 
-  public getViewFocusedChild(): Maybe<ITacticGroupNode> {
+  public getViewFocusedChild() : Maybe<ITacticGroupNode> {
     const viewChildren = this.getViewChildren()
     return this.getFocusedTacticGroup()
       .bind(tacticGroup => {
@@ -223,32 +228,32 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
       })
   }
 
-  public getWidth(): number {
+  public getWidth() : number {
     return this.proofTree.getGoalWidth()
   }
 
-  public isSolved(): boolean {
+  public isSolved() : boolean {
     if (this.proofTree.isCurNodeAncestor(Strictly.Yes, this)) { return false }
     const focusedTacticGroup = this.getFocusedTacticGroup()
     return this.getFocusedTacticGroup().caseOf({
-      nothing: () => false,
-      just: tg => tg.isSolved(),
+      nothing : () => false,
+      just : tg => tg.isSolved(),
     })
   }
 
-  public onChildSolved(sid: number): void {
+  public onChildSolved(sid : number) : void {
     this.onSolved(sid)
   }
 
-  public onSolved(sid: number): void {
+  public onSolved(sid : number) : void {
     if (this.openBraces === this.closedBraces) {
       this.parentGroup.caseOf({
-        nothing: () => {
+        nothing : () => {
           // if (autoLayout) {
           //   //proofTreeQueryWish('Qed.')
           // }
         },
-        just: p => p.onChildSolvedAndUnfocused(sid),
+        just : p => p.onChildSolvedAndUnfocused(sid),
       })
     }
     //  else if (autoLayout) {
@@ -256,10 +261,10 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
     // }
   }
 
-  public removeStateIds(sids: StateId[]): void {
-    // console.log("Removing state IDs", sids, "from", this.stateIds)
+  public removeStateIds(sids : StateId[]) : void {
+    // console.log('Removing state IDs', sids, 'from', this.stateIds)
     this.stateIds = _(this.stateIds).filter(s => !_(sids).includes(s)).value()
-    // console.log("Remaining", this.stateIds)
+    // console.log('Remaining', this.stateIds)
   }
 
 }

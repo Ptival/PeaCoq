@@ -1,60 +1,60 @@
-import * as d3Hierarchy from "d3-hierarchy"
-import { GoalNode } from "./goalnode"
-import { TacticGroupNode } from "./tacticgroupnode"
-import * as ProofTreeUtils from "./utils"
+import * as d3Hierarchy from 'd3-hierarchy'
+import { GoalNode } from './goalnode'
+import { TacticGroupNode } from './tacticgroupnode'
+import * as ProofTreeUtils from './utils'
 
 /*
  * Returns a rect of the absolute position of [elmt] within the canvas. It needs
  * [node] in order to return absolute values, where [node] is the node element
  * within which [elmt] lives.
  */
-function elmtRect(node: ProofTreeTypes.Node, elmt: HTMLElement) {
+function elmtRect(node : ProofTreeTypes.Node, elmt : HTMLElement) {
   const rect = elmt.getBoundingClientRect()
-  const containerRect = $(elmt).parents("foreignObject")[0].getBoundingClientRect()
+  const containerRect = $(elmt).parents('foreignObject')[0].getBoundingClientRect()
   const left = getDestinationScaledX(node) + ProofTreeUtils.deltaX(containerRect, rect)
   const top = getDestinationScaledY(node) + ProofTreeUtils.deltaY(containerRect, rect)
   return {
-    "left": left, "right": left + rect.width, "width": rect.width,
-    "top": top, "bottom": top + rect.height, "height": rect.height,
+    'left' : left, 'right' : left + rect.width, 'width' : rect.width,
+    'top' : top, 'bottom' : top + rect.height, 'height' : rect.height,
   }
 }
 
-export function getDestinationScaledX(node: ProofTreeTypes.Node): number {
+export function getDestinationScaledX(node : ProofTreeTypes.Node) : number {
   const tree = node.data.proofTree
   return ProofTreeUtils.nodeX(node) * tree.xFactor + xOffset(node)
 }
 
-export function getDestinationScaledY(node: ProofTreeTypes.Node): number {
+export function getDestinationScaledY(node : ProofTreeTypes.Node) : number {
   const tree = node.data.proofTree
   return ProofTreeUtils.nodeY(node) * tree.yFactor + yOffset(node)
 }
 
-export function getHierarchyGoalAncestor(d: ProofTreeTypes.Node): Maybe<ProofTreeTypes.Node> {
+export function getHierarchyGoalAncestor(d : ProofTreeTypes.Node) : Maybe<ProofTreeTypes.Node> {
   if (d.parent === null) { return nothing<ProofTreeTypes.Node>() }
   if (isGoalNodeHierarchyNode(d.parent)) { return just(d.parent) }
   return getHierarchyGoalAncestor(d.parent)
 }
 
-function isGoalNodeHierarchyNode(d: d3Hierarchy.HierarchyNode<IProofTreeNode>): d is d3Hierarchy.HierarchyNode<IGoalNode> {
+function isGoalNodeHierarchyNode(d : d3Hierarchy.HierarchyNode<IProofTreeNode>) : d is d3Hierarchy.HierarchyNode<IGoalNode> {
   return d.data instanceof GoalNode
 }
 
-function getHierarchyFocusedChild(d: ProofTreeTypes.Node): Maybe<ProofTreeTypes.Node> {
-  throw "TODO"
+function getHierarchyFocusedChild(d : ProofTreeTypes.Node) : Maybe<ProofTreeTypes.Node> {
+  throw 'TODO'
 }
 
-function xOffset(d: ProofTreeTypes.Node): number {
+function xOffset(d : ProofTreeTypes.Node) : number {
   return - d.data.getWidth() / 2 // position the center
 }
 
-function isCurGoalChild(n: ProofTreeTypes.Node): boolean {
+function isCurGoalChild(n : ProofTreeTypes.Node) : boolean {
   return (
     n.parent !== null
     && n.parent.data.isCurNode()
   )
 }
 
-function isCurGoalGrandChild(n: ProofTreeTypes.Node): boolean {
+function isCurGoalGrandChild(n : ProofTreeTypes.Node) : boolean {
   return (
     n.parent !== null
     && n.parent.parent !== null
@@ -62,11 +62,11 @@ function isCurGoalGrandChild(n: ProofTreeTypes.Node): boolean {
   )
 }
 
-function getFocusedChild(n: ProofTreeTypes.Node): Maybe<ProofTreeTypes.Node> {
+function getFocusedChild(n : ProofTreeTypes.Node) : Maybe<ProofTreeTypes.Node> {
   // const node = n.data
   return n.data.getFocusedChild().caseOf({
-    nothing: () => nothing<ProofTreeTypes.Node>(),
-    just: (focusedChild: IProofTreeNode) => {
+    nothing : () => nothing<ProofTreeTypes.Node>(),
+    just : (focusedChild : IProofTreeNode) => {
       const children = n.children
       if (children === undefined) { return thisShouldNotHappen() }
       const found = children.find(c => c.data.id === focusedChild.id)
@@ -76,11 +76,11 @@ function getFocusedChild(n: ProofTreeTypes.Node): Maybe<ProofTreeTypes.Node> {
   })
 }
 
-function getViewFocusedChild(n: ProofTreeTypes.Node): Maybe<ProofTreeTypes.Node> {
+function getViewFocusedChild(n : ProofTreeTypes.Node) : Maybe<ProofTreeTypes.Node> {
   // const node = n.data
   return n.data.getViewFocusedChild().caseOf({
-    nothing: () => nothing<ProofTreeTypes.Node>(),
-    just: (focusedChild: IProofTreeNode) => {
+    nothing : () => nothing<ProofTreeTypes.Node>(),
+    just : (focusedChild : IProofTreeNode) => {
       const children = n.children
       if (children === undefined) { return thisShouldNotHappen() }
       const found = children.find(c => c.data.id === focusedChild.id)
@@ -90,7 +90,7 @@ function getViewFocusedChild(n: ProofTreeTypes.Node): Maybe<ProofTreeTypes.Node>
   })
 }
 
-function isCurNodeParent(d: ProofTreeTypes.Node): boolean {
+function isCurNodeParent(d : ProofTreeTypes.Node) : boolean {
   const curNode = d.data.proofTree.getHierarchyCurNode()
   return (
     d.parent !== null
@@ -98,17 +98,17 @@ function isCurNodeParent(d: ProofTreeTypes.Node): boolean {
   )
 }
 
-function yOffset(d: ProofTreeTypes.Node): number {
+function yOffset(d : ProofTreeTypes.Node) : number {
   const tree = d.data.proofTree
   const offset = - d.data.getHeight() / 2 // for the center
   const focusedChild = getViewFocusedChild(d)
 
   // all tactic nodes are shifted such that the current tactic is centered
-  // assert(isGoal(tree.curNode), "yOffset assumes the current node is a goal!")
+  // assert(isGoal(tree.curNode), 'yOffset assumes the current node is a goal!')
   if (isCurGoalChild(d)) {
     const parent = d.parent
     if (parent === null) { return thisShouldNotHappen() }
-    // assert(focusedChild !== undefined, "yOffset: focusedChild === undefined")
+    // assert(focusedChild !== undefined, 'yOffset : focusedChild === undefined')
     return offset + (
       ProofTreeUtils.nodeY(parent) - ProofTreeUtils.nodeY(fromJust(focusedChild))
     ) * tree.yFactor

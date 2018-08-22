@@ -1,11 +1,11 @@
-import { isBefore } from "./editor-utils"
-import { Strictly } from "../peacoq/strictly"
+import { isBefore } from './editor-utils'
+import { Strictly } from '../peacoq/strictly'
 
 export function setupUserInteractionForwardGoto(
-  doc: ICoqDocument,
-  forwardGoto$: Rx.Observable<AceAjax.Position>,
-  errorMsg$: Rx.Observable<ErrorMessageFeedback>
-): void {
+  doc : ICoqDocument,
+  forwardGoto$ : Rx.Observable<AceAjax.Position>,
+  errorMsg$ : Rx.Observable<ErrorMessageFeedback>
+) : void {
 
   forwardGoto$
     .flatMap(dest => {
@@ -16,7 +16,7 @@ export function setupUserInteractionForwardGoto(
         .takeWhile(e => {
           const range = AceAjax.Range.fromPoints(e.stopPosition, dest)
           const text = doc.session.getDocument().getTextRange(range)
-          return CoqStringUtils.coqTrimLeft(text) !== ""
+          return CoqStringUtils.coqTrimLeft(text) !== ''
         })
         // if an error occurs, abort
         .takeUntil(errorMsg$)

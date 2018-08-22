@@ -1,8 +1,8 @@
 export class ProofTreeStack implements IProofTreeStack {
-  public added$: Rx.Subject<IProofTree>
-  public length: number
-  public removed$: Rx.Subject<IProofTree>
-  private proofTrees: IProofTree[]
+  public added$ : Rx.Subject<IProofTree>
+  public length : number
+  public removed$ : Rx.Subject<IProofTree>
+  private proofTrees : IProofTree[]
 
   constructor() {
     this.proofTrees = []
@@ -16,12 +16,12 @@ export class ProofTreeStack implements IProofTreeStack {
     })
   }
 
-  public peek(): IProofTree {
+  public peek() : IProofTree {
     if (this.proofTrees.length === 0) { debugger }
     return this.proofTrees[0]
   }
 
-  public pop(): IProofTree {
+  public pop() : IProofTree {
     const t = this.proofTrees.shift()
     if (t === undefined) {
       debugger
@@ -31,7 +31,7 @@ export class ProofTreeStack implements IProofTreeStack {
     return t
   }
 
-  public push(t: IProofTree): void {
+  public push(t : IProofTree) : void {
     this.proofTrees.unshift(t)
     this.added$.onNext(t)
   }

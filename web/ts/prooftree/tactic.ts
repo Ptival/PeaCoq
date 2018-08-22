@@ -1,13 +1,13 @@
-import * as _ from "lodash"
+import * as _ from 'lodash'
 
 export class Tactic implements ITactic {
-  // addReturn: AddReturn
-  public goalIndex: number
+  // addReturn : AddReturn
+  public goalIndex : number
 
   constructor(
-    public tactic: string,
-    public parentGroup: ITacticGroupNode,
-    public goals: IGoalNode[]
+    public tactic : string,
+    public parentGroup : ITacticGroupNode,
+    public goals : IGoalNode[]
   ) {
     // this.addReturn = waiting.addReturn
     this.goalIndex = 0
@@ -38,19 +38,19 @@ export class Tactic implements ITactic {
     */
   }
 
-  public focus(): void {
+  public focus() : void {
     const tacticIndex = _.findIndex(this.parentGroup.tactics, t => t.tactic === this.tactic)
     if (tacticIndex === -1) { debugger }
     this.parentGroup.tacticIndex = tacticIndex
     this.parentGroup.focus()
   }
 
-  public getFocusedGoal(): Maybe<IGoalNode> {
+  public getFocusedGoal() : Maybe<IGoalNode> {
     if (this.goals.length === 0) { return nothing<IGoalNode>() }
     return just(this.goals[this.goalIndex])
   }
 
-  public isSolved(): boolean {
+  public isSolved() : boolean {
     return _.every(this.goals, g => g.isSolved())
   }
 

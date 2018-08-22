@@ -1,125 +1,126 @@
-import * as _ from "lodash"
+import * as _ from 'lodash'
+import { Maybe } from 'tsmonad'
 
-import { commonAncestor } from "./common-ancestor"
+import { commonAncestor } from './common-ancestor'
 
 let nodeId = 0
 
 export abstract class ProofTreeNode implements IProofTreeNode {
-  private body: HTMLElement | undefined
-  public currentScaledX: number
-  public currentScaledY: number
-  public readonly depth: number
-  public readonly id: string
-  // public label: string
-  // public x: number
-  // x0: number
-  // public y: number
-  // y0: number
+  private body : HTMLElement | undefined
+  public currentScaledX : number
+  public currentScaledY : number
+  public readonly depth : number
+  public readonly id : string
+  // public label : string
+  // public x : number
+  // x0 : number
+  // public y : number
+  // y0 : number
 
   constructor(
-    public proofTree: IProofTree,
-    parent: Maybe<IProofTreeNode>
+    public proofTree : IProofTree,
+    parent : Maybe<IProofTreeNode>
   ) {
     this.body = undefined
-    this.depth = parent.fmap(p => p.depth + 1).valueOr(0)
-    const foo = parent.fmap(p => p.currentScaledX).valueOr(0)
+    this.depth = parent.fmap((p : IProofTreeNode) => p.depth + 1).valueOr(0)
+    const foo = parent.fmap((p : IProofTreeNode) => p.currentScaledX).valueOr(0)
     this.currentScaledX = parent.fmap(p => p.currentScaledX).valueOr(0)
     this.currentScaledY = parent.fmap(p => p.currentScaledY).valueOr(0)
     this.id = `${nodeId++}` // used to be taken care of by d3
   }
 
-  public abstract click(): void
-  public abstract focus(): void
+  public abstract click() : void
+  public abstract focus() : void
 
-  public abstract getAllDescendants(): IProofTreeNode[]
-  public abstract getAllGoalDescendants(): IGoalNode[]
-  public abstract getFocusedChild(): Maybe<IProofTreeNode>
-  public abstract getGoalAncestor(): Maybe<IGoalNode>
-  public abstract getHeight(): number
+  public abstract getAllDescendants() : IProofTreeNode[]
+  public abstract getAllGoalDescendants() : IGoalNode[]
+  public abstract getFocusedChild() : Maybe<IProofTreeNode>
+  public abstract getGoalAncestor() : Maybe<IGoalNode>
+  public abstract getHeight() : number
 
-  public getHTMLElement(): HTMLElement {
+  public getHTMLElement() : HTMLElement {
     if (this.body === undefined) {
       debugger
       throw this
     }
-    // assert(this.body !== undefined, "ProofTreeNode.getHTMLElement")
+    // assert(this.body !== undefined, 'ProofTreeNode.getHTMLElement')
     return this.body
   }
 
-  // getOriginalScaledX(): number {
+  // getOriginalScaledX() : number {
   //   // return this.getScaledX()
   //   return this.getGoalAncestor().caseOf({
-  //     // the root needs to spawn somewhere arbitrary: (0, 0.5)
-  //     nothing: () => this.proofTree.xOffset(this),
+  //     // the root needs to spawn somewhere arbitrary : (0, 0.5)
+  //     nothing : () => this.proofTree.xOffset(this),
   //     // non-roots are spawned at their parent's (cX0, cY0)
-  //     // just: (p) => + $(p.body.parentElement).attr("x"),
-  //     just: p => this.getScaledDestinationX(),
+  //     // just : (p) => + $(p.body.parentElement).attr('x'),
+  //     just : p => this.getScaledDestinationX(),
   //   })
   // }
   //
-  // getOriginalScaledY(): number {
+  // getOriginalScaledY() : number {
   //   // return this.getScaledY()
   //   const tree = this.proofTree
   //   return this.getGoalAncestor().caseOf({
-  //     // the root needs to spawn somewhere arbitrary: (0, 0.5)
-  //     nothing: () => 0.5 * tree.xOffset(this) + tree.yOffset(this),
+  //     // the root needs to spawn somewhere arbitrary : (0, 0.5)
+  //     nothing : () => 0.5 * tree.xOffset(this) + tree.yOffset(this),
   //     // non-roots are spawned at their parent's (cX0, cY0)
-  //     // just: (p) => + $(p.body.parentElement).attr("y"),
-  //     just: (p) => this.getScaledDestinationY(),
+  //     // just : (p) => + $(p.body.parentElement).attr('y'),
+  //     just : (p) => this.getScaledDestinationY(),
   //   })
   // }
 
-  public abstract getParent(): Maybe<IProofTreeNode>
+  public abstract getParent() : Maybe<IProofTreeNode>
 
-  // public getDestinationScaledX(): number {
+  // public getDestinationScaledX() : number {
   //   const tree = this.proofTree
   //   debugger
   //   return ProofTreeUtils.nodeX(this) * tree.xFactor + tree.xOffset(this)
   // }
 
-  // public getDestinationScaledY(): number {
+  // public getDestinationScaledY() : number {
   //   const tree = this.proofTree
   //   return ProofTreeUtils.nodeY(this) * tree.yFactor + tree.yOffset(this)
   // }
 
-  public abstract getViewChildren(): IProofTreeNode[]
+  public abstract getViewChildren() : IProofTreeNode[]
 
-  public abstract getViewFocusedChild(): Maybe<IProofTreeNode>
+  public abstract getViewFocusedChild() : Maybe<IProofTreeNode>
 
-  public getViewGrandChildren(): IProofTreeNode[] {
+  public getViewGrandChildren() : IProofTreeNode[] {
     return (
       _(this.getViewChildren())
         .map(e => e.getViewChildren())
-        .flatten<ProofTreeNode>(true)
+        .flattenDeep<IProofTreeNode>()
         .value()
     )
   }
 
-  public abstract getWidth(): number
+  public abstract getWidth() : number
 
-  public hasGrandParent(): boolean {
+  public hasGrandParent() : boolean {
     return this.hasParentSuchThat(p => p.hasParent())
   }
 
-  public hasParent(): boolean { return this.hasParentSuchThat(() => true) }
+  public hasParent() : boolean { return this.hasParentSuchThat(() => true) }
 
-  public hasParentSuchThat(pred: (_1: IProofTreeNode) => boolean): boolean {
+  public hasParentSuchThat(pred : (_1 : IProofTreeNode) => boolean) : boolean {
     return this.getParent().fmap(pred).valueOr(false)
   }
 
-  public isCurNode(): boolean {
+  public isCurNode() : boolean {
     return this.id === this.proofTree.curNode.id
   }
 
-  public isCurNodeAncestor(): boolean {
+  public isCurNodeAncestor() : boolean {
     const curNode = this.proofTree.curNode
     const common = commonAncestor(curNode, this)
     return this.id === common.id
   }
 
-  public abstract isSolved(): boolean
+  public abstract isSolved() : boolean
 
-  public setHTMLElement(e: HTMLElement): void {
+  public setHTMLElement(e : HTMLElement) : void {
     this.body = e
   }
 

@@ -1,43 +1,43 @@
-import * as _ from "lodash"
+import * as _ from 'lodash'
 
-import { GoalNode } from "./goalnode"
-import { ProofTree } from "./prooftree"
-import { Tactic } from "./tactic"
-import { TacticGroupNode } from "./tacticgroupnode"
+import { GoalNode } from './goalnode'
+import { ProofTree } from './prooftree'
+import { Tactic } from './tactic'
+import { TacticGroupNode } from './tacticgroupnode'
 
 export function proofTreeOnEdit(
-  doc: ICoqDocument,
-  showProofTreePanel: () => Promise<{}>,
-  hideProofTreePanel: () => void,
-  query: string,
-  stateId: number,
-  // lastStatus: IStatus,
-  // status: IStatus,
-  context: PeaCoqContext
-): void {
+  doc : ICoqDocument,
+  showProofTreePanel : () => Promise<{}>,
+  hideProofTreePanel : () => void,
+  query : string,
+  stateId : number,
+  // lastStatus : IStatus,
+  // status : IStatus,
+  context : PeaCoqContext
+) : void {
 
   const trimmed = CoqStringUtils.coqTrim(query)
 
   // I used to be smarter about this but I got tired of it
-  if (trimmed === "Proof.") {
+  if (trimmed === 'Proof.') {
     // we are behind on the number of proof trees, create one
     showProofTreePanel()
       .then(() => { // needs to be before for width/height
         const pt = new ProofTree(
-          "FIXME",
+          'FIXME',
           // status.statusProofName,
-          $("#prooftree")[0],
-          $("#prooftree").parent().width(),
-          $("#prooftree").parent().height(),
+          $('#prooftree')[0],
+          $('#prooftree').parent().width()  || 100,
+          $('#prooftree').parent().height() || 100,
           nothing<ITacticGroupNode>(),
           context,
           0,
           doc
         )
         // pt.curNode$.subscribe(
-        //   n => console.log("Current node changed to", n),
+        //   n => console.log('Current node changed to', n),
         //   null,
-        //   () => console.log("No longer tracking current node for this tree")
+        //   () => console.log('No longer tracking current node for this tree')
         // )
         doc.proofTrees.push(pt)
         const g = pt.rootNode
@@ -48,17 +48,17 @@ export function proofTreeOnEdit(
     return
   } else {
     // multiple trees might have been finished at once?
-    if (_(["Qed.", "Defined.", "Abort."]).includes(trimmed)) {
+    if (_(['Qed.', 'Defined.', 'Abort.']).includes(trimmed)) {
       doc.proofTrees.pop()
       if (doc.proofTrees.length === 0) {
-        $("#prooftree").empty()
+        $('#prooftree').empty()
         hideProofTreePanel()
       }
     }
     // while (doc.proofTrees.length > status.statusAllProofs.length) {
     //   doc.proofTrees.shift()
     //   if (doc.proofTrees.length === 0) {
-    //     $("#prooftree").empty()
+    //     $('#prooftree').empty()
     //     hideProofTreePanel()
     //   }
     // }
@@ -75,13 +75,13 @@ export function proofTreeOnEdit(
     return
   }
 
-  const tactic = curNode.addTactic(trimmed, "", context, stateId)
+  const tactic = curNode.addTactic(trimmed, '', context, stateId)
   tactic.focus()
 
   tactic.parentGroup.isProcessed = true
 
   if (tactic.goals.length > 0) {
-    const curGoal: IGoalNode = tactic.goals[0]
+    const curGoal : IGoalNode = tactic.goals[0]
     curGoal.addStateId(stateId)
     curNode.proofTree.curNode = curGoal
     curNode.proofTree.scheduleUpdate()
@@ -96,10 +96,10 @@ export function proofTreeOnEdit(
   we could rewind into old trees.
  */
 export function onStmCanceled(
-  doc: ICoqDocument,
-  hideProofTreePanel: () => void,
-  sids: StateId[]
-): void {
+  doc : ICoqDocument,
+  hideProofTreePanel : () => void,
+  sids : StateId[]
+) : void {
 
   if (doc.proofTrees.length === 0) { return }
   const activeProofTree = doc.proofTrees.peek()
@@ -114,13 +114,13 @@ export function onStmCanceled(
   const allGoals = activeProofTree.getAllGoals()
 
   _(allGoals).each(g => {
-    if (_(g.getStateIds()).some((s: StateId) => _(sids).includes(s))) {
+    if (_(g.getStateIds()).some((s : StateId) => _(sids).includes(s))) {
       _(g.tacticGroups).each(g => { g.isProcessed = false })
     }
     g.removeStateIds(sids)
   })
 
-  // TODO: Not sure if this is always correct
+  // TODO : Not sure if this is always correct
   const target = _.maxBy(allGoals, g => _.max(g.getStateIds()))
 
   if (target) {
@@ -132,7 +132,7 @@ export function onStmCanceled(
       doc.proofTrees.pop()
     }
     hideProofTreePanel()
-    $("#prooftree").empty()
+    $('#prooftree').empty()
   }
 
 }

@@ -1,13 +1,13 @@
-import * as Context from "./context"
-import * as Stage from "./stage"
-import * as DebugFlags from "../peacoq/debug-flags"
-import { emptyContext } from "../peacoq/peacoq"
-import { getContextRoute } from "../peacoq/routes"
+import * as Context from './context'
+import * as Stage from './stage'
+import * as DebugFlags from '../peacoq/debug-flags'
+import { emptyContext } from '../peacoq/peacoq'
+import { getContextRoute } from '../peacoq/routes'
 
 export function setup(
-  doc: ICoqDocument,
-  notice$: Notice$,
-  stmQuery$: StmQuery$
+  doc : ICoqDocument,
+  notice$ : Notice$,
+  stmQuery$ : StmQuery$
 ) {
   /*
   Feedback comes back untagged, so need the zip to keep track of the relationship
@@ -16,7 +16,7 @@ export function setup(
   Rx.Observable.zip<ISertop.IControl<ISertop.IControlCommand.IStmQuery>, NoticeMessageFeedback>(
     // We want only PeaCoqGetContext happening because a sentence is processed
     stmQuery$
-      .filter(q => q.controlCommand.query === "PeaCoqGetContext.")
+      .filter(q => q.controlCommand.query === 'PeaCoqGetContext.')
       .filter(q => q.controlCommand.fromAutomation === false),
     notice$.filter(m => m.routeId === getContextRoute)
   ).subscribe(([cmd, fbk]) => {
@@ -29,10 +29,10 @@ export function setup(
     const rawContext = fbk.feedbackContent.message
     const sentence = doc.getSentenceByStateId(stateId)
     sentence.caseOf<void>({
-      nothing: () => { },
-      just: sentence => {
+      nothing : () => { },
+      just : sentence => {
         if (!(sentence.stage instanceof Stage.Processed)) { debugger }
-        const stage: IProcessed = <any>sentence.stage
+        const stage : IProcessed = <any>sentence.stage
         if (DebugFlags.rawPeaCoqContext) { console.log(rawContext) }
         if (rawContext.length === 0) {
           stage.setContext(emptyContext)

@@ -4,7 +4,7 @@ abstract class BinderKind { }
 
 class Default extends BinderKind {
   constructor(
-    public kind: BindingKind
+    public kind : BindingKind
   ) {
     super()
   }
@@ -12,9 +12,9 @@ class Default extends BinderKind {
 
 class Generalized extends BinderKind {
   constructor(
-    public kind1: BindingKind,
-    public kind2: BindingKind,
-    public b: boolean
+    public kind1 : BindingKind,
+    public kind2 : BindingKind,
+    public b : boolean
   ) {
     super()
   }

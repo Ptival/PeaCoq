@@ -1,23 +1,23 @@
-import * as _ from "lodash"
+import * as _ from 'lodash'
 
-import { ProofTreeNode } from "./prooftreenode"
-import { Strictly } from "../peacoq/strictly"
-import * as Command from "../sertop/command"
-import * as ControlCommand from "../sertop/control-command"
+import { ProofTreeNode } from './prooftreenode'
+import { Strictly } from '../peacoq/strictly'
+import * as Command from '../sertop/command'
+import * as ControlCommand from '../sertop/control-command'
 
-const userTacticsGroupName = "PeaCoq user tactics"
+const userTacticsGroupName = 'PeaCoq user tactics'
 
 export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
-  public isProcessed: boolean
+  public isProcessed : boolean
   // do not use parent, D3 will overwrite
-  public span: JQuery
-  public tacticIndex: number
-  public tactics: ITactic[]
+  public span : JQuery
+  public tacticIndex : number
+  public tactics : ITactic[]
 
   constructor(
-    proofTree: IProofTree,
-    private parentGoal: IGoalNode,
-    public name: string
+    proofTree : IProofTree,
+    private parentGoal : IGoalNode,
+    public name : string
   ) {
     super(proofTree, just(parentGoal))
     this.isProcessed = false
@@ -28,23 +28,23 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
   public click() {
     if (this.proofTree.isCurNodeAncestor(Strictly.Yes, this)) {
       const stateId = _.min(this.proofTree.curNode.getStateIds())
-      if (stateId === undefined) { debugger }
+      if (stateId === undefined) { debugger; throw stateId }
       this.proofTree.document.sendCommands(
         Rx.Observable.just(new Command.Control(new ControlCommand.StmCancel([stateId])))
       )
     }
     this.getFocusedTactic().caseOf({
-      nothing: () => { debugger },
-      just: t => {
-        this.proofTree.document.editor.execCommand("insertstring", ` ${t.tactic}`)
+      nothing : () => { debugger },
+      just : (t : ITactic) => {
+        this.proofTree.document.editor.execCommand('insertstring', ` ${t.tactic}`)
         this.proofTree.document.next()
-        this.proofTree.document.editor.execCommand("insertstring", "\n")
+        this.proofTree.document.editor.execCommand('insertstring', '\n')
       }
     })
   }
 
   public focus() {
-    this.parentGoal.getFocusedChild().fmap(focused => {
+    this.parentGoal.getFocusedChild().fmap((focused : ITacticGroupNode) => {
       if (focused.id === this.id) { return }
       const thisIndex = _.findIndex(this.parentGoal.tacticGroups, t => t.id === this.id)
       if (thisIndex === -1) { debugger }
@@ -53,26 +53,26 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
     })
   }
 
-  public getAllDescendants(): IProofTreeNode[] {
-    const children: IGoalNode[] = _(this.tactics).map(t => t.goals).flatten<IGoalNode>().value()
-    const descendants: IProofTreeNode[] = _(children).map(c => c.getAllDescendants()).flatten<IProofTreeNode>().value()
+  public getAllDescendants() : IProofTreeNode[] {
+    const children : IGoalNode[] = _(this.tactics).map(t => t.goals).flatten<IGoalNode>().value()
+    const descendants : IProofTreeNode[] = _(children).map(c => c.getAllDescendants()).flatten<IProofTreeNode>().value()
     return ([] as IProofTreeNode[]).concat(children, descendants)
   }
 
-  public getAllGoalDescendants(): IGoalNode[] {
-    const children: IGoalNode[] = _(this.tactics).map(t => t.goals).flatten<IGoalNode>().value()
-    const descendants: IGoalNode[] = _(children).map(c => c.getAllGoalDescendants()).flatten<IGoalNode>().value()
+  public getAllGoalDescendants() : IGoalNode[] {
+    const children : IGoalNode[] = _(this.tactics).map(t => t.goals).flatten<IGoalNode>().value()
+    const descendants : IGoalNode[] = _(children).map(c => c.getAllGoalDescendants()).flatten<IGoalNode>().value()
     return ([] as IGoalNode[]).concat(children, descendants)
   }
 
-  public getFocusedChild(): Maybe<IGoalNode> {
+  public getFocusedChild() : Maybe<IGoalNode> {
     if (this.tactics.length === 0) { return nothing<IGoalNode>() }
     const focusedTactic = this.tactics[this.tacticIndex]
     if (focusedTactic.goals.length === 0) { return nothing<IGoalNode>() }
     return just(focusedTactic.goals[focusedTactic.goalIndex])
   }
 
-  public getFocusedTactic(): Maybe<ITactic> {
+  public getFocusedTactic() : Maybe<ITactic> {
     return (
       this.tactics.length === 0
         ? nothing<ITactic>()
@@ -80,24 +80,24 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
     )
   }
 
-  public getGoalAncestor(): Maybe<IGoalNode> { return just(this.parentGoal) }
+  public getGoalAncestor() : Maybe<IGoalNode> { return just(this.parentGoal) }
 
-  public getHeight(): number {
+  public getHeight() : number {
     const rect = this.getHTMLElement().getBoundingClientRect()
     return Math.ceil(rect.height)
   }
 
-  public getParent(): Maybe<IGoalNode> { return just(this.parentGoal) }
+  public getParent() : Maybe<IGoalNode> { return just(this.parentGoal) }
 
-  public getParentGoal(): IGoalNode { return this.parentGoal }
+  public getParentGoal() : IGoalNode { return this.parentGoal }
 
-  public getTactics(): ITactic[] {
+  public getTactics() : ITactic[] {
     return this.tactics
   }
 
-  public getViewChildren(): IGoalNode[] {
+  public getViewChildren() : IGoalNode[] {
     if (this.isSolved()
-      && !this.proofTree.isCurNodeAncestor(Strictly.Yes, this)) {
+        && !this.proofTree.isCurNodeAncestor(Strictly.Yes, this)) {
       return []
     }
     if (this.tactics.length === 0) { return [] }
@@ -105,33 +105,33 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
     return focusedTactic.goals
   }
 
-  public getViewFocusedChild(): Maybe<IGoalNode> {
+  public getViewFocusedChild() : Maybe<IGoalNode> {
     const viewChildren = this.getViewChildren()
     return this.getFocusedTactic()
-      .bind(tactic => tactic.getFocusedGoal())
-      .bind(goal => {
+      .bind((tactic : ITactic) => tactic.getFocusedGoal())
+      .bind((goal : IGoalNode) => {
         const found = viewChildren.find(e => e.id === goal.id)
         if (found === undefined) { return nothing<IGoalNode>() }
         return just(found)
       })
   }
 
-  public getWidth(): number {
+  public getWidth() : number {
     return this.proofTree.getTacticWidth()
   }
 
-  public isSolved(): boolean {
+  public isSolved() : boolean {
     return this.getFocusedTactic()
-      .fmap(t => this.isProcessed && t.isSolved())
+      .fmap((t : ITactic) => this.isProcessed && t.isSolved())
       .valueOr(false)
   }
 
-  public onChildSolvedAndUnfocused(sid: number): void {
-    const focusedTactic = fromJust(this.getFocusedTactic())
+  public onChildSolvedAndUnfocused(sid : number) : void {
+    const focusedTactic : ITactic = fromJust(this.getFocusedTactic())
     const unsolved = <IGoalNode | undefined>_(focusedTactic.goals)
       .find(elt => !elt.isSolved())
     // debugger
-    // console.log("unsolved", unsolved)
+    // console.log('unsolved', unsolved)
     if (unsolved === undefined) {
       this.onSolved(sid)
     } else {
@@ -142,11 +142,11 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
     }
   }
 
-  public onSolved(sid: number): void {
+  public onSolved(sid : number) : void {
     this.proofTree.curNode = this.parentGoal
     this.proofTree.updateAndWait()
       .then(() => {
-        // console.log("THEN")
+        // console.log('THEN')
         this.parentGoal.onChildSolved(sid)
       })
 
@@ -155,7 +155,7 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
   public shiftNextInGroup() {
     if (this.tacticIndex < this.tactics.length - 1) {
       this.tacticIndex++
-      // asyncLog("NEXTGROUPFOCUS " + nodeString(this.tactics[this.tacticIndex]))
+      // asyncLog('NEXTGROUPFOCUS ' + nodeString(this.tactics[this.tacticIndex]))
       this.proofTree.scheduleUpdate()
     }
   }
@@ -163,30 +163,30 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
   public shiftPrevInGroup() {
     if (this.tacticIndex > 0) {
       this.tacticIndex--
-      // asyncLog("PREVGROUPFOCUS " + nodeString(this.tactics[this.tacticIndex]))
+      // asyncLog('PREVGROUPFOCUS ' + nodeString(this.tactics[this.tacticIndex]))
       this.proofTree.scheduleUpdate()
     }
   }
 
-  public updateNode(): void {
+  public updateNode() : void {
     const jqBody = $(this.getHTMLElement())
-    let jQContents: JQuery
+    let jQContents : JQuery
     const focusedTactic = this.tactics[this.tacticIndex]
     const nbTactics = this.tactics.length
 
-    this.span = $("<div>")
-      .addClass("tacticNode")
-      .css("padding", "4px")
-      .css("text-align", "center")
+    this.span = $('<div>')
+      .addClass('tacticNode')
+      .css('padding', '4px')
+      .css('text-align', 'center')
 
     // prepend a tactic node selector if necessary
     if (nbTactics > 1) {
 
       if (this.tacticIndex > 0) {
         this.span.append(
-          $("<a>")
-            .attr("href", "#")
-            .text("◀")
+          $('<a>')
+            .attr('href', '#')
+            .text('◀')
             .click(e => {
               e.stopImmediatePropagation()
               this.shiftPrevInGroup()
@@ -197,14 +197,14 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
       }
 
       this.span.append(
-        "[" + (this.tacticIndex + 1) + "/" + this.tactics.length + "]"
+        '[' + (this.tacticIndex + 1) + '/' + this.tactics.length + ']'
       )
 
       if (this.tacticIndex < this.tactics.length - 1) {
         this.span.append(
-          $("<a>")
-            .attr("href", "#")
-            .text("▶")
+          $('<a>')
+            .attr('href', '#')
+            .text('▶')
             .click(e => {
               e.stopImmediatePropagation()
               this.shiftNextInGroup()
@@ -214,7 +214,7 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
         this.span.append(nbsp)
       }
 
-      this.span.append($("<br>"))
+      this.span.append($('<br>'))
 
     }
 

@@ -1,18 +1,20 @@
-import * as _ from "lodash"
+import * as _ from 'lodash'
 
-import * as Command from "../sertop/command"
-import * as ControlCommand from "../sertop/control-command"
+import * as Command from '../sertop/command'
+import * as ControlCommand from '../sertop/control-command'
 
 export function setup(
-  doc: ICoqDocument,
-  prev$: Rx.Observable<{}>
-): void {
+  doc : ICoqDocument,
+  prev$ : Rx.Observable<{}>
+) : void {
 
-  const sentenceToCancelBecausePrev$: Rx.Observable<ISentence<IStage>> =
+  const sentenceToCancelBecausePrev$ : Rx.Observable<ISentence<IStage>> =
     prev$
       .flatMap(({}) => {
         if (doc.getSentencesToProcess().length > 0) { return [] }
-        return [_.maxBy(doc.getAllSentences(), s => s.sentenceId)]
+        const max = _.maxBy(doc.getAllSentences(), s => s.sentenceId)
+        if (!max) { return [] }
+        return [max]
       })
       .share()
 

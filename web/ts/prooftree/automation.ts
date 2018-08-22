@@ -1,38 +1,38 @@
-import * as _ from "lodash"
+import * as _ from 'lodash'
 
-import * as Context from "../editor/context"
-import { tacticAutomationRoute } from "../peacoq/routes"
-import { Control } from "../sertop/command"
-import { StmAdd, StmEditAt, StmQuery } from "../sertop/control-command"
+import * as Context from '../editor/context'
+import { tacticAutomationRoute } from '../peacoq/routes'
+import { Control } from '../sertop/command'
+import { StmAdd, StmEditAt, StmQuery } from '../sertop/control-command'
 
 interface ProofTreeAutomationInput {
-  commandObserver: Rx.Observer<Command$>
-  completed$: Completed$
-  doc: ICoqDocument
-  error$: Error$
-  notice$: Notice$
-  stmActionsInFlightCounter$: Rx.Observable<number>
-  stmAdded$: StmAdded$
-  stopAutomationRound$: Rx.Observable<{}>
+  commandObserver : Rx.Observer<Command$>
+  completed$ : Completed$
+  doc : ICoqDocument
+  error$ : Error$
+  notice$ : Notice$
+  stmActionsInFlightCounter$ : Rx.Observable<number>
+  stmAdded$ : StmAdded$
+  stopAutomationRound$ : Rx.Observable<{}>
 }
 
 export function setup(
-  completed$: Completed$,
-  doc: ICoqDocument,
-  error$: Error$,
-  notice$: Notice$,
-  stmActionsInFlightCounter$: Rx.Observable<number>,
-  stmAdded$: StmAdded$,
-  stopAutomationRound$: Rx.Observable<{}>
-): void {
+  completed$ : Completed$,
+  doc : ICoqDocument,
+  error$ : Error$,
+  notice$ : Notice$,
+  stmActionsInFlightCounter$ : Rx.Observable<number>,
+  stmAdded$ : StmAdded$,
+  stopAutomationRound$ : Rx.Observable<{}>
+) : void {
 
   const pause$ = makePause$(stmActionsInFlightCounter$)
 
-  // tip$.subscribe(t => console.log(Date.now(), "TIP CHANGED"))
-  // pause$.subscribe(b => console.log(Date.now(), b ? "RESUME" : "PAUSE"))
+  // tip$.subscribe(t => console.log(Date.now(), 'TIP CHANGED'))
+  // pause$.subscribe(b => console.log(Date.now(), b ? 'RESUME' : 'PAUSE'))
 
   doc.debouncedTip$
-    .concatMap<ISentence<IStage>>(tip => tip.caseOf({ nothing: () => [], just: s => [s] }))
+    .concatMap<ISentence<IStage>>(tip => tip.caseOf({ nothing : () => [], just : s => [s] }))
     .concatMap(sentence => sentence.waitUntilProcessed())
     // Observable<ISentence<IProcessed>>
     .concatMap(
@@ -59,127 +59,127 @@ export function setup(
     .pausableBuffered(pause$) // I don't know why but this is needed for the next pausableBuffered call to work correctly
     .concatMap(candidatesForOneSentence$ =>
       candidatesForOneSentence$
-        // .do(cs => cs.take(1).subscribe((cmd: Command.Control<ControlCommand.StmAdd>) => console.log(Date.now(), "Before pause", cmd.controlCommand.sentence)))
+        // .do(cs => cs.take(1).subscribe((cmd : Command.Control<ControlCommand.StmAdd>) => console.log(Date.now(), 'Before pause', cmd.controlCommand.sentence)))
         .pausableBuffered(pause$)
-        // .do(cs => cs.take(1).subscribe((cmd: Command.Control<ControlCommand.StmAdd>) => console.log(Date.now(), "After pause", cmd.controlCommand.sentence)))
+        // .do(cs => cs.take(1).subscribe((cmd : Command.Control<ControlCommand.StmAdd>) => console.log(Date.now(), 'After pause', cmd.controlCommand.sentence)))
         .takeUntil(doc.tip$)
     )
     .subscribe(commands$ => doc.sendCommands(commands$))
 
 }
 
-function makeGroup(name: string, tactics: string[]): TacticGroup {
+function makeGroup(name : string, tactics : string[]) : TacticGroup {
   return {
-    "name": name,
-    "tactics": _(tactics).map(s => `${s}.`).value(),
+    'name' : name,
+    'tactics' : _(tactics).map(s => `${s}.`).value(),
   }
 }
 
 /*
   This strategy tries many tactics, not trying to be smart.
 */
-function tacticsToTry(e: PeaCoqContextElement): TacticGroup[] {
+function tacticsToTry(e : PeaCoqContextElement) : TacticGroup[] {
 
   const hyps = e.ppgoal.hyps
   const curHypsFull = _(hyps).clone().reverse()
   const curHyps = curHypsFull.map(h => h.name)
-  // TODO: there is a better way to do this
+  // TODO : there is a better way to do this
   const curNames = curHyps // _(curHyps).union(namesPossiblyInScope.reverse())
 
   const res = [
 
     makeGroup(
-      "terminators",
+      'terminators',
       ([] as string[]).concat(
-        // (pt.goalIsReflexive() ? ["reflexivity"] : [])
-        ["reflexivity"],
+        // (pt.goalIsReflexive() ? ['reflexivity'] : [])
+        ['reflexivity'],
         [
-          "discriminate",
-          "assumption",
-          "eassumption",
+          'discriminate',
+          'assumption',
+          'eassumption',
         ]
       )
     ),
 
     makeGroup(
-      "automation",
+      'automation',
       [
-        // "auto",
-        // "eauto",
+        // 'auto',
+        // 'eauto',
       ]
     ),
 
     makeGroup(
-      "introduction",
-      ["intros", "intro"]
+      'introduction',
+      ['intros', 'intro']
     ),
 
     makeGroup(
-      "destructuring",
+      'destructuring',
       [
-        "break_if",
-        "f_equal",
-        "repeat f_equal",
-        "subst"
+        'break_if',
+        'f_equal',
+        'repeat f_equal',
+        'subst'
       ]
     ),
 
     makeGroup(
-      "simplification",
+      'simplification',
       ([] as string[]).concat(
-        ["simpl"],
+        ['simpl'],
         curHyps.map(h => `simpl in ${h}`),
-        curHyps.length > 0 ? ["simpl in *"] : []
+        curHyps.length > 0 ? ['simpl in *'] : []
       )
     ),
 
     // makeGroup(
-    //     "constructors",
-    //     (pt.goalIsDisjunction() ? ["left", "right"] : [])
-    //         .concat(pt.goalIsConjunction() ? ["split"] : [])
+    //     'constructors',
+    //     (pt.goalIsDisjunction() ? ['left', 'right'] : [])
+    //         .concat(pt.goalIsConjunction() ? ['split'] : [])
     //         .concat([
-    //             "constructor",
-    //             "econstructor",
-    //             "eexists",
+    //             'constructor',
+    //             'econstructor',
+    //             'eexists',
     //         ])
     // ),
     //
     // makeGroup(
-    //     "destructors",
+    //     'destructors',
     //     _(curHyps)
     //         .filter(function(h) { return isLowerCase(h[0]); })
-    //         .map(function(h) { return "destruct " + h; })
+    //         .map(function(h) { return 'destruct ' + h; })
     //         .value()
     // ),
 
     makeGroup(
-      "induction",
+      'induction',
       curHyps.map(h => `induction ${h}`)
       // This was used for the study because induction applies to everything :(
       // _(curHypsFull)
       //     .filter(function(h) {
-      //         return h.hType.tag === "Var" && h.hType.contents === "natlist"
+      //         return h.hType.tag === 'Var' && h.hType.contents === 'natlist'
       //     })
-      //     .map(function(h) { return "induction " + h.hName; })
+      //     .map(function(h) { return 'induction ' + h.hName; })
       //     .value()
     ),
 
     // makeGroup(
-    //   "inversion",
+    //   'inversion',
     //   curHyps.map(h => `inversion ${h}`)
     // ),
 
     makeGroup(
-      "solver",
+      'solver',
       [
-        // "congruence",
-        // "omega",
-        // "firstorder"
+        // 'congruence',
+        // 'omega',
+        // 'firstorder'
       ]
     ),
 
     makeGroup(
-      "application",
+      'application',
       ([] as string[]).concat(
         curNames.map(n => `apply ${n}`),
         curNames.map(n => `eapply ${n}`)
@@ -187,7 +187,7 @@ function tacticsToTry(e: PeaCoqContextElement): TacticGroup[] {
     ),
 
     makeGroup(
-      "rewriting",
+      'rewriting',
       ([] as string[]).concat(
         curNames.map(n => `rewrite -> {n}`),
         curNames.map(n => `rewrite <- {n}`),
@@ -195,14 +195,14 @@ function tacticsToTry(e: PeaCoqContextElement): TacticGroup[] {
     ),
 
     // makeGroup(
-    //     "applications in",
+    //     'applications in',
     //     _(curNames).map(function(n) {
     //         return _(curHyps)
     //             .map(function(h) {
     //                 if (h === n) { return []; }
     //                 return ([
-    //                     "apply " + n + " in " + h,
-    //                     "eapply " + n + " in " + h,
+    //                     'apply ' + n + ' in ' + h,
+    //                     'eapply ' + n + ' in ' + h,
     //                 ])
     //             })
     //             .flatten(true).value()
@@ -210,23 +210,23 @@ function tacticsToTry(e: PeaCoqContextElement): TacticGroup[] {
     // ),
     //
     // makeGroup(
-    //     "rewrites in",
+    //     'rewrites in',
     //     _(curNames).map(function(n) {
     //         return _(curHyps)
     //             .map(function(h) {
     //                 if (h === n) { return []; }
     //                 return ([
-    //                     ("rewrite -> " + n + " in " + h),
-    //                     ("rewrite <- " + n + " in " + h)
+    //                     ('rewrite -> ' + n + ' in ' + h),
+    //                     ('rewrite <- ' + n + ' in ' + h)
     //                 ])
     //             })
     //             .flatten(true).value()
-    //         
+    //
     //     }).flatten(true).value()
     // ),
 
     makeGroup(
-      "revert",
+      'revert',
       curHyps.map(h => `revert ${h}`)
     ),
 
@@ -237,15 +237,15 @@ function tacticsToTry(e: PeaCoqContextElement): TacticGroup[] {
 }
 
 function getTacticsForContext(
-  context: PeaCoqContext,
-  sentence: ISentence<IProcessed>
-): CandidateInput[] {
+  context : PeaCoqContext,
+  sentence : ISentence<IProcessed>
+) : CandidateInput[] {
   if (context.fgGoals.length === 0) { return [] }
   return (
     _(tacticsToTry(context.fgGoals[0]))
       .flatMap(group =>
         group.tactics.map(tactic =>
-          ({ context, group: group.name, tactic, sentence })
+          ({ context, group : group.name, tactic, sentence })
         )
       )
       .value()
@@ -253,10 +253,10 @@ function getTacticsForContext(
 }
 
 interface CandidateInput {
-  context: PeaCoqContext
-  group: string
-  tactic: string
-  sentence: ISentence<IProcessed>
+  context : PeaCoqContext
+  group : string
+  tactic : string
+  sentence : ISentence<IProcessed>
 }
 
 // We keep separate commands$ and done$ because we want the recipient to
@@ -265,34 +265,34 @@ interface CandidateInput {
 // sure we only try one tactic at a time and stay interruptable between
 // two trials.
 function makeCandidate(
-  doc: ICoqDocument,
-  input: CandidateInput,
-  completed$: Completed$,
-  error$: Error$,
-  notice$: Notice$,
-  stmAdded$: StmAdded$
-): {
-    commands$: CommandStreamItem<ISertop.ICommand>
-    done$: Rx.Observable<any>
+  doc : ICoqDocument,
+  input : CandidateInput,
+  completed$ : Completed$,
+  error$ : Error$,
+  notice$ : Notice$,
+  stmAdded$ : StmAdded$
+) : {
+    commands$ : CommandStreamItem<ISertop.ICommand>
+    done$ : Rx.Observable<any>
   } {
   const { context, group, tactic, sentence } = input
   const stateId = sentence.stage.stateId
 
-  // FIXME: not sure how to better do this, but we do not want to send
+  // FIXME : not sure how to better do this, but we do not want to send
   // any command if the tip has moved. Somehow, takeUntil(tip$) does not
-  // necessarily do a good job, so double-checking here:
-  const curSid = _.max(doc.getAllSentences().map(s => s.getStateId().caseOf({ nothing: () => 0, just: sid => sid })))
+  // necessarily do a good job, so double-checking here :
+  const curSid = _.max(doc.getAllSentences().map(s => s.getStateId().caseOf({ nothing : () => 0, just : sid => sid })))
   if (stateId !== curSid) {
-    // console.log("Was expecting", stateId, "but we are at", curSid, "aborting")
+    // console.log('Was expecting', stateId, 'but we are at', curSid, 'aborting')
     return {
-      commands$: Rx.Observable.empty<ISertop.ICommand>(),
-      done$: Rx.Observable.empty<any>(),
+      commands$ : Rx.Observable.empty<ISertop.ICommand>(),
+      done$ : Rx.Observable.empty<any>(),
     }
   } else {
-    // console.log("Was expecting", stateId, "and we are at", curSid, "proceeding")
+    // console.log('Was expecting', stateId, 'and we are at', curSid, 'proceeding')
   }
 
-  const add = new Control(new StmAdd({ ontop: stateId }, tactic, true))
+  const add = new Control(new StmAdd({ ontop : stateId }, tactic, true))
   // listen for the STM added answer (there should be 0 if failed otherwise 1)
   const filteredStmAdded$ = stmAdded$.filter(a => a.cmdTag === add.tag)
     .takeUntil(completed$.filter(a => a.cmdTag === add.tag))
@@ -300,11 +300,11 @@ function makeCandidate(
     filteredStmAdded$
       .map(a => new Control(new StmQuery(
         {
-          sid: a.answer.stateId,
+          sid : a.answer.stateId,
           // route is used so that the rest of PeaCoq can safely ignore those feedback messages
-          route: tacticAutomationRoute
+          route : tacticAutomationRoute
         },
-        "PeaCoqGetContext.",
+        'PeaCoqGetContext.',
         true
       )))
       .share()
@@ -337,7 +337,7 @@ function makeCandidate(
   ]).share()
 
   // this is an empty stream that waits until either stream emits
-  const done$: Rx.Observable<any> = Rx.Observable.amb(stmAddErrored$, addNotice$).take(1).ignoreElements()
+  const done$ : Rx.Observable<any> = Rx.Observable.amb(stmAddErrored$, addNotice$).take(1).ignoreElements()
 
   return { commands$, done$ }
 
@@ -352,14 +352,14 @@ function makeCandidate(
 // tactic-to-try when pairs are matched. We also regulate the
 // tactic-to-try flow so that only one tactic is being tried at a time,
 // so that we can interrupt the flow between any two attempts.
-function makePause$(stmActionsInFlightCounter$: Rx.Observable<number>): Rx.Observable<boolean> {
+function makePause$(stmActionsInFlightCounter$ : Rx.Observable<number>) : Rx.Observable<boolean> {
 
   const pause$ = stmActionsInFlightCounter$
-    // .do(c => console.log("COUNT", c))
+    // .do(c => console.log('COUNT', c))
     .map(n => n === 0)
     .startWith(true)
     .distinctUntilChanged()
-    // .do(b => console.log("BOOL", b))
+    // .do(b => console.log('BOOL', b))
     // We need replay because the paused stream will subscribe to pause$
     // later, and it needs to know the last value of pause$ upon
     // subscription. Otherwise, when calling pausableBuffered, the

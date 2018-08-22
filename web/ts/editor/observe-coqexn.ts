@@ -1,11 +1,11 @@
 export function setup(
-  doc: ICoqDocument,
-  coqExn$: CoqExn$,
-  stmAdd$: StmAdd$,
-  stmQuery$: StmQuery$,
-  completed$: Completed$
-): void {
-  // This used to be simply:
+  doc : ICoqDocument,
+  coqExn$ : CoqExn$,
+  stmAdd$ : StmAdd$,
+  stmQuery$ : StmQuery$,
+  completed$ : Completed$
+) : void {
+  // This used to be simply :
   // - subscribe to coqExn$
   // - remove sentences whose cmdTag >= exn.cmdTag
   // But this won't work with automation, because sometimes a sentence
@@ -30,8 +30,8 @@ export function setup(
   ).subscribe(e => {
     // debugger
     doc.removeSentences(s => s.commandTag.caseOf({
-      nothing: () => false,
-      just: t => +t >= +e.cmdTag,
+      nothing : () => false,
+      just : t => +t >= +e.cmdTag,
     }))
   })
 }

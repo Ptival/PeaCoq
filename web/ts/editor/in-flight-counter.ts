@@ -1,4 +1,4 @@
-function makeCounter<T>(s: Command$, completed$: Completed$): Rx.Observable<number> {
+function makeCounter<T>(s : Command$, completed$ : Completed$) : Rx.Observable<number> {
   return Rx.Observable
     .merge([
       s.map(() => 1),
@@ -8,11 +8,11 @@ function makeCounter<T>(s: Command$, completed$: Completed$): Rx.Observable<numb
 }
 
 export function setup(
-  stmAdd$: StmAdd$,
-  stmCancel$: StmCancel$,
-  stmEditAt$: StmEditAt$,
-  completed$: Completed$
-): Rx.Observable<number> {
+  stmAdd$ : StmAdd$,
+  stmCancel$ : StmCancel$,
+  stmEditAt$ : StmEditAt$,
+  completed$ : Completed$
+) : Rx.Observable<number> {
 
   const stmAddCounter$ = makeCounter(stmAdd$, completed$)
   // stmAddCounter$.subscribe(c => console.log("ADD COUNTER", c))
@@ -23,7 +23,7 @@ export function setup(
   const stmEditAtCounter$ = makeCounter(stmEditAt$, completed$)
   // stmEditAtCounter$.subscribe(c => console.log("EDITAT COUNTER", c))
 
-  const stmActionsInFlightCounter$: Rx.Observable<number> =
+  const stmActionsInFlightCounter$ : Rx.Observable<number> =
     Rx.Observable.combineLatest(
       stmAddCounter$.startWith(0),
       stmCancelCounter$.startWith(0),

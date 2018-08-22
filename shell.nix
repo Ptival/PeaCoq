@@ -1,17 +1,17 @@
 { nixpkgs  ? import <nixpkgs> {}
-#, compiler ? "ghc802"
+, compiler ? "ghc802"
 }:
 #let callPackage = nixpkgs.pkgs.haskell.packages.${compiler}.callPackage; in
 # We call default.nix because it has some overrides
-# let peacoq-server = callPackage peacoq-server/default.nix {
-#   inherit compiler;
-# }; in
+#let peacoq-server = callPackage peacoq-server/default.nix {
+#  inherit compiler;
+#}; in
 nixpkgs.stdenv.mkDerivation {
   name = "peacoq";
   buildInputs = (with nixpkgs; [
     #ghc
-    nodejs
-    # peacoq-server
+    nodejs-10_x
+    #peacoq-server
   ] ++ (with ocamlPackages;
     [
       # Coq:

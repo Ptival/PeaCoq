@@ -25,9 +25,9 @@ type AppArgs = AppArg[]
 
 class CApp extends ConstrExpr {
   constructor(
-    public location: CoqLocation,
-    public funct: AppFun,
-    public args: AppArgs
+    public location : CoqLocation,
+    public funct : AppFun,
+    public args : AppArgs
   ) {
     super()
   }
@@ -46,11 +46,11 @@ type BranchExpr = [
 
 class CCases extends ConstrExpr {
   constructor(
-    public location: CoqLocation,
-    public caseStyle: CaseStyle,
-    public returnType: Maybe<ConstrExpr>,
-    public cases: CaseExpr[],
-    public branches: BranchExpr[]
+    public location : CoqLocation,
+    public caseStyle : CaseStyle,
+    public returnType : Maybe<ConstrExpr>,
+    public cases : CaseExpr[],
+    public branches : BranchExpr[]
   ) {
     super()
   }
@@ -62,9 +62,9 @@ class CCoFix extends ConstrExpr {
 
 class CDelimiters extends ConstrExpr {
   constructor(
-    public location: CoqLocation,
-    public str: string,
-    public expr: ConstrExpr
+    public location : CoqLocation,
+    public str : string,
+    public expr : ConstrExpr
   ) {
     super()
   }
@@ -76,10 +76,10 @@ class CFix extends ConstrExpr {
 
 class CHole extends ConstrExpr {
   constructor(
-    public location: CoqLocation,
-    public evarKinds: any,
-    public introPatternNamingExpr: any,
-    public rawGenericArgument: any
+    public location : CoqLocation,
+    public evarKinds : any,
+    public introPatternNamingExpr : any,
+    public rawGenericArgument : any
   ) {
     super()
   }
@@ -87,9 +87,9 @@ class CHole extends ConstrExpr {
 
 class CLambdaN extends ConstrExpr {
   constructor(
-    public location: CoqLocation,
-    public binders: BinderExpr[],
-    public body: ConstrExpr
+    public location : CoqLocation,
+    public binders : BinderExpr[],
+    public body : ConstrExpr
   ) {
     super()
   }
@@ -97,10 +97,10 @@ class CLambdaN extends ConstrExpr {
 
 class CLetIn extends ConstrExpr {
   constructor(
-    public location: CoqLocation,
-    public name: Located<Name>,
-    public bound: ConstrExpr,
-    public body: ConstrExpr
+    public location : CoqLocation,
+    public name : Located<Name>,
+    public bound : ConstrExpr,
+    public body : ConstrExpr
   ) {
     super()
   }
@@ -108,11 +108,11 @@ class CLetIn extends ConstrExpr {
 
 class CLetTuple extends ConstrExpr {
   constructor(
-    public location: CoqLocation,
-    public names: Located<Name>[],
-    public returnType: [Maybe<Located<Name>>, Maybe<ConstrExpr>],
-    public bound: ConstrExpr,
-    public body: ConstrExpr
+    public location : CoqLocation,
+    public names : Located<Name>[],
+    public returnType : [Maybe<Located<Name>>, Maybe<ConstrExpr>],
+    public bound : ConstrExpr,
+    public body : ConstrExpr
   ) {
     super()
   }
@@ -122,11 +122,11 @@ type Notation = String
 
 class CNotation extends ConstrExpr {
   constructor(
-    public location: CoqLocation,
-    public notation: Notation,
-    public substitution: ConstrNotationSubstitution,
-    public precedence: number,
-    public unparsing: Unparsing[]
+    public location : CoqLocation,
+    public notation : Notation,
+    public substitution : ConstrNotationSubstitution,
+    public precedence : number,
+    public unparsing : Unparsing[]
   ) {
     super()
   }
@@ -134,9 +134,9 @@ class CNotation extends ConstrExpr {
 
 class CProdN extends ConstrExpr {
   constructor(
-    public location: CoqLocation,
-    public binderList: BinderExpr[],
-    public returnExpr: ConstrExpr
+    public location : CoqLocation,
+    public binderList : BinderExpr[],
+    public returnExpr : ConstrExpr
   ) {
     super()
   }
@@ -144,8 +144,8 @@ class CProdN extends ConstrExpr {
 
 class CPrim extends ConstrExpr {
   constructor(
-    public location: CoqLocation,
-    public token: PrimToken
+    public location : CoqLocation,
+    public token : PrimToken
   ) {
     super()
   }
@@ -153,8 +153,8 @@ class CPrim extends ConstrExpr {
 
 class CRef extends ConstrExpr {
   constructor(
-    public reference: Reference,
-    public universeInstance: Maybe<InstanceExpr>
+    public reference : Reference,
+    public universeInstance : Maybe<InstanceExpr>
   ) {
     super()
   }
@@ -162,22 +162,22 @@ class CRef extends ConstrExpr {
 
 class CSort extends ConstrExpr {
   constructor(
-    public location: CoqLocation,
-    public globSort: GlobSort
+    public location : CoqLocation,
+    public globSort : GlobSort
   ) {
     super()
   }
 }
 
-function extractProdBinders(a: ConstrExpr): [LocalBinder[], ConstrExpr] {
+function extractProdBinders(a : ConstrExpr) : [LocalBinder[], ConstrExpr] {
   if (a instanceof CProdN) {
-    const [loc, bl, c]: [any, any[], any] = [a.location, a.binderList, a.returnExpr]
+    const [loc, bl, c] : [any, any[], any] = [a.location, a.binderList, a.returnExpr]
     if (bl.length === 0) {
       return extractProdBinders(a.returnExpr)
     } else {
       const [nal, bk, t] = bl[0]
       const [blrec, cRest] = extractProdBinders(new CProdN(loc, _.tail(bl), c))
-      const l: LocalBinder[] = [new LocalRawAssum(nal, bk, t)]
+      const l : LocalBinder[] = [new LocalRawAssum(nal, bk, t)]
       return [l.concat(blrec), cRest]
     }
   }

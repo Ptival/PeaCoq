@@ -1,21 +1,23 @@
+import { Maybe } from 'tsmonad'
+
 export function setup(
-  doc: ICoqDocument,
-  errorMsg$: Rx.Observable<ErrorMessageFeedback>
-): void {
+  doc : ICoqDocument,
+  errorMsg$ : Rx.Observable<ErrorMessageFeedback>
+) : void {
 
   const clear$ = Rx.Observable.empty() // TODO FIXME
 
   errorMsg$.subscribe(e => {
     // debugger
-    let failedEdit = nothing<ISentence<IStage>>()
+    let failedEdit = Maybe.nothing<ISentence<IStage>>()
     switch (e.editOrState) {
-      case EditOrState.Edit:
+      case EditOrState.Edit :
         failedEdit = just(doc.getSentencesToProcess()[0])
         break
-      case EditOrState.State:
+      case EditOrState.State :
         failedEdit = doc.getSentenceByStateId(e.editOrStateId)
         break
-      default: debugger
+      default : debugger
     }
     failedEdit.fmap(failedEdit => {
       e.feedbackContent.location.fmap(location => {
@@ -32,8 +34,8 @@ export function setup(
   })
 }
 
-// export function pimpMyError(vf: IValueFail): IEditorError {
-//   // Warning: the failed edit is not necessarily the first edit being processed
+// export function pimpMyError(vf : IValueFail) : IEditorError {
+//   // Warning : the failed edit is not necessarily the first edit being processed
 //   const editsBeingProcessed = Global.coqDocument.getEditsBeingProcessed()
 //   const failedEdit = _(editsBeingProcessed)
 //     .find(ed => ed.stage.stateId > vf.stateId)
@@ -45,8 +47,8 @@ export function setup(
 //     return new AceAjax.Range(errorStart.row, errorStart.column, errorStop.row, errorStop.column)
 //   })
 //   return {
-//     error: vf,
-//     failedEdit: failedEdit,
-//     range: range,
+//     error : vf,
+//     failedEdit : failedEdit,
+//     range : range,
 //   }
 // }

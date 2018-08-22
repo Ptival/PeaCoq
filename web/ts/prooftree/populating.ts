@@ -1,8 +1,8 @@
-import * as _ from "lodash"
+import * as _ from 'lodash'
 
 export function setup(
-  doc: ICoqDocument,
-  tip$: Rx.Observable<Tip>
+  doc : ICoqDocument,
+  tip$ : Rx.Observable<Tip>
 ) {
   tip$
     .filter(isJust)
@@ -23,7 +23,7 @@ export function setup(
             }
           }
         } else {
-          console.log("Curnode did not match stateID", stateId, curNode.getStateIds())
+          console.log('Curnode did not match stateID', stateId, curNode.getStateIds())
         }
       })
     })

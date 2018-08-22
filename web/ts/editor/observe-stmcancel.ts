@@ -1,10 +1,10 @@
-import * as _ from "lodash"
+import * as _ from 'lodash'
 
 export function setup(
-  doc: ICoqDocument,
-  stmCancel$: StmCancel$,
-  stmCanceled$: StmCanceled$
-): StmCanceled$ {
+  doc : ICoqDocument,
+  stmCancel$ : StmCancel$,
+  stmCanceled$ : StmCanceled$
+) : StmCanceled$ {
   const stmCanceledFiltered$ = new Rx.Subject<ISertop.IAnswer<ISertop.IStmCanceled>>()
 
   // Now that we pre-emptively removed sentences from the view before they are

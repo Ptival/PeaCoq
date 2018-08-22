@@ -1,16 +1,16 @@
-import * as _ from "lodash"
+import * as _ from 'lodash'
 
-import * as Stage from "./stage"
+import * as Stage from './stage'
 
 export function setup(
-  doc: ICoqDocument,
-  processed$: Rx.Observable<IFeedback<IFeedbackContent.IProcessed>>
-): void {
+  doc : ICoqDocument,
+  processed$ : Rx.Observable<IFeedback<IFeedbackContent.IProcessed>>
+) : void {
   processed$
     .subscribe(f => {
-      // console.log("PROCESSED", f)
+      // console.log('PROCESSED', f)
       switch (f.editOrState) {
-        case EditOrState.State:
+        case EditOrState.State :
           const stateId = f.editOrStateId
           const editsBeingProcessed = doc.getSentencesBeingProcessed()
           const sentence = _(editsBeingProcessed).find(e => e.stage.stateId === stateId)
@@ -24,13 +24,13 @@ export function setup(
             //   Global.coqDocument.moveCursorToPositionAndCenter(sentence.stopPosition)
             // }
           } else {
-            // this can happen for two reasons:
+            // this can happen for two reasons :
             // - when reloading
             // - when some sentence fails, we sometimes get processed messages for later sentences
             // debugger
           }
           break
-        default:
+        default :
           debugger // not sure this ever happens
       }
     })

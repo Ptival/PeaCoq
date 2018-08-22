@@ -1,44 +1,44 @@
-import { Control } from "../sertop/command"
-import { StmQuery } from "../sertop/control-command"
-import { SentenceMarker } from "./sentence-marker"
-import { getContextRoute } from "../peacoq/routes"
-import { theme } from "../peacoq/theme"
+import { Control } from '../sertop/command'
+import { StmQuery } from '../sertop/control-command'
+import { SentenceMarker } from './sentence-marker'
+import { getContextRoute } from '../peacoq/routes'
+import { theme } from '../peacoq/theme'
 
 export class ToProcess implements IToProcess {
-  public marker: ISentenceMarker
+  public marker : ISentenceMarker
 
   constructor(
-    doc: ICoqDocument,
-    start: AceAjax.Position,
-    stop: AceAjax.Position
+    doc : ICoqDocument,
+    start : AceAjax.Position,
+    stop : AceAjax.Position
   ) {
     this.marker = new SentenceMarker(doc, start, stop)
   }
 
-  public getColor(): string { return theme.toprocess }
+  public getColor() : string { return theme.toprocess }
 
   public getStateId() { return nothing<StateId>() }
 
-  public nextStageMarker(): ISentenceMarker {
+  public nextStageMarker() : ISentenceMarker {
     this.marker.markBeingProcessed()
     return this.marker
   }
 }
 
 export class BeingProcessed implements IBeingProcessed {
-  public marker: ISentenceMarker
-  public stateId: number
+  public marker : ISentenceMarker
+  public stateId : number
 
-  constructor(e: IToProcess, sid: number) {
+  constructor(e : IToProcess, sid : number) {
     this.marker = e.nextStageMarker()
     this.stateId = sid
   }
 
-  public getColor(): string { return theme.processing }
+  public getColor() : string { return theme.processing }
 
   public getStateId() { return just(this.stateId) }
 
-  public nextStageMarker(): ISentenceMarker {
+  public nextStageMarker() : ISentenceMarker {
     this.marker.markProcessed()
     return this.marker
   }
@@ -49,7 +49,7 @@ export class BeingProcessed implements IBeingProcessed {
   for the purpose of PeaCoq, we will always then query for [Goal].
   A problem is we often (but always?) receive the [Goal] response before
   the [Processed] feedback, which is annoying to keep track of as there
-  might be 4 states:
+  might be 4 states :
   - BeingProcessed and waiting for Goal
   - BeingProcessed and Goal received
   - Processed and waiting for Goal
@@ -61,14 +61,14 @@ export class BeingProcessed implements IBeingProcessed {
 */
 
 export class Processed implements IProcessed {
-  private context: Promise<PeaCoqContext> | null
-  private onFulfilled: ((c: PeaCoqContext) => void) | null
-  public marker: ISentenceMarker
-  public stateId: number
+  private context : Promise<PeaCoqContext> | null
+  private onFulfilled : ((c : PeaCoqContext) => void) | null
+  public marker : ISentenceMarker
+  public stateId : number
 
   constructor(
-    private doc: ICoqDocument,
-    e: IBeingProcessed
+    private doc : ICoqDocument,
+    e : IBeingProcessed
   ) {
     this.context = null // created later
     this.onFulfilled = null
@@ -78,16 +78,16 @@ export class Processed implements IProcessed {
 
   public getColor() { return theme.processed }
 
-  public getContext(): Promise<PeaCoqContext> {
-    // console.log("GETTING CONTEXT FOR STATE ID", this.stateId)
+  public getContext() : Promise<PeaCoqContext> {
+    // console.log('GETTING CONTEXT FOR STATE ID', this.stateId)
     if (this.context === null) {
       this.context = new Promise(onFulfilled => {
         const query = new Control(new StmQuery(
           {
-            route: getContextRoute,
-            sid: this.stateId,
+            route : getContextRoute,
+            sid : this.stateId,
           },
-          "PeaCoqGetContext.",
+          'PeaCoqGetContext.',
           false
         ))
         this.onFulfilled = onFulfilled
@@ -99,7 +99,7 @@ export class Processed implements IProcessed {
 
   public getStateId() { return just(this.stateId) }
 
-  public setContext(c: PeaCoqContext) {
+  public setContext(c : PeaCoqContext) {
     if (this.onFulfilled === null) {
       // someone else than getContext must have called PeaCoqGetContext
       debugger

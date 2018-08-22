@@ -1,4 +1,3 @@
-
 declare namespace AceAjax {
   export interface Anchor {
     $insertRight: boolean
@@ -39,3 +38,5 @@ declare namespace W2UI {
     owner: W2UI.W2Layout
   }
 }
+
+declare var jss : any

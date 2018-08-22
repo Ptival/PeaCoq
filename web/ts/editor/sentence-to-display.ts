@@ -1,17 +1,17 @@
-import * as _ from "lodash"
+import * as _ from 'lodash'
 
-import * as Command from "../sertop/command"
-import * as ControlCommand from "../sertop/control-command"
-import { isBefore } from "./editor-utils"
-import * as DebugFlags from "../peacoq/debug-flags"
-import { Strictly } from "../peacoq/strictly"
+import * as Command from '../sertop/command'
+import * as ControlCommand from '../sertop/control-command'
+import { isBefore } from './editor-utils'
+import * as DebugFlags from '../peacoq/debug-flags'
+import { Strictly } from '../peacoq/strictly'
 
-export function setup(doc: ICoqDocument): Rx.Observable<ISentence<IStage>> {
+export function setup(doc : ICoqDocument) : Rx.Observable<ISentence<IStage>> {
 
   const editor = doc.editor
 
-  const textCursorChangeEvent$ = Rx.Observable
-    .create(observer => editor.selection.on("changeCursor", e => observer.onNext(e)))
+  const textCursorChangeEvent$ : Rx.Observable<{}> = Rx.Observable
+    .create(observer => editor.selection.on('changeCursor', (e : any) => observer.onNext(e)))
     .share()
 
   const textCursorPosition$ = textCursorChangeEvent$
@@ -20,14 +20,14 @@ export function setup(doc: ICoqDocument): Rx.Observable<ISentence<IStage>> {
   if (DebugFlags.textCursorPosition) { textCursorPosition$.subscribe(p => console.log(p)) }
 
   /*
-  A sentence should be displayed if:
+  A sentence should be displayed if :
   - the cursor moves to a location where the sentence is under focus
   - a sentence got processed and no sentence is going to be processed
   The latter is necessary because the cursor doesn't move if the user processes
   a sentence while their cursor is already at the stop location.
   */
 
-  const sentenceToBeDisplayedBecauseUnderCursor$: Rx.Observable<ISentence<IStage>> =
+  const sentenceToBeDisplayedBecauseUnderCursor$ : Rx.Observable<ISentence<IStage>> =
     textCursorPosition$
       .debounce(250)
       .flatMap(pos => {

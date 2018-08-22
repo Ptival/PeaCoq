@@ -7,10 +7,10 @@ abstract class CasesPatternExpr { }
 
 class CPatCstr extends CasesPatternExpr {
   constructor(
-    public location: CoqLocation,
-    public reference: Reference,
-    public cases1: Maybe<CasesPatternExpr[]>,
-    public cases2: CasesPatternExpr[]
+    public location : CoqLocation,
+    public reference : Reference,
+    public cases1 : Maybe<CasesPatternExpr[]>,
+    public cases2 : CasesPatternExpr[]
   ) {
     super()
   }
@@ -18,8 +18,8 @@ class CPatCstr extends CasesPatternExpr {
 
 class CPatAtom extends CasesPatternExpr {
   constructor(
-    public location: CoqLocation,
-    public reference: Maybe<Reference>
+    public location : CoqLocation,
+    public reference : Maybe<Reference>
   ) {
     super()
   }
@@ -35,12 +35,12 @@ type CasesPatternNotationSubstitution = [
 
 class CPatNotation extends CasesPatternExpr {
   constructor(
-    public location: CoqLocation,
-    public notation: Notation,
-    public substitution: CasesPatternNotationSubstitution,
-    public patterns: CasesPatternExpr[],
-    public precedence: number,
-    public unparsing: Unparsing[]
+    public location : CoqLocation,
+    public notation : Notation,
+    public substitution : CasesPatternNotationSubstitution,
+    public patterns : CasesPatternExpr[],
+    public precedence : number,
+    public unparsing : Unparsing[]
   ) {
     super()
   }
@@ -49,8 +49,8 @@ class CPatNotation extends CasesPatternExpr {
 
 class CPatPrim extends CasesPatternExpr {
   constructor(
-    public location: CoqLocation,
-    public token: PrimToken
+    public location : CoqLocation,
+    public token : PrimToken
   ) {
     super()
   }
@@ -60,9 +60,9 @@ class CPatPrim extends CasesPatternExpr {
 
 class CPatDelimiters extends CasesPatternExpr {
   constructor(
-    public location: CoqLocation,
-    public str: string,
-    public cases: CasesPatternExpr
+    public location : CoqLocation,
+    public str : string,
+    public cases : CasesPatternExpr
   ) {
     super()
   }

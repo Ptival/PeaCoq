@@ -1,9 +1,9 @@
-import { ValueFail } from "../coq/value-fail"
-import { Processed } from "../coq/feedback-content"
+import { ValueFail } from '../coq/value-fail'
+import { Processed } from '../coq/feedback-content'
 
 /*
   This takes care of updating the position of the text cursor in the following
-  situations:
+  situations :
   - when the final edit of a sequence of edits being processed is processed
   - when an error occurs
   - when the user steps back to a previous edit
@@ -16,12 +16,12 @@ import { Processed } from "../coq/feedback-content"
 */
 
 export function setupTextCursorPositionUpdate(
-  doc: ICoqDocument,
-  editProcessed$: Rx.Observable<ISentence<IProcessed>>,
-  error$: Rx.Observable<IEditorError>,
-  previousEditToReach$: Rx.Observable<ISentence<IStage>>,
-  nextEditToProcess$: Rx.Observable<ISentence<IToProcess>>
-): void {
+  doc : ICoqDocument,
+  editProcessed$ : Rx.Observable<ISentence<IProcessed>>,
+  error$ : Rx.Observable<IEditorError>,
+  previousEditToReach$ : Rx.Observable<ISentence<IStage>>,
+  nextEditToProcess$ : Rx.Observable<ISentence<IToProcess>>
+) : void {
 
   const lastEditProcessedStopPosition$ =
     editProcessed$
@@ -32,8 +32,8 @@ export function setupTextCursorPositionUpdate(
   const errorLocation$ =
     error$
       .map(ee => ee.range.caseOf<AceAjax.Position>({
-        nothing: () => ee.failedEdit.stopPosition,
-        just: r => r.start,
+        nothing : () => ee.failedEdit.stopPosition,
+        just : r => r.start,
       }))
 
   const inhibitLastEditAfterError$ =

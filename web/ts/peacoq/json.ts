@@ -1,80 +1,80 @@
 /*
-The pretty-printed context is exposed objects of the form:
-{ constructorName: "Constructor",
-  constructorArgs: [a1, ...] }
+The pretty-printed context is exposed objects of the form :
+{ constructorName : 'Constructor',
+  constructorArgs : [a1, ...] }
 Where the `a`s may be numerals, strings, arrays or objects
 */
 
-export function walkJSON(input: any): any {
+export function walkJSON(input : any) : any {
   // console.log(input)
-  if (typeof input === "object") {
-    if (input.hasOwnProperty("constructorName")) {
+  if (typeof input === 'object') {
+    if (input.hasOwnProperty('constructorName')) {
       const processedArgs = input.constructorArgs.map(walkJSON)
       switch (input.constructorName) {
-        case "CApp": {
+        case 'CApp' : {
           const [a, b, c] = processedArgs
           return new CApp(a, b, c)
         }
-        case "CNotation": {
+        case 'CNotation' : {
           const [a, b, c, d, e] = processedArgs
           return new CNotation(a, b, c, d, e)
         }
-        case "CPrim": {
+        case 'CPrim' : {
           const [a, b] = processedArgs
           return new CPrim(a, b)
         }
-        case "CRef": {
+        case 'CRef' : {
           const [a, b] = processedArgs
           return new CRef(a, b)
         }
-        case "E": return new E()
-        case "Ident": {
+        case 'E' : return new E()
+        case 'Ident' : {
           const [a] = processedArgs
           return new Ident(a)
         }
-        case "L": return new L()
-        case "Name": {
+        case 'L' : return new L()
+        case 'Name' : {
           const [name] = processedArgs
           return new Name(name)
         }
-        case "nothing": return nothing()
-        case "Numeral": {
+        case 'nothing' : return nothing()
+        case 'Numeral' : {
           const [a] = processedArgs
           return new Numeral(a)
         }
-        case "PpBrk": {
+        case 'PpBrk' : {
           const [a, b] = processedArgs
           return new PpBrk(a, b)
         }
-        case "PpHoVB": {
+        case 'PpHoVB' : {
           const [a] = processedArgs
           return new PpHoVB(a)
         }
-        case "Prec": {
+        case 'Prec' : {
           const [a] = processedArgs
           return new Prec(a)
         }
-        case "Qualid": {
+        case 'Qualid' : {
           const [a] = processedArgs
           return new Qualid(a)
         }
-        case "UnpBox": {
+        case 'UnpBox' : {
           const [a, b] = processedArgs
           return new UnpBox(a, b)
         }
-        case "UnpCut": {
+        case 'UnpCut' : {
           const [a] = processedArgs
           return new UnpCut(a)
         }
-        case "UnpMetaVar": {
+        case 'UnpMetaVar' : {
           const [a, b] = processedArgs
           return new UnpMetaVar(a, b)
         }
-        case "UnpTerminal": {
+        case 'UnpTerminal' : {
           const [a] = processedArgs
           return new UnpTerminal(a)
         }
-        default:
+        default :
           const showme = input.constructorName
           const len = input.constructorArgs.length
           debugger
@@ -84,13 +84,13 @@ export function walkJSON(input: any): any {
     if (Array.isArray(input)) {
       return input.map(walkJSON)
     }
-    const output: any = {}
+    const output : any = {}
     for (const k in input) {
       output[k] = walkJSON(input[k])
     }
     return output
   }
-  if (["boolean", "number", "string"].includes(typeof input)) {
+  if (['boolean', 'number', 'string'].includes(typeof input)) {
     return input
   }
   debugger

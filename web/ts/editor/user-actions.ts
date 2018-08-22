@@ -1,18 +1,18 @@
-import * as FontSize from "./font-size"
-import { pickFile, saveFile, setupLoadFile, setupSaveFile } from "./toolbar"
+import * as FontSize from './font-size'
+import { pickFile, saveFile, setupLoadFile, setupSaveFile } from './toolbar'
 
 interface UserActionStreams {
-  goTo$: Rx.Observable<{}>,
-  loadedFile$: Rx.Observable<{}>,
-  next$: Rx.Observable<{}>,
-  prev$: Rx.Observable<{}>,
+  goTo$ : Rx.Observable<{}>,
+  loadedFile$ : Rx.Observable<{}>,
+  next$ : Rx.Observable<{}>,
+  prev$ : Rx.Observable<{}>,
 }
 
 export function setup(
-  doc: ICoqDocument,
-  toolbarStreams: ToolbarStreams,
-  shortcutsStreams: ShortcutsStreams
-): UserActionStreams {
+  doc : ICoqDocument,
+  toolbarStreams : ToolbarStreams,
+  shortcutsStreams : ShortcutsStreams
+) : UserActionStreams {
   const fontDecreasedStream =
     Rx.Observable
       .merge(toolbarStreams.fontDecrease, shortcutsStreams.fontDecrease)
@@ -41,9 +41,9 @@ export function setup(
   const loadedFilesStream = setupLoadFile(doc)
   setupSaveFile()
   return {
-    goTo$: goTo$,
-    loadedFile$: loadedFilesStream,
-    next$: next$,
-    prev$: prev$,
+    goTo$ : goTo$,
+    loadedFile$ : loadedFilesStream,
+    next$ : next$,
+    prev$ : prev$,
   }
 }

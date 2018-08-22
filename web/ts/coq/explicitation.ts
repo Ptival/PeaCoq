@@ -2,8 +2,8 @@ abstract class Explicitation {}
 
 class ExplByPos extends Explicitation {
   constructor(
-    public num: number,
-    public name: Maybe<string>
+    public num : number,
+    public name : Maybe<string>
   ) {
     super()
   }
@@ -11,7 +11,7 @@ class ExplByPos extends Explicitation {
 
 class ExplByName extends Explicitation {
   constructor(
-    public name: string
+    public name : string
   ) {
     super()
   }

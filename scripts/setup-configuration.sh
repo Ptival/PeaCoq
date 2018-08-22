@@ -9,8 +9,9 @@ logpath="/tmp"
 
 cat <<END > $file
 PeaCoqConfig
-{ configUserId = "peacoq"
-, configLogPath = "$logpath"
-, configCoqtop = "$peacoqpath/coq-serapi/sertop.native --prelude $peacoqpath/coq --printer=sertop"
+{ configUserId     = "peacoq"
+, configLogPath    = "$logpath"
+, configSertop     = "$peacoqpath/coq-serapi/sertop.native --printer=sertop"
+, configDirToServe = "web/"
 }
 END

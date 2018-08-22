@@ -6,8 +6,8 @@ abstract class Unparsing { }
 
 class UnpMetaVar extends Unparsing {
   constructor(
-    public index: number,
-    public parenRelation: ParenRelation
+    public index : number,
+    public parenRelation : ParenRelation
   ) {
     super()
   }
@@ -15,9 +15,9 @@ class UnpMetaVar extends Unparsing {
 
 class UnpListMetaVar extends Unparsing {
   constructor(
-    public index: number,
-    public parenRelation: ParenRelation,
-    public unparsing: Unparsing[]
+    public index : number,
+    public parenRelation : ParenRelation,
+    public unparsing : Unparsing[]
   ) {
     super()
   }
@@ -25,9 +25,9 @@ class UnpListMetaVar extends Unparsing {
 
 class UnpBinderListMetaVar extends Unparsing {
   constructor(
-    public n: number,
-    public isOpen: boolean,
-    public unparsing: Unparsing[]
+    public n : number,
+    public isOpen : boolean,
+    public unparsing : Unparsing[]
   ) {
     super()
   }
@@ -35,7 +35,7 @@ class UnpBinderListMetaVar extends Unparsing {
 
 class UnpTerminal extends Unparsing {
   constructor(
-    public terminal: string
+    public terminal : string
   ) {
     super()
   }
@@ -43,15 +43,15 @@ class UnpTerminal extends Unparsing {
 
 class UnpBox extends Unparsing {
   constructor(
-    public box: PpBox,
-    public unparsing: Unparsing[]
+    public box : PpBox,
+    public unparsing : Unparsing[]
   ) {
     super()
   }
 }
 
 class UnpCut extends Unparsing {
-  constructor(public cut: PpCut) {
+  constructor(public cut : PpCut) {
     super()
   }
 }
