@@ -14,11 +14,12 @@ fi
 
 cd peacoq-server
 
-cabal install --only-dependencies --enable-tests ${CABALFLAGS}
-cabal configure --enable-tests ${CABALFLAGS}
-cabal build -j2
-cabal copy
-cabal register
+# cabal install --only-dependencies --enable-tests ${CABALFLAGS}
+# cabal configure --enable-tests ${CABALFLAGS}
+# cabal build -j2
+# cabal copy
+# cabal register
+stack build
 
 # this path is ridiculous!
 ln -sf peacoq-server/dist/build/peacoq-server/peacoq-server ../peacoq

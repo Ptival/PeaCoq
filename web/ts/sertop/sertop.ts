@@ -100,12 +100,14 @@ function sendPing() : Promise<ISertop.IAnswer<ISertop.IAnswerKind>[]> {
 }
 
 function sendCommand(cmd : ISertop.ICommand) : Promise<ISertop.IAnswer<ISertop.IAnswerKind>[]> {
-    // console.log('SEND', cmd)
-    debugger
+    console.log('SEND', cmd)
+    const datum = `(${cmd.tag} ${cmd.toSexp()})`
+    console.log(datum)
+    // debugger
     return wrapAjax({
         type : 'POST',
         url : 'coqtop',
-        data : { data : JSON.stringify(`(${cmd.tag} ${cmd.toSexp()})`) },
+        data : datum,
         async : true,
     }).then(r => {
         // console.log('RECV', r)

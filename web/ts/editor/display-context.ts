@@ -25,7 +25,7 @@ export function setup(
   // 2. send an Observe command to coqtop so that the context gets evaluated
   sentenceToDisplay$
     .flatMap(s => s.getBeingProcessed$())
-    .map(bp => Rx.Observable.just(new Command.Control(new ControlCommand.StmObserve(bp.stateId))))
+    .map(bp => Rx.Observable.just(new Command.Control(new ControlCommand.Exec(bp.stateId))))
     .subscribe(cmd$ => doc.sendCommands(cmd$))
 
 }

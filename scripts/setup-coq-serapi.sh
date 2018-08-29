@@ -4,7 +4,7 @@ set -euv
 branch="v8.8"
 
 if [ ! -d coq-serapi/.git ]; then
-  git clone https://github.com/ejgallego/coq-serapi.git
+  git clone https://github.com/Ptival/coq-serapi.git
 fi
 cd coq-serapi
 git fetch origin $branch

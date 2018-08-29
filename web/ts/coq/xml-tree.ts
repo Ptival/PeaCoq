@@ -1,12 +1,15 @@
-// import { CoqXMLTag, mkCoqXMLTag } from './xml-tag'
+import * as _ from 'lodash'
+
+import { cAST } from './lib/c-ast'
+import * as Loc from './lib/loc'
 
 class CoqXMLTree {
-  public rootLabel : Located<CoqXMLTag>
+  public rootLabel : cAST<CoqXMLTag>
   public subForest : CoqXMLTree[]
-  constructor(t : [CoqLocation, ICoqtopResponse<any>]) {
+  constructor(t : [Loc.t, ICoqtopResponse<any>]) {
     const [loc, xmltag] = t
-    this.rootLabel = [loc, mkCoqXMLTag(xmltag)]
-    this.subForest = _(t[1]).map((t : [CoqLocation, ICoqtopResponse<any>]) => {
+      this.rootLabel = new cAST(mkCoqXMLTag(xmltag), just(loc))
+    this.subForest = _(t[1]).map((t : [Loc.t, ICoqtopResponse<any>]) => {
       return new CoqXMLTree(t)
     }).value()
   }

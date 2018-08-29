@@ -1,18 +1,19 @@
-import { prConstrExpr } from './coq-pretty-printer'
+import * as ConstrExpr from '../coq/intf/constr-expr'
+import { prConstrExpr } from '../coq/printing/ppconstr'
 import { htmlPrintPpCmds, htmlPrintPpCmdsDiff } from '../context-visualization/printers'
 
-export function htmlPrintConstrExpr(c : IConstrExpr) : string {
+export function htmlPrintConstrExpr(c : ConstrExpr.ConstrExpr) : string {
   const ppCmds = prConstrExpr(c)
   // console.log(ppCmds)
-  return htmlPrintPpCmds(ppCmds)
+  return htmlPrintPpCmds([ppCmds])
 }
 
-export function htmlPrintConstrExprDiff(c : IConstrExpr, old : IConstrExpr) : string {
+export function htmlPrintConstrExprDiff(c : ConstrExpr.ConstrExpr, old : ConstrExpr.ConstrExpr) : string {
   const ppCmds = prConstrExpr(c)
   const oldPpCmds = prConstrExpr(old)
   console.log(ppCmds)
   // return htmlPrintPpCmds(ppCmds)
-  return htmlPrintPpCmdsDiff(ppCmds, oldPpCmds)
+  return htmlPrintPpCmdsDiff([ppCmds], [oldPpCmds])
 }
 
 export function htmlPrintHyp(h : PeaCoqHyp) : string {

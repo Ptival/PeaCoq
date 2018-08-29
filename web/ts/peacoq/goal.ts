@@ -1,5 +1,6 @@
 import * as _ from 'lodash'
 
+import * as ConstrExpr from '../coq/intf/constr-expr'
 import { htmlPrintConstrExpr, htmlPrintHyps } from '../printing/html-printers'
 
 // export default PeaCoqGoal
@@ -15,7 +16,7 @@ export class PeaCoqGoal implements IPeaCoqGoal {
 
   constructor(
     public hyps : PeaCoqHyp[],
-    public concl : IConstrExpr
+    public concl : ConstrExpr.ConstrExpr
   ) {
     this.html = null // rendered on-demand and cached
   }

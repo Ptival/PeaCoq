@@ -1,9 +1,14 @@
 abstract class PrimToken { }
 
 class Numeral extends PrimToken {
-  constructor(public numeral : number) { super() }
+    constructor(
+        public readonly raw  : string,
+        public readonly sign : boolean,
+    ) { super() }
 }
 
 class PrimTokenString extends PrimToken {
-  constructor(public str : string) { super() }
+    constructor(
+        public readonly str : string,
+    ) { super() }
 }
