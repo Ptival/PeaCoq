@@ -10,6 +10,7 @@ nixpkgs.stdenv.mkDerivation {
   name = "peacoq";
   buildInputs = (with nixpkgs; [
     #ghc
+    #cabal-install
     nodejs-10_x
     #peacoq-server
   ] ++ (with ocamlPackages;

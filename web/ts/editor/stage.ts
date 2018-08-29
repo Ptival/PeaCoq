@@ -1,47 +1,48 @@
-import { Control } from '../sertop/command'
-import { StmQuery } from '../sertop/control-command'
 import { SentenceMarker } from './sentence-marker'
 import { getContextRoute } from '../peacoq/routes'
 import { theme } from '../peacoq/theme'
+import { Control } from '../sertop/command'
+import { StmQuery } from '../sertop/control-command'
+import { Vernac } from '../sertop/query-command'
 
 export class ToProcess implements IToProcess {
-  public marker : ISentenceMarker
+    public marker : ISentenceMarker
 
-  constructor(
-    doc : ICoqDocument,
-    start : AceAjax.Position,
-    stop : AceAjax.Position
-  ) {
-    this.marker = new SentenceMarker(doc, start, stop)
-  }
+    constructor(
+        doc : ICoqDocument,
+        start : AceAjax.Position,
+        stop : AceAjax.Position
+    ) {
+        this.marker = new SentenceMarker(doc, start, stop)
+    }
 
-  public getColor() : string { return theme.toprocess }
+    public getColor() : string { return theme.toprocess }
 
-  public getStateId() { return nothing<StateId>() }
+    public getStateId() { return nothing<StateId>() }
 
-  public nextStageMarker() : ISentenceMarker {
-    this.marker.markBeingProcessed()
-    return this.marker
-  }
+    public nextStageMarker() : ISentenceMarker {
+        this.marker.markBeingProcessed()
+        return this.marker
+    }
 }
 
 export class BeingProcessed implements IBeingProcessed {
-  public marker : ISentenceMarker
-  public stateId : number
+    public marker : ISentenceMarker
+    public stateId : number
 
-  constructor(e : IToProcess, sid : number) {
-    this.marker = e.nextStageMarker()
-    this.stateId = sid
-  }
+    constructor(e : IToProcess, sid : number) {
+        this.marker = e.nextStageMarker()
+        this.stateId = sid
+    }
 
-  public getColor() : string { return theme.processing }
+    public getColor() : string { return theme.processing }
 
-  public getStateId() { return just(this.stateId) }
+    public getStateId() { return just(this.stateId) }
 
-  public nextStageMarker() : ISentenceMarker {
-    this.marker.markProcessed()
-    return this.marker
-  }
+    public nextStageMarker() : ISentenceMarker {
+        this.marker.markProcessed()
+        return this.marker
+    }
 }
 
 /*
@@ -61,51 +62,51 @@ export class BeingProcessed implements IBeingProcessed {
 */
 
 export class Processed implements IProcessed {
-  private context : Promise<PeaCoqContext> | null
-  private onFulfilled : ((c : PeaCoqContext) => void) | null
-  public marker : ISentenceMarker
-  public stateId : number
+    private context : Promise<PeaCoqContext> | null
+    private onFulfilled : ((c : PeaCoqContext) => void) | null
+    public marker : ISentenceMarker
+    public stateId : number
 
-  constructor(
-    private doc : ICoqDocument,
-    e : IBeingProcessed
-  ) {
-    this.context = null // created later
-    this.onFulfilled = null
-    this.marker = e.nextStageMarker()
-    this.stateId = e.stateId
-  }
-
-  public getColor() { return theme.processed }
-
-  public getContext() : Promise<PeaCoqContext> {
-    // console.log('GETTING CONTEXT FOR STATE ID', this.stateId)
-    if (this.context === null) {
-      this.context = new Promise(onFulfilled => {
-        const query = new Control(new StmQuery(
-          {
-            route : getContextRoute,
-            sid : this.stateId,
-          },
-          'PeaCoqGetContext.',
-          false
-        ))
-        this.onFulfilled = onFulfilled
-        this.doc.sendCommands(Rx.Observable.just(query))
-      })
+    constructor(
+        private doc : ICoqDocument,
+        e : IBeingProcessed
+    ) {
+        this.context = null // created later
+        this.onFulfilled = null
+        this.marker = e.nextStageMarker()
+        this.stateId = e.stateId
     }
-    return this.context
-  }
 
-  public getStateId() { return just(this.stateId) }
+    public getColor() { return theme.processed }
 
-  public setContext(c : PeaCoqContext) {
-    if (this.onFulfilled === null) {
-      // someone else than getContext must have called PeaCoqGetContext
-      debugger
-      throw this
+    public getContext() : Promise<PeaCoqContext> {
+        // console.log('GETTING CONTEXT FOR STATE ID', this.stateId)
+        if (this.context === null) {
+            this.context = new Promise(onFulfilled => {
+                const query = new Control(new StmQuery(
+                    {
+                        route : getContextRoute,
+                        sid : this.stateId,
+                    },
+                    new Vernac('PeaCoqGetContext.'),
+                    false
+                ))
+                this.onFulfilled = onFulfilled
+                this.doc.sendCommands(Rx.Observable.just(query))
+            })
+        }
+        return this.context
     }
-    this.onFulfilled(c)
-  }
+
+    public getStateId() { return just(this.stateId) }
+
+    public setContext(c : PeaCoqContext) {
+        if (this.onFulfilled === null) {
+            // someone else than getContext must have called PeaCoqGetContext
+            debugger
+            throw this
+        }
+        this.onFulfilled(c)
+    }
 
 }

@@ -30,22 +30,27 @@ export class Feedback implements IFeedback<IFeedbackContent> {
 // }
 
 export function fromSertop(
-    f : [any, [[any, [string, string]], [any, string], [any, string]]]
+    f : [any, [[string, string], [string, string], [string, string], [string, any[]]]]
 ) {
     //const [, [[, [es, esid]], [, fc], [, rid]]] = f
     const [, [ [, docId], [,spanId], [,route], [,contents] ]] = f
-    let editOrState : EditOrState
-    switch (es) {
-        case 'Edit' :
-            editOrState = EditOrState.Edit
-            break
-        case 'State' :
-            editOrState = EditOrState.State
-            break
-        default :
-            debugger
-            // throw 'coqtopMkFeedback: neither edit nor state'
-            editOrState = EditOrState.State
-    }
-    return new Feedback(editOrState, +esid, FeedbackContent.fromSertop(fc), +rid)
+
+    // DEPRECATED?
+    // let editOrState : EditOrState
+    // switch (es) {
+    //     case 'Edit' :
+    //         editOrState = EditOrState.Edit
+    //         break
+    //     case 'State' :
+    //         editOrState = EditOrState.State
+    //         break
+    //     default :
+    //         debugger
+    //         // throw 'coqtopMkFeedback: neither edit nor state'
+    //         editOrState = EditOrState.State
+    // }
+
+    const editOrState = EditOrState.State // FIXME
+
+    return new Feedback(editOrState, +spanId, FeedbackContent.fromSertop(contents), +route)
 }

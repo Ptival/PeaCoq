@@ -11,7 +11,7 @@ cat <<END > $file
 PeaCoqConfig
 { configUserId     = "peacoq"
 , configLogPath    = "$logpath"
-, configSertop     = "$peacoqpath/coq-serapi/sertop.native --printer=sertop"
+, configSertop     = "$peacoqpath/coq-serapi/sertop.native --printer=sertop -I $peacoqpath/peacoq-plugin -Q $peacoqpath/peacoq-plugin,PeaCoq"
 , configDirToServe = "web/"
 }
 END

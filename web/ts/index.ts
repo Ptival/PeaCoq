@@ -46,214 +46,214 @@ import { setup as setupProofTree } from './prooftree/setup'
 
 let lastTimer = Date.now()
 function time(label : string) {
-  const now = Date.now()
-  const delta = now - lastTimer
-  if (delta > 5) {
-    console.log(`Timing ${label} : ${now - lastTimer}ms`)
-  }
-  lastTimer = now
+    const now = Date.now()
+    const delta = now - lastTimer
+    if (delta > 5) {
+        console.log(`Timing ${label} : ${now - lastTimer}ms`)
+    }
+    lastTimer = now
 }
 
 const resizeBufferingTime = 250 // milliseconds
 
 $(document).ready(() => {
 
-  const readyStartTime = Date.now()
+    const readyStartTime = Date.now()
 
-  const {
-    bottomLayout,
-    contextTabs,
-    layoutResizeStream,
-    rightLayout,
-    rightLayoutRenderedStream,
-    rightLayoutResizeStream,
-    windowResizeStream,
-  } = setupLayout()
+    const {
+        bottomLayout,
+        contextTabs,
+        layoutResizeStream,
+        rightLayout,
+        rightLayoutRenderedStream,
+        rightLayoutResizeStream,
+        windowResizeStream,
+    } = setupLayout()
 
-  const resize$ =
-    Rx.Observable.merge(windowResizeStream, layoutResizeStream, rightLayoutResizeStream)
-      // only fire once every <resizeBufferingTime> milliseconds
-      .bufferWithTime(resizeBufferingTime).filter(a => !_.isEmpty(a))
+    const resize$ =
+        Rx.Observable.merge(windowResizeStream, layoutResizeStream, rightLayoutResizeStream)
+    // only fire once every <resizeBufferingTime> milliseconds
+        .bufferWithTime(resizeBufferingTime).filter(a => !_.isEmpty(a))
 
-  const editor = ace.edit('editor')
+    const editor = ace.edit('editor')
 
-  const doc : ICoqDocument = new CoqDocument(editor)
+    const doc : ICoqDocument = new CoqDocument(editor)
 
-  bottomLayout.on({ type : 'render', execute : 'after' }, () => {
-    setupProgressBar(doc)
-    bottomLayout.refresh()
-  })
-
-  const tabsAreReadyPromise = new Promise(onFulfilled => {
-    rightLayoutRenderedStream.take(1).subscribe(() => {
-      // top panes
-      contextTabs.click('pretty')
-      doc.contextPanel = new ContextPanel(doc, rightLayoutName)
-      // TODO : stream this
-      fontSizeUpdate(doc)
-      onFulfilled()
+    bottomLayout.on({ type : 'render', execute : 'after' }, () => {
+        setupProgressBar(doc)
+        bottomLayout.refresh()
     })
-  })
 
-  time('start')
-  setupDisplayContext(doc)
-  time('A0')
-  setupObserveEditorChange(doc)
-  time('B0')
-  setupEditor(doc, editor)
-  time('C0')
-  editor.focus()
-  time('D0')
-  resize$.subscribe(() => onResize(doc))
-  time('E0')
+    const tabsAreReadyPromise = new Promise(onFulfilled => {
+        rightLayoutRenderedStream.take(1).subscribe(() => {
+            // top panes
+            contextTabs.click('pretty')
+            doc.contextPanel = new ContextPanel(doc, rightLayoutName)
+            // TODO : stream this
+            fontSizeUpdate(doc)
+            onFulfilled()
+        })
+    })
 
-  time('A1')
+    time('start')
+    setupDisplayContext(doc)
+    time('A0')
+    setupObserveEditorChange(doc)
+    time('B0')
+    setupEditor(doc, editor)
+    time('C0')
+    editor.focus()
+    time('D0')
+    resize$.subscribe(() => onResize(doc))
+    time('E0')
 
-  // SLOW!
-  // const toolbar$s = setupToolbar(doc)
-  const toolbar$s = {
-    fontDecrease : Rx.Observable.empty(),
-    fontIncrease : Rx.Observable.empty(),
-    goToCaret : Rx.Observable.empty(),
-    load : Rx.Observable.empty(),
-    next : Rx.Observable.empty(),
-    previous : Rx.Observable.empty(),
-    save : Rx.Observable.empty(),
-  }
+    time('A1')
 
-  time('B1')
-  const shortcut$s = setupKeybindings(doc)
-  time('C1')
-  const { goTo$, loadedFile$, next$, prev$ } = setupUserActions(doc, toolbar$s, shortcut$s)
-  time('D1')
+    // SLOW!
+    // const toolbar$s = setupToolbar(doc)
+    const toolbar$s = {
+        fontDecrease : Rx.Observable.empty(),
+        fontIncrease : Rx.Observable.empty(),
+        goToCaret : Rx.Observable.empty(),
+        load : Rx.Observable.empty(),
+        next : Rx.Observable.empty(),
+        previous : Rx.Observable.empty(),
+        save : Rx.Observable.empty(),
+    }
 
-  time('A2')
-  const [forwardGoTo$, backwardGoTo$] = setupGoToPartitioning(doc, goTo$)
-  time('B2')
-  setupCancelBecauseBackwardGoTo(doc, backwardGoTo$)
-  time('C2')
-  loadedFile$.subscribe(() => doc.contextPanel.clear())
-  time('D2')
-  setupQuitBecauseFileLoaded(doc, loadedFile$)
-  time('E2')
-  next$.subscribe(() => doc.next())
-  time('F2')
-  setupCancelBecausePrev(doc, prev$)
-  time('G2')
+    time('B1')
+    const shortcut$s = setupKeybindings(doc)
+    time('C1')
+    const { goTo$, loadedFile$, next$, prev$ } = setupUserActions(doc, toolbar$s, shortcut$s)
+    time('D1')
 
-  time('A3')
-  setupSyntaxHovering()
-  time('B3')
-  tabsAreReadyPromise.then(() => Theme.setupTheme(doc))
-  time('C3')
-  Theme.afterChange$.subscribe(() => onResize(doc))
-  time('D3')
-  // These also help with the initial display...
-  Theme.afterChange$.subscribe(() => { rightLayout.refresh() })
-  time('E3')
-  Theme.afterChange$.subscribe(() => { bottomLayout.refresh() })
-  time('F3')
+    time('A2')
+    const [forwardGoTo$, backwardGoTo$] = setupGoToPartitioning(doc, goTo$)
+    time('B2')
+    setupCancelBecauseBackwardGoTo(doc, backwardGoTo$)
+    time('C2')
+    loadedFile$.subscribe(() => doc.contextPanel.clear())
+    time('D2')
+    setupQuitBecauseFileLoaded(doc, loadedFile$)
+    time('E2')
+    next$.subscribe(() => doc.next())
+    time('F2')
+    setupCancelBecausePrev(doc, prev$)
+    time('G2')
 
-  // Automated tasks need to stop whenever the user changes the current state
-  const stopAutomationRound$ : Rx.Observable<{}> = Rx.Observable.empty() // FIXME URGENT
+    time('A3')
+    setupSyntaxHovering()
+    time('B3')
+    tabsAreReadyPromise.then(() => Theme.setupTheme(doc))
+    time('C3')
+    Theme.afterChange$.subscribe(() => onResize(doc))
+    time('D3')
+    // These also help with the initial display...
+    Theme.afterChange$.subscribe(() => { rightLayout.refresh() })
+    time('E3')
+    Theme.afterChange$.subscribe(() => { bottomLayout.refresh() })
+    time('F3')
 
-  time('F4')
+    // Automated tasks need to stop whenever the user changes the current state
+    const stopAutomationRound$ : Rx.Observable<{}> = Rx.Observable.empty() // FIXME URGENT
 
-  // This is pretty slow
-  // doc.editor.completers = [{ getCompletions : createGetCompletions(doc, stopAutomationRound$) }]
+    time('F4')
 
-  time('F5')
+    // This is pretty slow
+    // doc.editor.completers = [{ getCompletions : createGetCompletions(doc, stopAutomationRound$) }]
 
-  // Shorthands for input streams
-  time('F6')
-  const controlCommand$ = doc.input$.let(Filters.controlCommand)
-  time('F7')
-  const stmAdd$ = controlCommand$.let(Filters.stmAdd)
-  time('F8')
-  const stmCancel$ = controlCommand$.let(Filters.stmCancel)
-  time('F9')
-  const stmEditAt$ = controlCommand$.let(Filters.stmEditAt)
-  time('F10')
-  const stmQuery$ = controlCommand$.let(Filters.stmQuery)
-  time('F11')
+    time('F5')
 
-  // Shorthands for output streams
-  const { answer$s, feedback$s } = doc.output$s
-  time('F12')
-  const { completed$, coqExn$, stmAdded$, stmCanceled$ } = answer$s
-  time('F13')
-  const { error$, notice$ } = feedback$s.message$s
-  time('F14')
-  const { processed$ } = feedback$s
-  time('F15')
+    // Shorthands for input streams
+    time('F6')
+    const controlCommand$ = doc.input$.let(Filters.controlCommand)
+    time('F7')
+    const stmAdd$ = controlCommand$.let(Filters.stmAdd)
+    time('F8')
+    const stmCancel$ = controlCommand$.let(Filters.stmCancel)
+    time('F9')
+    const stmEditAt$ = controlCommand$.let(Filters.stmEditAt)
+    time('F10')
+    const stmQuery$ = controlCommand$.let(Filters.stmQuery)
+    time('F11')
 
-  time('A4')
-  setupObserveContext(doc, notice$, stmQuery$)
-  time('B4')
-  const stmActionsInFlightCounter$ = setupInFlightCounter(stmAdd$, stmCancel$, stmEditAt$, completed$)
-  time('C4')
-  // setupProofTreeAutomation(completed$, doc, error$, notice$, stmActionsInFlightCounter$, stmAdded$, stopAutomationRound$)
-  setupProofTreePopulating(doc, doc.tip$)
-  time('D4')
-  setupObserveStmAdded(doc, stmAdded$)
-  time('E4')
-  setupUserInteractionForwardGoto(doc, forwardGoTo$, error$)
-  time('F4')
-  setupObserveProcessed(doc, processed$)
-  time('G4')
+    // Shorthands for output streams
+    const { answer$s, feedback$s } = doc.output$s
+    time('F12')
+    const { completed$, coqExn$, stmAdded$, stmCanceled$ } = answer$s
+    time('F13')
+    const { error$, notice$ } = feedback$s.message$s
+    time('F14')
+    const { processed$ } = feedback$s
+    time('F15')
 
-  time('A5')
-  setupUnderlineError(doc, error$) // keep this above the subscription that removes edits
-  time('b5')
-  const jBottom = $(w2ui[rightLayoutName].get('bottom').content)
-  time('c5')
-  setupCoqtopPanel(doc, jBottom, error$, notice$, loadedFile$) // keep this above the subscription that removes edits
-  time('D5')
+    time('A4')
+    setupObserveContext(doc, notice$, stmQuery$)
+    time('B4')
+    const stmActionsInFlightCounter$ = setupInFlightCounter(stmAdd$, stmCancel$, stmEditAt$, completed$)
+    time('C4')
+    // setupProofTreeAutomation(completed$, doc, error$, notice$, stmActionsInFlightCounter$, stmAdded$, stopAutomationRound$)
+    setupProofTreePopulating(doc, doc.tip$)
+    time('D4')
+    setupObserveStmAdded(doc, stmAdded$)
+    time('E4')
+    setupUserInteractionForwardGoto(doc, forwardGoTo$, error$)
+    time('F4')
+    setupObserveProcessed(doc, processed$)
+    time('G4')
 
-  /***** IMPORTANT :
-   * The following lines remove edits from the document, so their subscription
-   * must happen after subscriptions that want to inspect the edits before removal.
-   * TODO : design it better so that removed edits are streamed out.
-   *****/
-  time('A6')
-  setupObserveCoqExn(doc, coqExn$, stmAdd$, stmQuery$, completed$)
-  time('B6')
-  setupObserveError(doc, error$)
-  time('C6')
+    time('A5')
+    setupUnderlineError(doc, error$) // keep this above the subscription that removes edits
+    time('b5')
+    const jBottom = $(w2ui[rightLayoutName].get('bottom').content)
+    time('c5')
+    setupCoqtopPanel(doc, jBottom, error$, notice$, loadedFile$) // keep this above the subscription that removes edits
+    time('D5')
 
-  time('A7')
-  // debugging
-  coqExn$
-    .filter(e => e.answer.getMessage().indexOf('Anomaly') >= 0)
-    .subscribe(e => { debugger })
-  time('B7')
+    /***** IMPORTANT :
+     * The following lines remove edits from the document, so their subscription
+     * must happen after subscriptions that want to inspect the edits before removal.
+     * TODO : design it better so that removed edits are streamed out.
+     *****/
+    time('A6')
+    setupObserveCoqExn(doc, coqExn$, stmAdd$, stmQuery$, completed$)
+    time('B6')
+    setupObserveError(doc, error$)
+    time('C6')
 
-  time('A8')
-  const stmCanceledFiltered$ = setupObserveStmCancel(doc, stmCancel$, stmCanceled$)
-  time('B8')
-  setupProofTree(doc, loadedFile$, resize$, stmCanceledFiltered$, bottomLayout)
-  time('C8')
-  const namesInScope$ = setupNamesInScope(doc, notice$)
-  time('D8')
-  namesInScope$.subscribe(names => console.log(`${names.length} names in scope`))
-  time('E8')
+    time('A7')
+    // debugging
+    coqExn$
+        .filter(e => e.answer.getMessage().indexOf('Anomaly') >= 0)
+        .subscribe(e => { debugger })
+    time('B7')
 
-  time('A9')
-  // Debugging :
-  doc.editor.setValue(`
-    Inductive day : Type :=
-    | monday : day
-    | tuesday : day
-    | wednesday : day
-    | thursday : day
-    | friday : day
-    | saturday : day
-    | sunday : day
-    .
-  `)
-  time('B9')
+    time('A8')
+    const stmCanceledFiltered$ = setupObserveStmCancel(doc, stmCancel$, stmCanceled$)
+    time('B8')
+    setupProofTree(doc, loadedFile$, resize$, stmCanceledFiltered$, bottomLayout)
+    time('C8')
+    const namesInScope$ = setupNamesInScope(doc, completed$, notice$, stmAdded$)
+    time('D8')
+    namesInScope$.subscribe(names => console.log(`${names.length} names in scope`))
+    time('E8')
 
-  const readyStopTime = Date.now()
-  console.log(`Ready handler executed in ${readyStopTime - readyStartTime}ms`)
+    time('A9')
+    // Debugging :
+    doc.editor.setValue(`
+Inductive day : Type :=
+| monday : day
+| tuesday : day
+| wednesday : day
+| thursday : day
+| friday : day
+| saturday : day
+| sunday : day
+.
+`)
+    time('B9')
+
+    const readyStopTime = Date.now()
+    console.log(`Ready handler executed in ${readyStopTime - readyStartTime}ms`)
 
 })
