@@ -14,7 +14,6 @@ export function coqLocationFromSexp(o : any) : Loc.t {
 }
 
 export function escapeQuotes(s : string) : string {
-    debugger
     return (
         s
             .replace(/'/g, `\\'`)

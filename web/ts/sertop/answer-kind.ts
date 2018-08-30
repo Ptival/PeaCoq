@@ -85,7 +85,7 @@ export function create(o : any) : ISertop.IAnswerKind {
                 throw 'StmEdited'
             }
 
-        case 'StmCanceled' :
+        case 'Canceled' :
             const [stateIds] : string[][] = args
             return new StmCanceled(stateIds.map(s => + s))
 

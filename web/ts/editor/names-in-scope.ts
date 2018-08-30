@@ -11,7 +11,7 @@ export function setup(
     stmAdded$ : StmAdded$
 ) : Rx.Observable<string[]> {
 
-    doc.debouncedTip$
+    const commands$$ = doc.debouncedTip$
 
         .map(tip => {
             return tip
@@ -48,13 +48,16 @@ export function setup(
                 })
         })
 
-        .subscribe(cmd$ => doc.sendCommands(cmd$))
-
-    return Rx.Observable.create<string[]>(o => {
+    // registering the observable before trigerring the subscription
+    const namesInScope$ = Rx.Observable.create<string[]>(o => {
         notice$.filter(n => n.routeId === namesInScopeRoute)
             .subscribe(n => {
                 o.onNext(n.feedbackContent.message.split('\n'))
             })
     })
+
+    commands$$.subscribe(cmd$ => doc.sendCommands(cmd$))
+
+    return namesInScope$
 
 }
