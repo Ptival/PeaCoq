@@ -11,6 +11,23 @@ export function setup(
     stmAdded$ : StmAdded$
 ) : Rx.Observable<string[]> {
 
+    const setSearch = new Control(new StmAdd({}, 'Set Search Output Name Only.', true))
+
+    const setSearchOutput$ =
+        stmAdded$
+        .filter(a => a.cmdTag === setSearch.tag)
+        .takeUntil(completed$.filter(a => a.cmdTag === setSearch.tag))
+        .map(a => new Control(new StmCancel([a.answer.stateId])))
+
+    const search = new Control(
+        new StmQuery(
+            { route : namesInScopeRoute },
+            new Vernac(`SearchAbout -"PEACOQ_NAMES_IN_SCOPE".`),
+            true
+        )
+    )
+    // const editAt = new Control(new StmEditAt(sid))
+
     const commands$$ = doc.debouncedTip$
 
         .map(tip => {
@@ -19,22 +36,6 @@ export function setup(
                 .caseOf({
                     nothing : () => Rx.Observable.empty<ISertop.ICommand>(),
                     just : sid => {
-                        const setSearch = new Control(new StmAdd({}, 'Set Search Output Name Only.', true))
-
-                        const setSearchOutput$ =
-                            stmAdded$
-                            .filter(a => a.cmdTag === setSearch.tag)
-                            .takeUntil(completed$.filter(a => a.cmdTag === setSearch.tag))
-                            .map(a => new Control(new StmCancel([a.answer.stateId])))
-
-                        const search = new Control(
-                            new StmQuery(
-                                { route : namesInScopeRoute },
-                                new Vernac(`SearchAbout -"PEACOQ_NAMES_IN_SCOPE".`),
-                                true
-                            )
-                        )
-                        // const editAt = new Control(new StmEditAt(sid))
 
                         const commands$ = Rx.Observable.concat<ISertop.ICommand>([
                             Rx.Observable.of(setSearch),
@@ -48,13 +49,21 @@ export function setup(
                 })
         })
 
+    /* NOTE:
+     * I am not sure which of these two indicate that the query has finished outputting:
+     * (Answer <id> Completed)                           where <id> is the id of the (Query ...)
+     * (Feedback (... (route <r>)) (contents Processed)) where <r> is the route we use for those queries
+     * For now, I will assume it is the former, but if some names faile to appear, it might
+     * indicate that we should look for the latter instead.
+     * */
+
     // registering the observable before trigerring the subscription
-    const namesInScope$ = Rx.Observable.create<string[]>(o => {
-        notice$.filter(n => n.routeId === namesInScopeRoute)
-            .subscribe(n => {
-                o.onNext(n.feedbackContent.message.split('\n'))
-            })
-    })
+    const namesInScope$ =
+        notice$
+        .takeUntil(completed$.filter(a => a.cmdTag === search.tag))
+        .filter(n => n.routeId === namesInScopeRoute)
+        .map(n => n.feedbackContent.message)
+        .toArray()
 
     commands$$.subscribe(cmd$ => doc.sendCommands(cmd$))
 

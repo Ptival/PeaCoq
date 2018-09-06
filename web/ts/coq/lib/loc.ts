@@ -27,3 +27,5 @@ export function makeLoc(bp : number, ep : number) {
 export function unLoc(loc : t) : [number, number] {
     return [loc.bp, loc.ep]
 }
+
+export type Located<A> = [Maybe<t>, A]

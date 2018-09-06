@@ -5,8 +5,9 @@
   Where the `a`s may be numerals, strings, arrays or objects
 */
 
-import * as ConstrExpr from '../coq/intf/constr-expr'
 import * as PpExtend from '../coq/interp/ppextend'
+import * as ConstrExpr from '../coq/intf/constr-expr'
+import * as LibNames from '../coq/library/libnames'
 
 function assert(condition : boolean, message : string) : void {
     if (!condition) {
@@ -73,7 +74,12 @@ export function walkJSON(input : any) : any {
 
                 case 'Default'     : return ctor1(Default,     processedArgs)
                 case 'Explicit'    : return ctor0(Explicit,    processedArgs)
-                case 'Ident'       : return ctor1(Ident,       processedArgs)
+
+                    // libnames
+                case 'Ident'       : return ctor1(LibNames.Ident,  processedArgs)
+                case 'Qualid'      : return ctor1(LibNames.Qualid, processedArgs)
+
+
                 case 'Name'        : return ctor1(Name,        processedArgs)
                 case 'Numeral'     : return ctor2(Numeral,     processedArgs)
                 case 'E'           : return ctor0(E,           processedArgs)
@@ -90,10 +96,6 @@ export function walkJSON(input : any) : any {
                 case 'Prec' : {
                     const [a] = processedArgs
                     return new Prec(a)
-                }
-                case 'Qualid' : {
-                    const [a] = processedArgs
-                    return new Qualid(a)
                 }
                 case 'UnpBox' : {
                     const [a, b] = processedArgs

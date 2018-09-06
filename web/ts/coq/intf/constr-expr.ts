@@ -2,11 +2,26 @@ import * as _ from 'lodash'
 
 import * as EvarKinds from './evar-kinds'
 import * as MiscTypes from './misctypes'
+import * as PpExtend from '../interp/ppextend'
 import { cAST } from '../lib/c-ast'
 import * as GenArg from '../lib/genarg'
-import * as PpExtend from '../interp/ppextend'
+import * as LibNames from '../library/libnames'
 
-export abstract class ConstrExprR { }
+export type ConstrExprR
+    = CApp
+    | CCases
+    | CCoFix
+    | CDelimiters
+    | CFix
+    | CHole
+    | CLambdaN
+    | CLetIn
+    | CLetTuple
+    | CNotation
+    | CProdN
+    | CPrim
+    | CRef
+    | CSort
 
 export type ConstrExpr = cAST<ConstrExprR>
 
@@ -23,13 +38,11 @@ type AppFun = [ProjFlag, ConstrExpr]
 export type AppArg = [ConstrExpr, Maybe<Located<Explicitation>>]
 export type AppArgs = AppArg[]
 
-export class CApp extends ConstrExprR {
+export class CApp {
     constructor(
         public funct : AppFun,
         public args : AppArgs
-    ) {
-        super()
-    }
+    ) { }
 }
 
 type CaseExpr = [
@@ -43,145 +56,126 @@ export type BranchExpr = cAST<[
     ConstrExpr
 ]>
 
-export class CCases extends ConstrExprR {
+export class CCases {
     constructor(
         public caseStyle : CaseStyle,
         public returnType : Maybe<ConstrExpr>,
         public cases : CaseExpr[],
         public branches : BranchExpr[]
-    ) {
-        super()
-    }
+    ) { }
 }
 
-export class CCoFix extends ConstrExprR {
+export class CCoFix {
     // TODO
 }
 
-export class CDelimiters extends ConstrExprR {
+export class CDelimiters {
     constructor(
         public str : string,
         public expr : ConstrExpr
-    ) {
-        super()
-    }
+    ) { }
 }
 
-export class CFix extends ConstrExprR {
+export class CFix {
     constructor(
-    ) { super() }
+    ) { }
 }
 
-export class CHole extends ConstrExprR {
+export class CHole {
     constructor(
         public evarKinds : Maybe<EvarKinds.t>,
         public introPatternNamingExpr : MiscTypes.IntroPatternNamingExpr,
         public rawGenericArgument : Maybe<GenArg.RawGenericArgument>,
-    ) {
-        super()
-    }
+    ) { }
 }
 
-export class CLambdaN extends ConstrExprR {
+export class CLambdaN {
     constructor(
         public binders : LocalBinderExpr[],
         public body : ConstrExpr
-    ) {
-        super()
-    }
+    ) { }
 }
 
-export class CLetIn extends ConstrExprR {
+export class CLetIn {
     constructor(
         public name : MiscTypes.lname,
         public bound : ConstrExpr,
         public type : Maybe<ConstrExpr>,
         public body : ConstrExpr,
-    ) {
-        super()
-    }
+    ) { }
 }
 
-export class CLetTuple extends ConstrExprR {
+export class CLetTuple {
     constructor(
         public names : MiscTypes.lname[],
         public returnType : [Maybe<MiscTypes.lname>, Maybe<ConstrExpr>],
         public bound : ConstrExpr,
         public body : ConstrExpr
-    ) {
-        super()
-    }
+    ) { }
 }
 
 export type Notation = String
 
-export class CNotation extends ConstrExprR {
+export class CNotation {
     constructor(
         public notation : Notation,
         public substitution : ConstrNotationSubstitution,
         public precedence : number,
         public unparsing : PpExtend.Unparsing[]
-    ) {
-        super()
-    }
+    ) { }
 }
 
-export class CProdN extends ConstrExprR {
+export class CProdN {
     constructor(
         public binderList : LocalBinderExpr[],
         public returnExpr : ConstrExpr
-    ) {
-        super()
-    }
+    ) { }
 }
 
-export class CPrim extends ConstrExprR {
+export class CPrim {
     constructor(
         public token : PrimToken
-    ) {
-        super()
-    }
+    ) { }
 }
 
-export class CRef extends ConstrExprR {
+export class CRef {
     constructor(
-        public reference : Reference,
+        public reference : LibNames.Reference,
         public universeInstance : Maybe<InstanceExpr>
-    ) {
-        super()
-    }
+    ) { }
 }
 
-export class CSort extends ConstrExprR {
+export class CSort {
     constructor(
         public globSort : GlobSort
-    ) {
-        super()
-    }
+    ) { }
 }
 
-export abstract class LocalBinderExpr { }
+export type LocalBinderExpr
+    = CLocalAssum
+    | CLocalDef
+    | CLocalPattern
 
-export class CLocalAssum extends LocalBinderExpr {
+export class CLocalAssum {
     constructor(
         public readonly names : MiscTypes.lname[],
         public readonly binderKind : BinderKind,
         public readonly type : ConstrExpr,
-    ) { super() }
+    ) { }
 }
 
-export class CLocalDef extends LocalBinderExpr {
+export class CLocalDef {
     constructor(
         public readonly name : MiscTypes.lname,
         public readonly value : ConstrExpr,
         public readonly optionalType : Maybe<ConstrExpr>,
-    ) { super() }
+    ) { }
 }
 
-export class CLocalPattern extends LocalBinderExpr {
+export class CLocalPattern {
     constructor(
         public readonly pattern : cAST<[CasesPatternExpr, Maybe<ConstrExpr>]>,
-    ) { super() }
+    ) { }
 }
 
 // added for PeaCoq
@@ -215,26 +209,27 @@ export class CLocalPattern extends LocalBinderExpr {
 
 export type CasesPatternExpr = cAST<CasesPatternExprR>
 
-export abstract class CasesPatternExprR {}
+export type CasesPatternExprR
+    = CPatCstr
+    | CPatAtom
+    | CPatNotation
+    | CPatPrim
+    | CPatDelimiters
 
 // TODO CPatAlias
 
-export class CPatCstr extends CasesPatternExprR {
+export class CPatCstr {
     constructor(
-        public reference : Reference,
+        public reference : LibNames.Reference,
         public cases1 : Maybe<CasesPatternExpr[]>,
         public cases2 : CasesPatternExpr[]
-    ) {
-        super()
-    }
+    ) { }
 }
 
-export class CPatAtom extends CasesPatternExprR {
+export class CPatAtom {
     constructor(
-        public reference : Maybe<Reference>
-    ) {
-        super()
-    }
+        public reference : Maybe<LibNames.Reference>
+    ) { }
 }
 
 // TODO CPatAtom
@@ -245,7 +240,7 @@ type CasesPatternNotationSubstitution = [
     CasesPatternExpr[][]
 ]
 
-export class CPatNotation extends CasesPatternExprR {
+export class CPatNotation {
     constructor(
         public notation : Notation,
         public substitution : CasesPatternNotationSubstitution,
@@ -253,27 +248,21 @@ export class CPatNotation extends CasesPatternExprR {
         // the next fields are added by PeaCoq to simplify things
         public precedence : number,
         public unparsing : PpExtend.Unparsing[]
-    ) {
-        super()
-    }
+    ) { }
 }
 // TODO CPatNotation
 
-export class CPatPrim extends CasesPatternExprR {
+export class CPatPrim {
     constructor(
         public token : PrimToken
-    ) {
-        super()
-    }
+    ) { }
 }
 
 // TODO CPatRecord
 
-export class CPatDelimiters extends CasesPatternExprR {
+export class CPatDelimiters {
     constructor(
         public str : string,
         public cases : CasesPatternExpr
-    ) {
-        super()
-    }
+    ) { }
 }

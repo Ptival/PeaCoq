@@ -1,3 +1,8 @@
+/*
+DO NOT TURN THIS FILE INTO A MODULE AS SOME NON-MODULE FILES USE IT!
+TODO: fix this
+*/
+
 const tantrum = {} // used to throw a tantrum
 
 function thisShouldNotHappen() : never {
@@ -5,9 +10,6 @@ function thisShouldNotHappen() : never {
   throw tantrum
 }
 
-/*
-DO NOT TURN THIS FILE INTO A MODULE AS SOME NON-MODULE FILES USE IT!
-*/
 // const tup1 : [number, number] = [1, 2, 3]
 // const tup2 : [number, number] = <any>[1, 2, 'foo']
 const nbsp = '\u00A0'
@@ -234,3 +236,6 @@ function fix(f : (a : any) => any) : any {
     return f(fix(f))(...x)
   }
 }
+
+function fst<A, B>(p : [A, B]) : A { return p[0] }
+function snd<A, B>(p : [A, B]) : B { return p[1] }

@@ -30,8 +30,16 @@ export namespace Name {
 type ModuleIdent = Id.t
 
 export namespace DirPath {
-    export type t = ModuleIdent[]
+    export type t = ReadonlyArray<ModuleIdent>
     export function repr(x : t) : t { return x }
+
+    export function toString(x : t) : string {
+        if (x.length === 0) {
+            return '<>'
+        } else {
+            return x.map(Id.toString).reverse().join('.')
+        }
+    }
 }
 
 export abstract class GlobalReference {}

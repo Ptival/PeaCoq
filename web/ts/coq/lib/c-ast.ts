@@ -8,3 +8,7 @@ export class cAST<A> {
         public readonly loc : Maybe<Loc.t>,
     ) { }
 }
+
+export function withVal<A, B>(f : (a : A) => B) : (c : cAST<A>) => B {
+    return c => f(c.v)
+}

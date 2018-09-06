@@ -11,7 +11,9 @@ import * as Loc from '../lib/loc'
 import * as Pp from '../lib/pp'
 import * as StrToken from '../str-token'
 import { PpCmdGlue } from '../lib/pp';
-import { CLocalDef, LocalBinderExpr } from '../intf/constr-expr';
+import { CLocalDef, LocalBinderExpr } from '../intf/constr-expr'
+import * as LibNames from '../library/libnames'
+import { peaCoqBox } from '../../peacoq/coq-utils'
 
 export type PrecAssoc = [number, ParenRelation]
 
@@ -43,14 +45,6 @@ export function precLess(child : number, parent : PrecAssoc) {
     if (parentAssoc instanceof L) { return child < absParentPrec }
     if (parentAssoc instanceof Prec) { return child <= parentAssoc.precedence }
     if (parentAssoc instanceof Any) { return true }
-}
-
-/*
-  peaCoqBox should not disrupt the pretty-printing flow, but add a
-  <span> so that sub-expression highlighting is more accurate
-*/
-function peaCoqBox(l : Pp.t) : Pp.t {
-    return [new Pp.PpCmdBox(new Pp.PpHoVBox(0), [l])]
 }
 
 function prComAt(n : number) : Pp.t { return Pp.mt() }
@@ -231,7 +225,7 @@ function printHunks(
     function ret(unp : PpExtend.Unparsing, pp1 : Pp.t, pp2 : Pp.t) : Pp.t {
         return ([] as Pp.t[]).concat(tagUnparsing(unp, pp1), pp2)
     }
-    function aux(ul : PpExtend.Unparsing[]) : Pp.t {
+    function aux(ul : ReadonlyArray<PpExtend.Unparsing>) : Pp.t {
         if (ul.length === 0) {
             return Pp.mt()
         }
@@ -277,7 +271,7 @@ function printHunks(
         }
         if (unp instanceof PpExtend.UnpBox) {
             const [b, sub] = [unp.box, unp.unparsing]
-            const pp1 = PpExtend.PpCmdOfBox(b, aux(sub))
+            const pp1 = PpExtend.PpCmdOfBox(b, aux(sub.map(snd)))
             const pp2 = aux(l)
             return ret(unp, pp1, pp2)
         }
@@ -311,31 +305,8 @@ function prNotation(
     ]
 }
 
-function reprQualid(sp : QualId) : QualId { return sp }
-
 function prList<T>(pr : (t : T) => Pp.t, l : T[]) : Pp.t {
     return new Pp.PpCmdGlue(l.map(pr))
-}
-
-function prQualid(sp : QualId) : Pp.t {
-    const [sl0, id0] = reprQualid(sp)
-    const id = tagRef(Names.Id.print(id0))
-    const rev = Names.DirPath.repr(sl0).slice(0).reverse()
-    const sl = (
-        (rev.length === 0)
-            ? Pp.mt()
-            : prList(
-                (dir : string) => ([] as Pp.t[]).concat(tagPath(Names.Id.print(dir)), Pp.str('.')),
-                sl0
-            )
-    )
-    return ([] as Pp.t[]).concat(sl, id)
-}
-
-function prReference(r : Reference) : Pp.t {
-    if (r instanceof Qualid) { return peaCoqBox(prQualid(r.lQualid[1])) }
-    if (r instanceof Ident) { return peaCoqBox(tagVariable(Pp.str(r.id[1]))) }
-    throw MatchFailure('prReference', r)
 }
 
 function prGlobSortInstance<T>(i : IGlobSortGen<T>) : Pp.t {
@@ -374,8 +345,8 @@ function prUniverseInstance(us : Maybe<InstanceExpr>) : Pp.t {
     )
 }
 
-function prCRef(r : Reference, us : Maybe<InstanceExpr>) : Pp.t {
-    return ([] as Pp.t[]).concat(prReference(r), prUniverseInstance(us))
+function prCRef(r : LibNames.Reference, us : Maybe<InstanceExpr>) : Pp.t {
+    return ([] as Pp.t[]).concat(LibNames.prReference(r), prUniverseInstance(us))
 }
 
 function chop<T>(i : number, l : T[]) : [T[], T[]] {
@@ -534,11 +505,11 @@ function prPatt(
             return pp.cases1.caseOf<[Pp.t, number]>({
                 nothing : () => {
                     if (pp.cases2.length === 0) {
-                        return [prReference(pp.reference), lAtom]
+                        return [LibNames.prReference(pp.reference), lAtom]
                     } else {
                         return [
                             ([] as Pp.t[]).concat(
-                                prReference(pp.reference),
+                                LibNames.prReference(pp.reference),
                                 prList(
                                     x => prPatt(Pp.spc, [lApp, new L()], x),
                                     pp.cases2
@@ -553,7 +524,7 @@ function prPatt(
                         return [
                             ([] as Pp.t[]).concat(
                                 Pp.str('@'),
-                                prReference(pp.reference),
+                                LibNames.prReference(pp.reference),
                                 prList(
                                     x => prPatt(Pp.spc, [lApp, new L()], x),
                                     cases1
@@ -566,7 +537,7 @@ function prPatt(
                         ([] as Pp.t[]).concat(
                             Pp.surround(([] as Pp.t[]).concat(
                                 Pp.str('@'),
-                                prReference(pp.reference),
+                                LibNames.prReference(pp.reference),
                                 prList(
                                     x => prPatt(Pp.spc, [lApp, new L()], x),
                                     cases1
@@ -585,7 +556,7 @@ function prPatt(
             const r = pp.reference
             return r.caseOf<PpResult>({
                 nothing : () => [Pp.str('_'), lAtom],
-                just : r => [prReference(r), lAtom],
+                just : r => [LibNames.prReference(r), lAtom],
             })
             // } else if (p instanceof ConstrExpr.CPatOr) {
             // TODO
@@ -723,22 +694,22 @@ function prEqn(
     return ([] as Pp.t[]).concat(
         Pp.spc(),
         Pp.hov(4,
-            prWithComments(
-                loc,
-                ([] as Pp.t[]).concat(
-                    Pp.str('| '),
-                    Pp.hov(0, ([] as Pp.t[]).concat(
-                        Pp.prListWithSep(
-                            Pp.prSpaceBar,
-                            (x : ConstrExpr.ConstrExpr[]) => Pp.prListWithSep(sepV, (y : ConstrExpr.ConstrExpr) => prPatt(Pp.mt, lTop, y), x),
-                            pl
-                        ),
-                        Pp.str(' =>')
-                    )),
-                    prSepCom(Pp.spc, x => pr(lTop, x), rhs)
-                )
-            )
-           )
+               prWithComments(
+                   loc,
+                   ([] as Pp.t[]).concat(
+                       Pp.str('| '),
+                       Pp.hov(0, ([] as Pp.t[]).concat(
+                           Pp.prListWithSep(
+                               Pp.prSpaceBar,
+                               (x : ConstrExpr.ConstrExpr[]) => Pp.prListWithSep(sepV, (y : ConstrExpr.ConstrExpr) => prPatt(Pp.mt, lTop, y), x),
+                               pl
+                           ),
+                           Pp.str(' =>')
+                       )),
+                       prSepCom(Pp.spc, x => pr(lTop, x), rhs)
+                   )
+               )
+              )
     )
 }
 
@@ -981,7 +952,7 @@ function prGen(
 
         }
 
-        const [strm, prec] = match(a)
+        const [strm, prec] = match(a.v)
 
         return (
             ([] as Pp.t[]).concat(
