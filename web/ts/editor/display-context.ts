@@ -6,26 +6,26 @@ import * as DebugFlags from '../peacoq/debug-flags'
 import { Strictly } from '../peacoq/strictly'
 
 export function setup(
-  doc : ICoqDocument
+    doc : ICoqDocument
 ) : void {
 
-  const sentenceToDisplay$ = setupSentenceToDisplay(doc)
+    const sentenceToDisplay$ = setupSentenceToDisplay(doc)
 
-  // For each sentence we intend to display we must:
+    // For each sentence we intend to display we must:
 
-  // 1. listen to its context being ready, and display it when it is
-  sentenceToDisplay$
+    // 1. listen to its context being ready, and display it when it is
+    sentenceToDisplay$
     // .do(s => console.log('I want to display', s))
-    .concatMap(sentence => sentence.getProcessed$())
+        .concatMap(sentence => sentence.getProcessed$())
     // .do(s => console.log('I waited for it to be processed', s))
-    .concatMap(stage => stage.getContext())
+        .concatMap(stage => stage.getContext())
     // .do(s => console.log('I waited for its context', s))
-    .subscribe(context => doc.contextPanel.display(context))
+        .subscribe(context => doc.contextPanel.display(context))
 
-  // 2. send an Observe command to coqtop so that the context gets evaluated
-  sentenceToDisplay$
-    .flatMap(s => s.getBeingProcessed$())
-    .map(bp => Rx.Observable.just(new Command.Control(new ControlCommand.Exec(bp.stateId))))
-    .subscribe(cmd$ => doc.sendCommands(cmd$))
+    // 2. send an Observe command to coqtop so that the context gets evaluated
+    sentenceToDisplay$
+        .flatMap(s => s.getBeingProcessed$())
+        .map(bp => Rx.Observable.just(new Command.Control(new ControlCommand.Exec(bp.stateId))))
+        .subscribe(cmd$ => doc.sendCommands(cmd$))
 
 }

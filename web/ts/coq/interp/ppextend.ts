@@ -1,4 +1,5 @@
 import * as Pp from '../lib/pp'
+import * as ParenRelation from '../paren-relation'
 
 export type PpBox
     = PpHB
@@ -11,7 +12,7 @@ export class PpHB   { constructor(public n : number) { } }
 export class PpHoVB { constructor(public n : number) { } }
 export class PpHVB  { constructor(public n : number) { } }
 export class PpVB   { constructor(public n : number) { } }
-export class PpTB   {}
+export class PpTB   { private tag : 'PpTB' }
 
 export type PpCut
     = PpBrk
@@ -21,8 +22,8 @@ export type PpCut
 
 export class PpBrk  { constructor(public n1 : number, public n2 : number) { } }
 export class PpTbrk { constructor(public n1 : number, public n2 : number) { } }
-export class PpTab  {}
-export class PpFnl  {}
+export class PpTab  { private tag : 'PpTab' }
+export class PpFnl  { private tag : 'PpFnl' }
 
 export function PpCmdOfBox(b : PpBox, s : Pp.t) : Pp.t {
     if (b instanceof PpHB)   { return Pp.h  (b.n, s) }
@@ -50,21 +51,21 @@ export type Unparsing
 export class UnpMetaVar {
     constructor(
         public index : number,
-        public parenRelation : ParenRelation
+        public parenRelation : ParenRelation.ParenRelation
     ) { }
 }
 
 export class UnpBinderMetaVar {
     constructor(
         public index : number,
-        public parenRelation : ParenRelation,
+        public parenRelation : ParenRelation.ParenRelation,
     ) { }
 }
 
 export class UnpListMetaVar {
     constructor(
         public index : number,
-        public parenRelation : ParenRelation,
+        public parenRelation : ParenRelation.ParenRelation,
         public unparsing : ReadonlyArray<Unparsing>
     ) { }
 }

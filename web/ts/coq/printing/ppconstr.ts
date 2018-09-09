@@ -13,9 +13,11 @@ import * as StrToken from '../str-token'
 import { PpCmdGlue } from '../lib/pp';
 import { CLocalDef, LocalBinderExpr } from '../intf/constr-expr'
 import * as LibNames from '../library/libnames'
+import * as ParenRelation from '../paren-relation'
+import * as CaseStyle from '../case-style'
 import { peaCoqBox } from '../../peacoq/coq-utils'
 
-export type PrecAssoc = [number, ParenRelation]
+export type PrecAssoc = [number, ParenRelation.ParenRelation]
 
 const lAtom = 0
 const lProd = 200
@@ -29,11 +31,11 @@ const lArg = 9
 const lApp = 10
 const lPosInt = 0
 const lNegInt = 35
-const lTop : PrecAssoc = [200, new E()]
+const lTop : PrecAssoc = [200, new ParenRelation.E()]
 const lProj = 1
 const lDelim = 1
-const lSimpleConstr : PrecAssoc = [8, new E()]
-const lSimplePatt : PrecAssoc = [1, new E()]
+const lSimpleConstr : PrecAssoc = [8, new ParenRelation.E()]
+const lSimplePatt : PrecAssoc = [1, new ParenRelation.E()]
 
 export function precLess(child : number, parent : PrecAssoc) {
     const [parentPrec, parentAssoc] = parent
@@ -41,10 +43,10 @@ export function precLess(child : number, parent : PrecAssoc) {
         return true
     }
     const absParentPrec = Math.abs(parentPrec)
-    if (parentAssoc instanceof E) { return child <= absParentPrec }
-    if (parentAssoc instanceof L) { return child < absParentPrec }
-    if (parentAssoc instanceof Prec) { return child <= parentAssoc.precedence }
-    if (parentAssoc instanceof Any) { return true }
+    if (parentAssoc instanceof ParenRelation.E) { return child <= absParentPrec }
+    if (parentAssoc instanceof ParenRelation.L) { return child < absParentPrec }
+    if (parentAssoc instanceof ParenRelation.Prec) { return child <= parentAssoc.precedence }
+    if (parentAssoc instanceof ParenRelation.Any) { return true }
 }
 
 function prComAt(n : number) : Pp.t { return Pp.mt() }
@@ -74,14 +76,14 @@ function prLName(ln : MiscTypes.lname) : Pp.t {
 }
 
 function surroundImpl(k : BindingKind, p : Pp.t) : Pp.t {
-    if (k instanceof Explicit) { return ([] as Pp.t[]).concat(Pp.str('('), p, Pp.str(')')) }
-    if (k instanceof Implicit) { return ([] as Pp.t[]).concat(Pp.str('{'), p, Pp.str('}')) }
+    if (k instanceof Explicit) { return Pp.concat(Pp.str('('), p, Pp.str(')')) }
+    if (k instanceof Implicit) { return Pp.concat(Pp.str('{'), p, Pp.str('}')) }
     throw MatchFailure('surroundImpl', k)
 }
 
 function surroundImplicit(k : BindingKind, p : Pp.t) : Pp.t {
     if (k instanceof Explicit) { return p }
-    if (k instanceof Implicit) { return ([] as Pp.t[]).concat(Pp.str('{'), p, Pp.str('}')) }
+    if (k instanceof Implicit) { return Pp.concat(Pp.str('{'), p, Pp.str('}')) }
     throw MatchFailure('surroundImplicit', k)
 }
 
@@ -99,7 +101,7 @@ function prBinder(
         if (t instanceof ConstrExpr.CHole && t.introPatternNamingExpr instanceof MiscTypes.IntroAnonymous) {
             throw 'TODO : prBinder CHole'
         } else {
-            const s = ([] as Pp.t[]).concat(
+            const s = Pp.concat(
                 Pp.prListWithSep(Pp.spc, prLName, nal),
                 Pp.str(' : '),
                 pr(t)
@@ -121,9 +123,9 @@ function prDelimitedBinders(
     const bl0 = bl[0]
     if (bl0 instanceof ConstrExpr.CLocalAssum && bl.length === 1) {
         const [nal, k, t] = [bl0.names, bl0.binderKind, bl0.type]
-        return (([] as Pp.t[]).concat(kw(n), prBinder(false, prC, [nal, k, t])))
+        return Pp.concat(kw(n), prBinder(false, prC, [nal, k, t]))
     } else {
-        return (([] as Pp.t[]).concat(kw(n), prUndelimitedBinders(sep, prC, bl)))
+        return Pp.concat(kw(n), prUndelimitedBinders(sep, prC, bl))
     }
 }
 
@@ -138,11 +140,11 @@ function tagVariable(p : Pp.t) : Pp.t { return Pp.tag('variable', p) }
 function keyword(s : string) : Pp.t { return tagKeyword(Pp.str(s)) }
 
 function prForall() : Pp.t {
-    return ([] as Pp.t[]).concat(keyword('forall'), Pp.spc())
+    return Pp.concat(keyword('forall'), Pp.spc())
 }
 
 function prFun() : Pp.t {
-    return ([] as Pp.t[]).concat(keyword('fun'), Pp.spc())
+    return Pp.concat(keyword('fun'), Pp.spc())
 }
 
 const maxInt = 9007199254740991
@@ -204,8 +206,8 @@ function tagUnparsing(unp : PpExtend.Unparsing, pp1 : Pp.t) : Pp.t {
 
 function printHunks(
     n : number,
-    pr : (_1 : [number, ParenRelation], _2 : ConstrExpr.ConstrExpr) => Pp.t,
-    prPatt : (_1 : [number, ParenRelation], _2 : ConstrExpr.CasesPatternExpr) => Pp.t,
+    pr : (_1 : [number, ParenRelation.ParenRelation], _2 : ConstrExpr.ConstrExpr) => Pp.t,
+    prPatt : (_1 : [number, ParenRelation.ParenRelation], _2 : ConstrExpr.CasesPatternExpr) => Pp.t,
     prBinders : (_1 : () => Pp.t, _2 : boolean, _3 : ConstrExpr.ConstrExprR) => Pp.t,
     [terms, termlists, binders, binderlists] : ConstrExpr.ConstrNotationSubstitution,
     unps : PpExtend.Unparsing[]
@@ -223,7 +225,7 @@ function printHunks(
         return res
     }
     function ret(unp : PpExtend.Unparsing, pp1 : Pp.t, pp2 : Pp.t) : Pp.t {
-        return ([] as Pp.t[]).concat(tagUnparsing(unp, pp1), pp2)
+        return Pp.concat(tagUnparsing(unp, pp1), pp2)
     }
     function aux(ul : ReadonlyArray<PpExtend.Unparsing>) : Pp.t {
         if (ul.length === 0) {
@@ -290,8 +292,8 @@ type PpResult = [Pp.t, number]
 // Here Coq would consult the notation table to figure [unpl] and [level] from
 // [s], but we have it already figured out.
 function prNotation(
-    pr : (_1 : [number, ParenRelation], _2 : ConstrExpr.ConstrExprR) => Pp.t,
-    prPatt : (_1 : [number, ParenRelation], _2 : ConstrExpr.CasesPatternExpr) => Pp.t,
+    pr : (_1 : [number, ParenRelation.ParenRelation], _2 : ConstrExpr.ConstrExprR) => Pp.t,
+    prPatt : (_1 : [number, ParenRelation.ParenRelation], _2 : ConstrExpr.CasesPatternExpr) => Pp.t,
     prBinders : (_1 : () => Pp.t, _2 : boolean, _3 : ConstrExpr.LocalBinderExpr[]) => Pp.t,
     s : ConstrExpr.Notation,
     env : ConstrExpr.ConstrNotationSubstitution,
@@ -330,7 +332,7 @@ function prOptNoSpc<T>(pr : (t : T) => Pp.t, mx : Maybe<T>) : Pp.t {
 }
 
 function prUnivAnnot<T>(pr : (t : T) => Pp.t, x : T) : Pp.t {
-    return ([] as Pp.t[]).concat(Pp.str('@{'), pr(x), Pp.str('}'))
+    return Pp.concat(Pp.str('@{'), pr(x), Pp.str('}'))
 }
 
 function prUniverseInstance(us : Maybe<InstanceExpr>) : Pp.t {
@@ -346,7 +348,7 @@ function prUniverseInstance(us : Maybe<InstanceExpr>) : Pp.t {
 }
 
 function prCRef(r : LibNames.Reference, us : Maybe<InstanceExpr>) : Pp.t {
-    return ([] as Pp.t[]).concat(LibNames.prReference(r), prUniverseInstance(us))
+    return Pp.concat(LibNames.prReference(r), prUniverseInstance(us))
 }
 
 function chop<T>(i : number, l : T[]) : [T[], T[]] {
@@ -369,8 +371,8 @@ function prProj(
     f : ConstrExpr.ConstrExpr,
     l : ConstrExpr.AppArgs
 ) : Pp.t {
-    return ([] as Pp.t[]).concat(
-        pr([lProj, new E()], a),
+    return Pp.concat(
+        pr([lProj, new ParenRelation.E()], a),
         Pp.cut(),
         Pp.str('.('),
         prApp(pr, f, l),
@@ -383,14 +385,14 @@ function prExplArgs(
     [a, mexpl] : ConstrExpr.AppArg
 ) : Pp.t {
     return mexpl.caseOf({
-        nothing : () => pr([lApp, new L()], a),
+        nothing : () => pr([lApp, new ParenRelation.L()], a),
         just : expl => {
             const e = expl.some[1]
             if (e instanceof ExplByPos) {
                 throw 'Anomaly : Explicitation by position not implemented'
             }
             if (e instanceof ExplByName) {
-                return ([] as Pp.t[]).concat(Pp.str('('), prId(e.name), Pp.str(' :='), pr(lTop, a), Pp.str(')'))
+                return Pp.concat(Pp.str('('), prId(e.name), Pp.str(' :='), pr(lTop, a), Pp.str(')'))
             }
             throw MatchFailure('prExplArgs', e)
         },
@@ -404,9 +406,9 @@ function prApp(
 ) {
     return Pp.hov(
         2,
-        ([] as Pp.t[]).concat(
-            pr([lApp, new L()], a),
-            prList(a => ([] as Pp.t[]).concat(Pp.spc(), prExplArgs(pr, a)), l)
+        Pp.concat(
+            pr([lApp, new ParenRelation.L()], a),
+            prList(a => Pp.concat(Pp.spc(), prExplArgs(pr, a)), l)
         )
     )
 }
@@ -437,7 +439,7 @@ function prUniv(l : string[]) {
     if (l.length === 1) {
         return Pp.str(l[0])
     } else {
-        return ([] as Pp.t[]).concat(
+        return Pp.concat(
             Pp.str('max('),
             Pp.prListWithSep(() => Pp.str(','), Pp.str, l),
             Pp.str(')')
@@ -458,7 +460,7 @@ function prGlobSort(s : GlobSort) : Pp.t {
         } else {
             return Pp.hov(
                 0,
-                ([] as Pp.t[]).concat(tagType(Pp.str('Type')), prUnivAnnot(prUniv, s.type))
+                Pp.concat(tagType(Pp.str('Type')), prUnivAnnot(prUniv, s.type))
             )
         }
     }
@@ -466,7 +468,7 @@ function prGlobSort(s : GlobSort) : Pp.t {
 }
 
 function prDelimiters(key : string, strm : Pp.t) : Pp.t {
-    return peaCoqBox(([] as Pp.t[]).concat(strm, Pp.str('%' + key)))
+    return peaCoqBox(Pp.concat(strm, Pp.str('%' + key)))
 }
 
 function tagConstrExpr(ce : ConstrExpr.ConstrExpr, cmds : Pp.t) {
@@ -508,10 +510,10 @@ function prPatt(
                         return [LibNames.prReference(pp.reference), lAtom]
                     } else {
                         return [
-                            ([] as Pp.t[]).concat(
+                            Pp.concat(
                                 LibNames.prReference(pp.reference),
                                 prList(
-                                    x => prPatt(Pp.spc, [lApp, new L()], x),
+                                    x => prPatt(Pp.spc, [lApp, new ParenRelation.L()], x),
                                     pp.cases2
                                 )
                             ),
@@ -522,11 +524,11 @@ function prPatt(
                 just : cases1 => {
                     if (pp.cases2.length === 0) {
                         return [
-                            ([] as Pp.t[]).concat(
+                            Pp.concat(
                                 Pp.str('@'),
                                 LibNames.prReference(pp.reference),
                                 prList(
-                                    x => prPatt(Pp.spc, [lApp, new L()], x),
+                                    x => prPatt(Pp.spc, [lApp, new ParenRelation.L()], x),
                                     cases1
                                 )
                             ),
@@ -534,17 +536,17 @@ function prPatt(
                         ]
                     }
                     return [
-                        ([] as Pp.t[]).concat(
-                            Pp.surround(([] as Pp.t[]).concat(
+                        Pp.concat(
+                            Pp.surround(Pp.concat(
                                 Pp.str('@'),
                                 LibNames.prReference(pp.reference),
                                 prList(
-                                    x => prPatt(Pp.spc, [lApp, new L()], x),
+                                    x => prPatt(Pp.spc, [lApp, new ParenRelation.L()], x),
                                     cases1
                                 )
                             )),
                             prList(
-                                x => prPatt(Pp.spc, [lApp, new L()], x),
+                                x => prPatt(Pp.spc, [lApp, new ParenRelation.L()], x),
                                 pp.cases2
                             )
                         ),
@@ -569,8 +571,8 @@ function prPatt(
             ) {
                 const p = pp.substitution[0][0]
                 return [
-                    ([] as Pp.t[]).concat(
-                        prPatt(() => Pp.str('('), [Number.MAX_VALUE, new E()], p),
+                    Pp.concat(
+                        prPatt(() => Pp.str('('), [Number.MAX_VALUE, new ParenRelation.E()], p),
                         Pp.str(')')
                     )
                     , lAtom
@@ -589,11 +591,11 @@ function prPatt(
                     pp.precedence
                 )
                 const prefix =
-                    (args.length === 0 || precLess(lNot, [lApp, new L()]))
+                    (args.length === 0 || precLess(lNot, [lApp, new ParenRelation.L()]))
                     ? strmNot
                     : Pp.surround(strmNot)
                 return [
-                    ([] as Pp.t[]).concat(prefix, prList(x => prPatt(Pp.spc, [lApp, new L()], x), args)),
+                    Pp.concat(prefix, prList(x => prPatt(Pp.spc, [lApp, new ParenRelation.L()], x), args)),
                     args.length === 0 ? lNot : lApp
                 ]
             }
@@ -611,7 +613,7 @@ function prPatt(
 
     const [strm, prec] = match(p.v)
     const loc = p.loc
-    return prWithComments(loc, ([] as Pp.t[]).concat(
+    return prWithComments(loc, Pp.concat(
         sep(),
         precLess(prec, inh) ? strm : Pp.surround(strm)
     ))
@@ -622,10 +624,10 @@ function prAsin(
     mna : Maybe<MiscTypes.lname>,
     indnalopt : Maybe<ConstrExpr.ConstrExpr>
 ) : Pp.t {
-    return ([] as Pp.t[]).concat(
+    return Pp.concat(
         mna.caseOf({
             nothing : () => Pp.mt(),
-            just : na => ([] as Pp.t[]).concat(
+            just : na => Pp.concat(
                 Pp.spc(),
                 keyword('as'),
                 Pp.spc(),
@@ -634,7 +636,7 @@ function prAsin(
         }),
         indnalopt.caseOf({
             nothing : () => Pp.mt(),
-            just : i => ([] as Pp.t[]).concat(
+            just : i => Pp.concat(
                 Pp.spc(),
                 keyword('in'),
                 Pp.spc(),
@@ -648,13 +650,13 @@ function prCaseItem(
     pr : (_1 : PrecAssoc, _2 : ConstrExpr.ConstrExpr) => Pp.t,
     [tm, asClause, inClause] : [ConstrExpr.ConstrExpr, Maybe<cAST<Name>>, Maybe<ConstrExpr.ConstrExpr>]
 ) : Pp.t {
-    return Pp.hov(0, ([] as Pp.t[]).concat(
-        pr([lCast, new E()], tm),
+    return Pp.hov(0, Pp.concat(
+        pr([lCast, new ParenRelation.E()], tm),
         prAsin(pr, asClause, inClause)
     ))
 }
 
-function sepV() : Pp.t { return ([] as Pp.t[]).concat(Pp.str(','), Pp.spc()) }
+function sepV() : Pp.t { return Pp.concat(Pp.str(','), Pp.spc()) }
 
 function constrLoc(c : ConstrExpr.ConstrExpr) : Maybe<Loc.t> {
     return c.loc
@@ -665,7 +667,7 @@ function prSepCom(
     f : (c : ConstrExpr.ConstrExpr) => Pp.t,
     c : ConstrExpr.ConstrExpr
 ) : Pp.t {
-    return prWithComments(constrLoc(c), ([] as Pp.t[]).concat(sep(), f(c)))
+    return prWithComments(constrLoc(c), Pp.concat(sep(), f(c)))
 }
 
 function prCaseType(
@@ -675,9 +677,9 @@ function prCaseType(
     // TODO : po instanceof CHole with IntroAnonymous
     return mpo.caseOf({
         nothing : () => Pp.mt(),
-        just : po => ([] as Pp.t[]).concat(
+        just : po => Pp.concat(
             Pp.spc(),
-            Pp.hov(2, ([] as Pp.t[]).concat(
+            Pp.hov(2, Pp.concat(
                 keyword('return'),
                 prSepCom(Pp.spc, x => pr(lSimpleConstr, x), po)
             ))
@@ -691,14 +693,14 @@ function prEqn(
 ) : Pp.t {
     const [pl, rhs] = v
     // const pl1 = _(pl0).map((located : Located<Array<CasesPatternExpr>>) => located[1]).value()
-    return ([] as Pp.t[]).concat(
+    return Pp.concat(
         Pp.spc(),
         Pp.hov(4,
                prWithComments(
                    loc,
-                   ([] as Pp.t[]).concat(
+                   Pp.concat(
                        Pp.str('| '),
-                       Pp.hov(0, ([] as Pp.t[]).concat(
+                       Pp.hov(0, Pp.concat(
                            Pp.prListWithSep(
                                Pp.prSpaceBar,
                                (x : ConstrExpr.ConstrExpr[]) => Pp.prListWithSep(sepV, (y : ConstrExpr.ConstrExpr) => prPatt(Pp.mt, lTop, y), x),
@@ -719,20 +721,20 @@ function prSimpleReturnType(
     po : Maybe<ConstrExpr.ConstrExpr>
 ) : Pp.t {
     return (
-        ([] as Pp.t[]).concat(
+        Pp.concat(
             na.caseOf({
                 nothing : () => Pp.mt(),
                 just : x => x.v instanceof Name
-                    ? ([] as Pp.t[]).concat(Pp.spc(), keyword('as'), prId(x.v.id))
+                    ? Pp.concat(Pp.spc(), keyword('as'), prId(x.v.id))
                     : Pp.mt()
             })
         )
     )
 }
 
-const prFunSep : Pp.t = ([] as Pp.t[]).concat(Pp.spc(), Pp.str('=>'))
+const prFunSep : Pp.t = Pp.concat(Pp.spc(), Pp.str('=>'))
 
-function prGen(
+function pr0(
     pr : (_1 : () => Pp.t, _2 : PrecAssoc, _3 : ConstrExpr.ConstrExpr) => Pp.t
 ) : (_1 : () => Pp.t, _2 : PrecAssoc, _3 : ConstrExpr.ConstrExpr) => Pp.t {
     return (
@@ -745,7 +747,7 @@ function prGen(
             return [tagConstrExpr(a, cmds), prec]
         }
 
-        const prmt = (x : [number, ParenRelation], y : ConstrExpr.ConstrExpr) => pr(Pp.mt, x, y)
+        const prmt = (x : [number, ParenRelation.ParenRelation], y : ConstrExpr.ConstrExpr) => pr(Pp.mt, x, y)
 
         function match(aa : ConstrExpr.ConstrExprR) : PpResult {
 
@@ -770,11 +772,11 @@ function prGen(
                         // nested applications, rather than having a flat n-ary one
                         if (l2.length > 0) {
                             return ret(
-                                ([] as Pp.t[]).concat(
+                                Pp.concat(
                                     p,
                                     prList(
                                         aaa => {
-                                            return ([] as Pp.t[]).concat(Pp.spc(), prExplArgs(prmt, aaa))
+                                            return Pp.concat(Pp.spc(), prExplArgs(prmt, aaa))
                                         },
                                         l2
                                     )
@@ -789,14 +791,14 @@ function prGen(
             }
 
             if (aa instanceof ConstrExpr.CCases) {
-                if (aa.caseStyle instanceof LetPatternStyle) {
+                if (aa.caseStyle instanceof CaseStyle.LetPatternStyle) {
                     throw 'TODO : LetPatternStyle'
                 }
                 const [rtnTypOpt, c, eqns] = [aa.returnType, aa.cases, aa.branches]
-                const prDangling = (pa : [number, ParenRelation], c : ConstrExpr.ConstrExpr) => prDanglingWithFor(Pp.mt, pr, pa, c)
+                const prDangling = (pa : [number, ParenRelation.ParenRelation], c : ConstrExpr.ConstrExpr) => prDanglingWithFor(Pp.mt, pr, pa, c)
                 return ret(
                     Pp.v(0,
-                         Pp.hv(0, ([] as Pp.t[]).concat(
+                         Pp.hv(0, Pp.concat(
                              keyword('match'),
                              Pp.brk(1, 2),
                              Pp.hov(0,
@@ -823,7 +825,7 @@ function prGen(
             if (aa instanceof ConstrExpr.CDelimiters) {
                 const [sc, e] = [aa.str, aa.expr]
                 return ret(
-                    prDelimiters(sc, pr(Pp.mt, [lDelim, new E()], e)),
+                    prDelimiters(sc, pr(Pp.mt, [lDelim, new ParenRelation.E()], e)),
                     lDelim
                 )
             }
@@ -831,7 +833,7 @@ function prGen(
             if (aa instanceof ConstrExpr.CLambdaN) {
                 const [bl, a] = [aa.binders, aa.body]
                 return ret(
-                    Pp.hov(0, ([] as Pp.t[]).concat(
+                    Pp.hov(0, Pp.concat(
                         Pp.hov(2, prDelimitedBinders(prFun, Pp.spc, x => pr(Pp.mt, lTop, x), bl)),
                         prFunSep,
                         pr(Pp.spc, lTop, a)
@@ -846,10 +848,10 @@ function prGen(
                     throw ('TODO : pr CLetIn with CFix/CcoFix')
                 }
                 return ret(
-                    Pp.hv(0, ([] as Pp.t[]).concat(
-                        Pp.hov(2, ([] as Pp.t[]).concat(
+                    Pp.hv(0, Pp.concat(
+                        Pp.hov(2, Pp.concat(
                             keyword('let'), Pp.spc(), prLName(x),
-                            prOptNoSpc(t => ([] as Pp.t[]).concat(Pp.str(' :'), Pp.ws(1), pr(Pp.mt, lTop, t)), t),
+                            prOptNoSpc(t => Pp.concat(Pp.str(' :'), Pp.ws(1), pr(Pp.mt, lTop, t)), t),
                             Pp.str(' :='), pr(Pp.spc, lTop, a), Pp.spc(), keyword('in')
                         )),
                         pr(Pp.spc, lTop, aa.body)
@@ -863,10 +865,10 @@ function prGen(
                 return ret(
                     Pp.hv(0,
                           Pp.hov(2,
-                                 ([] as Pp.t[]).concat(
+                                 Pp.concat(
                                      keyword('let'),
                                      Pp.spc(),
-                                     Pp.hov(1, ([] as Pp.t[]).concat(
+                                     Pp.hov(1, Pp.concat(
                                          Pp.str('('),
                                          Pp.prListWithSep(sepV, prLName, nal),
                                          Pp.str(')'),
@@ -888,10 +890,10 @@ function prGen(
                 if (aa.notation === '(\u00A0_\u00A0)') {
                     const [[t], [], []] = aa.substitution
                     return ret(
-                        ([] as Pp.t[]).concat(
+                        Pp.concat(
                             pr(
                                 () => { return Pp.str('(') },
-                                [maxInt, new L()],
+                                [maxInt, new ParenRelation.L()],
                                 t
                             ),
                             Pp.str(')')
@@ -901,7 +903,7 @@ function prGen(
                 } else {
                     const [s, env] = [aa.notation, aa.substitution]
                     return prNotation(
-                        (x : [number, ParenRelation], y : ConstrExpr.ConstrExpr) => pr(Pp.mt, x, y),
+                        (x : [number, ParenRelation.ParenRelation], y : ConstrExpr.ConstrExpr) => pr(Pp.mt, x, y),
                         (x, y) => prPatt(Pp.mt, x, y),
                         (x : () => Pp.t, y : boolean, z : LocalBinderExpr[]) => prBindersGen(w => pr(Pp.mt, lTop, w), x, y, z),
                         s,
@@ -922,7 +924,7 @@ function prGen(
             if (aa instanceof ConstrExpr.CProdN) {
                 const [bl, a] = [aa.binderList, aa.returnExpr]
                 return ret(
-                    ([] as Pp.t[]).concat(
+                    Pp.concat(
                         prDelimitedBinders(
                             prForall,
                             Pp.spc,
@@ -955,7 +957,7 @@ function prGen(
         const [strm, prec] = match(a.v)
 
         return (
-            ([] as Pp.t[]).concat(
+            Pp.concat(
                 sep(),
                 precLess(prec, inherited)
                     ? strm
@@ -966,16 +968,61 @@ function prGen(
     }
 }
 
-export function prConstrExpr(a : ConstrExpr.ConstrExpr) : Pp.t {
-    return fix(prGen)(Pp.mt, lTop, a)
+function pr1(_2 : PrecAssoc, _3 : ConstrExpr.ConstrExpr) : Pp.t {
+    const pr : (_1 : () => Pp.t, _2 : PrecAssoc, _3 : ConstrExpr.ConstrExpr) => Pp.t = fix(pr0)
+    return pr(Pp.mt, _2, _3)
+}
+
+function pr2(_2 : PrecAssoc, _3 : ConstrExpr.ConstrExpr) : Pp.t {
+    if (_3.v instanceof ConstrExpr.CAppExpl) {
+        const [ [pf, f, us], args ] = [ _3.v.funct , _3.v.args ]
+        if (isNothing(pf) && args.length === 0) {
+            return Pp.concat(Pp.str("@"), prCRef(f, us))
+        }
+    }
+    return pr1(_2, _3)
+}
+
+function prExpr(prec : PrecAssoc, c : ConstrExpr.ConstrExpr) {
+    // FIXME: ignoring `transf` for now
+    return pr2(prec, c)
+}
+
+function prConstrExprN(n : PrecAssoc, c : ConstrExpr.ConstrExpr) {
+    return prExpr(n, c)
+}
+
+function prSimpleConstr(x : ConstrExpr.ConstrExpr) { return prExpr(lSimpleConstr, x) }
+
+const defaultTermPr = {
+    prConstrExpr         : prSimpleConstr,
+    prLConstrExpr        : (x : ConstrExpr.ConstrExpr) => prExpr(lTop, x),
+    prConstrPatternExpr  : prSimpleConstr,
+    prLConstrPatternExpr : (x : ConstrExpr.ConstrExpr) => prExpr(lTop, x),
+}
+
+export function prConstrExpr(c : ConstrExpr.ConstrExpr) : Pp.t {
+    return defaultTermPr.prConstrExpr(c)
+}
+
+function prLConstrExpr(c : ConstrExpr.ConstrExpr) : Pp.t {
+    return defaultTermPr.prLConstrExpr(c)
+}
+
+function prConstrPatternExpr(c : ConstrExpr.ConstrExpr) : Pp.t {
+    return defaultTermPr.prConstrPatternExpr(c)
+}
+
+function prLConstrPatternExpr(c : ConstrExpr.ConstrExpr) : Pp.t {
+    return defaultTermPr.prLConstrPatternExpr(c)
 }
 
 function prHTMLGen(
     pr : (_1 : () => Pp.t, _2 : PrecAssoc, _3 : ConstrExpr.ConstrExpr) => Pp.t
 ) : (_1 : () => Pp.t, _2 : PrecAssoc, _3 : ConstrExpr.ConstrExpr) => Pp.t {
-    const recur = prGen(pr)
+    const recur = pr0(pr)
     return (sep : () => Pp.t, pa : PrecAssoc, e : ConstrExpr.ConstrExpr) => {
-        return ([] as Pp.t[]).concat(
+        return Pp.concat(
             Pp.str(`<span class='ace_editor syntax'>`),
             recur(sep, pa, e),
             Pp.str('</span>')

@@ -1,5 +1,6 @@
 import * as _ from 'lodash'
 
+import * as CaseStyle from '../case-style'
 import * as EvarKinds from './evar-kinds'
 import * as MiscTypes from './misctypes'
 import * as PpExtend from '../interp/ppextend'
@@ -8,20 +9,27 @@ import * as GenArg from '../lib/genarg'
 import * as LibNames from '../library/libnames'
 
 export type ConstrExprR
-    = CApp
-    | CCases
-    | CCoFix
-    | CDelimiters
+    = CRef
     | CFix
-    | CHole
+    | CCoFix
+    | CProdN
     | CLambdaN
     | CLetIn
+    | CAppExpl
+    | CApp
+// | CRecord
+    | CCases
     | CLetTuple
-    | CNotation
-    | CProdN
-    | CPrim
-    | CRef
+// | CIf
+    | CHole
+// | CPatVar
+// | CEvar
     | CSort
+// | CCast
+    | CNotation
+// | CGeneralization
+    | CPrim
+    | CDelimiters
 
 export type ConstrExpr = cAST<ConstrExprR>
 
@@ -45,6 +53,14 @@ export class CApp {
     ) { }
 }
 
+type AppExplFun = [ProjFlag, LibNames.Reference, Maybe<InstanceExpr>]
+export class CAppExpl {
+    constructor(
+        public readonly funct : AppExplFun,
+        public readonly args : ConstrExpr[]
+    ) { }
+}
+
 type CaseExpr = [
     ConstrExpr,
     Maybe<MiscTypes.lname>,
@@ -58,7 +74,7 @@ export type BranchExpr = cAST<[
 
 export class CCases {
     constructor(
-        public caseStyle : CaseStyle,
+        public caseStyle : CaseStyle.CaseStyle,
         public returnType : Maybe<ConstrExpr>,
         public cases : CaseExpr[],
         public branches : BranchExpr[]

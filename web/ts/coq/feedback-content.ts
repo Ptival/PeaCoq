@@ -45,7 +45,9 @@ export function fromSertop(o : any) : IFeedbackContent {
     }
 }
 
-export class AddedAxiom implements IFeedbackContent.IAddedAxiom { }
+export class AddedAxiom implements IFeedbackContent.IAddedAxiom {
+    private tag : 'AddedAxiom'
+}
 
 export class FileDependency implements IFeedbackContent.IFileDependency {
     constructor(

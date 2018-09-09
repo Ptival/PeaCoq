@@ -8,6 +8,7 @@
 import * as PpExtend from '../coq/interp/ppextend'
 import * as ConstrExpr from '../coq/intf/constr-expr'
 import * as LibNames from '../coq/library/libnames'
+import * as ParenRelation from '../coq/paren-relation'
 
 function assert(condition : boolean, message : string) : void {
     if (!condition) {
@@ -79,11 +80,14 @@ export function walkJSON(input : any) : any {
                 case 'Ident'       : return ctor1(LibNames.Ident,  processedArgs)
                 case 'Qualid'      : return ctor1(LibNames.Qualid, processedArgs)
 
-
                 case 'Name'        : return ctor1(Name,        processedArgs)
                 case 'Numeral'     : return ctor2(Numeral,     processedArgs)
-                case 'E'           : return ctor0(E,           processedArgs)
-                case 'L'           : return ctor0(L,           processedArgs)
+
+                    // paren-relation
+                case 'E'           : return ctor0(ParenRelation.E,    processedArgs)
+                case 'L'           : return ctor0(ParenRelation.L,    processedArgs)
+                case 'Prec'        : return ctor1(ParenRelation.Prec, processedArgs)
+                case 'Any'         : return ctor0(ParenRelation.Any,  processedArgs)
 
                 case 'PpBrk' : {
                     const [a, b] = processedArgs
@@ -92,10 +96,6 @@ export function walkJSON(input : any) : any {
                 case 'PpHoVB' : {
                     const [a] = processedArgs
                     return new PpExtend.PpHoVB(a)
-                }
-                case 'Prec' : {
-                    const [a] = processedArgs
-                    return new Prec(a)
                 }
                 case 'UnpBox' : {
                     const [a, b] = processedArgs

@@ -46,25 +46,38 @@ function htmlPrintPpCmdDiff(p : Pp.t, old : Pp.t) : string {
     throw MatchFailure('htmlPrintPpCmd', p)
 }
 
-function box<T>(p : Pp.t, s : string) : string {
+function box(p : Pp.t, s : string) : string {
     return `<span class='box syntax'>${s}</span>`
 }
 
 export function htmlPrintPpCmd(p : Pp.t) : string {
+
     if (p instanceof Pp.PpCmdBox) {
         // FIXME: use blockType
         // FIXME: boxes used to have a list, but now glues have lists, so not sure this makes sense anymore
         return box(p, htmlPrintPpCmds([p.contents]))
     }
+
     if (p instanceof Pp.PpCmdPrintBreak) {
         return ' '.repeat(p.nspaces)
     }
-    if (p instanceof Pp.PpCmdForceNewline) {
-        return 'TODO: PpCmdForceNewline'
+
+    if (p instanceof Pp.PpCmdForceNewline) { return 'TODO: PpCmdForceNewline' }
+
+    if (p instanceof Pp.PpCmdComment) { return 'TODO: PpCmdComment' }
+
+    if (p instanceof Pp.PpCmdEmpty) {
+        return ''
     }
-    if (p instanceof Pp.PpCmdComment) {
-        return 'TODO: PpCmdComment'
+
+    if (p instanceof Pp.PpCmdString) { throw p }
+
+    if (p instanceof Pp.PpCmdGlue) {
+        return p.docviews.map(htmlPrintPpCmd).join()
     }
+
+    if (p instanceof Pp.PpCmdTag) { throw p }
+
     throw MatchFailure('htmlPrintPpCmd', p)
 }
 
@@ -72,11 +85,11 @@ export function htmlPrintPpCmds(l : Pp.t[]) : string {
     _(patterns).each(pattern => {
         l = pattern(l)
     })
-        return _.reduce(
-            l,
-            (acc : string, p : Pp.t) => { return acc + htmlPrintPpCmd(p) },
-            ''
-        )
+    return _.reduce(
+        l,
+        (acc : string, p : Pp.t) => { return acc + htmlPrintPpCmd(p) },
+        ''
+    )
 }
 
 export function htmlPrintPpCmdsDiff(l : Pp.t[], old : Pp.t[]) : string {
@@ -84,17 +97,17 @@ export function htmlPrintPpCmdsDiff(l : Pp.t[], old : Pp.t[]) : string {
         l = pattern(l)
         old = pattern(old)
     })
-        if (!ppCmdsSameShape(l, old)) {
-            return markDifferent(
-                _.reduce(
-                    l,
-                    (acc : string, p : Pp.t) => {
-                        return acc + htmlPrintPpCmd(p)
-                    },
-                    ''
-                )
+    if (!ppCmdsSameShape(l, old)) {
+        return markDifferent(
+            _.reduce(
+                l,
+                (acc : string, p : Pp.t) => {
+                    return acc + htmlPrintPpCmd(p)
+                },
+                ''
             )
-        }
+        )
+    }
     const z = _.zip(l, old)
     return _.reduce(
         z,

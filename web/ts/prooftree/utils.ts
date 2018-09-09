@@ -7,7 +7,7 @@ import { TacticGroupNode } from './tacticgroupnode'
 
 /*
   Stuff that is somewhat general but mostly useful for the proof tree.
- */
+*/
 
 // function elmtRect0(node : IProofTreeNode, elmt : HTMLElement) {
 //   const rect = elmt.getBoundingClientRect()
@@ -21,41 +21,41 @@ import { TacticGroupNode } from './tacticgroupnode'
 // }
 
 type Rectangle = {
-  bottom : number
-  left : number
-  right : number
-  top : number
+    bottom : number
+    left : number
+    right : number
+    top : number
 }
 
 export function deltaX(rect1 : Rectangle, rect2 : Rectangle) : number {
-  return rect2.left - rect1.left
+    return rect2.left - rect1.left
 }
 export function deltaY(rect1 : Rectangle, rect2 : Rectangle) : number {
-  return rect2.top - rect1.top
+    return rect2.top - rect1.top
 }
 
 function makeGoalNodePre() {
-  return $('<pre>')
-    .addClass('goalNode')
+    return $('<pre>')
+        .addClass('goalNode')
     // inlining some CSS for svg_datatourl
-    .css('font-family', 'monospace')
-    .css('font-size', '14px')
-    .css('line-height', 'normal')
-    .css('margin', 0)
-    .css('padding', 0)
+        .css('font-family', 'monospace')
+        .css('font-size', '14px')
+        .css('line-height', 'normal')
+        .css('margin', 0)
+        .css('padding', 0)
 }
 
 export function swapXY({ x, y } : XY) : XY {
-  return { x : y, y : x }
+    return { x : y, y : x }
 }
 
 // transposition accessors
 export function nodeX(d : ProofTreeTypes.Node) : number {
-  return d.y
+    return d.y
 }
 
 export function nodeY(d : ProofTreeTypes.Node) : number {
-  return d.x
+    return d.x
 }
 
 // function goalNodeUnicityRepr(node : IGoalNode) : string {
@@ -89,39 +89,39 @@ const centerLeftOffset = +10
 const centerRightOffset = -10
 
 function mkCenterLeft(x : number, y : number, h : number) : XY {
-  return { x : x + centerLeftOffset, y : y + h / 2 }
+    return { x : x + centerLeftOffset, y : y + h / 2 }
 }
 
 export function currentCenterLeft(d : ProofTreeTypes.Node) : XY {
-  return mkCenterLeft(d.data.currentScaledX, d.data.currentScaledY, d.data.getHeight())
+    return mkCenterLeft(d.data.currentScaledX, d.data.currentScaledY, d.data.getHeight())
 }
 
 export function destinationCenterLeft(d : ProofTreeTypes.Node) : XY {
-  return mkCenterLeft(HierarchyNodeUtils.getDestinationScaledX(d), HierarchyNodeUtils.getDestinationScaledY(d), d.data.getHeight())
+    return mkCenterLeft(HierarchyNodeUtils.getDestinationScaledX(d), HierarchyNodeUtils.getDestinationScaledY(d), d.data.getHeight())
 }
 
 function mkCenterRight(x : number, y : number, w : number, h : number) : XY {
-  return { x : x + w + centerRightOffset, y : y + h / 2 }
+    return { x : x + w + centerRightOffset, y : y + h / 2 }
 }
 
 export function currentCenterRight(d : ProofTreeTypes.Node) : XY {
-  return mkCenterRight(d.data.currentScaledX, d.data.currentScaledY, d.data.getWidth(), d.data.getHeight())
+    return mkCenterRight(d.data.currentScaledX, d.data.currentScaledY, d.data.getWidth(), d.data.getHeight())
 }
 
 export function destinationCenterRight(d : ProofTreeTypes.Node) : XY {
-  return mkCenterRight(HierarchyNodeUtils.getDestinationScaledX(d), HierarchyNodeUtils.getDestinationScaledY(d), d.data.getWidth(), d.data.getHeight())
+    return mkCenterRight(HierarchyNodeUtils.getDestinationScaledX(d), HierarchyNodeUtils.getDestinationScaledY(d), d.data.getWidth(), d.data.getHeight())
 }
 
 /*
-Right now this code doesn't make sense anymore, even type-wise the last
-lines return an object of lists. Disabled for now.
+  Right now this code doesn't make sense anymore, even type-wise the last
+  lines return an object of lists. Disabled for now.
 */
 
 /*
   This might be terrible design, but [spotTheDifference] currently marks inline
   diffs through CSS background-color. It's much more stable than using
   rectangles when animated.
- */
+*/
 // function spotTheDifferences(before : JQuery, after : JQuery) {
 //
 //   function rec(before, after) {
@@ -185,101 +185,101 @@ lines return an object of lists. Disabled for now.
   [currentY]
 */
 function destinationEmptyRect(node : ProofTreeTypes.Node, currentY : number) : Rectangle {
-  const delta = 1 // how big to make the empty rectangle
-  return $.extend(
-    {
-      'left' : HierarchyNodeUtils.getDestinationScaledX(node),
-      'right' : HierarchyNodeUtils.getDestinationScaledX(node) + node.data.getWidth(),
-      'width' : node.data.getWidth()
-    },
-    {
-      'top' : currentY - delta,
-      'bottom' : currentY + delta,
-      'height' : 2 * delta,
-    }
-  )
+    const delta = 1 // how big to make the empty rectangle
+    return $.extend(
+        {
+            'left' : HierarchyNodeUtils.getDestinationScaledX(node),
+            'right' : HierarchyNodeUtils.getDestinationScaledX(node) + node.data.getWidth(),
+            'width' : node.data.getWidth()
+        },
+        {
+            'top' : currentY - delta,
+            'bottom' : currentY + delta,
+            'height' : 2 * delta,
+        }
+    )
 }
 
 function currentEmptyRect(node : IProofTreeNode, currentY : number) : Rectangle {
-  const delta = 1 // how big to make the empty rectangle
-  return $.extend(
-    {
-      'left' : node.currentScaledX,
-      'right' : node.currentScaledY + node.getWidth(),
-      'width' : node.getWidth()
-    },
-    {
-      'top' : currentY - delta,
-      'bottom' : currentY + delta,
-      'height' : 2 * delta,
-    }
-  )
+    const delta = 1 // how big to make the empty rectangle
+    return $.extend(
+        {
+            'left' : node.currentScaledX,
+            'right' : node.currentScaledY + node.getWidth(),
+            'width' : node.getWidth()
+        },
+        {
+            'top' : currentY - delta,
+            'bottom' : currentY + delta,
+            'height' : 2 * delta,
+        }
+    )
 }
 
 const diffColor = (() => {
-  const colors = [
-    '#ffbb78',
-    '#f7b6d2',
-    '#dbdb8d',
-    '#6b6ecf',
-    '#8ca252',
-    '#b5cf6b',
-    '#cedb9c',
-    '#bd9e39',
-    '#d6616b',
-    '#ce6dbd',
-    '#de9ed6',
-  ]
-  return d3Scale.scaleOrdinal<number, string>(colors)
+    const colors = [
+        '#ffbb78',
+        '#f7b6d2',
+        '#dbdb8d',
+        '#6b6ecf',
+        '#8ca252',
+        '#b5cf6b',
+        '#cedb9c',
+        '#bd9e39',
+        '#d6616b',
+        '#ce6dbd',
+        '#de9ed6',
+    ]
+    return d3Scale.scaleOrdinal<number, string>(colors)
 })()
 
 function mkDiagonal(
-  cL : (xy : XY) => XY,
-  cR : (xy : XY) => XY
+    cL : (xy : XY) => XY,
+    cR : (xy : XY) => XY
 ) : (d : ProofTreeTypes.Link) => string {
-  return d => {
-    const srcNode = d.source
-    const tgtNode = d.target
-    const src = swapXY(cR(srcNode))
-    const tgt = swapXY(cL(tgtNode))
-    const path = d3Path.path()
-    path.moveTo(src.x, src.y)
-    const midX = Math.floor((src.x + tgt.x) / 2)
-    // const midY = Math.floor((src.y + tgt.y) / 2)
-    path.bezierCurveTo(midX, src.y, midX, tgt.y, tgt.x, tgt.y)
-    return path.toString()
-  }
+    return d => {
+        const srcNode = d.source
+        const tgtNode = d.target
+        const src = swapXY(cR(srcNode))
+        const tgt = swapXY(cL(tgtNode))
+        const path = d3Path.path()
+        path.moveTo(src.x, src.y)
+        const midX = Math.floor((src.x + tgt.x) / 2)
+        // const midY = Math.floor((src.y + tgt.y) / 2)
+        path.bezierCurveTo(midX, src.y, midX, tgt.y, tgt.x, tgt.y)
+        return path.toString()
+    }
 }
 
 export const currentDiagonal = mkDiagonal(currentCenterLeft, currentCenterRight)
 export const destinationDiagonal = mkDiagonal(destinationCenterLeft, destinationCenterRight)
 
 export function makeHierarchyTree(t : IProofTree) : d3Hierarchy.HierarchyPointNode<IProofTreeNode> {
-  const hierarchyRoot = d3Hierarchy.hierarchy(
-    t.rootNode,
-    (node : IProofTreeNode) => {
-      console.log('Computing some children')
-      // fake nodes are used to trick the layout engine into spacing
-      // childrenless nodes appropriately
-      if (node instanceof FakeNode) { return [] }
-      const viewChildren = node.getViewChildren()
-      // in order to trick d3 into displaying tactics better add fake
-      // children to tactic nodes that solve their goal
-      if (node instanceof TacticGroupNode && viewChildren.length === 0) {
-        return [new FakeNode(t, node)]
-      }
-      if (viewChildren === undefined) {
-        debugger
-      }
-      return viewChildren
-    }
-  )
-  return d3Hierarchy.tree<IProofTreeNode>()
-    .separation(d => {
-      // TODO: now that I put fake nodes, still need this?
-      // TODO: this just won't work, need invisible children
-      // for tactics without children
-      return 1 / (1 + Math.pow(d.depth, 3))
-    })
+    const hierarchyRoot = d3Hierarchy.hierarchy(
+        t.rootNode,
+        (node : IProofTreeNode) => {
+            console.log('Computing some children')
+            // fake nodes are used to trick the layout engine into spacing
+            // childrenless nodes appropriately
+            if (node instanceof FakeNode) { return [] }
+            const viewChildren = node.getViewChildren()
+            // in order to trick d3 into displaying tactics better add fake
+            // children to tactic nodes that solve their goal
+            if (node instanceof TacticGroupNode && viewChildren.length === 0) {
+                return [new FakeNode(t, node)]
+            }
+            if (viewChildren === undefined) {
+                debugger
+            }
+            return viewChildren
+        }
+    )
+    return d3Hierarchy.tree<IProofTreeNode>()
+        .separation(d => {
+            // TODO: now that I put fake nodes, still need this?
+            // TODO: this just won't work, need invisible children
+            // for tactics without children
+            return 1 / (1 + Math.pow(d.depth, 3))
+        })
     (hierarchyRoot)
 }

@@ -1,11 +1,12 @@
-abstract class CaseStyle { }
+export type CaseStyle
+    = LetStyle
+    | IfStyle
+    | LetPatternStyle
+    | MatchStyle
+    | RegularStyle
 
-class LetStyle extends CaseStyle { }
-
-class IfStyle extends CaseStyle { }
-
-class LetPatternStyle extends CaseStyle { }
-
-class MatchStyle extends CaseStyle { }
-
-class RegularStyle extends CaseStyle { }
+export class LetStyle        { private tag : 'LetStyle' }
+export class IfStyle         { private tag : 'IfStyle' }
+export class LetPatternStyle { private tag : 'LetPatternStyle' }
+export class MatchStyle      { private tag : 'MatchStyle' }
+export class RegularStyle    { private tag : 'RegularStyle' }

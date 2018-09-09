@@ -8,12 +8,12 @@ import { Vernac } from '../sertop/query-command'
 
 interface ProofTreeAutomationInput {
     commandObserver : Rx.Observer<Command$>
-        completed$ : Completed$
+    completed$ : Completed$
     doc : ICoqDocument
     error$ : Error$
     notice$ : Notice$
     stmActionsInFlightCounter$ : Rx.Observable<number>
-        stmAdded$ : StmAdded$
+    stmAdded$ : StmAdded$
     stopAutomationRound$ : Rx.Observable<{}>
 }
 
@@ -274,7 +274,7 @@ function makeCandidate(
     stmAdded$ : StmAdded$
 ) : {
     commands$ : CommandStreamItem<ISertop.ICommand>
-        done$ : Rx.Observable<any>
+    done$ : Rx.Observable<any>
 } {
     const { context, group, tactic, sentence } = input
     const stateId = sentence.stage.stateId

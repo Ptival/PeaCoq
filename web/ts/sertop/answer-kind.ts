@@ -3,9 +3,13 @@ import * as Loc from '../coq/lib/loc'
 import * as Tip from '../coq/tip'
 import * as SertopUtils from './utils'
 
-export class Ack implements ISertop.IAck { }
+export class Ack implements ISertop.IAck {
+    private tag : 'Ack'
+}
 
-export class Completed implements ISertop.ICompleted { }
+export class Completed implements ISertop.ICompleted {
+    private tag : 'Completed'
+}
 
 export class CoqExn implements ISertop.ICoqExn {
     constructor(

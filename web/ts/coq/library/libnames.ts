@@ -41,8 +41,9 @@ function prPath(sp : FullPath) { return Pp.str(stringOfPath(sp)) }
 function prQualid(q : QualId) : Pp.t { return prPath(q) }
 
 export function prReference(r : Reference) : Pp.t {
-    return peaCoqBox(C_AST.withVal(r => {
+    return peaCoqBox(C_AST.withVal((r : ReferenceR) => {
         if (r instanceof Qualid) { return prQualid(r.qualId) }
         if (r instanceof Ident) { return Names.Id.print(r.id) }
-    }))
+        throw r
+    })(r))
 }

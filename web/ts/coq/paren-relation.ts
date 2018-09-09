@@ -1,11 +1,21 @@
-abstract class ParenRelation { }
+export type ParenRelation
+    = E
+    | L
+    | Prec
+    | Any
 
-class E extends ParenRelation { }
-
-class L extends ParenRelation { }
-
-class Prec extends ParenRelation {
-  constructor(public precedence : number) { super() }
+export class E {
+    private tag : 'E'
 }
 
-class Any extends ParenRelation { }
+export class L {
+    private tag : 'L'
+}
+
+export class Prec {
+    constructor(public precedence : number) { }
+}
+
+export class Any {
+    private tag : 'Any'
+}
