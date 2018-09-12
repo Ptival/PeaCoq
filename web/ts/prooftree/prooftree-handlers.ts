@@ -5,6 +5,9 @@ import { ProofTree } from './prooftree'
 import { Tactic } from './tactic'
 import { TacticGroupNode } from './tacticgroupnode'
 
+import * as Command from '../sertop/command'
+import * as ControlCommand from '../sertop/control-command'
+
 export function proofTreeOnEdit(
     doc : ICoqDocument,
     showProofTreePanel : () => Promise<{}>,
@@ -18,7 +21,8 @@ export function proofTreeOnEdit(
 
     const trimmed = CoqStringUtils.coqTrim(query)
 
-    // I used to be smarter about this but I got tired of it
+    // I used to be smarter about this but I got tired of it: for now, you need
+    // the `Proof.` keyword to open the prooftree.
     if (trimmed === 'Proof.') {
         // we are behind on the number of proof trees, create one
         showProofTreePanel()
@@ -29,11 +33,31 @@ export function proofTreeOnEdit(
                     $('#prooftree')[0],
                     $('#prooftree').parent().width()  || 100,
                     $('#prooftree').parent().height() || 100,
-                    nothing<ITacticGroupNode>(),
                     context,
                     0,
                     doc
                 )
+
+                pt.clickOnAncestor$.subscribe(({}) => {
+                    // For now, we only allow clicks on the parent, so we just
+                    // need to cancel the current node.  We cancel its lowest
+                    // state ID.
+                    const stateId = _.min(pt.curNode.getStateIds())
+                    if (stateId === undefined) {
+                        debugger
+                        throw stateId
+                    }
+                    doc.sendCommands(
+                        Rx.Observable.just(new Command.Control(new ControlCommand.StmCancel([stateId])))
+                    )
+                })
+
+                pt.clickOnDescendant$.subscribe(t => {
+                    doc.editor.execCommand('insertstring', ` ${t.tactic}`)
+                    doc.next()
+                    doc.editor.execCommand('insertstring', '\n')
+                })
+
                 // pt.curNode$.subscribe(
                 //   n => console.log('Current node changed to', n),
                 //   null,

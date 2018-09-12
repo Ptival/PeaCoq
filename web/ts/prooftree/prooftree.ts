@@ -17,6 +17,7 @@ import { TacticGroupNode } from './tacticgroupnode'
 import * as TextSelection from './text-selection'
 import { Strictly } from '../peacoq/strictly'
 import * as ProofTreeUtils from './utils'
+import { controlCommand } from '../peacoq/filters';
 
 type HTMLElementSelection = ProofTreeTypes.HTMLElementSelection
 
@@ -51,6 +52,8 @@ function pairwise<T>(a : T[]) : [T, T][] {
 }
 
 export class ProofTree implements IProofTree {
+    public readonly clickOnAncestor$ : Rx.Subject<{}>
+    public readonly clickOnDescendant$ : Rx.Subject<ITactic>
     public descendantsOffset : number
     public readonly curNode$ : Rx.Subject<IGoalNode>
     public rootNode : IGoalNode
@@ -85,10 +88,9 @@ export class ProofTree implements IProofTree {
         anchor : HTMLElement,
         private width : number,
         private height : number,
-        parent : Maybe<ITacticGroupNode>,
         public context : PeaCoqContext,
         public index : number,
-        public document : ICoqDocument
+        private document : ICoqDocument
     ) {
         width = Math.max(0, width)
         this.width = width
@@ -104,7 +106,10 @@ export class ProofTree implements IProofTree {
         this.usingKeyboard = true // true until the user moves their mouse
         this.tacticWaiting = nothing<string>()
 
-        this.rootNode = new GoalNode(this, parent, context, index)
+        this.clickOnAncestor$ = new Rx.Subject()
+        this.clickOnDescendant$ = new Rx.Subject()
+
+        this.rootNode = this.createGoalNode(nothing(), context, index)
 
         this._curNode = this.rootNode
         this.curNode$ = new Rx.BehaviorSubject(this.rootNode)
@@ -178,6 +183,32 @@ export class ProofTree implements IProofTree {
             .let(debounceAndThrottle(1000))
             .subscribe(() => this.updateAndWait())
 
+    }
+
+    public createGoalNode(parent : Maybe<ITacticGroupNode>, context : PeaCoqContext, index : number) : IGoalNode {
+
+        const goalNode = new GoalNode(this, parent, context, index)
+
+        goalNode.tacticGroup$.subscribe(tg => {
+            tg.click$.subscribe(({}) => {
+                if (this.isCurNodeAncestor(Strictly.Yes, tg)) {
+                    this.clickOnAncestor$.onNext({})
+                    return
+                }
+                if (this.isCurNodeDescendant(Strictly.Yes, tg)) {
+                     tg.getFocusedTactic().caseOf({
+                         nothing : () => { debugger },
+                         just : (t : ITactic) => {
+                             this.clickOnDescendant$.onNext(t)
+                         }
+                     })
+                    return
+                }
+                debugger
+            })
+        })
+
+        return goalNode
     }
 
     public cleanup() {

@@ -2,12 +2,11 @@ import * as _ from 'lodash'
 
 import { ProofTreeNode } from './prooftreenode'
 import { Strictly } from '../peacoq/strictly'
-import * as Command from '../sertop/command'
-import * as ControlCommand from '../sertop/control-command'
 
 const userTacticsGroupName = 'PeaCoq user tactics'
 
 export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
+    public click$ : Rx.Subject<{}>
     public isProcessed : boolean
     // do not use parent, D3 will overwrite
     public span : JQuery
@@ -20,27 +19,14 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
         public name : string
     ) {
         super(proofTree, just(parentGoal))
+        this.click$ = new Rx.Subject()
         this.isProcessed = false
         this.tactics = []
         this.tacticIndex = 0
     }
 
     public click() {
-        if (this.proofTree.isCurNodeAncestor(Strictly.Yes, this)) {
-            const stateId = _.min(this.proofTree.curNode.getStateIds())
-            if (stateId === undefined) { debugger; throw stateId }
-            this.proofTree.document.sendCommands(
-                Rx.Observable.just(new Command.Control(new ControlCommand.StmCancel([stateId])))
-            )
-        }
-        this.getFocusedTactic().caseOf({
-            nothing : () => { debugger },
-            just : (t : ITactic) => {
-                this.proofTree.document.editor.execCommand('insertstring', ` ${t.tactic}`)
-                this.proofTree.document.next()
-                this.proofTree.document.editor.execCommand('insertstring', '\n')
-            }
-        })
+        this.click$.onNext({})
     }
 
     public focus() {

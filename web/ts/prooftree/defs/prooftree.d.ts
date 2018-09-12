@@ -1,14 +1,17 @@
 interface IProofTree {
+    readonly clickOnAncestor$ : Rx.Observable<{}>
+    readonly clickOnDescendant$ : Rx.Observable<ITactic>
     readonly curNode: IGoalNode
     readonly curNode$: Rx.Observable<IGoalNode>
     readonly descendantsOffset: number
-    readonly document: ICoqDocument
+    // readonly document: ICoqDocument
     readonly rootNode: IGoalNode
     readonly tacticWaiting: Maybe<string>
     readonly xFactor: number
     readonly yFactor: number
 
     cleanup(): void
+    createGoalNode(parent : Maybe<ITacticGroupNode>, context : PeaCoqContext, index : number) : IGoalNode
     getAllGoals(): IGoalNode[]
     getGoalWidth(): number
     getHierarchyCurNode(): d3.HierarchyPointNode<IProofTreeNode>

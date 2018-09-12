@@ -13,6 +13,7 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
     // DO NOT USE 'parent' AS D3 WILL OVERWRITE
     private parentGroup : Maybe<ITacticGroupNode>
     private stateIds : number[]
+    public tacticGroup$ : Rx.Subject<ITacticGroupNode>
     public tacticGroups : ITacticGroupNode[]
     private _tacticIndex : number
 
@@ -32,6 +33,7 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
         this.openBraces = 0
         this.parentGroup = parent
         this.stateIds = []
+        this.tacticGroup$ = new Rx.Subject()
         this.tacticGroups = []
         this._tacticIndex = 0
     }
@@ -58,6 +60,7 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
         if (maybeTacticGroup === undefined) {
             tacticGroup = new TacticGroupNode(this.proofTree, this, groupName)
             this.tacticGroups.push(tacticGroup)
+            this.tacticGroup$.onNext(tacticGroup)
         } else {
             tacticGroup = maybeTacticGroup
         }
@@ -83,8 +86,7 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
         const goalNodes : IGoalNode[] =
             _(_.range(nbRelevantGoals))
             .map(ndx =>
-                 new GoalNode(
-                     this.proofTree,
+                 this.proofTree.createGoalNode(
                      just(tacticGroup),
                      context,
                      ndx
