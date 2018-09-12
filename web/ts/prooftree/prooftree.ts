@@ -169,11 +169,11 @@ export class ProofTree implements IProofTree {
 
         this.updateSubject = new Rx.Subject()
 
+        // TODO: figure out why I was doing this and whether I can avoid it
         // Why?
         Rx.Observable.interval(2000).subscribe(() => this.updateSubject.onNext({}))
 
-        // TODO : figure out why I was doing this and whether I can avoid it
-        // this updates the display every second
+        // this updates at most once per second
         this.updateSubject
             .let(debounceAndThrottle(1000))
             .subscribe(() => this.updateAndWait())
@@ -230,6 +230,7 @@ export class ProofTree implements IProofTree {
             case Strictly.Yes : return commonAncestorIsNode && !this.isCurNode(n)
             case Strictly.No : return commonAncestorIsNode
         }
+        debugger
         throw 'ProofTree.isCurNodeAncestor'
     }
 
@@ -411,6 +412,9 @@ export class ProofTree implements IProofTree {
                     return 1
                 }
                 const wantedSpacing = ((a.data.getHeight() + b.data.getHeight()) / 2) + verticalSpacingBetweenNodes
+                if (wantedSpacing === 0) {
+                    debugger
+                }
                 return wantedSpacing / yDistance
             })
             .value()
@@ -420,6 +424,7 @@ export class ProofTree implements IProofTree {
             this.yFactor = newYFactor
         }
         else {
+            debugger
             console.log('Not updating yFactor, check this out...')
         }
 
@@ -478,6 +483,7 @@ export class ProofTree implements IProofTree {
             case Strictly.Yes : return commonAncestorIsCurNode && !this.isCurNode(n)
             case Strictly.No : return commonAncestorIsCurNode
         }
+        debugger
         throw 'ProofTree.isCurNodeDescendant'
     }
 
@@ -809,7 +815,7 @@ export class ProofTree implements IProofTree {
     }
 
     private updatePromise<T>(onFulfilled : () => void, onRejected : () => void) : void {
-        console.trace('updatePromise')
+        // console.trace('updatePromise')
         const curNode = this.curNode
 
         this.resetSVGTransform() // cancel view transformations
@@ -817,6 +823,8 @@ export class ProofTree implements IProofTree {
         this.treeRoot = ProofTreeUtils.makeHierarchyTree(this)
         const allNodes = this.treeRoot.descendants()
         const allLinks = this.treeRoot.links()
+
+        // debugger
 
         // now remove all fake nodes
         const nodes = allNodes
@@ -842,7 +850,6 @@ export class ProofTree implements IProofTree {
             .transition()
             .duration(animationDuration)
             .each(() => {
-
                 const textEnter = textSelection.enter().append('foreignObject')
                 const rectSelection = this.rectLayer.selectAll('rect').data<ProofTreeTypes.Node>(nodes, byNodeId)
                 const linkSelection = this.linkLayer.selectAll('path').data<ProofTreeTypes.Link>(links, byLinkId)
@@ -862,6 +869,8 @@ export class ProofTree implements IProofTree {
 
                 textEnter
                     .append('xhtml :body')
+                    .attr('width', '100%')
+                    .attr('height', '100%')
                     .each((d, i, nodes) => {
                         const self = nodes[i]
                         // debugger
@@ -927,6 +936,18 @@ export class ProofTree implements IProofTree {
             })
             .on('end', onFulfilled)
 
+    }
+
+    public setCurrentNode(n : IGoalNode) : void {
+        this.curNode = n
+    }
+
+    public setTacticWaiting(t : string) : void {
+        this.tacticWaiting = just(t)
+    }
+
+    public unsetTacticWaiting() : void {
+        this.tacticWaiting = nothing()
     }
 
 }

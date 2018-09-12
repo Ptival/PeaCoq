@@ -78,7 +78,10 @@ export function walkJSON(input : any) : any {
 
                     // libnames
                 case 'Ident'       : return ctor1(LibNames.Ident,  processedArgs)
-                case 'Qualid'      : return ctor1(LibNames.Qualid, processedArgs)
+                case 'Qualid'      : {
+                    const [ [dirpath, basename] ] = processedArgs
+                    return new LibNames.Qualid({ dirpath, basename })
+                }
 
                 case 'Name'        : return ctor1(Name,        processedArgs)
                 case 'Numeral'     : return ctor2(Numeral,     processedArgs)

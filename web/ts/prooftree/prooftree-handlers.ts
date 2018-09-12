@@ -83,7 +83,7 @@ export function proofTreeOnEdit(
     if (tactic.goals.length > 0) {
         const curGoal : IGoalNode = tactic.goals[0]
         curGoal.addStateId(stateId)
-        curNode.proofTree.curNode = curGoal
+        curNode.proofTree.setCurrentNode(curGoal)
         curNode.proofTree.scheduleUpdate()
     } else {
         curNode.onChildSolved(stateId)
@@ -107,7 +107,7 @@ export function onStmCanceled(
     const curNode = activeProofTree.curNode
 
     // clean up necessary for tactics waiting
-    activeProofTree.tacticWaiting = nothing<string>()
+    activeProofTree.unsetTacticWaiting()
 
     // first, get rid of all stored stateIds > sid
     // and mark their children tactic groups unprocessed
@@ -124,7 +124,7 @@ export function onStmCanceled(
     const target = _.maxBy(allGoals, g => _.max(g.getStateIds()))
 
     if (target) {
-        activeProofTree.curNode = target
+        activeProofTree.setCurrentNode(target)
         activeProofTree.scheduleUpdate()
     } else {
         // debugger

@@ -102,7 +102,10 @@ export function app(d1 : t, d2 : t) : t {
 }
 
 export function concat(...args : t[]) : t {
-    if (args.length === 0) { throw args }
+    if (args.length === 0) {
+        debugger
+        throw args
+    }
     if (args.length === 1) { return args[0] }
     const [first, ...rest] = args
     return rest.reduce((acc, elt) => new PpCmdGlue([acc, elt]), first)

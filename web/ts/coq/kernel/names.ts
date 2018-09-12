@@ -22,6 +22,7 @@ export namespace Name {
     export function print(n : t) : Pp.t {
         if (n instanceof Anonymous) { return Pp.str('_') }
         if (n instanceof Name) { return Id.print(n.id) }
+        debugger
         throw n
     }
 

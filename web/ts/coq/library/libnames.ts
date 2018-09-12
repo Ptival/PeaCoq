@@ -44,6 +44,7 @@ export function prReference(r : Reference) : Pp.t {
     return peaCoqBox(C_AST.withVal((r : ReferenceR) => {
         if (r instanceof Qualid) { return prQualid(r.qualId) }
         if (r instanceof Ident) { return Names.Id.print(r.id) }
+        debugger
         throw r
     })(r))
 }

@@ -30,12 +30,14 @@ export function PpCmdOfBox(b : PpBox, s : Pp.t) : Pp.t {
     if (b instanceof PpHoVB) { return Pp.hov(b.n, s) }
     if (b instanceof PpHVB)  { return Pp.hv (b.n, s) }
     if (b instanceof PpVB)   { return Pp.v  (b.n, s) }
+    debugger
     throw MatchFailure('PpCmdOfBox', b)
 }
 
 export function PpCmdOfCut(c : PpCut) : Pp.t {
     if (c instanceof PpFnl)  { return Pp.fnl() }
     if (c instanceof PpBrk)  { return Pp.brk(c.n1, c.n2) }
+    debugger
     throw MatchFailure('PpCmdOfCut', c)
 }
 

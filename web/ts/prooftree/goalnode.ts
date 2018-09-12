@@ -178,6 +178,9 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
     public getHeight() : number {
         const node = this.getHTMLElement()
         const rect = node.getBoundingClientRect()
+        if (rect.height === 0) {
+            // debugger
+        }
         return Math.ceil(rect.height)
     }
 

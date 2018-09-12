@@ -10,7 +10,7 @@ export function onTextEnter(s : ProofTreeTypes.NodeSelection) : void {
         .attr('y', d => d.data.currentScaledY)
         .attr('width', d => d.data.getWidth())
         .attr('height', d => d.data.getHeight())
-        .each(d => console.log('entered', d.x, d.y))
+        .each(d => console.log(`Entered { x: ${d.x}, y: ${d.y}, w: ${d.data.getWidth()}, h: ${d.data.getHeight()} }`))
     // .style('opacity', 0)
 }
 

@@ -12,6 +12,7 @@ function htmlPrintStrToken(t : StrToken.StrToken) : string {
     if (t instanceof StrToken.StrLen) {
         return (t.str)
     }
+    debugger
     throw MatchFailure('htmlPrintStrToken', t)
 }
 
@@ -43,6 +44,7 @@ function htmlPrintPpCmdDiff(p : Pp.t, old : Pp.t) : string {
     if (p instanceof Pp.PpCmdComment) {
         return 'TODO: PpCmdComment'
     }
+    debugger
     throw MatchFailure('htmlPrintPpCmd', p)
 }
 
@@ -70,14 +72,18 @@ export function htmlPrintPpCmd(p : Pp.t) : string {
         return ''
     }
 
-    if (p instanceof Pp.PpCmdString) { throw p }
+    if (p instanceof Pp.PpCmdString) { return p.str }
 
     if (p instanceof Pp.PpCmdGlue) {
-        return p.docviews.map(htmlPrintPpCmd).join()
+        return p.docviews.map(htmlPrintPpCmd).join('')
     }
 
-    if (p instanceof Pp.PpCmdTag) { throw p }
+    if (p instanceof Pp.PpCmdTag) {
+        // FIXME: now we get cool tags, maybe use them?
+        return htmlPrintPpCmd(p.contents)
+    }
 
+    debugger
     throw MatchFailure('htmlPrintPpCmd', p)
 }
 

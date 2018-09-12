@@ -241,6 +241,10 @@ $(document).ready(() => {
     time('A9')
     // Debugging :
     doc.editor.setValue(`
+Theorem test : forall x, (and (or (x = 0) (x > 0)) (x >= 0)).
+Proof.
+  intros.
+
 Inductive day : Type :=
 | monday : day
 | tuesday : day

@@ -91,12 +91,21 @@ function wrapAjax(i : JQueryAjaxSettings) : Promise<any> {
 
 function sendPing() : Promise<ISertop.IAnswer<ISertop.IAnswerKind>[]> {
     // console.log('PING')
-    return wrapAjax({
-        type : 'POST',
-        url : 'ping',
-        data : {},
-        async : true,
-    }).then(r => r.map(sexpParse).map(Answer.create))
+    return (
+        wrapAjax({
+            type : 'POST',
+            url : 'ping',
+            data : {},
+            async : true,
+        })
+            .then(r => r.map(sexpParse).map(Answer.create))
+            // .catch(e => {
+            //     console.log(`PING request failed`)
+            //     console.log(`Error:`)
+            //     console.log(e)
+            //     throw e
+            // })
+                )
 }
 
 function sendCommand(cmd : ISertop.ICommand) : Promise<ISertop.IAnswer<ISertop.IAnswerKind>[]> {
@@ -104,13 +113,23 @@ function sendCommand(cmd : ISertop.ICommand) : Promise<ISertop.IAnswer<ISertop.I
     const datum = `(${cmd.tag} ${cmd.toSexp()})`
     console.log(datum)
     // debugger
-    return wrapAjax({
-        type : 'POST',
-        url : 'coqtop',
-        data : datum,
-        async : true,
-    }).then(r => {
-        // console.log('RECV', r)
-        return r.map(sexpParse).map(Answer.create)
-    })
+    return (
+        wrapAjax({
+            type : 'POST',
+            url : 'coqtop',
+            data : datum,
+            async : true,
+        })
+            .then(r => {
+                // console.log('RECV', r)
+                return r.map(sexpParse).map(Answer.create)
+            })
+            // .catch(e => {
+            //     console.log(`POST request failed:`)
+            //     console.log(datum)
+            //     console.log(`Error:`)
+            //     console.log(e)
+            //     throw e
+            // })
+                ) // FIXME: typescript-mode indentation is wrong
 }

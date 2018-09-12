@@ -78,12 +78,14 @@ function prLName(ln : MiscTypes.lname) : Pp.t {
 function surroundImpl(k : BindingKind, p : Pp.t) : Pp.t {
     if (k instanceof Explicit) { return Pp.concat(Pp.str('('), p, Pp.str(')')) }
     if (k instanceof Implicit) { return Pp.concat(Pp.str('{'), p, Pp.str('}')) }
+    debugger
     throw MatchFailure('surroundImpl', k)
 }
 
 function surroundImplicit(k : BindingKind, p : Pp.t) : Pp.t {
     if (k instanceof Explicit) { return p }
     if (k instanceof Implicit) { return Pp.concat(Pp.str('{'), p, Pp.str('}')) }
+    debugger
     throw MatchFailure('surroundImplicit', k)
 }
 
@@ -94,11 +96,13 @@ function prBinder(
 ) : Pp.t {
     if (k instanceof Generalized) {
         const [b, bp, tp] = [k.kind1, k.kind2, k.b]
+        debugger
         throw 'TODO : prBinder Generalized'
     }
     if (k instanceof Default) {
         const b = k.kind
         if (t instanceof ConstrExpr.CHole && t.introPatternNamingExpr instanceof MiscTypes.IntroAnonymous) {
+            debugger
             throw 'TODO : prBinder CHole'
         } else {
             const s = Pp.concat(
@@ -109,6 +113,7 @@ function prBinder(
             return peaCoqBox(many ? surroundImpl(b, s) : surroundImplicit(b, s))
         }
     }
+    debugger
     throw MatchFailure('prBinder', k)
 }
 
@@ -119,7 +124,10 @@ function prDelimitedBinders(
     bl : ConstrExpr.LocalBinderExpr[]
 ) : Pp.t {
     const n = beginOfBinders(bl)
-    if (bl.length === 0) { throw 'prDelimitedBinders : bl should not be empty' }
+    if (bl.length === 0) {
+        debugger
+        throw 'prDelimitedBinders : bl should not be empty'
+    }
     const bl0 = bl[0]
     if (bl0 instanceof ConstrExpr.CLocalAssum && bl.length === 1) {
         const [nal, k, t] = [bl0.names, bl0.binderKind, bl0.type]
@@ -163,8 +171,10 @@ function prBinderAmongMany(
 
         /* TODO :
            if (c instanceof CCast) {
+           debugger
            throw 'TODO : prBinderAmongMany then'
            } else {
+           debugger
            throw 'TODO : prBinderAmongMany else'
            }
         */
@@ -792,6 +802,7 @@ function pr0(
 
             if (aa instanceof ConstrExpr.CCases) {
                 if (aa.caseStyle instanceof CaseStyle.LetPatternStyle) {
+                    debugger
                     throw 'TODO : LetPatternStyle'
                 }
                 const [rtnTypOpt, c, eqns] = [aa.returnType, aa.cases, aa.branches]
@@ -845,6 +856,7 @@ function pr0(
             if (aa instanceof ConstrExpr.CLetIn) {
                 const [x, a, t, b] = [aa.name, aa.bound, aa.type, aa.body]
                 if (a instanceof ConstrExpr.CFix || a instanceof ConstrExpr.CCoFix) {
+                    debugger
                     throw ('TODO : pr CLetIn with CFix/CcoFix')
                 }
                 return ret(
@@ -950,6 +962,7 @@ function pr0(
                 return ret(prGlobSort(aa.globSort), lAtom)
             }
 
+            debugger
             throw MatchFailure('pr > match', aa)
 
         }
@@ -1048,6 +1061,7 @@ function dumbPrintPpCmd(p : Pp.t) : string {
     if (p instanceof Pp.PpCmdComment) {
         return 'TODO : PpExtend.PpCmdComment'
     }
+    debugger
     throw MatchFailure('dumbPrintPpCmd', p)
 }
 
@@ -1058,6 +1072,7 @@ function dumbPrintStrToken(t : StrToken.StrToken) : string {
     if (t instanceof StrToken.StrLen) {
         return t.str
     }
+    debugger
     throw MatchFailure('dumbPrintStrToken', t)
 }
 
@@ -1074,6 +1089,7 @@ function beginOfBinder(lBi : ConstrExpr.LocalBinderExpr) : number {
     if (lBi instanceof ConstrExpr.CLocalDef)     { return bLoc(lBi.name.loc) }
     if (lBi instanceof ConstrExpr.CLocalAssum)   { return bLoc(lBi.names[0].loc) }
     if (lBi instanceof ConstrExpr.CLocalPattern) { return bLoc(lBi.pattern.loc) }
+    debugger
     throw MatchFailure('beginOfBinder', lBi)
 }
 
