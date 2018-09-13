@@ -19,33 +19,19 @@
     "preserveConstEnums": true,
     "removeComments": true,
     "rootDir": "ts",
-    "skipLibCheck": true,
-    "skipDefaultLibCheck": true,
     "strictNullChecks": true,
     "suppressImplicitAnyIndexErrors": true,
-    "target": "es6",
-    "types": [
-      "ace",
-      "d3-hierarchy",
-      "d3-selection",
-      "jquery",
-      "jquery.contextmenu",
-      "jss",
-      "lodash",
-      "rx",
-      "tsmonad",
-      "w2ui"
-    ]
+    "target": "es6"
   },
   "include": [
-    "**/*.ts"
+    "**/*"
   ],
   "exclude": [
     "node_modules",
     "typings/globals"
   ],
   "formatCodeOptions": {
-    "indentSize": 2,
+    "indentSize": 4,
     "tabSize": 4,
     "newLineCharacter": "\r\n",
     "convertTabsToSpaces": true,

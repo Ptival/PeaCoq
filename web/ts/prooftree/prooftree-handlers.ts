@@ -4,9 +4,9 @@ import { GoalNode } from './goalnode'
 import { ProofTree } from './prooftree'
 import { Tactic } from './tactic'
 import { TacticGroupNode } from './tacticgroupnode'
-
-import * as Command from '../sertop/command'
-import * as ControlCommand from '../sertop/control-command'
+import * as StateId from '../coq/lib/stateid'
+import * as PeaCoqUtils from '../peacoq/utils'
+import * as SerAPIProtocol from '../sertop/serapi-protocol'
 
 export function proofTreeOnEdit(
     doc : ICoqDocument,
@@ -48,7 +48,7 @@ export function proofTreeOnEdit(
                         throw stateId
                     }
                     doc.sendCommands(
-                        Rx.Observable.just(new Command.Control(new ControlCommand.StmCancel([stateId])))
+                        Rx.Observable.just(new SerAPIProtocol.Cancel([stateId]))
                     )
                 })
 
@@ -93,7 +93,7 @@ export function proofTreeOnEdit(
     const activeProofTree = doc.proofTrees.peek()
     const curNode = activeProofTree.curNode
 
-    if (isUpperCase(trimmed[0]) || CoqStringUtils.isBullet(trimmed)) {
+    if (PeaCoqUtils.isUpperCase(trimmed[0]) || CoqStringUtils.isBullet(trimmed)) {
         // curNode.goals = goals
         curNode.addStateId(stateId)
         return
@@ -122,7 +122,7 @@ export function proofTreeOnEdit(
 export function onStmCanceled(
     doc : ICoqDocument,
     hideProofTreePanel : () => void,
-    sids : StateId[]
+    sids : StateId.t[]
 ) : void {
 
     if (doc.proofTrees.length === 0) { return }
@@ -138,7 +138,7 @@ export function onStmCanceled(
     const allGoals = activeProofTree.getAllGoals()
 
     _(allGoals).each(g => {
-        if (_(g.getStateIds()).some((s : StateId) => _(sids).includes(s))) {
+        if (_(g.getStateIds()).some((s : StateId.t) => _(sids).includes(s))) {
             _(g.tacticGroups).each(g => { g.isProcessed = false })
         }
         g.removeStateIds(sids)

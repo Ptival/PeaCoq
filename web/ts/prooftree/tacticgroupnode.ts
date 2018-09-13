@@ -1,7 +1,9 @@
 import * as _ from 'lodash'
+import { Maybe } from 'tsmonad'
 
 import { ProofTreeNode } from './prooftreenode'
 import { Strictly } from '../peacoq/strictly'
+import * as PeaCoqUtils from '../peacoq/utils'
 
 const userTacticsGroupName = 'PeaCoq user tactics'
 
@@ -18,7 +20,7 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
         private parentGoal : IGoalNode,
         public name : string
     ) {
-        super(proofTree, just(parentGoal))
+        super(proofTree, Maybe.just(parentGoal))
         this.click$ = new Rx.Subject()
         this.isProcessed = false
         this.tactics = []
@@ -52,28 +54,29 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
     }
 
     public getFocusedChild() : Maybe<IGoalNode> {
-        if (this.tactics.length === 0) { return nothing<IGoalNode>() }
+        if (this.tactics.length === 0) { return Maybe.nothing<IGoalNode>() }
         const focusedTactic = this.tactics[this.tacticIndex]
-        if (focusedTactic.goals.length === 0) { return nothing<IGoalNode>() }
-        return just(focusedTactic.goals[focusedTactic.goalIndex])
+        if (focusedTactic.goals.length === 0) { return Maybe.nothing<IGoalNode>() }
+        return Maybe.just(focusedTactic.goals[focusedTactic.goalIndex])
     }
 
     public getFocusedTactic() : Maybe<ITactic> {
         return (
             this.tactics.length === 0
-                ? nothing<ITactic>()
-                : just(this.tactics[this.tacticIndex])
+                ? Maybe.nothing<ITactic>()
+                : Maybe.just(this.tactics[this.tacticIndex])
         )
     }
 
-    public getGoalAncestor() : Maybe<IGoalNode> { return just(this.parentGoal) }
+    public getGoalAncestor() : Maybe<IGoalNode> { return Maybe.just(this.parentGoal) }
 
     public getHeight() : number {
         const rect = this.getHTMLElement().getBoundingClientRect()
-        return Math.ceil(rect.height)
+        const computed = Math.ceil(rect.height)
+        return Math.max(computed, 20)
     }
 
-    public getParent() : Maybe<IGoalNode> { return just(this.parentGoal) }
+    public getParent() : Maybe<IGoalNode> { return Maybe.just(this.parentGoal) }
 
     public getParentGoal() : IGoalNode { return this.parentGoal }
 
@@ -97,8 +100,8 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
             .bind((tactic : ITactic) => tactic.getFocusedGoal())
             .bind((goal : IGoalNode) => {
                 const found = viewChildren.find(e => e.id === goal.id)
-                if (found === undefined) { return nothing<IGoalNode>() }
-                return just(found)
+                if (found === undefined) { return Maybe.nothing<IGoalNode>() }
+                return Maybe.just(found)
             })
     }
 
@@ -113,7 +116,7 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
     }
 
     public onChildSolvedAndUnfocused(sid : number) : void {
-        const focusedTactic : ITactic = fromJust(this.getFocusedTactic())
+        const focusedTactic : ITactic = PeaCoqUtils.fromJust(this.getFocusedTactic())
         const unsolved = <IGoalNode | undefined>_(focusedTactic.goals)
             .find(elt => !elt.isSolved())
         // debugger
@@ -178,7 +181,7 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
                         })
                 )
             } else {
-                this.span.append(nbsp)
+                this.span.append(PeaCoqUtils.nbsp)
             }
 
             this.span.append(
@@ -196,7 +199,7 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
                         })
                 )
             } else {
-                this.span.append(nbsp)
+                this.span.append(PeaCoqUtils.nbsp)
             }
 
             this.span.append($('<br>'))

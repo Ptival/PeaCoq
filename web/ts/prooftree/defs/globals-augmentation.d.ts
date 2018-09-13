@@ -3,8 +3,8 @@
 import * as TSMonad from 'tsmonad'
 
 declare global {
-  const TsMonad = {
-    Maybe : TSMonad.Maybe
-  }
-  type Maybe<T> = TSMonad.Maybe<T>
+    // interface TsMonad<T> {
+    //     Maybe : TSMonad.Maybe<T>
+    // }
+    type Maybe<T> = TSMonad.Maybe<T>
 }

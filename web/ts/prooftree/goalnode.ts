@@ -1,4 +1,5 @@
 import * as _ from 'lodash'
+import * as TsMonad from 'tsmonad'
 
 import { Tactic } from './tactic'
 import { TacticGroupNode } from './tacticgroupnode'
@@ -181,9 +182,10 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
         const node = this.getHTMLElement()
         const rect = node.getBoundingClientRect()
         if (rect.height === 0) {
-            // debugger
+            // debugger // FIXME
         }
-        return Math.ceil(rect.height)
+        const computed = Math.ceil(rect.height)
+        return Math.max(computed, 60)
     }
 
     public getParent() : Maybe<ITacticGroupNode> { return this.parentGroup }

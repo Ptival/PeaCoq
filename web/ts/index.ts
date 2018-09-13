@@ -1,4 +1,5 @@
 import * as _ from 'lodash'
+import { Maybe } from 'tsmonad'
 
 import { setup as setupCancelBecauseBackwardGoTo } from './editor/cancel-because-backward-goto'
 import { setup as setupCancelBecausePrev } from './editor/cancel-because-prev'
@@ -36,7 +37,11 @@ import * as Theme from './peacoq/theme'
 
 import { setup as setupProofTreeAutomation } from './prooftree/automation'
 import { setup as setupProofTreePopulating } from './prooftree/populating'
+import { ProofTree } from './prooftree/prooftree'
 import { setup as setupProofTree } from './prooftree/setup'
+
+import * as C_AST from './coq/lib/c-ast'
+import * as ConstrExpr from './coq/intf/constr-expr'
 
 // import * as Promise from 'bluebird'
 // Promise.longStackTraces()
@@ -56,7 +61,59 @@ function time(label : string) {
 
 const resizeBufferingTime = 250 // milliseconds
 
+function displayProofTree() {
+
+    const {
+        bottomLayout,
+        contextTabs,
+        layoutResizeStream,
+        rightLayout,
+        rightLayoutRenderedStream,
+        rightLayoutResizeStream,
+        windowResizeStream,
+    } = setupLayout()
+
+    const editor = ace.edit('editor')
+
+    const doc : ICoqDocument = new CoqDocument(editor)
+
+    const goal : PeaCoqContextElement = {
+        goal : {
+            goalId : 0,
+            goalHyp : ["HELLO", "I", "AM", "ERROR"],
+            goalCcl : "SUP?",
+        },
+        ppgoal : {
+            hyps : [],
+            concl : new C_AST.cAST(new ConstrExpr.CPrim(new PrimTokenString('I AM CONCL')), Maybe.nothing()),
+            getHTML : () => { throw 'NOT IMPLEMENTED' }
+        },
+    }
+
+    const context : PeaCoqContext = {
+        fgGoals : [],
+        bgGoals : [],
+        shelvedGoals : [],
+        givenUpGoals : [],
+    }
+
+    const pt = new ProofTree(
+        'DEBUG',
+        $('#prooftree')[0],
+        200,
+        200,
+        context,
+        0,
+        doc
+    )
+
+}
+
 $(document).ready(() => {
+
+    displayProofTree()
+
+    return
 
     const readyStartTime = Date.now()
 
@@ -165,27 +222,16 @@ $(document).ready(() => {
     time('F5')
 
     // Shorthands for input streams
-    time('F6')
-    const controlCommand$ = doc.input$.let(Filters.controlCommand)
-    time('F7')
-    const stmAdd$ = controlCommand$.let(Filters.stmAdd)
-    time('F8')
-    const stmCancel$ = controlCommand$.let(Filters.stmCancel)
-    time('F9')
-    const stmEditAt$ = controlCommand$.let(Filters.stmEditAt)
-    time('F10')
-    const stmQuery$ = controlCommand$.let(Filters.stmQuery)
-    time('F11')
+    const cmd$ = doc.input$
+    const stmAdd$    = cmd$.let(Filters.Cmd.add)
+    const stmCancel$ = cmd$.let(Filters.Cmd.cancel)
+    const stmQuery$  = cmd$.let(Filters.Cmd.query)
 
     // Shorthands for output streams
     const { answer$s, feedback$s } = doc.output$s
-    time('F12')
     const { completed$, coqExn$, stmAdded$, stmCanceled$ } = answer$s
-    time('F13')
     const { error$, notice$ } = feedback$s.message$s
-    time('F14')
     const { processed$ } = feedback$s
-    time('F15')
 
     time('A4')
     setupObserveContext(doc, notice$, stmQuery$)

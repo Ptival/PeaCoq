@@ -40,3 +40,9 @@ declare namespace W2UI {
 }
 
 declare var jss : any
+
+declare namespace Rx {
+    interface Observable<T> extends IObservable<T> {
+        filter<U extends T>(predicate: (value: T, index: number, source: Observable<T>) => value is U, thisArg?: any): Observable<U>
+    }
+}

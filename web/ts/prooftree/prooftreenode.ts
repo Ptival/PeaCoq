@@ -35,8 +35,8 @@ export abstract class ProofTreeNode implements IProofTreeNode {
     public abstract getAllDescendants() : IProofTreeNode[]
     public abstract getAllGoalDescendants() : IGoalNode[]
     public abstract getFocusedChild() : Maybe<IProofTreeNode>
-        public abstract getGoalAncestor() : Maybe<IGoalNode>
-        public abstract getHeight() : number
+    public abstract getGoalAncestor() : Maybe<IGoalNode>
+    public abstract getHeight() : number
 
     public getHTMLElement() : HTMLElement {
         if (this.body === undefined) {
@@ -72,29 +72,29 @@ export abstract class ProofTreeNode implements IProofTreeNode {
 
     public abstract getParent() : Maybe<IProofTreeNode>
 
-        // public getDestinationScaledX() : number {
-        //   const tree = this.proofTree
-        //   debugger
-        //   return ProofTreeUtils.nodeX(this) * tree.xFactor + tree.xOffset(this)
-        // }
+    // public getDestinationScaledX() : number {
+    //   const tree = this.proofTree
+    //   debugger
+    //   return ProofTreeUtils.nodeX(this) * tree.xFactor + tree.xOffset(this)
+    // }
 
-        // public getDestinationScaledY() : number {
-        //   const tree = this.proofTree
-        //   return ProofTreeUtils.nodeY(this) * tree.yFactor + tree.yOffset(this)
-        // }
+    // public getDestinationScaledY() : number {
+    //   const tree = this.proofTree
+    //   return ProofTreeUtils.nodeY(this) * tree.yFactor + tree.yOffset(this)
+    // }
 
-        public abstract getViewChildren() : IProofTreeNode[]
+    public abstract getViewChildren() : IProofTreeNode[]
 
     public abstract getViewFocusedChild() : Maybe<IProofTreeNode>
 
-        public getViewGrandChildren() : IProofTreeNode[] {
-            return (
-                _(this.getViewChildren())
-                    .map(e => e.getViewChildren())
-                    .flattenDeep<IProofTreeNode>()
-                    .value()
-            )
-        }
+    public getViewGrandChildren() : IProofTreeNode[] {
+        return (
+            _(this.getViewChildren())
+                .map(e => e.getViewChildren())
+                .flattenDeep<IProofTreeNode>()
+                .value()
+        )
+    }
 
     public abstract getWidth() : number
 

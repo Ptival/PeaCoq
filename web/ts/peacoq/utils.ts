@@ -1,3 +1,6 @@
+import * as _ from 'lodash'
+import { Maybe } from 'tsmonad'
+
 /*
   DO NOT TURN THIS FILE INTO A MODULE AS SOME NON-MODULE FILES USE IT!
   TODO: fix this
@@ -5,14 +8,14 @@
 
 const tantrum = {} // used to throw a tantrum
 
-function thisShouldNotHappen() : never {
+export function thisShouldNotHappen() : never {
     debugger
     throw tantrum
 }
 
 // const tup1 : [number, number] = [1, 2, 3]
 // const tup2 : [number, number] = <any>[1, 2, 'foo']
-const nbsp = '\u00A0'
+export const nbsp = '\u00A0'
 
 function unbsp(s : string) : string {
     return s.replace(/ /g, ' ')
@@ -26,10 +29,10 @@ function replaceNBSPWithSpaces(s : string) : string {
     return s.replace(/\u00A0/g, ' ')
 }
 
-const nothing = TsMonad.Maybe.nothing
-const just = TsMonad.Maybe.just
+// const nothing = TsMonad.Maybe.nothing
+// const just = TsMonad.Maybe.just
 
-function fromJust<T>(m : Maybe<T>) : T {
+export function fromJust<T>(m : Maybe<T>) : T {
     return m.caseOf({
         nothing : () => {
             debugger
@@ -41,7 +44,7 @@ function fromJust<T>(m : Maybe<T>) : T {
 }
 
 function isNothing<T>(m : Maybe<T>) : boolean {
-    return m.equals(nothing<T>())
+    return m.equals(Maybe.nothing<T>())
 }
 
 function isJust<T>(m : Maybe<T>) : boolean {
@@ -49,9 +52,9 @@ function isJust<T>(m : Maybe<T>) : boolean {
 }
 
 function bindAll<T, U>(l : Maybe<T>[], f : (...args : T[]) => U) : Maybe<U> {
-    if (l.length === 0) { return just(f()) }
+    if (l.length === 0) { return Maybe.just(f()) }
     return l[0].caseOf({
-        nothing : () => nothing<U>(),
+        nothing : () => Maybe.nothing<U>(),
         just : l0 => {
             return bindAll(l.slice(1), (...args) => f(l0, ...args))
         }
@@ -62,7 +65,7 @@ function listFromMaybe<T>(m : Maybe<T>) : T[] {
     return m.caseOf({ nothing : () => [], just : x => [x] })
 }
 
-function assert(condition : boolean, message : string) : void {
+export function assert(condition : boolean, message : string) : void {
     if (!condition) {
         alert(`Assertion failed : ${message}`)
         throw message || 'Assertion failed'
@@ -71,7 +74,7 @@ function assert(condition : boolean, message : string) : void {
 
 function avg(n1 : number, n2 : number) : number { return (n1 + n2) / 2 }
 
-function parseSVGTransform(a : string) : any {
+export function parseSVGTransform(a : string) : any {
     const b = {}
     const m = a.match(/(\w+\((\-?\d+\.?\d*,? ?)+\))+/g)
     if (m !== null) {
@@ -100,12 +103,12 @@ function MissingOverload(fn : string, o : Object) : string {
     return `Missing overload ${fn}, constructor: ${o.constructor.toString()}`
 }
 
-function isUpperCase(character : string) : boolean {
+export function isUpperCase(character : string) : boolean {
     return /^[A-Z]$/.test(character)
 }
 
 // specialized version of console.log, because JS is stupid
-function outputError(error : any) : void {
+export function outputError(error : any) : void {
     console.log(error, error.stack)
 }
 

@@ -2,57 +2,59 @@ import * as Exception from './exception'
 import * as Loc from '../coq/lib/loc'
 import * as Tip from '../coq/tip'
 import * as SertopUtils from './utils'
+import * as StateId from '../coq/lib/stateid'
 
-export class Ack implements ISertop.IAck {
+export type AnswerKind
+    = Ack
+    | Completed
+    | Added
+    | Canceled
+    | ObjList
+    | CoqExn
+
+export function isAck      (ak : AnswerKind) : ak is Ack       { return ak instanceof Ack       }
+export function isCompleted(ak : AnswerKind) : ak is Completed { return ak instanceof Completed }
+export function isAdded    (ak : AnswerKind) : ak is Added     { return ak instanceof Added     }
+export function isCanceled (ak : AnswerKind) : ak is Canceled  { return ak instanceof Canceled  }
+export function isObjList  (ak : AnswerKind) : ak is ObjList   { return ak instanceof ObjList   }
+export function isCoqExn   (ak : AnswerKind) : ak is CoqExn    { return ak instanceof CoqExn    }
+
+export class Ack {
     private tag : 'Ack'
 }
 
-export class Completed implements ISertop.ICompleted {
+export class Completed {
     private tag : 'Completed'
 }
 
-export class CoqExn implements ISertop.ICoqExn {
+export class Added {
     constructor(
-        public exn : IException
+        public stateId : StateId.t,
+        public location : Loc.t,
+        public tip : Tip.NewTip | Tip.Unfocus
     ) { }
-    public getMessage() : string { return this.exn.getMessage() }
 }
 
-export class ObjList implements ISertop.IObjList {
+export class Canceled {
+    constructor(
+        public stateIds : StateId.t[]
+    ) { }
+}
+
+export class ObjList {
     constructor(
         public readonly objects : any[]
     ) { }
 }
 
-export class StmAdded implements ISertop.IStmAdded {
+export class CoqExn {
     constructor(
-        public stateId : StateId,
-        public location : Loc.t,
-        public tip : Tip.NewTip | Tip.Unfocus
-    ) {
-        // console.log('StmAdded', stateId)
-    }
-}
-
-export class StmCanceled implements ISertop.IStmCanceled {
-    constructor(
-        public stateIds : StateId[]
+        public exn : Exception.Exception
     ) { }
+    public getMessage() : string { return this.exn.getMessage() }
 }
 
-export class StmCurId implements ISertop.IStmCurId {
-    constructor(
-        public curId : number
-    ) { }
-}
-
-export class StmEdited implements ISertop.IStmEdited {
-    constructor(
-        public tip : Tip.NewTip // | Focus
-    ) { }
-}
-
-export function create(o : any) : ISertop.IAnswerKind {
+export function create(o : any) : AnswerKind {
     if (typeof o === 'string') {
         switch (o) {
             case 'Ack' : return new Ack()
@@ -63,35 +65,29 @@ export function create(o : any) : ISertop.IAnswerKind {
     const [kind, ...args] = o
     switch (kind) {
 
-        case 'CoqExn' :
-            return new CoqExn(Exception.create(args))
+        case 'Ack' : return new Ack()
+
+        case 'Completed' : return new Completed()
 
         case 'Added' : { // opening a scope prevents hoisted variable clashes
             const [stateId, coqLocation, tip] : [string, string, string] = args
-            return new StmAdded(+ stateId, SertopUtils.coqLocationFromSexp(coqLocation), tip)
+            debugger // CHECK THE TYPE
+            throw o
+            // return new StmAdded(+ stateId, SertopUtils.coqLocationFromSexp(coqLocation), tip)
         }
+
+        case 'Canceled' :
+            const [stateIds] : string[][] = args
+            debugger // CHECK THE TYPE
+            return new Canceled(stateIds.map(s => + s))
 
         case 'ObjList' : {
             const [objects] : any[] = args
             return new ObjList(args)
         }
 
-        case 'StmCurId' :
-            const [curId] = args
-            return new StmCurId(curId)
-
-        case 'StmEdited' :
-            const [tip] = args
-            if (tip === 'NewTip') {
-                return new StmEdited(new Tip.NewTip())
-            } else {
-                debugger
-                throw 'StmEdited'
-            }
-
-        case 'Canceled' :
-            const [stateIds] : string[][] = args
-            return new StmCanceled(stateIds.map(s => + s))
+        case 'CoqExn' :
+            return new CoqExn(Exception.create(args))
 
         default :
             debugger

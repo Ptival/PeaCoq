@@ -1,69 +1,133 @@
-import * as Feedback from '../coq/feedback'
-import * as Stage from '../editor/stage'
-import * as Answer from '../sertop/answer'
-import * as Command from '../sertop/command'
-import * as ControlCommand from '../sertop/control-command'
+import * as F from '../coq/lib/feedback'
+import * as S from '../editor/stage'
+import * as A from '../sertop/answer'
+import * as AK from '../sertop/answer-kind'
+import * as SAPI from '../sertop/serapi-protocol'
 
-/*
-I used to do this by overloading the type for filter as:
-filter<U>(predicate: (value: T, index: number, source: Observable<T>) => boolean, thisArg?: any): Observable<U>
-But it makes tsc much much slower, which is unbearable.
-*/
+export namespace Stage {
 
-export function controlCommand(
-  s : Rx.Observable<ISertop.ICommand>
-) : Rx.Observable<Command.Control<ISertop.IControlCommand>> {
-  return (s as Rx.Observable<any>).filter(i => i instanceof Command.Control)
+    export function sentenceBeingProcessed(
+        s : Rx.Observable<ISentence<IStage>>
+    ) : Rx.Observable<ISentence<IBeingProcessed>> {
+        return (s as Rx.Observable<ISentence<any>>).filter(i => i.stage instanceof S.BeingProcessed)
+    }
+
+    export function sentenceProcessed(
+        s : Rx.Observable<ISentence<IStage>>
+    ) : Rx.Observable<ISentence<IProcessed>> {
+        return (s as Rx.Observable<ISentence<any>>).filter(i => i.stage instanceof S.Processed)
+    }
+
+    export function beingProcessed(
+        s : Rx.Observable<IStage>
+    ) : Rx.Observable<IBeingProcessed> {
+        return (s as Rx.Observable<any>).filter(i => i instanceof S.BeingProcessed)
+    }
+
+    export function processed(
+        s : Rx.Observable<IStage>
+    ) : Rx.Observable<IProcessed> {
+        return (s as Rx.Observable<any>).filter(i => i instanceof S.Processed)
+    }
+
 }
 
-export function stmAdd(s : ControlCommand$) : StmAdd$ {
-  return (s as Rx.Observable<Command.Control<any>>).filter(i => i.controlCommand instanceof ControlCommand.StmAdd)
+export namespace Answer {
+
+    export function answer(s : Rx.Observable<A.Answer>) : Rx.Observable<A.Answer.Answer<AK.AnswerKind>> {
+        return s.filter<A.Answer.Answer<AK.AnswerKind>>(A.isAnswer)
+    }
+
+    export function feedback(s : Rx.Observable<A.Answer>) : Rx.Observable<F.Feedback<F.FeedbackContent>> {
+        return s.filter<F.Feedback<F.FeedbackContent>>(A.isFeedback)
+    }
+
+    export namespace Answer {
+
+        export function ack(s : Rx.Observable<A.Answer.Answer<AK.AnswerKind>>) : Rx.Observable<A.Answer.Answer<AK.Ack>> {
+            return s.filter<A.Answer.Answer<AK.Ack>>(A.isAck)
+        }
+
+        export function completed(s : Rx.Observable<A.Answer.Answer<AK.AnswerKind>>) : Rx.Observable<A.Answer.Answer<AK.Completed>> {
+            return s.filter<A.Answer.Answer<AK.Completed>>(A.isCompleted)
+        }
+
+        export function added(s : Rx.Observable<A.Answer.Answer<AK.AnswerKind>>) : Rx.Observable<A.Answer.Answer<AK.Added>> {
+            return s.filter<A.Answer.Answer<AK.Added>>(A.isAdded)
+        }
+
+        export function canceled(s : Rx.Observable<A.Answer.Answer<AK.AnswerKind>>) : Rx.Observable<A.Answer.Answer<AK.Canceled>> {
+            return s.filter<A.Answer.Answer<AK.Canceled>>(A.isCanceled)
+        }
+
+        export function objList(s : Rx.Observable<A.Answer.Answer<AK.AnswerKind>>) : Rx.Observable<A.Answer.Answer<AK.ObjList>> {
+            return s.filter<A.Answer.Answer<AK.ObjList>>(A.isObjList)
+        }
+
+        export function coqExn(s : Rx.Observable<A.Answer.Answer<AK.AnswerKind>>) : Rx.Observable<A.Answer.Answer<AK.CoqExn>> {
+            return s.filter<A.Answer.Answer<AK.CoqExn>>(A.isCoqExn)
+        }
+
+    }
+
 }
 
-export function stmCancel(s : ControlCommand$) : StmCancel$ {
-  return (s as Rx.Observable<Command.Control<any>>).filter(i => i.controlCommand instanceof ControlCommand.StmCancel)
+export namespace Feedback {
+
+    export function message(s : Feedback$<F.FeedbackContent>) : Message$<F.Level> {
+        return s.filter<F.Feedback<F.Message<F.Level>>>(F.Feedback.isMessage)
+    }
+
+    export function processed(s : Feedback$<F.FeedbackContent>) : Processed$ {
+        return s.filter<F.Feedback<F.Processed>>(F.Feedback.isProcessed)
+    }
+
 }
 
-export function stmEditAt(s : ControlCommand$) : StmEditAt$ {
-  return (s as Rx.Observable<Command.Control<any>>).filter(i => i.controlCommand instanceof ControlCommand.StmEditAt)
+export namespace Message {
+
+    export function debug(s : Message$<F.Level>) : Debug$ {
+        return s.filter<F.Feedback<F.Message<F.Debug>>>(F.Feedback.isDebug)
+    }
+
+    export function error(s : Message$<F.Level>) : Error$ {
+        return s.filter<F.Feedback<F.Message<F.Error>>>(F.Feedback.isError)
+    }
+
+    export function info(s : Message$<F.Level>) : Info$ {
+        return s.filter<F.Feedback<F.Message<F.Info>>>(F.Feedback.isInfo)
+    }
+
+    export function notice(s : Message$<F.Level>) : Notice$ {
+        return s.filter<F.Feedback<F.Message<F.Notice>>>(F.Feedback.isNotice)
+    }
+
+    export function warning(s : Message$<F.Level>) : Warning$ {
+        return s.filter<F.Feedback<F.Message<F.Warning>>>(F.Feedback.isWarning)
+    }
+
 }
 
-export function stmQuery(s : ControlCommand$) : StmQuery$ {
-  return (s as Rx.Observable<Command.Control<any>>).filter(i => i.controlCommand instanceof ControlCommand.StmQuery)
-}
+export namespace Cmd {
 
-export function sentenceBeingProcessed(
-  s : Rx.Observable<ISentence<IStage>>
-) : Rx.Observable<ISentence<IBeingProcessed>> {
-  return (s as Rx.Observable<ISentence<any>>).filter(i => i.stage instanceof Stage.BeingProcessed)
-}
+    export function add(s : Rx.Observable<SAPI.Cmd>) : Rx.Observable<SAPI.Add> {
+        return s.filter<SAPI.Add>(SAPI.isAdd)
+    }
 
-export function sentenceProcessed(
-  s : Rx.Observable<ISentence<IStage>>
-) : Rx.Observable<ISentence<IProcessed>> {
-  return (s as Rx.Observable<ISentence<any>>).filter(i => i.stage instanceof Stage.Processed)
-}
+    export function cancel(s : Rx.Observable<SAPI.Cmd>) : Rx.Observable<SAPI.Cancel> {
+        return s.filter<SAPI.Cancel>(SAPI.isCancel)
+    }
 
-export function beingProcessed(
-  s : Rx.Observable<IStage>
-) : Rx.Observable<IBeingProcessed> {
-  return (s as Rx.Observable<any>).filter(i => i instanceof Stage.BeingProcessed)
-}
+    export function exec(s : Rx.Observable<SAPI.Cmd>) : Rx.Observable<SAPI.Exec> {
+        return s.filter<SAPI.Exec>(SAPI.isExec)
+    }
 
-export function processed(
-  s : Rx.Observable<IStage>
-) : Rx.Observable<IProcessed> {
-  return (s as Rx.Observable<any>).filter(i => i instanceof Stage.Processed)
-}
+    export function query(s : Rx.Observable<SAPI.Cmd>) : Rx.Observable<SAPI.Query> {
+        return s.filter<SAPI.Query>(SAPI.isQuery)
+    }
 
-export function answer(
-  s : Rx.Observable<ISertop.IAnswer<ISertop.IAnswerKind>>
-) : Rx.Observable<Answer.Answer> {
-  return (s as Rx.Observable<any>).filter(i => i instanceof Answer.Answer)
-}
+    export function quit(s : Rx.Observable<SAPI.Cmd>) : Rx.Observable<SAPI.Quit> {
+        return s.filter<SAPI.Quit>(SAPI.isQuit)
+    }
 
-export function feedback(
-  s : Rx.Observable<ISertop.IAnswer<ISertop.IAnswerKind>>
-) : Rx.Observable<Feedback.Feedback> {
-  return (s as Rx.Observable<any>).filter(i => i instanceof Feedback.Feedback)
 }

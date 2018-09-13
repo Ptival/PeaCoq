@@ -2,9 +2,8 @@ import * as _ from 'lodash'
 
 import * as Context from '../editor/context'
 import { tacticAutomationRoute } from '../peacoq/routes'
-import { Control } from '../sertop/command'
-import { StmAdd, StmQuery } from '../sertop/control-command'
 import { Vernac } from '../sertop/query-command'
+import * as SerAPIProtocol from '../sertop/serapi-protocol'
 
 interface ProofTreeAutomationInput {
     commandObserver : Rx.Observer<Command$>
@@ -13,7 +12,7 @@ interface ProofTreeAutomationInput {
     error$ : Error$
     notice$ : Notice$
     stmActionsInFlightCounter$ : Rx.Observable<number>
-    stmAdded$ : StmAdded$
+    stmAdded$ : Added$
     stopAutomationRound$ : Rx.Observable<{}>
 }
 
@@ -23,7 +22,7 @@ export function setup(
     error$ : Error$,
     notice$ : Notice$,
     stmActionsInFlightCounter$ : Rx.Observable<number>,
-    stmAdded$ : StmAdded$,
+    stmAdded$ : Added$,
     stopAutomationRound$ : Rx.Observable<{}>
 ) : void {
 
@@ -271,9 +270,9 @@ function makeCandidate(
     completed$ : Completed$,
     error$ : Error$,
     notice$ : Notice$,
-    stmAdded$ : StmAdded$
+    stmAdded$ : Added$
 ) : {
-    commands$ : CommandStreamItem<ISertop.ICommand>
+    commands$ : CommandStreamItem<SerAPIProtocol.Cmd>
     done$ : Rx.Observable<any>
 } {
     const { context, group, tactic, sentence } = input
@@ -286,20 +285,20 @@ function makeCandidate(
     if (stateId !== curSid) {
         // console.log('Was expecting', stateId, 'but we are at', curSid, 'aborting')
         return {
-            commands$ : Rx.Observable.empty<ISertop.ICommand>(),
+            commands$ : Rx.Observable.empty(),
             done$ : Rx.Observable.empty<any>(),
         }
     } else {
         // console.log('Was expecting', stateId, 'and we are at', curSid, 'proceeding')
     }
 
-    const add = new Control(new StmAdd({ ontop : stateId }, tactic, true))
+    const add = new SerAPIProtocol.Add({ ontop : stateId }, tactic, true)
     // listen for the STM added answer (there should be 0 if failed otherwise 1)
     const filteredStmAdded$ = stmAdded$.filter(a => a.cmdTag === add.tag)
         .takeUntil(completed$.filter(a => a.cmdTag === add.tag))
     const getContext$ =
         filteredStmAdded$
-        .map(a => new Control(new StmQuery(
+        .map(a => new SerAPIProtocol.Query(
             {
                 sid : a.answer.stateId,
                 // route is used so that the rest of PeaCoq can safely ignore those feedback messages
@@ -307,7 +306,7 @@ function makeCandidate(
             },
             new Vernac('PeaCoqGetContext.'),
             true
-        )))
+        ))
         .share()
     const stmAddErrored$ = filteredStmAdded$.flatMap(a => error$.filter(e => e.editOrStateId === a.answer.stateId))
     // now, try to pick up the notice feedback for that state id
@@ -331,7 +330,7 @@ function makeCandidate(
         })
     const editAt = new Control(new StmEditAt(stateId))
 
-    const commands$ = Rx.Observable.concat<ISertop.ICommand>([
+    const commands$ = Rx.Observable.concat<SerAPIProtocol.Cmd>([
         Rx.Observable.just(add),
         getContext$,
         Rx.Observable.just(editAt)

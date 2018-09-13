@@ -82,6 +82,7 @@ export class CCases {
 }
 
 export class CCoFix {
+    private tag : 'CCoFix'
     // TODO
 }
 
@@ -93,6 +94,7 @@ export class CDelimiters {
 }
 
 export class CFix {
+    private tag : 'CFix'
     constructor(
     ) { }
 }

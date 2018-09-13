@@ -1,13 +1,17 @@
 import { escapeQuotes } from './utils'
 
-export class Goals implements ISertop.IQueryCommand.IGoals {
+export type QueryCommand
+    = Goals
+    | Vernac
+
+export class Goals {
     constructor() { }
     public toSexp() : string {
         return `Goals`
     }
 }
 
-export class Vernac implements ISertop.IQueryCommand.IVernac {
+export class Vernac {
     constructor(
         public readonly vernac : string
     ) { }

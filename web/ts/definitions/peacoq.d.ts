@@ -1,50 +1,50 @@
 // input
-type Command$ = Rx.Observable<ISertop.ICommand>
-type ControlCommand$ = Rx.Observable<ISertop.IControl<ISertop.IControlCommand>>
+type Command$ = Rx.Observable<import('../sertop/serapi-protocol').Cmd>
 
-type StmAdd$ = Rx.Observable<ISertop.IControl<ISertop.IControlCommand.IStmAdd>>
-type StmCancel$ = Rx.Observable<ISertop.IControl<ISertop.IControlCommand.IStmCancel>>
-type StmEditAt$ = Rx.Observable<ISertop.IControl<ISertop.IControlCommand.IStmEditAt>>
-type StmObserve$ = Rx.Observable<ISertop.IControl<ISertop.IControlCommand.IStmObserve>>
-type StmQuery$ = Rx.Observable<ISertop.IControl<ISertop.IControlCommand.IStmQuery>>
+type StmAdd$     = Rx.Observable<import('../sertop/serapi-protocol').Add>
+type StmCancel$  = Rx.Observable<import('../sertop/serapi-protocol').Cancel>
+type StmQuery$   = Rx.Observable<import('../sertop/serapi-protocol').Query>
 
 // output
-type Completed$ = Rx.Observable<ISertop.IAnswer<ISertop.ICompleted>>
-type CoqExn$ = Rx.Observable<ISertop.IAnswer<ISertop.ICoqExn>>
+type Answer$<T> = Rx.Observable<import('../sertop/answer').Answer.Answer<T>>
 
-type StmAdded$ = Rx.Observable<ISertop.IAnswer<ISertop.IStmAdded>>
-type StmCanceled$ = Rx.Observable<ISertop.IAnswer<ISertop.IStmCanceled>>
+type Ack$       = Answer$<import('../sertop/answer-kind').Ack>
+type Completed$ = Answer$<import('../sertop/answer-kind').Completed>
+type Added$     = Answer$<import('../sertop/answer-kind').Added>
+type Canceled$  = Answer$<import('../sertop/answer-kind').Canceled>
+type ObjList$   = Answer$<import('../sertop/answer-kind').ObjList>
+type CoqExn$    = Answer$<import('../sertop/answer-kind').CoqExn>
 
 // feedback
-type Processed$ = Rx.Observable<IFeedback<IFeedbackContent.IProcessed>>
 
-// message feedback
-type Error$ = Rx.Observable<ErrorMessageFeedback>
-type Notice$ = Rx.Observable<NoticeMessageFeedback>
+type Feedback$<T> = Rx.Observable<import('../coq/lib/feedback').Feedback<T>>
 
-declare const enum PeaCoqMessageLevel {
-  Default,
-  Danger,
-  Info,
-  Success,
-  Warning,
-}
+type Processed$  = Feedback$<import('../coq/lib/feedback').Processed>
+type Message$<L> = Feedback$<import('../coq/lib/feedback').Message<L>>
+
+type Debug$   = Message$<import('../coq/lib/feedback').Debug>
+type Error$   = Message$<import('../coq/lib/feedback').Error>
+type Info$    = Message$<import('../coq/lib/feedback').Info>
+type Notice$  = Message$<import('../coq/lib/feedback').Notice>
+type Warning$ = Message$<import('../coq/lib/feedback').Warning>
 
 interface PeaCoqContextElement {
-  goal: IGoal
-  ppgoal: IPeaCoqGoal
+    goal: IGoal
+    ppgoal: IPeaCoqGoal
 }
 
 type PeaCoqContext = IGoals<PeaCoqContextElement>
 
+type ConstrExpr = import('../coq/lib/c-ast').cAST<import('../coq/intf/constr-expr').ConstrExprR>
+
 interface IPeaCoqGoal {
-  hyps: PeaCoqHyp[]
-  concl: IConstrExpr
-  getHTML(): JQuery
+    hyps : PeaCoqHyp[]
+    concl : ConstrExpr
+    getHTML() : JQuery
 }
 
 interface PeaCoqHyp {
-  name: string
-  maybeTerm: Maybe<IConstrExpr>
-  type: IConstrExpr
+    name : string
+    maybeTerm : Maybe<ConstrExpr>
+    type : ConstrExpr
 }

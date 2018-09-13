@@ -1,14 +1,12 @@
 import * as Answer from './answer'
 import * as AnswerKind from './answer-kind'
-import * as Command from './command'
-import * as ControlCommand from './control-command'
-import * as Feedback from '../coq/feedback'
+import * as SerAPIProtocol from './serapi-protocol'
+import * as Feedback from '../coq/lib/feedback'
 import * as FeedbackContent from '../coq/feedback-content'
-import * as MessageLevel from '../coq/message-level'
 import * as Filters from '../peacoq/filters'
 
 export function setup(
-    cmd$ : Rx.Observable<ISertop.ICommand>
+    cmd$ : Rx.Observable<SerAPIProtocol.Cmd>
 ) : CoqtopOutputStreams {
 
     // Need to use something like websockets to avoid having to poll like this
@@ -25,7 +23,7 @@ export function setup(
     // and writes to coqtop are not atomic, so burst of messages become
     // intertwined!...
     const slowedCmd$ =
-        Rx.Observable.zip<ISertop.ICommand, number>(
+        Rx.Observable.zip<SerAPIProtocol.Cmd, number>(
             cmd$,
             cmdOutputSubject
         )
@@ -44,10 +42,10 @@ export function setup(
     const output$ = Rx.Observable.merge(pingOutput$, cmdOutput$)
 
     output$
-        .filter(o => o instanceof Answer.Answer)
+        .filter<Answer.Answer.Answer<AnswerKind.AnswerKind>>(Answer.isAnswer)
         .filter(o => o.answer instanceof AnswerKind.Ack)
     // we don't listen to the answer from `cmdTagMinimum` as it may not arrive
-        .filter(o => + o.cmdTag >= Command.cmdTagMinimum + 1)
+        .filter(o => + o.cmdTag >= SerAPIProtocol.cmdTagMinimum + 1)
         .subscribe(o => { cmdOutputSubject.onNext(+ o.cmdTag) })
 
     cmdOutput$.connect()
@@ -57,28 +55,27 @@ export function setup(
     cmdOutputSubject.onNext(-2)
     cmdOutputSubject.onNext(-1)
 
-    const answer$ = output$.let(Filters.answer)
-    const feedback$ = output$.let(Filters.feedback)
-    const messageFeedback$ =
-        feedback$.filter(a => a.feedbackContent instanceof FeedbackContent.Message) as any as Rx.Observable<IFeedback<FeedbackContent.Message<any>>>
-        return {
-            answer$s : {
-                completed$ : answer$.filter(a => a.answer instanceof AnswerKind.Completed) as any,
-                coqExn$ : answer$.filter(a => a.answer instanceof AnswerKind.CoqExn) as any,
-                stmAdded$ : answer$.filter(a => a.answer instanceof AnswerKind.StmAdded) as any,
-                stmCanceled$ : answer$.filter(a => a.answer instanceof AnswerKind.StmCanceled) as any,
+    const answer$ = output$.let(Filters.Answer.answer)
+    const feedback$ = output$.let(Filters.Answer.feedback)
+    const messageFeedback$ = feedback$.let(Filters.Feedback.message)
+    return {
+        answer$s : {
+            completed$   : answer$.filter(a => a.answer instanceof AnswerKind.Completed) as any,
+            coqExn$      : answer$.filter(a => a.answer instanceof AnswerKind.CoqExn) as any,
+            stmAdded$    : answer$.filter(a => a.answer instanceof AnswerKind.Added) as any,
+            stmCanceled$ : answer$.filter(a => a.answer instanceof AnswerKind.Canceled) as any,
+        },
+        feedback$s : {
+            message$s : {
+                debug$   : messageFeedback$.let(Filters.Message.debug  ),
+                error$   : messageFeedback$.let(Filters.Message.error  ),
+                info$    : messageFeedback$.let(Filters.Message.info   ),
+                notice$  : messageFeedback$.let(Filters.Message.notice ),
+                warning$ : messageFeedback$.let(Filters.Message.warning),
             },
-            feedback$s : {
-                message$s : {
-                    debug$ : messageFeedback$.filter(f => f.feedbackContent.level instanceof MessageLevel.Debug) as any,
-                    error$ : messageFeedback$.filter(f => f.feedbackContent.level instanceof MessageLevel.Error) as any,
-                    info$ : messageFeedback$.filter(f => f.feedbackContent.level instanceof MessageLevel.Info) as any,
-                    notice$ : messageFeedback$.filter(f => f.feedbackContent.level instanceof MessageLevel.Notice) as any,
-                    warning$ : messageFeedback$.filter(f => f.feedbackContent.level instanceof MessageLevel.Warning) as any,
-                },
-                processed$ : feedback$.filter(f => f.feedbackContent instanceof FeedbackContent.Processed),
-            },
-        }
+            processed$ : feedback$.let(Filters.Feedback.processed),
+        },
+    }
 }
 
 function wrapAjax(i : JQueryAjaxSettings) : Promise<any> {
@@ -89,7 +86,7 @@ function wrapAjax(i : JQueryAjaxSettings) : Promise<any> {
     })
 }
 
-function sendPing() : Promise<ISertop.IAnswer<ISertop.IAnswerKind>[]> {
+function sendPing() : Promise<Answer.Answer.Answer<AnswerKind.AnswerKind>[]> {
     // console.log('PING')
     return (
         wrapAjax({
@@ -99,16 +96,16 @@ function sendPing() : Promise<ISertop.IAnswer<ISertop.IAnswerKind>[]> {
             async : true,
         })
             .then(r => r.map(sexpParse).map(Answer.create))
-            // .catch(e => {
-            //     console.log(`PING request failed`)
-            //     console.log(`Error:`)
-            //     console.log(e)
-            //     throw e
-            // })
-                )
+        // .catch(e => {
+        //     console.log(`PING request failed`)
+        //     console.log(`Error:`)
+        //     console.log(e)
+        //     throw e
+        // })
+    )
 }
 
-function sendCommand(cmd : ISertop.ICommand) : Promise<ISertop.IAnswer<ISertop.IAnswerKind>[]> {
+function sendCommand(cmd : SerAPIProtocol.Cmd) : Promise<Answer.Answer.Answer<AnswerKind.AnswerKind>[]> {
     console.log('SEND', cmd)
     const datum = `(${cmd.tag} ${cmd.toSexp()})`
     console.log(datum)
@@ -124,12 +121,12 @@ function sendCommand(cmd : ISertop.ICommand) : Promise<ISertop.IAnswer<ISertop.I
                 // console.log('RECV', r)
                 return r.map(sexpParse).map(Answer.create)
             })
-            // .catch(e => {
-            //     console.log(`POST request failed:`)
-            //     console.log(datum)
-            //     console.log(`Error:`)
-            //     console.log(e)
-            //     throw e
-            // })
-                ) // FIXME: typescript-mode indentation is wrong
+        // .catch(e => {
+        //     console.log(`POST request failed:`)
+        //     console.log(datum)
+        //     console.log(`Error:`)
+        //     console.log(e)
+        //     throw e
+        // })
+    ) // FIXME: typescript-mode indentation is wrong
 }

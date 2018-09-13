@@ -17,7 +17,7 @@ import { TacticGroupNode } from './tacticgroupnode'
 import * as TextSelection from './text-selection'
 import { Strictly } from '../peacoq/strictly'
 import * as ProofTreeUtils from './utils'
-import { controlCommand } from '../peacoq/filters';
+import * as PeaCoqUtils from '../peacoq/utils'
 
 type HTMLElementSelection = ProofTreeTypes.HTMLElementSelection
 
@@ -104,12 +104,12 @@ export class ProofTree implements IProofTree {
         this.xFactor = this.width
         this.yFactor = this.height
         this.usingKeyboard = true // true until the user moves their mouse
-        this.tacticWaiting = nothing<string>()
+        this.tacticWaiting = Maybe.nothing<string>()
 
         this.clickOnAncestor$ = new Rx.Subject()
         this.clickOnDescendant$ = new Rx.Subject()
 
-        this.rootNode = this.createGoalNode(nothing(), context, index)
+        this.rootNode = this.createGoalNode(Maybe.nothing(), context, index)
 
         this._curNode = this.rootNode
         this.curNode$ = new Rx.BehaviorSubject(this.rootNode)
@@ -242,7 +242,7 @@ export class ProofTree implements IProofTree {
         const found = this.treeRoot.descendants().find(d => d.data.id === this.curNode.id)
         if (found === undefined) {
             debugger
-            throw tantrum
+            throw this
         }
         return found
     }
@@ -357,10 +357,10 @@ export class ProofTree implements IProofTree {
 
         const centeredDescendant : Maybe<IProofTreeNode> =
             this.curNode.getViewFocusedChild().caseOf<Maybe<IProofTreeNode>>({
-                nothing : () => nothing<IProofTreeNode>(),
+                nothing : () => Maybe.nothing<IProofTreeNode>(),
                 just : fc => fc.getFocusedChild().caseOf<Maybe<IProofTreeNode>>({
-                    nothing : () => just(fc),
-                    just : (fgc : IProofTreeNode) => just(fgc),
+                    nothing : () => Maybe.just(fc),
+                    just : (fgc : IProofTreeNode) => Maybe.just(fgc),
                 })
             })
 
@@ -467,7 +467,7 @@ export class ProofTree implements IProofTree {
     private getAllNodes() : IProofTreeNode[] { return this.rootNode.getAllDescendants() }
 
     private getCurrentGoal() : IGoalNode {
-        assert(this.curNode instanceof GoalNode, 'getCurrentGoal : curNode instanceof GoalNode')
+        PeaCoqUtils.assert(this.curNode instanceof GoalNode, 'getCurrentGoal : curNode instanceof GoalNode')
         return this.curNode
     }
 
@@ -691,7 +691,7 @@ export class ProofTree implements IProofTree {
         // delay for testing purposes
         // .then(delayPromise(0))
             .then(this.processTactics.bind(this))
-            .catch(outputError)
+            .catch(PeaCoqUtils.outputError)
 
                 }
 
@@ -757,7 +757,7 @@ export class ProofTree implements IProofTree {
     private resetSVGTransform() : void {
         const transform = this.viewport.attr('transform')
         if (transform.length === 0) { return }
-        let m = parseSVGTransform(transform)
+        let m = PeaCoqUtils.parseSVGTransform(transform)
         if (m.hasOwnProperty('matrix')) {
             m = m.matrix
             this.viewport.attr(
@@ -900,15 +900,15 @@ export class ProofTree implements IProofTree {
 
                 textEnter
                     .append('xhtml :body')
-                    .attr('width', '100%')
-                    .attr('height', '100%')
+                    .style('width', '150px')
+                    .style('height', '60px')
                     .each((d, i, nodes) => {
                         const self = nodes[i]
                         // debugger
                         const body = d3Selection.select(self as Element).node()
                         if (body === null) {
                             debugger
-                            return thisShouldNotHappen()
+                            return PeaCoqUtils.thisShouldNotHappen()
                         }
                         d.data.setHTMLElement(<HTMLElement><any>body)
                         const node = d.data
@@ -941,7 +941,7 @@ export class ProofTree implements IProofTree {
 
                 const hierarchyCurNode = nodes.find(n => n.data.id === curNode.id)
                 if (hierarchyCurNode === undefined) {
-                    return thisShouldNotHappen()
+                    return PeaCoqUtils.thisShouldNotHappen()
                 }
                 const hierarchyCurNodeParent = hierarchyCurNode.parent
 
@@ -974,11 +974,11 @@ export class ProofTree implements IProofTree {
     }
 
     public setTacticWaiting(t : string) : void {
-        this.tacticWaiting = just(t)
+        this.tacticWaiting = Maybe.just(t)
     }
 
     public unsetTacticWaiting() : void {
-        this.tacticWaiting = nothing()
+        this.tacticWaiting = Maybe.nothing()
     }
 
 }
