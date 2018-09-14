@@ -6,6 +6,7 @@ import * as MiscTypes from './misctypes'
 import * as PpExtend from '../interp/ppextend'
 import { cAST } from '../lib/c-ast'
 import * as GenArg from '../lib/genarg'
+import { Located } from '../lib/loc'
 import * as LibNames from '../library/libnames'
 
 export type ConstrExprR

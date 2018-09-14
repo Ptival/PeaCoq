@@ -43,7 +43,7 @@ export function fromJust<T>(m : Maybe<T>) : T {
     })
 }
 
-function isNothing<T>(m : Maybe<T>) : boolean {
+export function isNothing<T>(m : Maybe<T>) : boolean {
     return m.equals(Maybe.nothing<T>())
 }
 
@@ -223,7 +223,7 @@ function repeat(n : number, s : string) : string {
     return Array(n + 1).join(s)
 }
 
-function prefixes<T>(a : T[]) : T[][] {
+export function prefixes<T>(a : T[]) : T[][] {
     return _.reduce(
         a,
         (acc : T[][], elt) =>

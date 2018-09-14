@@ -1,5 +1,4 @@
 import { ValueFail } from '../coq/value-fail'
-import { Processed } from '../coq/feedback-content'
 
 /*
   This takes care of updating the position of the text cursor in the following
@@ -59,8 +58,6 @@ export function setupTextCursorPositionUpdate(
         nextEditStopPosition$
     ])
 
-    positionUpdate$.subscribe(pos =>
-                              doc.moveCursorToPositionAndCenter(pos)
-                             )
+    positionUpdate$.subscribe(pos => doc.moveCursorToPositionAndCenter(pos))
 
 }

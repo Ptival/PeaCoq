@@ -2,7 +2,6 @@ import * as Answer from './answer'
 import * as AnswerKind from './answer-kind'
 import * as SerAPIProtocol from './serapi-protocol'
 import * as Feedback from '../coq/lib/feedback'
-import * as FeedbackContent from '../coq/feedback-content'
 import * as Filters from '../peacoq/filters'
 
 export function setup(

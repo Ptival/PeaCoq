@@ -5,6 +5,7 @@ import * as Pp from '../coq/lib/pp'
 import * as PpExtend from '../coq/interp/ppextend'
 import * as Pattern from './pattern'
 import { StrDef } from '../coq/str-token'
+import * as PeaCoqUtils from '../peacoq/utils'
 
 export function findPpCmdSuchThat(
     l : Pp.t[],
@@ -59,11 +60,11 @@ export function replaceToken(s1 : string, s2 : string, l : Pp.t[]) : Pp.t[] {
 }
 
 function ppCmdsMatchGen(p : Pattern.Pattern[], l : Pp.t[], o : Object) : Maybe<Object> {
-    if (p.length !== l.length) { return nothing() }
+    if (p.length !== l.length) { return Maybe.nothing() }
     const zip = _.zip(p, l)
     for (const index in zip) {
         const [pat, cmd] = zip[index]
-        if (!pat) { return nothing() }
+        if (!pat) { return Maybe.nothing() }
         const shortCircuit = ppCmdMatchGen(pat, cmd, o).caseOf({
             nothing : () => true,
             just : (newo) => {
@@ -71,9 +72,9 @@ function ppCmdsMatchGen(p : Pattern.Pattern[], l : Pp.t[], o : Object) : Maybe<O
                 return false
             }
         })
-        if (shortCircuit) { return nothing() }
+        if (shortCircuit) { return Maybe.nothing() }
     }
-    return just(o)
+    return Maybe.just(o)
 }
 
 function reduceMaybe<IN, ACC>(
@@ -89,20 +90,20 @@ function reduceMaybe<IN, ACC>(
                 just : (acc) => f(acc, elt),
             })
         },
-        just(acc)
+        Maybe.just(acc)
     )
 }
 
 function ppCmdMatchGen(pat : Pattern.Pattern, p : Pp.t | any, o : Object) : Maybe<Object> {
     if (pat instanceof Pattern.Anything) {
-        return just(o)
+        return Maybe.just(o)
     } else if (pat instanceof Pattern.ArrayPattern) {
-        if (!(p instanceof Array)) { throw MatchFailure('ppCmdMatchGen > ArrayPattern', p) }
+        if (!(p instanceof Array)) { throw PeaCoqUtils.MatchFailure('ppCmdMatchGen > ArrayPattern', p) }
         return ppCmdsMatchGen(pat.array, p, o)
     } else if (pat instanceof Pattern.BinderPattern) {
         const binder = pat.binder
         o[binder] = p
-        return just(o)
+        return Maybe.just(o)
     } else if (pat instanceof Pattern.Constructor) {
         if (p instanceof pat.name) {
             return reduceMaybe(
@@ -111,25 +112,25 @@ function ppCmdMatchGen(pat : Pattern.Pattern, p : Pp.t | any, o : Object) : Mayb
                     if (field in p) {
                         return ppCmdMatchGen((<Pattern.Constructor>pat).fields[field], p[field], acc)
                     } else {
-                        return nothing()
+                        return Maybe.nothing()
                     }
                 },
                 o
             )
         } else {
-            return nothing()
+            return Maybe.nothing()
         }
     } else if (pat instanceof Pattern.StringPattern) {
         if (!(typeof p === 'string')) {
-            throw MatchFailure('ppCmdMatchGen > StringPattern', p)
+            throw PeaCoqUtils.MatchFailure('ppCmdMatchGen > StringPattern', p)
         }
         if (pat.str === p) {
-            return just(o)
+            return Maybe.just(o)
         } else {
-            return nothing()
+            return Maybe.nothing()
         }
     } else {
-        throw MatchFailure('patternMatch > rec', pat)
+        throw PeaCoqUtils.MatchFailure('patternMatch > rec', pat)
     }
 }
 

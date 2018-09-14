@@ -18,6 +18,7 @@ import * as CaseStyle from '../case-style'
 import { peaCoqBox } from '../../peacoq/coq-utils'
 import { MatchFailure } from '../../peacoq/utils'
 import * as PeaCoqUtils from '../../peacoq/utils'
+import { CasesPatternExpr, ConstrNotationSubstitution } from '../intf/constr-expr';
 
 export type PrecAssoc = [number, ParenRelation.ParenRelation]
 
@@ -216,12 +217,12 @@ function tagUnparsing(unp : PpExtend.Unparsing, pp1 : Pp.t) : Pp.t {
     return pp1
 }
 
-function printHunks(
+function printHunks<T>(
     n : number,
-    pr : (_1 : [number, ParenRelation.ParenRelation], _2 : ConstrExpr.ConstrExpr) => Pp.t,
+    pr : (_1 : [number, ParenRelation.ParenRelation], _2 : T) => Pp.t,
     prPatt : (_1 : [number, ParenRelation.ParenRelation], _2 : ConstrExpr.CasesPatternExpr) => Pp.t,
     prBinders : (_1 : () => Pp.t, _2 : boolean, _3 : ConstrExpr.LocalBinderExpr[]) => Pp.t,
-    [terms, termlists, binders, binderlists] : ConstrExpr.ConstrNotationSubstitution,
+    [terms, termlists, binders, binderlists] : [T[], T[][], ConstrExpr.CasesPatternExpr[], ConstrExpr.LocalBinderExpr[][]],
     unps : PpExtend.Unparsing[]
 ) : Pp.t {
     const env     = terms.slice(0)
@@ -303,12 +304,12 @@ type PpResult = [Pp.t, number]
 
 // Here Coq would consult the notation table to figure [unpl] and [level] from
 // [s], but we have it already figured out.
-function prNotation(
-    pr : (_1 : [number, ParenRelation.ParenRelation], _2 : ConstrExpr.ConstrExpr) => Pp.t,
+function prNotation<T>(
+    pr : (_1 : [number, ParenRelation.ParenRelation], _2 : T) => Pp.t,
     prPatt : (_1 : [number, ParenRelation.ParenRelation], _2 : ConstrExpr.CasesPatternExpr) => Pp.t,
     prBinders : (_1 : () => Pp.t, _2 : boolean, _3 : ConstrExpr.LocalBinderExpr[]) => Pp.t,
-    s : ConstrExpr.Notation,
-    env : ConstrExpr.ConstrNotationSubstitution,
+    s : ConstrExpr.Notation, // ignored
+    env : [T[], T[][], ConstrExpr.CasesPatternExpr[], ConstrExpr.LocalBinderExpr[][]],
     // these extra arguments are PeaCoq-specific
     unpl : PpExtend.Unparsing[],
     level : number
@@ -512,10 +513,10 @@ function prWithComments(
 function prPatt(
     sep : () => Pp.t,
     inh : PrecAssoc,
-    p : ConstrExpr.ConstrExpr
+    p : ConstrExpr.CasesPatternExpr
 ) : Pp.t {
 
-    function match(pp : ConstrExpr.ConstrExprR) : [Pp.t, number] {
+    function match(pp : ConstrExpr.CasesPatternExprR) : [Pp.t, number] {
         // TODO ConstrExpr.CPatRecord
         // TODO ConstrExpr.CPatAlias
         if (pp instanceof ConstrExpr.CPatCstr) {
@@ -528,7 +529,7 @@ function prPatt(
                             Pp.concat(
                                 LibNames.prReference(pp.reference),
                                 prList(
-                                    x => prPatt(Pp.spc, [lApp, new ParenRelation.L()], x),
+                                    (x : ConstrExpr.CasesPatternExpr) => prPatt(Pp.spc, [lApp, new ParenRelation.L()], x),
                                     pp.cases2
                                 )
                             ),
@@ -601,7 +602,7 @@ function prPatt(
                     (x : any, y : any) => Pp.mt(),
                     (x : any, y : any, z : any) => Pp.mt(),
                     s,
-                    [l, ll, [], []],
+                    [[], [], [], []],
                     pp.unparsing,
                     pp.precedence
                 )
@@ -637,7 +638,7 @@ function prPatt(
 function prAsin(
     pr : (_1 : PrecAssoc, _2 : ConstrExpr.ConstrExpr) => Pp.t,
     mna : Maybe<MiscTypes.lname>,
-    indnalopt : Maybe<ConstrExpr.ConstrExpr>
+    indnalopt : Maybe<ConstrExpr.CasesPatternExpr>
 ) : Pp.t {
     return Pp.concat(
         mna.caseOf({
@@ -663,7 +664,7 @@ function prAsin(
 
 function prCaseItem(
     pr : (_1 : PrecAssoc, _2 : ConstrExpr.ConstrExpr) => Pp.t,
-    [tm, asClause, inClause] : [ConstrExpr.ConstrExpr, Maybe<cAST<Name>>, Maybe<ConstrExpr.ConstrExpr>]
+    [tm, asClause, inClause] : [ConstrExpr.ConstrExpr, Maybe<cAST<Name>>, Maybe<ConstrExpr.CasesPatternExpr>]
 ) : Pp.t {
     return Pp.hov(0, Pp.concat(
         pr([lCast, new ParenRelation.E()], tm),
@@ -718,7 +719,7 @@ function prEqn(
                        Pp.hov(0, Pp.concat(
                            Pp.prListWithSep(
                                Pp.prSpaceBar,
-                               (x : ConstrExpr.ConstrExpr[]) => Pp.prListWithSep(sepV, (y : ConstrExpr.ConstrExpr) => prPatt(Pp.mt, lTop, y), x),
+                               (x : ConstrExpr.CasesPatternExpr[]) => Pp.prListWithSep(sepV, (y : ConstrExpr.CasesPatternExpr) => prPatt(Pp.mt, lTop, y), x),
                                pl
                            ),
                            Pp.str(' =>')
@@ -922,7 +923,7 @@ function pr0(
                     return prNotation(
                         (x : [number, ParenRelation.ParenRelation], y : ConstrExpr.ConstrExpr) => pr(Pp.mt, x, y),
                         (x, y) => prPatt(Pp.mt, x, y),
-                        (x : () => Pp.t, y : boolean, z : LocalBinderExpr[]) => prBindersGen(w => pr(Pp.mt, lTop, w), x, y, z),
+                        (x : () => Pp.t, y : boolean, z : ConstrExpr.LocalBinderExpr[]) => prBindersGen(w => pr(Pp.mt, lTop, w), x, y, z),
                         s,
                         env,
                         aa.unparsing,
@@ -987,14 +988,14 @@ function pr0(
 }
 
 function pr1(_2 : PrecAssoc, _3 : ConstrExpr.ConstrExpr) : Pp.t {
-    const pr : (_1 : () => Pp.t, _2 : PrecAssoc, _3 : ConstrExpr.ConstrExpr) => Pp.t = fix(pr0)
+    const pr : (_1 : () => Pp.t, _2 : PrecAssoc, _3 : ConstrExpr.ConstrExpr) => Pp.t = PeaCoqUtils.fix(pr0)
     return pr(Pp.mt, _2, _3)
 }
 
 function pr2(_2 : PrecAssoc, _3 : ConstrExpr.ConstrExpr) : Pp.t {
     if (_3.v instanceof ConstrExpr.CAppExpl) {
         const [ [pf, f, us], args ] = [ _3.v.funct , _3.v.args ]
-        if (isNothing(pf) && args.length === 0) {
+        if (PeaCoqUtils.isNothing(pf) && args.length === 0) {
             return Pp.concat(Pp.str("@"), prCRef(f, us))
         }
     }
@@ -1049,7 +1050,7 @@ function prHTMLGen(
 }
 
 function prHTML(a : ConstrExpr.ConstrExpr) : Pp.t {
-    return fix(prHTMLGen)(Pp.mt, lTop, a)
+    return PeaCoqUtils.fix(prHTMLGen)(Pp.mt, lTop, a)
 }
 
 function dumbPrintPpCmd(p : Pp.t) : string {

@@ -1,5 +1,7 @@
 import * as _ from 'lodash'
 
+import * as PeaCoqUtils from '../peacoq/utils'
+
 export class Goal implements IGoal {
     public goalId : number
     public goalHyp : string[]
@@ -9,8 +11,8 @@ export class Goal implements IGoal {
     // in the callees
     constructor(o : any) {
         this.goalId = + o.goal_id
-        this.goalHyp = _(o.goal_hyp).map(unbsp).value()
-        this.goalCcl = unbsp(o.goal_ccl)
+        this.goalHyp = _(o.goal_hyp).map(PeaCoqUtils.unbsp).value()
+        this.goalCcl = PeaCoqUtils.unbsp(o.goal_ccl)
     }
 
     public toString() : string {

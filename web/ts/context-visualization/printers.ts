@@ -4,6 +4,7 @@ import * as Pp from '../coq/lib/pp'
 import * as PpExtend from '../coq/interp/ppextend'
 import * as StrToken from '../coq/str-token'
 import { patterns } from './visualizations'
+import * as PeaCoqUtils from '../peacoq/utils'
 
 function htmlPrintStrToken(t : StrToken.StrToken) : string {
     if (t instanceof StrToken.StrDef) {
@@ -13,7 +14,7 @@ function htmlPrintStrToken(t : StrToken.StrToken) : string {
         return (t.str)
     }
     debugger
-    throw MatchFailure('htmlPrintStrToken', t)
+    throw PeaCoqUtils.MatchFailure('htmlPrintStrToken', t)
 }
 
 function markDifferent(s : string) : string {
@@ -45,7 +46,7 @@ function htmlPrintPpCmdDiff(p : Pp.t, old : Pp.t) : string {
         return 'TODO: PpCmdComment'
     }
     debugger
-    throw MatchFailure('htmlPrintPpCmd', p)
+    throw PeaCoqUtils.MatchFailure('htmlPrintPpCmd', p)
 }
 
 function box(p : Pp.t, s : string) : string {
@@ -84,7 +85,7 @@ export function htmlPrintPpCmd(p : Pp.t) : string {
     }
 
     debugger
-    throw MatchFailure('htmlPrintPpCmd', p)
+    throw PeaCoqUtils.MatchFailure('htmlPrintPpCmd', p)
 }
 
 export function htmlPrintPpCmds(l : Pp.t[]) : string {

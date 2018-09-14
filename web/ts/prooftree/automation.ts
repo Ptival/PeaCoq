@@ -1,5 +1,6 @@
 import * as _ from 'lodash'
 
+import * as Feedback from '../coq/lib/feedback'
 import * as Context from '../editor/context'
 import { tacticAutomationRoute } from '../peacoq/routes'
 import { Vernac } from '../sertop/query-command'
@@ -272,7 +273,7 @@ function makeCandidate(
     notice$ : Notice$,
     stmAdded$ : Added$
 ) : {
-    commands$ : CommandStreamItem<SerAPIProtocol.Cmd>
+    commands$ : Rx.Observable<SerAPIProtocol.Cmd>
     done$ : Rx.Observable<any>
 } {
     const { context, group, tactic, sentence } = input
@@ -308,13 +309,15 @@ function makeCandidate(
             true
         ))
         .share()
-    const stmAddErrored$ = filteredStmAdded$.flatMap(a => error$.filter(e => e.editOrStateId === a.answer.stateId))
+
+    const stmAddErrored$ = filteredStmAdded$.flatMap(a => error$.filter(e => e.spanId === a.answer.stateId))
+
     // now, try to pick up the notice feedback for that state id
     const addNotice$ =
         filteredStmAdded$
         .flatMap(a => {
             return notice$
-                .filter(n => n.editOrStateId === a.answer.stateId)
+                .filter(n => n.spanId === a.answer.stateId)
                 .takeUntil(stmAddErrored$)
                 .take(1)
         })
@@ -322,7 +325,7 @@ function makeCandidate(
     // the notice, unless we need to stop.
     addNotice$
         .subscribe(n => {
-            const afterContext = Context.create(n.feedbackContent.message)
+            const afterContext = Context.create(n.contents.message)
             // we only add tactics that change something
             if (!Context.isEqual(afterContext, context)) {
                 sentence.addCompletion(tactic, group, afterContext)
@@ -337,7 +340,8 @@ function makeCandidate(
     ]).share()
 
     // this is an empty stream that waits until either stream emits
-    const done$ : Rx.Observable<any> = Rx.Observable.amb(stmAddErrored$, addNotice$).take(1).ignoreElements()
+    const done$ : Message$<Feedback.Level> =
+        Rx.Observable.amb<Feedback.Feedback<Feedback.Message<Feedback.Level>>>(stmAddErrored$, addNotice$).take(1).ignoreElements()
 
     return { commands$, done$ }
 

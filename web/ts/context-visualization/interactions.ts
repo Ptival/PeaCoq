@@ -1,5 +1,7 @@
 import * as _ from 'lodash'
 
+import * as PeaCoqUtils from '../peacoq/utils'
+
 /*
   Note: this is not the way this should work in the end, as it is pretty brittle,
   but this is for the sake of demonstrating this kind of feature easily.
@@ -61,7 +63,7 @@ function forallInteraction() : void {
                 .map(e => $(e).text())
                 .toArray()
                 .subscribe(a => {
-                    _(prefixes(a))
+                    _(PeaCoqUtils.prefixes(a))
                         .reverse()
                         .each(prefix => {
                             const s = `intros ${prefix.join(' ')}.`
