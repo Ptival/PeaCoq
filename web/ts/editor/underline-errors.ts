@@ -1,37 +1,33 @@
 import { Maybe } from 'tsmonad'
 
 export function setup(
-  doc : ICoqDocument,
-  errorMsg$ : Rx.Observable<ErrorMessageFeedback>
+    doc : ICoqDocument,
+    errorMsg$ : Error$
 ) : void {
 
-  const clear$ = Rx.Observable.empty() // TODO FIXME
+    const clear$ = Rx.Observable.empty() // TODO FIXME
 
-  errorMsg$.subscribe(e => {
-    // debugger
-    let failedEdit = Maybe.nothing<ISentence<IStage>>()
-    switch (e.editOrState) {
-      case EditOrState.Edit :
-        failedEdit = just(doc.getSentencesToProcess()[0])
-        break
-      case EditOrState.State :
-        failedEdit = doc.getSentenceByStateId(e.editOrStateId)
-        break
-      default : debugger
-    }
-    failedEdit.fmap(failedEdit => {
-      e.feedbackContent.location.fmap(location => {
-        const errorStartIndex = location.bp
-        const errorStopIndex = location.ep
-        // to compute the document location, we must map the location (nb of characters)
-        // to the on-screen position (by virtually moving the cursor right)
-        const errorStart = doc.movePositionRight(failedEdit.startPosition, errorStartIndex)
-        const errorStop = doc.movePositionRight(failedEdit.startPosition, errorStopIndex)
-        const range = new AceAjax.Range(errorStart.row, errorStart.column, errorStop.row, errorStop.column)
-        doc.markError(range, clear$)
-      })
+    errorMsg$.subscribe(e => {
+        let failedEdit = Maybe.nothing<ISentence<IStage>>()
+
+        const option1 = doc.getSentencesToProcess()[0]
+        const option2 = doc.getSentenceByStateId(e.spanId)
+
+        // FIXME: failedEdit should be one of the two options!!!
+
+        failedEdit.fmap(failedEdit => {
+            e.contents.location.fmap(location => {
+                const errorStartIndex = location.bp
+                const errorStopIndex = location.ep
+                // to compute the document location, we must map the location (nb of characters)
+                // to the on-screen position (by virtually moving the cursor right)
+                const errorStart = doc.movePositionRight(failedEdit.startPosition, errorStartIndex)
+                const errorStop = doc.movePositionRight(failedEdit.startPosition, errorStopIndex)
+                const range = new AceAjax.Range(errorStart.row, errorStart.column, errorStop.row, errorStop.column)
+                doc.markError(range, clear$)
+            })
+        })
     })
-  })
 }
 
 // export function pimpMyError(vf : IValueFail) : IEditorError {

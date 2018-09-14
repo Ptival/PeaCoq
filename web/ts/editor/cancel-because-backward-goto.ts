@@ -1,5 +1,4 @@
-import * as Command from '../sertop/command'
-import * as ControlCommand from '../sertop/control-command'
+import { Cancel } from "../sertop/serapi-protocol"
 
 export function setup(
   doc : ICoqDocument,
@@ -12,7 +11,7 @@ export function setup(
       return (
         maybeSentence
           .bind(e => e.getStateId())
-          .fmap(s => new Command.Control(new ControlCommand.StmCancel([s])))
+          .fmap(s => new Cancel([s]))
           .caseOf({
             nothing : () => [],
             just : cmd => [Rx.Observable.just(cmd)],

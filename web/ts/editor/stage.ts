@@ -1,9 +1,11 @@
+import { Maybe } from 'tsmonad'
+
 import { SentenceMarker } from './sentence-marker'
+import * as StateId from '../coq/lib/stateid'
 import { getContextRoute } from '../peacoq/routes'
 import { theme } from '../peacoq/theme'
-import { Control } from '../sertop/command'
-import { StmQuery } from '../sertop/control-command'
 import { Vernac } from '../sertop/query-command'
+import { Query } from '../sertop/serapi-protocol'
 
 export class ToProcess implements IToProcess {
     public marker : ISentenceMarker
@@ -18,7 +20,7 @@ export class ToProcess implements IToProcess {
 
     public getColor() : string { return theme.toprocess }
 
-    public getStateId() { return nothing<StateId>() }
+    public getStateId() { return Maybe.nothing<StateId.t>() }
 
     public nextStageMarker() : ISentenceMarker {
         this.marker.markBeingProcessed()
@@ -37,7 +39,7 @@ export class BeingProcessed implements IBeingProcessed {
 
     public getColor() : string { return theme.processing }
 
-    public getStateId() { return just(this.stateId) }
+    public getStateId() { return Maybe.just(this.stateId) }
 
     public nextStageMarker() : ISentenceMarker {
         this.marker.markProcessed()
@@ -83,14 +85,14 @@ export class Processed implements IProcessed {
         // console.log('GETTING CONTEXT FOR STATE ID', this.stateId)
         if (this.context === null) {
             this.context = new Promise(onFulfilled => {
-                const query = new Control(new StmQuery(
+                const query = new Query(
                     {
                         route : getContextRoute,
                         sid : this.stateId,
                     },
                     new Vernac('PeaCoqGetContext.'),
                     false
-                ))
+                )
                 this.onFulfilled = onFulfilled
                 this.doc.sendCommands(Rx.Observable.just(query))
             })
@@ -98,7 +100,7 @@ export class Processed implements IProcessed {
         return this.context
     }
 
-    public getStateId() { return just(this.stateId) }
+    public getStateId() { return Maybe.just(this.stateId) }
 
     public setContext(c : PeaCoqContext) {
         if (this.onFulfilled === null) {

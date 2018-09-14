@@ -1,43 +1,40 @@
 import { escapeQuotes } from '../sertop/utils'
 import { namesInScopeRoute } from '../peacoq/routes'
-import { Control } from '../sertop/command'
-import { StmAdd, StmQuery, StmCancel } from '../sertop/control-command'
-import { Vernac } from '../sertop/query-command';
+import { Vernac } from '../sertop/query-command'
+import { Add, Cancel, Query, Cmd } from '../sertop/serapi-protocol'
 
 export function setup(
     doc : ICoqDocument,
     completed$ : Completed$,
     notice$ : Notice$,
-    stmAdded$ : StmAdded$
+    stmAdded$ : Added$
 ) : Rx.Observable<string[]> {
 
-    const setSearch = new Control(new StmAdd({}, 'Set Search Output Name Only.', true))
+    const setSearch = new Add({}, 'Set Search Output Name Only.', true)
 
     const setSearchOutput$ =
         stmAdded$
         .filter(a => a.cmdTag === setSearch.tag)
         .takeUntil(completed$.filter(a => a.cmdTag === setSearch.tag))
-        .map(a => new Control(new StmCancel([a.answer.stateId])))
+        .map(a => new Cancel([a.answer.stateId]))
 
-    const search = new Control(
-        new StmQuery(
-            { route : namesInScopeRoute },
-            new Vernac(`SearchAbout -"PEACOQ_NAMES_IN_SCOPE".`),
-            true
-        )
+    const search = new Query(
+        { route : namesInScopeRoute },
+        new Vernac(`SearchAbout -"PEACOQ_NAMES_IN_SCOPE".`),
+        true
     )
     // const editAt = new Control(new StmEditAt(sid))
 
-    const commands$$ = doc.debouncedTip$
+    const commands$$ : Rx.Observable<Rx.Observable<Cmd>> = doc.debouncedTip$
 
         .map(tip => {
             return tip
                 .bind(t => t.stage.getStateId())
                 .caseOf({
-                    nothing : () => Rx.Observable.empty<ISertop.ICommand>(),
+                    nothing : () => Rx.Observable.empty<Cmd>(),
                     just : sid => {
 
-                        const commands$ = Rx.Observable.concat<ISertop.ICommand>([
+                        const commands$ = Rx.Observable.concat<Cmd>([
                             Rx.Observable.of(setSearch),
                             Rx.Observable.of(search),
                             setSearchOutput$,
@@ -61,8 +58,8 @@ export function setup(
     const namesInScope$ =
         notice$
         .takeUntil(completed$.filter(a => a.cmdTag === search.tag))
-        .filter(n => n.routeId === namesInScopeRoute)
-        .map(n => n.feedbackContent.message)
+        .filter(n => n.route === namesInScopeRoute)
+        .map(n => n.contents.message)
         .toArray()
 
     commands$$.subscribe(cmd$ => doc.sendCommands(cmd$))

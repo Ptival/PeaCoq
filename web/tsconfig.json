@@ -3,6 +3,7 @@
     "formatOnSave": false
   },
   "compilerOptions": {
+    "baseUrl": ".",
     "declaration": false,
     "experimentalDecorators": true,
     "lib": [
@@ -16,6 +17,10 @@
     "noImplicitAny": true,
     "noLib": false,
     "outDir": "js-of-ts",
+    "paths": {
+      "@coq": [ "coq" ],
+      "@prooftree": [ "prooftree" ]
+    },
     "preserveConstEnums": true,
     "removeComments": true,
     "rootDir": "ts",

@@ -1,7 +1,10 @@
 import * as d3Hierarchy from 'd3-hierarchy'
+import { Maybe } from 'tsmonad'
+
 import { GoalNode } from './goalnode'
 import { TacticGroupNode } from './tacticgroupnode'
 import * as ProofTreeUtils from './utils'
+import * as PeaCoqUtils from '../peacoq/utils'
 
 /*
  * Returns a rect of the absolute position of [elmt] within the canvas. It needs
@@ -30,8 +33,8 @@ export function getDestinationScaledY(node : ProofTreeTypes.Node) : number {
 }
 
 export function getHierarchyGoalAncestor(d : ProofTreeTypes.Node) : Maybe<ProofTreeTypes.Node> {
-  if (d.parent === null) { return nothing<ProofTreeTypes.Node>() }
-  if (isGoalNodeHierarchyNode(d.parent)) { return just(d.parent) }
+  if (d.parent === null) { return Maybe.nothing<ProofTreeTypes.Node>() }
+  if (isGoalNodeHierarchyNode(d.parent)) { return Maybe.just(d.parent) }
   return getHierarchyGoalAncestor(d.parent)
 }
 
@@ -65,13 +68,13 @@ function isCurGoalGrandChild(n : ProofTreeTypes.Node) : boolean {
 function getFocusedChild(n : ProofTreeTypes.Node) : Maybe<ProofTreeTypes.Node> {
   // const node = n.data
   return n.data.getFocusedChild().caseOf({
-    nothing : () => nothing<ProofTreeTypes.Node>(),
+    nothing : () => Maybe.nothing<ProofTreeTypes.Node>(),
     just : (focusedChild : IProofTreeNode) => {
       const children = n.children
-      if (children === undefined) { return thisShouldNotHappen() }
+      if (children === undefined) { return PeaCoqUtils.thisShouldNotHappen() }
       const found = children.find(c => c.data.id === focusedChild.id)
-      if (found === undefined) { return thisShouldNotHappen() }
-      return just(found)
+      if (found === undefined) { return PeaCoqUtils.thisShouldNotHappen() }
+      return Maybe.just(found)
     }
   })
 }
@@ -79,13 +82,13 @@ function getFocusedChild(n : ProofTreeTypes.Node) : Maybe<ProofTreeTypes.Node> {
 function getViewFocusedChild(n : ProofTreeTypes.Node) : Maybe<ProofTreeTypes.Node> {
   // const node = n.data
   return n.data.getViewFocusedChild().caseOf({
-    nothing : () => nothing<ProofTreeTypes.Node>(),
+    nothing : () => Maybe.nothing<ProofTreeTypes.Node>(),
     just : (focusedChild : IProofTreeNode) => {
       const children = n.children
-      if (children === undefined) { return thisShouldNotHappen() }
+      if (children === undefined) { return PeaCoqUtils.thisShouldNotHappen() }
       const found = children.find(c => c.data.id === focusedChild.id)
-      if (found === undefined) { return thisShouldNotHappen() }
-      return just(found)
+      if (found === undefined) { return PeaCoqUtils.thisShouldNotHappen() }
+      return Maybe.just(found)
     }
   })
 }
@@ -107,10 +110,10 @@ function yOffset(d : ProofTreeTypes.Node) : number {
   // assert(isGoal(tree.curNode), 'yOffset assumes the current node is a goal!')
   if (isCurGoalChild(d)) {
     const parent = d.parent
-    if (parent === null) { return thisShouldNotHappen() }
+    if (parent === null) { return PeaCoqUtils.thisShouldNotHappen() }
     // assert(focusedChild !== undefined, 'yOffset : focusedChild === undefined')
     return offset + (
-      ProofTreeUtils.nodeY(parent) - ProofTreeUtils.nodeY(fromJust(focusedChild))
+      ProofTreeUtils.nodeY(parent) - ProofTreeUtils.nodeY(PeaCoqUtils.fromJust(focusedChild))
     ) * tree.yFactor
   }
 

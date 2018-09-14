@@ -1,14 +1,16 @@
+import { Maybe } from 'tsmonad'
+
+import * as PpExtend from '../coq/interp/ppextend'
+import * as ConstrExpr from '../coq/intf/constr-expr'
+import * as LibNames from '../coq/library/libnames'
+import * as ParenRelation from '../coq/paren-relation'
+
 /*
   The pretty-printed context exposes objects of the form :
   { constructorName : 'Constructor',
   constructorArgs : [a1, ...] }
   Where the `a`s may be numerals, strings, arrays or objects
 */
-
-import * as PpExtend from '../coq/interp/ppextend'
-import * as ConstrExpr from '../coq/intf/constr-expr'
-import * as LibNames from '../coq/library/libnames'
-import * as ParenRelation from '../coq/paren-relation'
 
 function assert(condition : boolean, message : string) : void {
     if (!condition) {
@@ -63,7 +65,7 @@ export function walkJSON(input : any) : any {
             switch (input.constructorName) {
 
                     // special case for nothing
-                case 'nothing'  : return nothing()
+                case 'nothing'  : return Maybe.nothing()
 
                     // coq-constr-expr
                 case 'CApp'        : return ctor2(ConstrExpr.CApp,        processedArgs)

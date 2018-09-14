@@ -1,3 +1,5 @@
+import { Maybe } from 'tsmonad'
+
 import * as Loc from './loc'
 import * as StateId from './stateid'
 import * as SertopUtils from '../../sertop/utils'
@@ -131,8 +133,8 @@ export namespace FeedbackContent {
             case 'FileDependency' :
                 const [depends, file] = args
                 switch (depends.length) {
-                    case 0 : return new FileDependency(nothing<string>(), file)
-                    case 1 : return new FileDependency(just(depends[0]), file)
+                    case 0 : return new FileDependency(Maybe.nothing<string>(), file)
+                    case 1 : return new FileDependency(Maybe.just(depends[0]), file)
                     default :
                         debugger
                         throw 'FileDependency'
@@ -144,8 +146,8 @@ export namespace FeedbackContent {
                 const [level, maybeLocation, message] = args
                 const location = (
                     maybeLocation.length === 0
-                        ? nothing<Loc.t>()
-                        : just(SertopUtils.coqLocationFromSexp(maybeLocation[0]))
+                        ? Maybe.nothing<Loc.t>()
+                        : Maybe.just(SertopUtils.coqLocationFromSexp(maybeLocation[0]))
                 )
                 return new Message(
                     Level.create(level),

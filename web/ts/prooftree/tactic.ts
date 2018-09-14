@@ -1,4 +1,5 @@
 import * as _ from 'lodash'
+import { Maybe } from 'tsmonad'
 
 export class Tactic implements ITactic {
   // addReturn : AddReturn
@@ -46,8 +47,8 @@ export class Tactic implements ITactic {
   }
 
   public getFocusedGoal() : Maybe<IGoalNode> {
-    if (this.goals.length === 0) { return nothing<IGoalNode>() }
-    return just(this.goals[this.goalIndex])
+    if (this.goals.length === 0) { return Maybe.nothing<IGoalNode>() }
+    return Maybe.just(this.goals[this.goalIndex])
   }
 
   public isSolved() : boolean {

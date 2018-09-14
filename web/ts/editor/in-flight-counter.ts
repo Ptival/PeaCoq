@@ -8,9 +8,8 @@ function makeCounter<T>(s : Command$, completed$ : Completed$) : Rx.Observable<n
 }
 
 export function setup(
-  stmAdd$ : StmAdd$,
-  stmCancel$ : StmCancel$,
-  stmEditAt$ : StmEditAt$,
+  stmAdd$ : Add$,
+  stmCancel$ : Cancel$,
   completed$ : Completed$
 ) : Rx.Observable<number> {
 
@@ -20,15 +19,11 @@ export function setup(
   const stmCancelCounter$ = makeCounter(stmCancel$, completed$)
   // stmCancelCounter$.subscribe(c => console.log("CANCEL COUNTER", c))
 
-  const stmEditAtCounter$ = makeCounter(stmEditAt$, completed$)
-  // stmEditAtCounter$.subscribe(c => console.log("EDITAT COUNTER", c))
-
   const stmActionsInFlightCounter$ : Rx.Observable<number> =
     Rx.Observable.combineLatest(
       stmAddCounter$.startWith(0),
       stmCancelCounter$.startWith(0),
-      stmEditAtCounter$.startWith(0),
-      (x, y, z) => x + y + z
+      (x, y) => x + y
     )
 
   return stmActionsInFlightCounter$

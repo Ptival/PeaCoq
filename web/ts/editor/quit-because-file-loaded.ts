@@ -1,12 +1,11 @@
-import * as Command from '../sertop/command'
-import * as ControlCommand from '../sertop/control-command'
+import { Quit } from "../sertop/serapi-protocol"
 
 export function setup(
-  doc : ICoqDocument,
-  loadedFile$ : Rx.Observable<{}>
+    doc : ICoqDocument,
+    loadedFile$ : Rx.Observable<{}>
 ) : void {
-  loadedFile$
-    .startWith({}) // quit upon loading the webpage
-    .map(({}) => Rx.Observable.just(new Command.Control(new ControlCommand.Quit())))
-    .subscribe(cmd$ => doc.sendCommands(cmd$))
+    loadedFile$
+        .startWith({}) // quit upon loading the webpage
+        .map(({}) => Rx.Observable.just(new Quit()))
+        .subscribe(cmd$ => doc.sendCommands(cmd$))
 }

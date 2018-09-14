@@ -1,4 +1,5 @@
 import { cAST } from '../lib/c-ast'
+import { Located } from '../lib/loc'
 import * as Pp from '../lib/pp'
 
 export function prLocated<T>(pr : (t : T) => Pp.t, [loc, x] : Located<T>) {

@@ -1,9 +1,11 @@
-// OMG this is so ugly, will fix!!!
+import * as PeaCoqUtils from '../peacoq/utils'
+
+// FIXME: this is ugly
 
 // TODO : use an AsyncSubject instead?
 export function show(bottomLayout : W2UI.W2Layout) : Promise<{}> {
   return new Promise(onFulfilled => {
-    const handler = fix(handler => (event : W2UI.W2Event) => {
+    const handler = PeaCoqUtils.fix(handler => (event : W2UI.W2Event) => {
       event.onComplete = onFulfilled
       bottomLayout.off('show', handler)
     })

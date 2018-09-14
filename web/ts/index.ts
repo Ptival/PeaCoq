@@ -236,7 +236,7 @@ $(document).ready(() => {
     time('A4')
     setupObserveContext(doc, notice$, stmQuery$)
     time('B4')
-    const stmActionsInFlightCounter$ = setupInFlightCounter(stmAdd$, stmCancel$, stmEditAt$, completed$)
+    const stmActionsInFlightCounter$ = setupInFlightCounter(stmAdd$, stmCancel$, completed$)
     time('C4')
     // setupProofTreeAutomation(completed$, doc, error$, notice$, stmActionsInFlightCounter$, stmAdded$, stopAutomationRound$)
     setupProofTreePopulating(doc, doc.tip$)

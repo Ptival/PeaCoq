@@ -1,6 +1,6 @@
 interface ISentence<S extends IStage> {
     array: ISentenceArray
-    commandTag: Maybe<CommandTag>
+    commandTag: Maybe<string>
     completionAdded$: Rx.Subject<{}> // should be:
     // completionAdded$: Rx.Observable<{}>
     // but TypeScript compiler is super slow with that (see https://github.com/Microsoft/TypeScript/issues/9791 for information)

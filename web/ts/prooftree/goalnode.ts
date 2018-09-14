@@ -1,9 +1,10 @@
 import * as _ from 'lodash'
-import * as TsMonad from 'tsmonad'
+import { Maybe } from 'tsmonad'
 
 import { Tactic } from './tactic'
 import { TacticGroupNode } from './tacticgroupnode'
 import { ProofTreeNode } from './prooftreenode'
+import * as StateId from '../coq/lib/stateid'
 import { Strictly } from '../peacoq/strictly'
 
 export class GoalNode extends ProofTreeNode implements IGoalNode {
@@ -45,12 +46,12 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
         this._tacticIndex = ti
     }
 
-    public addStateId(s : StateId) : void {
+    public addStateId(s : StateId.t) : void {
         // console.log('Adding state ID', s)
         this.stateIds.push(s)
     }
 
-    public addTactic(tacticName : string, groupName : string, context : PeaCoqContext, stateId : StateId) : ITactic {
+    public addTactic(tacticName : string, groupName : string, context : PeaCoqContext, stateId : StateId.t) : ITactic {
         const found = _.find(this.getTactics(), t => t.tactic === tacticName)
         if (found !== undefined) {
             return found
@@ -88,7 +89,7 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
             _(_.range(nbRelevantGoals))
             .map(ndx =>
                  this.proofTree.createGoalNode(
-                     just(tacticGroup),
+                     Maybe.just(tacticGroup),
                      context,
                      ndx
                  )
@@ -147,8 +148,8 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
     }
 
     public getFocusedChild() : Maybe<ITacticGroupNode> {
-        if (this.tacticGroups.length === 0) { return nothing<ITacticGroupNode>() }
-        return just(this.tacticGroups[this.tacticIndex])
+        if (this.tacticGroups.length === 0) { return Maybe.nothing<ITacticGroupNode>() }
+        return Maybe.just(this.tacticGroups[this.tacticIndex])
     }
 
     public getGoalAncestor() : Maybe<IGoalNode> {
@@ -160,8 +161,8 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
             .filter(group => group.tactics.length > 0)
             .value()
 
-        if (nonEmptyTacticGroups.length === 0) { return TsMonad.Maybe.nothing<ITacticGroupNode>() }
-        return TsMonad.Maybe.just(nonEmptyTacticGroups[this.tacticIndex])
+        if (nonEmptyTacticGroups.length === 0) { return Maybe.nothing<ITacticGroupNode>() }
+        return Maybe.just(nonEmptyTacticGroups[this.tacticIndex])
     }
 
     public getGoalAncestors() : IGoalNode[] {
@@ -173,7 +174,7 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
 
     public getGrandParent() : Maybe<IGoalNode> {
         return this.parentGroup.caseOf({
-            nothing : () => nothing<IGoalNode>(),
+            nothing : () => Maybe.nothing<IGoalNode>(),
             just : (p : ITacticGroupNode) => p.getParent(),
         })
     }
@@ -190,7 +191,7 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
 
     public getParent() : Maybe<ITacticGroupNode> { return this.parentGroup }
 
-    public getStateIds() : StateId[] {
+    public getStateIds() : StateId.t[] {
         return this.stateIds
     }
 
@@ -230,8 +231,8 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
         return this.getFocusedTacticGroup()
             .bind(tacticGroup => {
                 const found = viewChildren.find(e => e.id === tacticGroup.id)
-                if (found === undefined) { return nothing<ITacticGroupNode>() }
-                return just(found)
+                if (found === undefined) { return Maybe.nothing<ITacticGroupNode>() }
+                return Maybe.just(found)
             })
     }
 
@@ -268,7 +269,7 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
         // }
     }
 
-    public removeStateIds(sids : StateId[]) : void {
+    public removeStateIds(sids : StateId.t[]) : void {
         // console.log('Removing state IDs', sids, 'from', this.stateIds)
         this.stateIds = _(this.stateIds).filter(s => !_(sids).includes(s)).value()
         // console.log('Remaining', this.stateIds)

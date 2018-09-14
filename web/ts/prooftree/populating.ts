@@ -1,12 +1,13 @@
 import * as _ from 'lodash'
+import * as PeaCoqUtils from '../peacoq/utils'
 
 export function setup(
   doc : ICoqDocument,
   tip$ : Rx.Observable<Tip>
 ) {
   tip$
-    .filter(isJust)
-    .map(fromJust)
+    .filter(PeaCoqUtils.isJust)
+    .map(PeaCoqUtils.fromJust)
     .flatMapLatest(s => s.waitUntilProcessed())
     .flatMapLatest(s => s.completionAdded$.map(() => s))
     .subscribe(s => {

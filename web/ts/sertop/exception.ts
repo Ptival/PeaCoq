@@ -1,3 +1,5 @@
+import * as PeaCoqUtils from '../peacoq/utils'
+
 export type Exception
     = EvaluatedError
     | NoCurrentProof
@@ -45,7 +47,7 @@ export function create(args : any) : Exception {
                 debugger
                 throw error
             }
-            return thisShouldNotHappen()
+            return PeaCoqUtils.thisShouldNotHappen()
         }
         default : debugger
     }

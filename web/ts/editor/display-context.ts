@@ -1,9 +1,8 @@
 import { setup as setupSentenceToDisplay } from './sentence-to-display'
-import * as Command from '../sertop/command'
-import * as ControlCommand from '../sertop/control-command'
 import { isBefore } from './editor-utils'
 import * as DebugFlags from '../peacoq/debug-flags'
 import { Strictly } from '../peacoq/strictly'
+import { Exec } from '../sertop/serapi-protocol'
 
 export function setup(
     doc : ICoqDocument
@@ -25,7 +24,7 @@ export function setup(
     // 2. send an Observe command to coqtop so that the context gets evaluated
     sentenceToDisplay$
         .flatMap(s => s.getBeingProcessed$())
-        .map(bp => Rx.Observable.just(new Command.Control(new ControlCommand.Exec(bp.stateId))))
+        .map(bp => Rx.Observable.just(new Exec(bp.stateId)))
         .subscribe(cmd$ => doc.sendCommands(cmd$))
 
 }

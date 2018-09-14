@@ -1,4 +1,5 @@
 import * as _ from 'lodash'
+import { Maybe } from 'tsmonad'
 
 import * as PpUtils from './pputils'
 import * as Option from '../clib/option'
@@ -11,11 +12,12 @@ import * as Loc from '../lib/loc'
 import * as Pp from '../lib/pp'
 import * as StrToken from '../str-token'
 import { PpCmdGlue } from '../lib/pp';
-import { CLocalDef, LocalBinderExpr } from '../intf/constr-expr'
 import * as LibNames from '../library/libnames'
 import * as ParenRelation from '../paren-relation'
 import * as CaseStyle from '../case-style'
 import { peaCoqBox } from '../../peacoq/coq-utils'
+import { MatchFailure } from '../../peacoq/utils'
+import * as PeaCoqUtils from '../../peacoq/utils'
 
 export type PrecAssoc = [number, ParenRelation.ParenRelation]
 
@@ -59,7 +61,7 @@ function prLIdent(i : cAST<string>) : Pp.t {
         nothing : () => prId(id),
         just : (loc : Loc.t) => {
             const [b, ] = Loc.unLoc(loc)
-            return PpUtils.prLocated(prId, [just(Loc.makeLoc(b, b + Names.Id.toString(id).length)), id])
+            return PpUtils.prLocated(prId, [Maybe.just(Loc.makeLoc(b, b + Names.Id.toString(id).length)), id])
         },
     })
 }
@@ -218,7 +220,7 @@ function printHunks(
     n : number,
     pr : (_1 : [number, ParenRelation.ParenRelation], _2 : ConstrExpr.ConstrExpr) => Pp.t,
     prPatt : (_1 : [number, ParenRelation.ParenRelation], _2 : ConstrExpr.CasesPatternExpr) => Pp.t,
-    prBinders : (_1 : () => Pp.t, _2 : boolean, _3 : ConstrExpr.ConstrExprR) => Pp.t,
+    prBinders : (_1 : () => Pp.t, _2 : boolean, _3 : ConstrExpr.LocalBinderExpr[]) => Pp.t,
     [terms, termlists, binders, binderlists] : ConstrExpr.ConstrNotationSubstitution,
     unps : PpExtend.Unparsing[]
 ) : Pp.t {
@@ -283,7 +285,7 @@ function printHunks(
         }
         if (unp instanceof PpExtend.UnpBox) {
             const [b, sub] = [unp.box, unp.unparsing]
-            const pp1 = PpExtend.PpCmdOfBox(b, aux(sub.map(snd)))
+            const pp1 = PpExtend.PpCmdOfBox(b, aux(sub.map(PeaCoqUtils.snd)))
             const pp2 = aux(l)
             return ret(unp, pp1, pp2)
         }
@@ -302,7 +304,7 @@ type PpResult = [Pp.t, number]
 // Here Coq would consult the notation table to figure [unpl] and [level] from
 // [s], but we have it already figured out.
 function prNotation(
-    pr : (_1 : [number, ParenRelation.ParenRelation], _2 : ConstrExpr.ConstrExprR) => Pp.t,
+    pr : (_1 : [number, ParenRelation.ParenRelation], _2 : ConstrExpr.ConstrExpr) => Pp.t,
     prPatt : (_1 : [number, ParenRelation.ParenRelation], _2 : ConstrExpr.CasesPatternExpr) => Pp.t,
     prBinders : (_1 : () => Pp.t, _2 : boolean, _3 : ConstrExpr.LocalBinderExpr[]) => Pp.t,
     s : ConstrExpr.Notation,
@@ -371,7 +373,7 @@ function sepLast<T>(l : T[]) : [T, T[]] {
 }
 
 function prProj(
-    pr : (_1 : ConstrExpr.ConstrExprR, _2 : ConstrExpr.ConstrExpr) => Pp.t,
+    pr : (_1 : PrecAssoc, _2 : ConstrExpr.ConstrExpr) => Pp.t,
     prApp : (
         pr : (_1 : PrecAssoc, _2 : ConstrExpr.ConstrExpr) => Pp.t,
         a : ConstrExpr.ConstrExpr,
@@ -381,12 +383,15 @@ function prProj(
     f : ConstrExpr.ConstrExpr,
     l : ConstrExpr.AppArgs
 ) : Pp.t {
-    return Pp.concat(
-        pr([lProj, new ParenRelation.E()], a),
-        Pp.cut(),
-        Pp.str('.('),
-        prApp(pr, f, l),
-        Pp.str(')')
+    return Pp.hov(
+        0,
+        Pp.concat(
+            pr([lProj, new ParenRelation.E()], a),
+            Pp.cut(),
+            Pp.str('.('),
+            prApp(pr, f, l),
+            Pp.str(')')
+        )
     )
 }
 
@@ -487,7 +492,7 @@ function tagConstrExpr(ce : ConstrExpr.ConstrExpr, cmds : Pp.t) {
 
 function prDanglingWithFor(
     sep : () => Pp.t,
-    pr : (_1 : () => Pp.t, _2 : PrecAssoc, _3 : ConstrExpr.ConstrExprR) => Pp.t,
+    pr : (_1 : () => Pp.t, _2 : PrecAssoc, _3 : ConstrExpr.ConstrExpr) => Pp.t,
     inherited : PrecAssoc,
     a : ConstrExpr.ConstrExpr
 ) : Pp.t {
@@ -592,7 +597,7 @@ function prPatt(
                 const [l, ll] = pp.substitution
                 const args = pp.patterns
                 const [strmNot, lNot] = prNotation(
-                    (x, y : ConstrExpr.CasesPatternExpr) => prPatt(Pp.mt, x, y),
+                    (x, y) => prPatt(Pp.mt, x, y),
                     (x : any, y : any) => Pp.mt(),
                     (x : any, y : any, z : any) => Pp.mt(),
                     s,

@@ -1,9 +1,9 @@
 // input
 type Command$ = Rx.Observable<import('../sertop/serapi-protocol').Cmd>
 
-type StmAdd$     = Rx.Observable<import('../sertop/serapi-protocol').Add>
-type StmCancel$  = Rx.Observable<import('../sertop/serapi-protocol').Cancel>
-type StmQuery$   = Rx.Observable<import('../sertop/serapi-protocol').Query>
+type Add$     = Rx.Observable<import('../sertop/serapi-protocol').Add>
+type Cancel$  = Rx.Observable<import('../sertop/serapi-protocol').Cancel>
+type Query$   = Rx.Observable<import('../sertop/serapi-protocol').Query>
 
 // output
 type Answer$<T> = Rx.Observable<import('../sertop/answer').Answer.Answer<T>>
@@ -47,4 +47,12 @@ interface PeaCoqHyp {
     name : string
     maybeTerm : Maybe<ConstrExpr>
     type : ConstrExpr
+}
+
+declare const enum PeaCoqMessageLevel {
+    Default,
+    Danger,
+    Info,
+    Success,
+    Warning,
 }

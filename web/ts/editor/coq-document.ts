@@ -1,13 +1,14 @@
 import * as _ from 'lodash'
+import { Maybe } from 'tsmonad'
 
 import { Anchor } from './anchor'
 import * as Stage from './stage'
 import { SentenceArray } from './sentence-array'
 import { errorUnderlineClass, theme } from '../peacoq/theme'
 import { ProofTreeStack } from '../prooftree/stack'
-import * as Command from '../sertop/command'
-import * as ControlCommand from '../sertop/control-command'
 import { setup as setupSertop } from '../sertop/sertop'
+import { Add } from '../sertop/serapi-protocol'
+import * as StateId from '../coq/lib/stateid'
 
 function tipKey(t : Tip) : number {
     return t.caseOf({
@@ -17,7 +18,7 @@ function tipKey(t : Tip) : number {
 }
 
 export class CoqDocument implements ICoqDocument {
-    public addsToProcess$ : Rx.Observable<StmAdd$>
+    public addsToProcess$ : Rx.Observable<Add$>
     private beginAnchor : Anchor
     private commandObserver : Rx.Observer<Command$>
     public command$ : Rx.Observable<Command$>
@@ -70,7 +71,7 @@ export class CoqDocument implements ICoqDocument {
         this.tip$ = tip$
         // this.tip$.subscribe(t => console.log('tip$ from coq-document', t.sentenceId))
         this.debouncedTip$ = this.tipSubject.distinctUntilChanged(tipKey).debounce(250).share()
-        this.sentenceBeingProcessed$.subscribe(s => this.setTip(just(s)))
+        this.sentenceBeingProcessed$.subscribe(s => this.setTip(Maybe.just(s)))
 
         const nextSubject = new Rx.ReplaySubject(1)
         this.nextObserver = nextSubject.asObserver()
@@ -95,8 +96,8 @@ export class CoqDocument implements ICoqDocument {
         sentencesToProcess$.subscribe(e => this.moveCursorToPositionAndCenter(e.stopPosition))
         sentencesToProcess$
             .map(s => {
-                const command = new Command.Control(new ControlCommand.StmAdd({}, s.query, false))
-                s.commandTag = just(command.tag)
+                const command = new Add({}, s.query, false)
+                s.commandTag = Maybe.just(command.tag)
                 return Rx.Observable.just(command)
             })
             .subscribe(cmd$ => this.sendCommands(cmd$))
@@ -108,8 +109,8 @@ export class CoqDocument implements ICoqDocument {
     public getActiveProofTree() : Maybe<IProofTree> {
         return (
             this.proofTrees.length > 0
-                ? just(this.proofTrees.peek())
-                : nothing<IProofTree>()
+                ? Maybe.just(this.proofTrees.peek())
+                : Maybe.nothing<IProofTree>()
         )
     }
 
@@ -117,23 +118,23 @@ export class CoqDocument implements ICoqDocument {
 
     public getSentenceAtPosition(pos : AceAjax.Position) : Maybe<ISentence<IStage>> {
         const edit = _(this.getAllSentences()).find(e => e.containsPosition(pos))
-        return edit ? just(edit)  : nothing<ISentence<IStage>>()
+        return edit ? Maybe.just(edit) : Maybe.nothing<ISentence<IStage>>()
     }
 
-    public getSentenceByStateId(id : StateId) : Maybe<ISentence<IStage>> {
+    public getSentenceByStateId(id : StateId.t) : Maybe<ISentence<IStage>> {
         const edit = _(this.getAllSentences()).find(e => e.getStateId().caseOf({
             nothing : () => false,
             just : s => s === id,
         }))
-        return edit ? just(edit)  : nothing<ISentence<IStage>>()
+        return edit ? Maybe.just(edit) : Maybe.nothing<ISentence<IStage>>()
     }
 
-    public getSentenceByTag(tag : CommandTag) : Maybe<ISentence<IStage>> {
+    public getSentenceByTag(tag : string) : Maybe<ISentence<IStage>> {
         const edit = _(this.getAllSentences()).find(e => e.commandTag.caseOf({
             nothing : () => false,
             just : s => s === tag,
         }))
-        return edit ? just(edit)  : nothing<ISentence<IStage>>()
+        return edit ? Maybe.just(edit) : Maybe.nothing<ISentence<IStage>>()
     }
 
     public getSentencesBeingProcessed() : ISentence<IBeingProcessed>[] {
@@ -315,7 +316,7 @@ export class CoqDocument implements ICoqDocument {
     //   this.edits.removeFollowingEdits(e)
     // }
 
-    public removeSentencesByStateIds(ids : StateId[]) : void {
+    public removeSentencesByStateIds(ids : StateId.t[]) : void {
         this.sentences.removeSentences(e => e.getStateId().caseOf({
             nothing : () => false,
             just : id => _(ids).includes(id),

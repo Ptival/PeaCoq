@@ -17,11 +17,11 @@ export function thisShouldNotHappen() : never {
 // const tup2 : [number, number] = <any>[1, 2, 'foo']
 export const nbsp = '\u00A0'
 
-function unbsp(s : string) : string {
+export function unbsp(s : string) : string {
     return s.replace(/ /g, ' ')
 }
 
-function trimSpacesAround(s : string) : string {
+export function trimSpacesAround(s : string) : string {
     return s.replace(/^\s+|\s+$/g, '')
 }
 
@@ -47,7 +47,7 @@ function isNothing<T>(m : Maybe<T>) : boolean {
     return m.equals(Maybe.nothing<T>())
 }
 
-function isJust<T>(m : Maybe<T>) : boolean {
+export function isJust<T>(m : Maybe<T>) : boolean {
     return m.caseOf({ nothing : () => false, just : x => true })
 }
 
@@ -93,7 +93,7 @@ export function parseSVGTransform(a : string) : any {
     }
 }
 
-function MatchFailure(fn : string, o : Object) : string {
+export function MatchFailure(fn : string, o : Object) : string {
     debugger
     if (!o) { return 'undefined discriminee' }
     return `Match failed in ${fn}, constructor: ${o.constructor.toString()}`
@@ -234,11 +234,11 @@ function prefixes<T>(a : T[]) : T[][] {
     )
 }
 
-function fix(f : (a : any) => any) : any {
+export function fix(f : (a : any) => any) : any {
     return (...x : any[]) => {
         return f(fix(f))(...x)
     }
 }
 
-function fst<A, B>(p : [A, B]) : A { return p[0] }
-function snd<A, B>(p : [A, B]) : B { return p[1] }
+export function fst<A, B>(p : [A, B]) : A { return p[0] }
+export function snd<A, B>(p : [A, B]) : B { return p[1] }

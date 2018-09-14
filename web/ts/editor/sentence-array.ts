@@ -1,4 +1,5 @@
 import * as _ from 'lodash'
+import { Maybe } from 'tsmonad'
 
 import * as DebugFlags from '../peacoq/debug-flags'
 import * as Filters from '../peacoq/filters'
@@ -28,9 +29,9 @@ export class SentenceArray implements ISentenceArray {
                                                 )
         }
         this.sentenceBeingProcessed$ =
-            this.sentenceChangedStage$.let(Filters.sentenceBeingProcessed)
+            this.sentenceChangedStage$.let(Filters.Stage.sentenceBeingProcessed)
         this.sentenceProcessed$ =
-            this.sentenceChangedStage$.let(Filters.sentenceProcessed)
+            this.sentenceChangedStage$.let(Filters.Stage.sentenceProcessed)
         this.sentenceCreated$ = new Rx.Subject<any>()
         if (DebugFlags.sentenceCreated) { this.sentenceCreated$.subscribe(s => console.log('sentence created', s)) }
         this.sentenceRemoved$ = new Rx.Subject<any>()
@@ -56,7 +57,7 @@ export class SentenceArray implements ISentenceArray {
 
     public getLast() : Maybe<ISentence<IStage>> {
         const last = _(this.sentences).last()
-        return last === undefined ? nothing<ISentence<IStage>>() : just(last)
+        return last === undefined ? Maybe.nothing<ISentence<IStage>>() : Maybe.just(last)
     }
 
     public remove(r : ISentence<any>) {
