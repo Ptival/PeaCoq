@@ -8,12 +8,12 @@ import * as PeaCoqUtils from '../peacoq/utils'
 const userTacticsGroupName = 'PeaCoq user tactics'
 
 export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
-    public click$ : Rx.Subject<{}>
+    public readonly click$ : Rx.Subject<{}>
     public isProcessed : boolean
     // do not use parent, D3 will overwrite
     public span : JQuery
     public tacticIndex : number
-    public tactics : ITactic[]
+    public readonly tactics : ITactic[]
 
     constructor(
         proofTree : IProofTree,

@@ -69,10 +69,10 @@ export function onTextUpdatePostMerge(s : ProofTreeTypes.NodeSelection) : void {
     // .style('opacity', 1)
         .on('end', (d, i, nodes) => {
             // this is in 'end' so that it does not trigger before nodes are positioned
-            d3Selection.select<d3Selection.BaseType, IProofTreeNode>(nodes[i])
+            d3Selection.select<d3Selection.BaseType, ProofTreeTypes.Node>(nodes[i])
                 .on('click', dd => {
                     // asyncLog('CLICK ' + nodeString(dd))
-                    dd.click()
+                    dd.data.click()
                 })
         })
 }

@@ -16,7 +16,7 @@ export function setup(
     // match a sentence in the document.
     stmCancel$
     // .filter(c => !c.controlCommand.fromAutomation)
-        .flatMap(c => stmCanceled$.filter(e => e.cmdTag === c.tag))
+        .flatMap(c => stmCanceled$.filter(e => e.cmdTag === c.cmdTag))
         .subscribe(a => {
             const removedStateIds = a.answer.stateIds
             stmCanceledFiltered$.onNext(a)

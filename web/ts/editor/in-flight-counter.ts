@@ -2,7 +2,7 @@ function makeCounter<T>(s : Command$, completed$ : Completed$) : Rx.Observable<n
   return Rx.Observable
     .merge([
       s.map(() => 1),
-      s.concatMap(a => completed$.filter(c => c.cmdTag === a.tag).take(1)).map(() => -1),
+      s.concatMap(a => completed$.filter(c => c.cmdTag === a.cmdTag).take(1)).map(() => -1),
     ])
     .scan((acc, elt) => acc + elt, 0)
 }

@@ -1,11 +1,11 @@
 interface ITacticGroupNode extends IProofTreeNode {
-    click$ : Rx.Observable<{}>
+    readonly click$ : Rx.Observable<{}>
     //constructor(proofTree: IProofTree, parent: IGoalNode, name: string)
     isProcessed: boolean
-    name: string
-    span: JQuery
+    readonly name: string
+    readonly span: JQuery
     tacticIndex: number
-    tactics: ITactic[]
+    readonly tactics: ITactic[]
 
     getFocusedChild(): Maybe<IGoalNode>
     getFocusedTactic(): Maybe<ITactic>

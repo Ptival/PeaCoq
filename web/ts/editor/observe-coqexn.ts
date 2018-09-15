@@ -18,14 +18,14 @@ export function setup(
         stmAdd$
             .filter(a => !a.fromAutomation)
             .flatMap(a =>
-                     coqExn$.filter(e => e.cmdTag === a.tag)
-                     .take(1).takeUntil(completed$.filter(c => c.cmdTag === a.tag))
+                     coqExn$.filter(e => e.cmdTag === a.cmdTag)
+                     .take(1).takeUntil(completed$.filter(c => c.cmdTag === a.cmdTag))
                     ),
         stmQuery$
             .filter(a => !a.fromAutomation)
             .flatMap(a =>
-                     coqExn$.filter(e => e.cmdTag === a.tag)
-                     .take(1).takeUntil(completed$.filter(c => c.cmdTag === a.tag))
+                     coqExn$.filter(e => e.cmdTag === a.cmdTag)
+                     .take(1).takeUntil(completed$.filter(c => c.cmdTag === a.cmdTag))
                     )
     ).subscribe(e => {
         // debugger
