@@ -2,6 +2,7 @@ import { escapeQuotes } from '../sertop/utils'
 import { namesInScopeRoute } from '../peacoq/routes'
 import { Vernac } from '../sertop/query-command'
 import { Add, Cancel, Query, Cmd } from '../sertop/serapi-protocol'
+import { listenAnswerForCommand } from '../peacoq/serapi-utils';
 
 export function setup(
     doc : ICoqDocument,
@@ -13,9 +14,7 @@ export function setup(
     const setSearch = new Add({}, 'Set Search Output Name Only.', true)
 
     const setSearchOutput$ =
-        stmAdded$
-        .filter(a => a.cmdTag === setSearch.tag)
-        .takeUntil(completed$.filter(a => a.cmdTag === setSearch.tag))
+        listenAnswerForCommand(setSearch, stmAdded$, completed$)
         .map(a => new Cancel([a.answer.stateId]))
 
     const search = new Query(
@@ -57,7 +56,7 @@ export function setup(
     // registering the observable before trigerring the subscription
     const namesInScope$ =
         notice$
-        .takeUntil(completed$.filter(a => a.cmdTag === search.tag))
+        .takeUntil(completed$.filter(a => a.cmdTag === search.cmdTag))
         .filter(n => n.route === namesInScopeRoute)
         .map(n => n.contents.message)
         .toArray()

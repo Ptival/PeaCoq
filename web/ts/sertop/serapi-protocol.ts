@@ -24,8 +24,8 @@ export const cmdTagMinimum = 2 // 0 and 1 will be sent by the server
 let cmdTagCounter : number = cmdTagMinimum
 
 abstract class AbstractCommand {
-    public tag : string
-    constructor() { this.tag = (cmdTagCounter++).toString() }
+    public cmdTag : string
+    constructor() { this.cmdTag = (cmdTagCounter++).toString() }
     public abstract toSexp() : string
 }
 

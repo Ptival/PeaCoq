@@ -97,7 +97,7 @@ export class CoqDocument implements ICoqDocument {
         sentencesToProcess$
             .map(s => {
                 const command = new Add({}, s.query, false)
-                s.commandTag = Maybe.just(command.tag)
+                s.commandTag = Maybe.just(command.cmdTag)
                 return Rx.Observable.just(command)
             })
             .subscribe(cmd$ => this.sendCommands(cmd$))

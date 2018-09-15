@@ -4,7 +4,9 @@ import * as Feedback from '../coq/lib/feedback'
 import * as Context from '../editor/context'
 import { tacticAutomationRoute } from '../peacoq/routes'
 import { Vernac } from '../sertop/query-command'
-import * as SerAPIProtocol from '../sertop/serapi-protocol'
+import * as SAPI from '../sertop/serapi-protocol'
+import { listenAnswerForCommand } from '../peacoq/serapi-utils';
+import { Cancel } from '../sertop/serapi-protocol';
 
 interface ProofTreeAutomationInput {
     commandObserver : Rx.Observer<Command$>
@@ -273,7 +275,7 @@ function makeCandidate(
     notice$ : Notice$,
     stmAdded$ : Added$
 ) : {
-    commands$ : Rx.Observable<SerAPIProtocol.Cmd>
+    commands$ : Rx.Observable<SAPI.Cmd>
     done$ : Rx.Observable<any>
 } {
     const { context, group, tactic, sentence } = input
@@ -293,13 +295,12 @@ function makeCandidate(
         // console.log('Was expecting', stateId, 'and we are at', curSid, 'proceeding')
     }
 
-    const add = new SerAPIProtocol.Add({ ontop : stateId }, tactic, true)
+    const add = new SAPI.Add({ ontop : stateId }, tactic, true)
     // listen for the STM added answer (there should be 0 if failed otherwise 1)
-    const filteredStmAdded$ = stmAdded$.filter(a => a.cmdTag === add.tag)
-        .takeUntil(completed$.filter(a => a.cmdTag === add.tag))
+    const filteredStmAdded$ = listenAnswerForCommand(add, stmAdded$, completed$)
     const getContext$ =
         filteredStmAdded$
-        .map(a => new SerAPIProtocol.Query(
+        .map(a => new SAPI.Query(
             {
                 sid : a.answer.stateId,
                 // route is used so that the rest of PeaCoq can safely ignore those feedback messages
@@ -321,6 +322,7 @@ function makeCandidate(
                 .takeUntil(stmAddErrored$)
                 .take(1)
         })
+
     // we can send the next candidate when we receive either the error or
     // the notice, unless we need to stop.
     addNotice$
@@ -331,12 +333,15 @@ function makeCandidate(
                 sentence.addCompletion(tactic, group, afterContext)
             }
         })
-    const editAt = new Control(new StmEditAt(stateId))
+    debugger
 
-    const commands$ = Rx.Observable.concat<SerAPIProtocol.Cmd>([
+    const cancel$ = listenAnswerForCommand(add, stmAdded$, completed$)
+        .map(a => new Cancel([a.answer.stateId]))
+
+    const commands$ = Rx.Observable.concat<SAPI.Cmd>([
         Rx.Observable.just(add),
         getContext$,
-        Rx.Observable.just(editAt)
+        cancel$,
     ]).share()
 
     // this is an empty stream that waits until either stream emits

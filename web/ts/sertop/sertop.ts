@@ -106,7 +106,7 @@ function sendPing() : Promise<Answer.Answer.Answer<AnswerKind.AnswerKind>[]> {
 
 function sendCommand(cmd : SerAPIProtocol.Cmd) : Promise<Answer.Answer.Answer<AnswerKind.AnswerKind>[]> {
     console.log('SEND', cmd)
-    const datum = `(${cmd.tag} ${cmd.toSexp()})`
+    const datum = `(${cmd.cmdTag} ${cmd.toSexp()})`
     console.log(datum)
     // debugger
     return (

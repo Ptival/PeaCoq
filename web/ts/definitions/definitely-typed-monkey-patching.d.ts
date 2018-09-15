@@ -6,14 +6,14 @@ declare namespace AceAjax {
         _signal(s: string): void
     }
     interface Completion {
-        caption?: string
-        meta: string
-        score?: number
-        snippet?: string
-        value?: string
+        // caption?: string
+        // meta: string
+        // score?: number
+        // snippet?: string
+        // value?: string
     }
     interface Completer {
-        getCompletions: (editor: Editor, session: IEditSession, position: AceAjax.Position, prefix: string, callback: (err: boolean, results: Completion[]) => void) => void
+        // getCompletions: (editor: Editor, session: IEditSession, position: AceAjax.Position, prefix: string, callback: (err: boolean, results: Completion[]) => void) => void
     }
     export interface Editor {
         completer: any

@@ -99,6 +99,10 @@ export class ProofTree implements IProofTree {
 
         this.anchor = d3Selection.select(anchor)
 
+        if (this.anchor.size() === 0) {
+            debugger
+        }
+
         this.paused = false
         this.svgId = _.uniqueId()
         this.xFactor = this.width
@@ -129,7 +133,7 @@ export class ProofTree implements IProofTree {
             .insert('div', ' :first-child')
             .attr('id', 'pt-' + this.svgId)
             .classed('prooftree', true)
-            .style('overflow', 'hidden')
+            // .style('overflow', 'hidden')
 
         this.svg = this.div
             .insert('svg', ' :first-child')
@@ -899,9 +903,7 @@ export class ProofTree implements IProofTree {
                 */
 
                 textEnter
-                    .append('xhtml :body')
-                    .style('width', '150px')
-                    .style('height', '60px')
+                    .append('xhtml:body')
                     .each((d, i, nodes) => {
                         const self = nodes[i]
                         // debugger

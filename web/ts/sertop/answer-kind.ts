@@ -70,15 +70,15 @@ export function create(o : any) : AnswerKind {
         case 'Completed' : return new Completed()
 
         case 'Added' : { // opening a scope prevents hoisted variable clashes
-            const [stateId, coqLocation, tip] : [string, string, string] = args
-            debugger // CHECK THE TYPE
-            throw o
-            // return new StmAdded(+ stateId, SertopUtils.coqLocationFromSexp(coqLocation), tip)
+            const [stateId, coqLocation, tip] : [string, [string, string][], string] = args
+            if (typeof tip !== 'string') {
+                debugger // This should be the case for Unfocus, figure it out
+            }
+            return new Added(+ stateId, SertopUtils.coqLocationFromSexp(coqLocation), Tip.parseNewTipOrUnfocus(tip))
         }
 
         case 'Canceled' :
-            const [stateIds] : string[][] = args
-            debugger // CHECK THE TYPE
+            const stateIds : string[] = args
             return new Canceled(stateIds.map(s => + s))
 
         case 'ObjList' : {

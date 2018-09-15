@@ -42,6 +42,7 @@ import { setup as setupProofTree } from './prooftree/setup'
 
 import * as C_AST from './coq/lib/c-ast'
 import * as ConstrExpr from './coq/intf/constr-expr'
+import { PeaCoqGoal } from './peacoq/goal';
 
 // import * as Promise from 'bluebird'
 // Promise.longStackTraces()
@@ -83,37 +84,54 @@ function displayProofTree() {
             goalHyp : ["HELLO", "I", "AM", "ERROR"],
             goalCcl : "SUP?",
         },
-        ppgoal : {
-            hyps : [],
-            concl : new C_AST.cAST(new ConstrExpr.CPrim(new PrimTokenString('I AM CONCL')), Maybe.nothing()),
-            getHTML : () => { throw 'NOT IMPLEMENTED' }
-        },
+        ppgoal : new PeaCoqGoal(
+            [],
+            new C_AST.cAST(new ConstrExpr.CPrim(new PrimTokenString('I AM CONCL')), Maybe.nothing())
+        ),
     }
 
     const context : PeaCoqContext = {
-        fgGoals : [],
+        fgGoals : [goal],
         bgGoals : [],
         shelvedGoals : [],
         givenUpGoals : [],
     }
 
+    const anchor = document.getElementById('interface')
+    if (!anchor) {
+        debugger
+        throw anchor
+    }
+
     const pt = new ProofTree(
         'DEBUG',
-        $('#prooftree')[0],
-        200,
-        200,
+        anchor,
+        anchor.clientWidth,
+        anchor.clientHeight,
         context,
         0,
         doc
     )
 
+    const tabsAreReadyPromise = new Promise(onFulfilled => {
+        rightLayoutRenderedStream.take(1).subscribe(() => {
+            // top panes
+            contextTabs.click('pretty')
+            doc.contextPanel = new ContextPanel(doc, rightLayoutName)
+            // TODO : stream this
+            fontSizeUpdate(doc)
+            onFulfilled()
+        })
+    })
+
+    tabsAreReadyPromise.then(() => Theme.setupTheme(doc))
+
 }
 
 $(document).ready(() => {
 
-    displayProofTree()
-
-    return
+    // displayProofTree()
+    // return
 
     const readyStartTime = Date.now()
 
