@@ -2,6 +2,7 @@ import { Maybe } from 'tsmonad'
 
 import * as PpExtend from '../coq/interp/ppextend'
 import * as ConstrExpr from '../coq/intf/constr-expr'
+import * as MiscTypes from '../coq/intf/misctypes'
 import * as LibNames from '../coq/library/libnames'
 import * as ParenRelation from '../coq/paren-relation'
 
@@ -69,11 +70,20 @@ export function walkJSON(input : any) : any {
 
                     // coq-constr-expr
                 case 'CApp'        : return ctor2(ConstrExpr.CApp,        processedArgs)
+                case 'CCases'      : return ctor4(ConstrExpr.CCases,      processedArgs)
+                    // CCoFix
+                    // CDelimiters
+                    // CFix
+                    // CHole
+                case 'CLambdaN'    : return ctor2(ConstrExpr.CLambdaN,    processedArgs)
+                    // CLetIn
+                    // CLetTuple
                 case 'CLocalAssum' : return ctor3(ConstrExpr.CLocalAssum, processedArgs)
                 case 'CNotation'   : return ctor4(ConstrExpr.CNotation,   processedArgs)
                 case 'CPrim'       : return ctor1(ConstrExpr.CPrim,       processedArgs)
                 case 'CProdN'      : return ctor2(ConstrExpr.CProdN,      processedArgs)
                 case 'CRef'        : return ctor2(ConstrExpr.CRef,        processedArgs)
+                case 'CSort'       : return ctor1(ConstrExpr.CSort,       processedArgs)
 
                 case 'Default'     : return ctor1(Default,     processedArgs)
                 case 'Explicit'    : return ctor0(Explicit,    processedArgs)
@@ -93,6 +103,11 @@ export function walkJSON(input : any) : any {
                 case 'L'           : return ctor0(ParenRelation.L,    processedArgs)
                 case 'Prec'        : return ctor1(ParenRelation.Prec, processedArgs)
                 case 'Any'         : return ctor0(ParenRelation.Any,  processedArgs)
+
+                    // glob-sort-gen
+                case 'GProp' : return ctor0(MiscTypes.GProp, processedArgs)
+                case 'GSet'  : return ctor0(MiscTypes.GSet,  processedArgs)
+                case 'GType' : return ctor1(MiscTypes.GType, processedArgs)
 
                 case 'PpBrk' : {
                     const [a, b] = processedArgs

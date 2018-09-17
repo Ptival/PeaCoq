@@ -325,9 +325,9 @@ function prList<T>(pr : (t : T) => Pp.t, l : T[]) : Pp.t {
 }
 
 function prGlobSortInstance<T>(i : IGlobSortGen<T>) : Pp.t {
-    if (i instanceof GProp) { return tagType(Pp.str('Prop')) }
-    if (i instanceof GSet) { return tagType(Pp.str('Set')) }
-    if (i instanceof GType) {
+    if (i instanceof MiscTypes.GProp) { return tagType(Pp.str('Prop')) }
+    if (i instanceof MiscTypes.GSet) { return tagType(Pp.str('Set')) }
+    if (i instanceof MiscTypes.GType) {
         // TODO : this is weird, it's not a Maybe, probably a bug here
         return i.type.caseOf({
             nothing : () => tagType(Pp.str('Type')),
@@ -464,13 +464,13 @@ function prUniv(l : string[]) {
 }
 
 function prGlobSort(s : GlobSort) : Pp.t {
-    if (s instanceof GProp) {
+    if (s instanceof MiscTypes.GProp) {
         return tagType(Pp.str('Prop'))
     }
-    if (s instanceof GSet) {
+    if (s instanceof MiscTypes.GSet) {
         return tagType(Pp.str('Set'))
     }
-    if (s instanceof GType) {
+    if (s instanceof MiscTypes.GType) {
         if (s.type.length === 0) {
             return tagType(Pp.str('Type'))
         } else {
