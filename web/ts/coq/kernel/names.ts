@@ -1,25 +1,28 @@
 import * as Pp from "../lib/pp"
 
 export namespace Id {
-    export type t = string
-    export function print(id : t) : Pp.t { return Pp.str(id) }
-    export function toString(id : t) : string { return id }
+    export type T = string
+    export function print(id : T) : Pp.T { return Pp.str(id) }
+    export function toString(id : T) : string { return id }
 }
 
-type Variable = Id.t
+type Variable = Id.T
 
 export namespace Name {
-    export abstract class t {}
 
-    export class Anonymous extends t {}
+    export type T
+        = Anonymous
+        | Name
 
-    export class Name extends t {
+    export class Anonymous {}
+
+    export class Name {
         constructor(
             public readonly id : string
-        ) { super() }
+        ) { }
     }
 
-    export function print(n : t) : Pp.t {
+    export function print(n : T) : Pp.T {
         if (n instanceof Anonymous) { return Pp.str('_') }
         if (n instanceof Name) { return Id.print(n.id) }
         debugger
@@ -28,43 +31,53 @@ export namespace Name {
 
 }
 
-type ModuleIdent = Id.t
+type ModuleIdent = Id.T
 
 export namespace DirPath {
-    export type t = ReadonlyArray<ModuleIdent>
-    export function repr(x : t) : t { return x }
 
-    export function toString(x : t) : string {
+    export type T = ReadonlyArray<ModuleIdent>
+
+    export function repr(x : T) : T { return x }
+
+    export function toString(x : T) : string {
         if (x.length === 0) {
             return '<>'
         } else {
             return x.map(Id.toString).reverse().join('.')
         }
     }
+
 }
 
-export abstract class GlobalReference {}
+export type GlobalReference
+    = VarRef
+    | ConstRef
+    | IndRef
+    | ConstructRef
 
-export class VarRef extends GlobalReference {
+export class VarRef {
     constructor(
         public readonly variable : Variable,
-    ) { super() }
+    ) { }
 }
 
-export class ConstRef extends GlobalReference {
+export class ConstRef {
+    private tag : 'ConstRef'
     constructor(
         // public readonly constant : Constant.t,
-    ) { super() }
+    ) { }
 }
 
-export class IndRef extends GlobalReference {
+export class IndRef {
+    private tag : 'IndRef'
     constructor(
         // public readonly inductive : Inductive,
-    ) { super() }
+    ) { }
 }
 
-export class ConstructRef extends GlobalReference {
+export class ConstructRef {
+    private tag : 'ConstructRef'
     constructor(
         // public readonly ctor : Constructor,
-    ) { super() }
+    ) { }
 }

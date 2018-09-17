@@ -102,7 +102,7 @@ export class CFix {
 
 export class CHole {
     constructor(
-        public evarKinds : Maybe<EvarKinds.t>,
+        public evarKinds : Maybe<EvarKinds.T>,
         public introPatternNamingExpr : MiscTypes.IntroPatternNamingExpr,
         public rawGenericArgument : Maybe<GenArg.RawGenericArgument>,
     ) { }

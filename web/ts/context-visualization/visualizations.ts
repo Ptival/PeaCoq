@@ -6,10 +6,10 @@ import { findPpCmdSuchThat, matchPattern, ppCmdIsString, ppCmdIsStringSuchThat, 
 
 const anyPattern = new Pattern.Anything()
 
-function patternScopeDelimiters(l : Pp.t[]) : Pp.t[] {
+function patternScopeDelimiters(l : Pp.T[]) : Pp.T[] {
     return replacePpCmd(
         ppCmdIsStringSuchThat(s => s.startsWith('%')),
-        t => ([] as Pp.t[]).concat(
+        t => ([] as Pp.T[]).concat(
             Pp.str(`<span style="vertical-align: sub; color: #9C27B0; font-size: xx-small;">`),
             Pp.str((<any>t).token.string.replace('%', '')),
             Pp.str(`</span>`)
@@ -18,43 +18,43 @@ function patternScopeDelimiters(l : Pp.t[]) : Pp.t[] {
     )
 }
 
-function patternForall(l : Pp.t[]) : Pp.t[] {
+function patternForall(l : Pp.T[]) : Pp.T[] {
     return replaceToken('forall', '∀', l)
 }
 
-function patternExists(l : Pp.t[]) : Pp.t[] {
+function patternExists(l : Pp.T[]) : Pp.T[] {
     return replaceToken('exists', '∃', l)
 }
 
-function patternArrow(l : Pp.t[]) : Pp.t[] {
+function patternArrow(l : Pp.T[]) : Pp.T[] {
     return replaceToken('->', '→', l)
 }
 
-function patternMult(l : Pp.t[]) : Pp.t[] {
+function patternMult(l : Pp.T[]) : Pp.T[] {
     return replaceToken('*', '×', l)
 }
 
-function patternAnd(l : Pp.t[]) : Pp.t[] {
+function patternAnd(l : Pp.T[]) : Pp.T[] {
     return replaceToken('/\\', '∧', l)
 }
 
-function patternOr(l : Pp.t[]) : Pp.t[] {
+function patternOr(l : Pp.T[]) : Pp.T[] {
     return replaceToken('\\/', '∨', l)
 }
 
-function patternEquiv(l : Pp.t[]) : Pp.t[] {
+function patternEquiv(l : Pp.T[]) : Pp.T[] {
     return replaceToken('<->', '⇔', l)
 }
 
-function patternNat(l : Pp.t[]) : Pp.t[] {
+function patternNat(l : Pp.T[]) : Pp.T[] {
     return replaceToken('nat', '\u2115', l)
 }
 
-function patternZ(l : Pp.t[]) : Pp.t[] {
+function patternZ(l : Pp.T[]) : Pp.T[] {
     return replaceToken('Z', '\u2124', l)
 }
 
-function patternAbs(l : Pp.t[]) : Pp.t[] {
+function patternAbs(l : Pp.T[]) : Pp.T[] {
     return matchPattern(
         l,
         [
@@ -67,7 +67,7 @@ function patternAbs(l : Pp.t[]) : Pp.t[] {
             anyPattern
         ],
         match => {
-            return ([] as Pp.t[]).concat(
+            return ([] as Pp.T[]).concat(
                 Pp.str('|'),
                 l[2],
                 Pp.str('|')
@@ -83,10 +83,10 @@ function patternAbs(l : Pp.t[]) : Pp.t[] {
    CloseTag
    ...
 */
-function patternPow(l : Pp.t[]) : Pp.t[] {
+function patternPow(l : Pp.T[]) : Pp.T[] {
     const pos = findPpCmdSuchThat(l, ppCmdIsString('^'))
     if (pos > 0) {
-        return ([] as Pp.t[]).concat(
+        return ([] as Pp.T[]).concat(
             l.slice(0, pos - 2),
             Pp.str(`<span style='vertical-align: super;'>`),
             l.slice(pos + 2),
@@ -98,7 +98,7 @@ function patternPow(l : Pp.t[]) : Pp.t[] {
 
 // for 'divides': \u2223
 // for 'does not divide': \u2224
-function patternDivides(l : Pp.t[]) : Pp.t[] {
+function patternDivides(l : Pp.T[]) : Pp.T[] {
     return matchPattern(
         l,
         [
@@ -106,7 +106,7 @@ function patternDivides(l : Pp.t[]) : Pp.t[] {
             anyPattern, anyPattern, anyPattern, anyPattern
         ],
         match => {
-            return ([] as Pp.t[]).concat(
+            return ([] as Pp.T[]).concat(
                 [l[2]],
                 [l[1]], // space
                 Pp.str('\u2223'),
@@ -117,7 +117,7 @@ function patternDivides(l : Pp.t[]) : Pp.t[] {
     )
 }
 
-function patternZSquare(l : Pp.t[]) : Pp.t[] {
+function patternZSquare(l : Pp.T[]) : Pp.T[] {
     return matchPattern(l,
                         [
         box([
@@ -128,7 +128,7 @@ function patternZSquare(l : Pp.t[]) : Pp.t[] {
         anyPattern, anyPattern
     ],
                         match => {
-                            return ([] as Pp.t[]).concat(
+                            return ([] as Pp.T[]).concat(
                                 [l[2]],
                                 Pp.str('²')
                             )
@@ -148,7 +148,7 @@ function tok(s : string) : Pattern.Pattern {
     })
 }
 
-function patternZOfNat(l : Pp.t[]) : Pp.t[] {
+function patternZOfNat(l : Pp.T[]) : Pp.T[] {
     return matchPattern(l,
                         // TODO: we could have a pattern like this one removing outer parentheses
                         [
@@ -159,7 +159,7 @@ function patternZOfNat(l : Pp.t[]) : Pp.t[] {
         anyPattern
     ],
                         match => {
-                            return ([] as Pp.t[]).concat(
+                            return ([] as Pp.T[]).concat(
                                 [l[2]],
                                 Pp.str(`<span style="vertical-align: sub; font-size: xx-small;">`),
                                 Pp.str('\u2115'),
@@ -169,7 +169,7 @@ function patternZOfNat(l : Pp.t[]) : Pp.t[] {
                        )
 }
 
-function boxDropParentheses(p : Pp.t) : Pp.t {
+function boxDropParentheses(p : Pp.T) : Pp.T {
     debugger // FIXME
     // I think now it will look like a box with a glue of length 3 inside
     if (p instanceof Pp.PpCmdBox) { // && p.contents.length === 3) {
@@ -183,7 +183,7 @@ function boxDropParentheses(p : Pp.t) : Pp.t {
     return p
 }
 
-function patternSumLambda(l : Pp.t[]) : Pp.t[] {
+function patternSumLambda(l : Pp.T[]) : Pp.T[] {
     return matchPattern(
         l,
         [
@@ -215,7 +215,7 @@ function patternSumLambda(l : Pp.t[]) : Pp.t[] {
             new Pattern.BinderPattern('upperBound')
         ],
         match => {
-            return ([] as Pp.t[]).concat(
+            return ([] as Pp.T[]).concat(
                 Pp.str(`<span style="display: flex; flex-flow: row; align-items: center;">`),
                 Pp.str(`<span style="font-family: MathJax_Size4; font-size:120%;">(</span>`),
                 Pp.str(`<span style="display: flex; flex-flow: column; margin-right: 0.5em;">`),
@@ -238,7 +238,7 @@ function patternSumLambda(l : Pp.t[]) : Pp.t[] {
     )
 }
 
-function patternSum(l : Pp.t[]) : Pp.t[] {
+function patternSum(l : Pp.T[]) : Pp.T[] {
     return matchPattern(
         l,
         [
@@ -249,7 +249,7 @@ function patternSum(l : Pp.t[]) : Pp.t[] {
             new Pattern.BinderPattern('upperBound')
         ],
         match => {
-            return ([] as Pp.t[]).concat(
+            return ([] as Pp.T[]).concat(
                 Pp.str(`<span style="display: flex; flex-flow: row; align-items: center;">`),
                 Pp.str(`<span style="font-family: MathJax_Size4; font-size:120%;">(</span>`),
                 Pp.str(`<span style="display: flex; flex-flow: column; margin-right: 0.5em;">`),
@@ -269,7 +269,7 @@ function patternSum(l : Pp.t[]) : Pp.t[] {
     )
 }
 
-export const patterns : Array<(_1 : Pp.t[]) => Pp.t[]> = [
+export const patterns : Array<(_1 : Pp.T[]) => Pp.T[]> = [
     patternPow,
     patternForall,
     patternExists,

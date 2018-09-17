@@ -27,7 +27,7 @@ export class PpTbrk { constructor(public n1 : number, public n2 : number) { } }
 export class PpTab  { private tag : 'PpTab' }
 export class PpFnl  { private tag : 'PpFnl' }
 
-export function PpCmdOfBox(b : PpBox, s : Pp.t) : Pp.t {
+export function PpCmdOfBox(b : PpBox, s : Pp.T) : Pp.T {
     if (b instanceof PpHB)   { return Pp.h  (b.n, s) }
     if (b instanceof PpHoVB) { return Pp.hov(b.n, s) }
     if (b instanceof PpHVB)  { return Pp.hv (b.n, s) }
@@ -36,7 +36,7 @@ export function PpCmdOfBox(b : PpBox, s : Pp.t) : Pp.t {
     throw MatchFailure('PpCmdOfBox', b)
 }
 
-export function PpCmdOfCut(c : PpCut) : Pp.t {
+export function PpCmdOfCut(c : PpCut) : Pp.T {
     if (c instanceof PpFnl)  { return Pp.fnl() }
     if (c instanceof PpBrk)  { return Pp.brk(c.n1, c.n2) }
     debugger

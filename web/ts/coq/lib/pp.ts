@@ -17,7 +17,7 @@ export type DocView
     | PpCmdForceNewline
     | PpCmdComment
 
-export type t = DocView
+export type T = DocView
 
 export class PpCmdEmpty {
     private tag : 'PpCmdEmpty'
@@ -68,12 +68,12 @@ export class PpCmdComment {
     ) { }
 }
 
-export function app(d1 : t, d2 : t) : t {
+export function app(d1 : T, d2 : T) : T {
     if (d1 instanceof PpCmdEmpty) { return d2 }
     if (d2 instanceof PpCmdEmpty) { return d1 }
 
     if (d1 instanceof PpCmdGlue) {
-        if (d1.docviews.length == 2) {
+        if (d1.docviews.length === 2) {
             const [l1, l2] = d1.docviews
             if (d2 instanceof PpCmdGlue) {
                 const l3 = d2.docviews
@@ -101,7 +101,7 @@ export function app(d1 : t, d2 : t) : t {
     return new PpCmdGlue([d1, d2])
 }
 
-export function concat(...args : t[]) : t {
+export function concat(...args : T[]) : T {
     if (args.length === 0) {
         debugger
         throw args
@@ -111,29 +111,29 @@ export function concat(...args : t[]) : t {
     return rest.reduce((acc, elt) => new PpCmdGlue([acc, elt]), first)
 }
 
-export function str(s : string)              : t { return new PpCmdString(s) }
-export function brk(a : number, b : number)  : t { return new PpCmdPrintBreak(a, b) }
-export function fnl()                        : t { return new PpCmdForceNewline() }
-export function ws(n : number)               : t { return new PpCmdPrintBreak(n, 0) }
-export function comment(l : string[])        : t { return new PpCmdComment(l) }
+export function str(s : string)              : T { return new PpCmdString(s) }
+export function brk(a : number, b : number)  : T { return new PpCmdPrintBreak(a, b) }
+export function fnl()                        : T { return new PpCmdForceNewline() }
+export function ws(n : number)               : T { return new PpCmdPrintBreak(n, 0) }
+export function comment(l : string[])        : T { return new PpCmdComment(l) }
 
-export function mt()  : t { return new PpCmdEmpty() }
-export function spc() : t { return new PpCmdPrintBreak(1, 0) }
-export function cut() : t { return new PpCmdPrintBreak(0, 0) }
+export function mt()  : T { return new PpCmdEmpty() }
+export function spc() : T { return new PpCmdPrintBreak(1, 0) }
+export function cut() : T { return new PpCmdPrintBreak(0, 0) }
 
-export function isMt(v : t) : boolean { return v instanceof PpCmdEmpty }
+export function isMt(v : T) : boolean { return v instanceof PpCmdEmpty }
 
-export function h  (n : number, s : t) : t { return new PpCmdBox(new PpHBox(n),   s) }
-export function v  (n : number, s : t) : t { return new PpCmdBox(new PpVBox(n),   s) }
-export function hv (n : number, s : t) : t { return new PpCmdBox(new PpHVBox(n),  s) }
-export function hov(n : number, s : t) : t { return new PpCmdBox(new PpHoVBox(n), s) }
-export function t  (            s : t) : t { return new PpCmdBox(new PpTBox(),    s) }
+export function h  (n : number, s : T) : T { return new PpCmdBox(new PpHBox(n),   s) }
+export function v  (n : number, s : T) : T { return new PpCmdBox(new PpVBox(n),   s) }
+export function hv (n : number, s : T) : T { return new PpCmdBox(new PpHVBox(n),  s) }
+export function hov(n : number, s : T) : T { return new PpCmdBox(new PpHoVBox(n), s) }
+export function t  (            s : T) : T { return new PpCmdBox(new PpTBox(),    s) }
 
-export function tag(t : PpTag, s : t) : t {
+export function tag(t : PpTag, s : T) : T {
     return new PpCmdTag(t, s)
 }
 
-export function surround(p : t) : t {
+export function surround(p : T) : T {
     return hov(1, concat(
         str("("),
         p,
@@ -141,18 +141,18 @@ export function surround(p : t) : t {
     ))
 }
 
-function prListSepLastSep<T>(
+function prListSepLastSep<A>(
     noEmpty : boolean,
-    sepThunk : () => t,
-    lastSepThunk : () => t,
-    elem : (e : T) => t,
-    l : T[]
-) : t {
+    sepThunk : () => T,
+    lastSepThunk : () => T,
+    elem : (e : A) => T,
+    l : A[]
+) : T {
     const sep = sepThunk()
     const lastSep = lastSepThunk()
     const elems = l.map(elem)
     const filteredElems = noEmpty ? elems.filter(e => !isMt(e)) : elems
-    function insertSeps(es : t[]) : t {
+    function insertSeps(es : T[]) : T {
         if      (es.length === 0) { return mt() }
         else if (es.length === 1) { return es[0] }
         else if (es.length === 2) {
@@ -160,16 +160,16 @@ function prListSepLastSep<T>(
             return concat(h, lastSep, e)
         }
         else {
-            const [h, t] = [_.head(es) as t, _.tail(es)]
+            const [h, t] = [_.head(es) as T, _.tail(es)]
             return concat(h, sep, insertSeps(t))
         }
     }
     return insertSeps(filteredElems)
 }
 
-export function prListWithSep<T>(sep : () => t, pr : (t : T) => t, l : T[]) : t {
+export function prListWithSep<A>(sep : () => T, pr : (t : A) => T, l : A[]) : T {
     return prListSepLastSep(false, sep, sep, pr, l)
 }
 
-export function prBar()      : t { return concat(str('|'), spc()) }
-export function prSpaceBar() : t { return concat(str(';'), spc()) }
+export function prBar()      : T { return concat(str('|'), spc()) }
+export function prSpaceBar() : T { return concat(str(';'), spc()) }

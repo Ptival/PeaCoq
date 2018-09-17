@@ -23,7 +23,7 @@ function markDifferent(s : string) : string {
 
 function syntax(s : string) : string { return `<span class='syntax'>${s}</span>` }
 
-function htmlPrintPpCmdDiff(p : Pp.t, old : Pp.t) : string {
+function htmlPrintPpCmdDiff(p : Pp.T, old : Pp.T) : string {
     if (p.constructor !== old.constructor) {
         return markDifferent(htmlPrintPpCmd(p))
     }
@@ -49,11 +49,11 @@ function htmlPrintPpCmdDiff(p : Pp.t, old : Pp.t) : string {
     throw PeaCoqUtils.MatchFailure('htmlPrintPpCmd', p)
 }
 
-function box(p : Pp.t, s : string) : string {
+function box(p : Pp.T, s : string) : string {
     return `<span class='box syntax'>${s}</span>`
 }
 
-export function htmlPrintPpCmd(p : Pp.t) : string {
+export function htmlPrintPpCmd(p : Pp.T) : string {
 
     if (p instanceof Pp.PpCmdBox) {
         // FIXME: use blockType
@@ -88,18 +88,18 @@ export function htmlPrintPpCmd(p : Pp.t) : string {
     throw PeaCoqUtils.MatchFailure('htmlPrintPpCmd', p)
 }
 
-export function htmlPrintPpCmds(l : Pp.t[]) : string {
+export function htmlPrintPpCmds(l : Pp.T[]) : string {
     _(patterns).each(pattern => {
         l = pattern(l)
     })
     return _.reduce(
         l,
-        (acc : string, p : Pp.t) => { return acc + htmlPrintPpCmd(p) },
+        (acc : string, p : Pp.T) => { return acc + htmlPrintPpCmd(p) },
         ''
     )
 }
 
-export function htmlPrintPpCmdsDiff(l : Pp.t[], old : Pp.t[]) : string {
+export function htmlPrintPpCmdsDiff(l : Pp.T[], old : Pp.T[]) : string {
     _(patterns).each(pattern => {
         l = pattern(l)
         old = pattern(old)
@@ -108,7 +108,7 @@ export function htmlPrintPpCmdsDiff(l : Pp.t[], old : Pp.t[]) : string {
         return markDifferent(
             _.reduce(
                 l,
-                (acc : string, p : Pp.t) => {
+                (acc : string, p : Pp.T) => {
                     return acc + htmlPrintPpCmd(p)
                 },
                 ''
@@ -118,18 +118,18 @@ export function htmlPrintPpCmdsDiff(l : Pp.t[], old : Pp.t[]) : string {
     const z = _.zip(l, old)
     return _.reduce(
         z,
-        (acc : string, [p, oldP] : [Pp.t, Pp.t]) => {
+        (acc : string, [p, oldP] : [Pp.T, Pp.T]) => {
             return acc + htmlPrintPpCmdDiff(p, oldP)
         },
         ''
     )
 }
 
-function ppCmdSameShape(p : Pp.t, old : Pp.t) : boolean {
+function ppCmdSameShape(p : Pp.T, old : Pp.T) : boolean {
     return (p.constructor === old.constructor)
 }
 
-export function ppCmdsSameShape(l : Pp.t[], old : Pp.t[]) : boolean {
+export function ppCmdsSameShape(l : Pp.T[], old : Pp.T[]) : boolean {
     if (l.length === 0 && old.length === 0) { return true }
     if (l.length > 0 && old.length > 0) {
         return (

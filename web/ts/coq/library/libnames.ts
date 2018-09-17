@@ -11,19 +11,19 @@ export type ReferenceR
     | Ident
 
 type FullPath = {
-    dirpath : Names.DirPath.t
-    basename : Names.Id.t
+    dirpath : Names.DirPath.T
+    basename : Names.Id.T
 }
 type QualId = FullPath
 
 export class Qualid { constructor(public qualId : QualId) { } }
-export class Ident { constructor(public id : Names.Id.t) { } }
+export class Ident { constructor(public id : Names.Id.T) { } }
 
-function reprQualid(q : QualId) : [Names.DirPath.t, Names.Id.t] {
+function reprQualid(q : QualId) : [Names.DirPath.T, Names.Id.T] {
     return reprPath(q)
 }
 
-function reprPath(p : FullPath) : [Names.DirPath.t, Names.Id.t] {
+function reprPath(p : FullPath) : [Names.DirPath.T, Names.Id.T] {
     return [p.dirpath, p.basename]
 }
 
@@ -38,9 +38,9 @@ function stringOfPath(sp : FullPath) {
 
 function prPath(sp : FullPath) { return Pp.str(stringOfPath(sp)) }
 
-function prQualid(q : QualId) : Pp.t { return prPath(q) }
+function prQualid(q : QualId) : Pp.T { return prPath(q) }
 
-export function prReference(r : Reference) : Pp.t {
+export function prReference(r : Reference) : Pp.T {
     return peaCoqBox(C_AST.withVal((r : ReferenceR) => {
         if (r instanceof Qualid) { return prQualid(r.qualId) }
         if (r instanceof Ident) { return Names.Id.print(r.id) }

@@ -8,16 +8,16 @@ import { StrDef } from '../coq/str-token'
 import * as PeaCoqUtils from '../peacoq/utils'
 
 export function findPpCmdSuchThat(
-    l : Pp.t[],
-    predicate : (_1 : Pp.t) => boolean
+    l : Pp.T[],
+    predicate : (_1 : Pp.T) => boolean
 ) : number {
     return _.findIndex(l, predicate)
 }
 
 export function ppCmdIsStringSuchThat(
     predicate : (_1 : string) => boolean
-) : (_1 : Pp.t) => boolean {
-    return (token : Pp.t) => {
+) : (_1 : Pp.T) => boolean {
+    return (token : Pp.T) => {
         if (token instanceof Pp.PpCmdString) {
             return predicate(token.str)
         }
@@ -25,18 +25,18 @@ export function ppCmdIsStringSuchThat(
     }
 }
 
-export function ppCmdIsString(s : string) : (_1 : Pp.t) => boolean {
+export function ppCmdIsString(s : string) : (_1 : Pp.T) => boolean {
     return ppCmdIsStringSuchThat((s1) => s === s1.trim())
 }
 
 export function replacePpCmd(
-    match : (_1 : Pp.t) => boolean,
-    replace : (_1 : Pp.t) => Pp.t[],
-    l : Pp.t[]
-) : Pp.t[] {
+    match : (_1 : Pp.T) => boolean,
+    replace : (_1 : Pp.T) => Pp.T[],
+    l : Pp.T[]
+) : Pp.T[] {
     const pos = findPpCmdSuchThat(l, match)
     if (pos < 0) { return l }
-    return ([] as Pp.t[]).concat(
+    return ([] as Pp.T[]).concat(
         l.slice(0, pos),
         replace(l[pos]),
         l.slice(pos + 1)
@@ -48,10 +48,10 @@ export function replacePpCmd(
   sometimes \u00A0<token> or sometimes <token>\u00A0, so we perform the
   replacement with a regexp to preserve the \u00A0.
 */
-export function replaceToken(s1 : string, s2 : string, l : Pp.t[]) : Pp.t[] {
+export function replaceToken(s1 : string, s2 : string, l : Pp.T[]) : Pp.T[] {
     return replacePpCmd(
         ppCmdIsString(s1),
-        (t : Pp.t) => {
+        (t : Pp.T) => {
             if (!(t instanceof Pp.PpCmdString)) { throw t }
             return [Pp.str(t.str.replace(s1, s2))]
         },
@@ -59,7 +59,7 @@ export function replaceToken(s1 : string, s2 : string, l : Pp.t[]) : Pp.t[] {
     )
 }
 
-function ppCmdsMatchGen(p : Pattern.Pattern[], l : Pp.t[], o : Object) : Maybe<Object> {
+function ppCmdsMatchGen(p : Pattern.Pattern[], l : Pp.T[], o : Object) : Maybe<Object> {
     if (p.length !== l.length) { return Maybe.nothing() }
     const zip = _.zip(p, l)
     for (const index in zip) {
@@ -94,7 +94,7 @@ function reduceMaybe<IN, ACC>(
     )
 }
 
-function ppCmdMatchGen(pat : Pattern.Pattern, p : Pp.t | any, o : Object) : Maybe<Object> {
+function ppCmdMatchGen(pat : Pattern.Pattern, p : Pp.T | any, o : Object) : Maybe<Object> {
     if (pat instanceof Pattern.Anything) {
         return Maybe.just(o)
     } else if (pat instanceof Pattern.ArrayPattern) {
@@ -134,15 +134,15 @@ function ppCmdMatchGen(pat : Pattern.Pattern, p : Pp.t | any, o : Object) : Mayb
     }
 }
 
-function ppCmdsMatch(p : Pattern.Pattern[], l : Pp.t[]) : Maybe<Object> {
+function ppCmdsMatch(p : Pattern.Pattern[], l : Pp.T[]) : Maybe<Object> {
     return ppCmdsMatchGen(p, l, {})
 }
 
 export function matchPattern(
-    l : Pp.t[],
+    l : Pp.T[],
     pat : Pattern.Pattern[],
-    h : (_1 : any) => Pp.t[]
-) : Pp.t[] {
+    h : (_1 : any) => Pp.T[]
+) : Pp.T[] {
     return ppCmdsMatch(pat, l).caseOf({
         nothing : () => l,
         just : (m) => h(m),
