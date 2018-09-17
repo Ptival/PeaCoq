@@ -41,7 +41,7 @@
         "@types/ace": "0.0.40",
         "@types/bluebird": "^3.5.23",
         "@types/clean-webpack-plugin": "^0.1.2",
-        "@types/codemirror": "0.0.59",
+        "@types/codemirror": "0.0.60",
         "@types/copy-webpack-plugin": "^4.4.1",
         "@types/d3": "^5.0.0",
         "@types/d3-hierarchy": "^1.1.4",
