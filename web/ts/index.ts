@@ -170,19 +170,11 @@ $(document).ready(() => {
         })
     })
 
-    time('start')
     setupDisplayContext(doc)
-    time('A0')
     setupObserveEditorChange(doc)
-    time('B0')
     setupEditor(doc, editor)
-    time('C0')
     editor.focus()
-    time('D0')
     resize$.subscribe(() => onResize(doc))
-    time('E0')
-
-    time('A1')
 
     // SLOW!
     // const toolbar$s = setupToolbar(doc)
@@ -196,48 +188,28 @@ $(document).ready(() => {
         save : Rx.Observable.empty(),
     }
 
-    time('B1')
     const shortcut$s = setupKeybindings(doc)
-    time('C1')
     const { goTo$, loadedFile$, next$, prev$ } = setupUserActions(doc, toolbar$s, shortcut$s)
-    time('D1')
 
-    time('A2')
     const [forwardGoTo$, backwardGoTo$] = setupGoToPartitioning(doc, goTo$)
-    time('B2')
     setupCancelBecauseBackwardGoTo(doc, backwardGoTo$)
-    time('C2')
     loadedFile$.subscribe(() => doc.contextPanel.clear())
-    time('D2')
     setupQuitBecauseFileLoaded(doc, loadedFile$)
-    time('E2')
     next$.subscribe(() => doc.next())
-    time('F2')
     setupCancelBecausePrev(doc, prev$)
-    time('G2')
 
-    time('A3')
     setupSyntaxHovering()
-    time('B3')
     tabsAreReadyPromise.then(() => Theme.setupTheme(doc))
-    time('C3')
     Theme.afterChange$.subscribe(() => onResize(doc))
-    time('D3')
     // These also help with the initial display...
     Theme.afterChange$.subscribe(() => { rightLayout.refresh() })
-    time('E3')
     Theme.afterChange$.subscribe(() => { bottomLayout.refresh() })
-    time('F3')
 
     // Automated tasks need to stop whenever the user changes the current state
     const stopAutomationRound$ : Rx.Observable<{}> = Rx.Observable.empty() // FIXME URGENT
 
-    time('F4')
-
     // This is pretty slow
     // doc.editor.completers = [{ getCompletions : createGetCompletions(doc, stopAutomationRound$) }]
-
-    time('F5')
 
     // Shorthands for input streams
     const cmd$ = doc.input$
@@ -251,58 +223,36 @@ $(document).ready(() => {
     const { error$, notice$ } = feedback$s.message$s
     const { processed$ } = feedback$s
 
-    time('A4')
     setupObserveContext(doc, notice$, stmQuery$)
-    time('B4')
     const stmActionsInFlightCounter$ = setupInFlightCounter(stmAdd$, stmCancel$, completed$)
-    time('C4')
     // setupProofTreeAutomation(completed$, doc, error$, notice$, stmActionsInFlightCounter$, stmAdded$, stopAutomationRound$)
     setupProofTreePopulating(doc, doc.tip$)
-    time('D4')
     setupObserveStmAdded(doc, stmAdded$)
-    time('E4')
     setupUserInteractionForwardGoto(doc, forwardGoTo$, error$)
-    time('F4')
     setupObserveProcessed(doc, processed$)
-    time('G4')
 
-    time('A5')
     setupUnderlineError(doc, error$) // keep this above the subscription that removes edits
-    time('b5')
     const jBottom = $(w2ui[rightLayoutName].get('bottom').content)
-    time('c5')
     setupCoqtopPanel(doc, jBottom, error$, notice$, loadedFile$) // keep this above the subscription that removes edits
-    time('D5')
 
     /***** IMPORTANT :
      * The following lines remove edits from the document, so their subscription
      * must happen after subscriptions that want to inspect the edits before removal.
      * TODO : design it better so that removed edits are streamed out.
      *****/
-    time('A6')
     setupObserveCoqExn(doc, coqExn$, stmAdd$, stmQuery$, completed$)
-    time('B6')
     setupObserveError(doc, error$)
-    time('C6')
 
-    time('A7')
     // debugging
     coqExn$
         .filter(e => e.answer.getMessage().indexOf('Anomaly') >= 0)
         .subscribe(e => { debugger })
-    time('B7')
 
-    time('A8')
     const stmCanceledFiltered$ = setupObserveStmCancel(doc, stmCancel$, stmCanceled$)
-    time('B8')
     setupProofTree(doc, loadedFile$, resize$, stmCanceledFiltered$, bottomLayout)
-    time('C8')
     const namesInScope$ = setupNamesInScope(doc, completed$, notice$, stmAdded$)
-    time('D8')
     namesInScope$.subscribe(names => console.log(`${names.length} names in scope`))
-    time('E8')
 
-    time('A9')
     // Debugging :
     doc.editor.setValue(`
 Theorem test : forall x, (and (or (x = 0) (x > 0)) (x >= 0)).
@@ -319,7 +269,6 @@ Inductive day : Type :=
 | sunday : day
 .
 `)
-    time('B9')
 
     const readyStopTime = Date.now()
     console.log(`Ready handler executed in ${readyStopTime - readyStartTime}ms`)
