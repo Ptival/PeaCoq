@@ -181,12 +181,13 @@ export class GoalNode extends ProofTreeNode implements IGoalNode {
 
     public getHeight() : number {
         const node = this.getHTMLElement()
-        const rect = node.getBoundingClientRect()
-        if (rect.height === 0) {
-            // debugger // FIXME
+        // NOTE: getBoundingClientRect does not return same measurement as clientHeight
+        // NOTE: getBoundingClientRect also does not return integers, so need to use Math.ceil
+        const height = node.clientHeight
+        if (height === 0) {
+            debugger // FIXME
         }
-        const computed = Math.ceil(rect.height)
-        return Math.max(computed, 60)
+        return height
     }
 
     public getParent() : Maybe<ITacticGroupNode> { return this.parentGroup }
