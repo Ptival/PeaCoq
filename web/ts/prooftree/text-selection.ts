@@ -1,7 +1,9 @@
 import * as d3Interpolate from 'd3-interpolate'
 import * as d3Selection from 'd3-selection'
+
 import * as HierarchyNodeUtils from './hierarchy-node-utils'
 import { TacticGroupNode } from './tacticgroupnode'
+import * as ProofTreeUtils from './utils'
 
 export function onTextEnter(s : ProofTreeTypes.NodeSelection) : void {
     s
@@ -17,6 +19,7 @@ export function onTextEnter(s : ProofTreeTypes.NodeSelection) : void {
 export function onTextExit(s : ProofTreeTypes.NodeSelection) : void {
     s
         .transition()
+        .duration(ProofTreeUtils.animationDuration)
         .attrTween('x', (d : ProofTreeTypes.Node) : (t : number) => string => {
             const destinationScaledX = HierarchyNodeUtils.getHierarchyGoalAncestor(d).caseOf({
                 nothing : () => HierarchyNodeUtils.getDestinationScaledX(d),
@@ -47,6 +50,7 @@ export function onTextUpdatePostMerge(s : ProofTreeTypes.NodeSelection) : void {
     s
         .each(d => { if (d.data instanceof TacticGroupNode) { d.data.updateNode() } })
         .transition()
+        .duration(ProofTreeUtils.animationDuration)
     // .style('opacity', '1')
     // NOTE: we use attrTween to be able to update currentScaledX and currentScaledY
         .attrTween('x', (d, i, a) => {

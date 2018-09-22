@@ -255,9 +255,11 @@ $(document).ready(() => {
 
     // Debugging :
     doc.editor.setValue(`
-Theorem test : forall x, (and (or (x = 0) (x > 0)) (x >= 0)).
+Theorem swap : forall (A B : Prop), A /\\ B -> B /\\ A.
 Proof.
-  intros.
+  intros A B H.
+  destruct H as [HA HB].
+  split.
 
 Inductive day : Type :=
 | monday : day

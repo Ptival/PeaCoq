@@ -27,7 +27,6 @@ function byNodeId(d : ProofTreeTypes.Node) : string { return d.data.id }
 function byLinkId(d : ProofTreeTypes.Link) : string { return `${d.source.data.id}, ${d.target.data.id}` }
 
 /* Globals to be configured */
-const animationDuration = 800
 // const diffBlue = '#8888EE'
 // const diffGreen = '#88EE88'
 // const diffOrange = '#FFB347'
@@ -883,7 +882,7 @@ export class ProofTree implements IProofTree {
         // See. https ://bl.ocks.org/mbostock/5348789
         d3Selection.select({} as any)
             .transition()
-            .duration(animationDuration)
+            .duration(ProofTreeUtils.animationDuration)
             .each(() => {
                 const textEnter = textSelection.enter().append('foreignObject')
                 const rectSelection = this.rectLayer.selectAll('rect').data<ProofTreeTypes.Node>(nodes, byNodeId)
@@ -963,7 +962,8 @@ export class ProofTree implements IProofTree {
                     .transition()
                     .attr(
                         'transform',
-                        'translate(' + this.viewportX + ', ' + this.viewportY + ')'
+                        //'translate(' + this.viewportX + ', ' + this.viewportY + ')'
+                        'translate(0, 0)'
                     )
 
             })

@@ -5,6 +5,8 @@ import { FakeNode } from './fakenode'
 import * as HierarchyNodeUtils from './hierarchy-node-utils'
 import { TacticGroupNode } from './tacticgroupnode'
 
+export const animationDuration = 1000
+
 /*
   Stuff that is somewhat general but mostly useful for the proof tree.
 */
@@ -240,8 +242,8 @@ function mkDiagonal(
     return d => {
         const srcNode = d.source
         const tgtNode = d.target
-        const src = swapXY(cR(srcNode))
-        const tgt = swapXY(cL(tgtNode))
+        const src = cR(srcNode)
+        const tgt = cL(tgtNode)
         const path = d3Path.path()
         path.moveTo(src.x, src.y)
         const midX = Math.floor((src.x + tgt.x) / 2)
