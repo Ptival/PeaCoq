@@ -71,9 +71,7 @@ export class TacticGroupNode extends ProofTreeNode implements ITacticGroupNode {
     public getGoalAncestor() : Maybe<IGoalNode> { return Maybe.just(this.parentGoal) }
 
     public getHeight() : number {
-        const rect = this.getHTMLElement().getBoundingClientRect()
-        const computed = Math.ceil(rect.height)
-        return Math.max(computed, 20)
+        return this.getHTMLElement().clientHeight
     }
 
     public getParent() : Maybe<IGoalNode> { return Maybe.just(this.parentGoal) }
