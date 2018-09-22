@@ -7,14 +7,13 @@ import * as ProofTreeUtils from './utils'
 export function onRectEnter(s : ProofTreeTypes.NodeSelection) : void {
     s
         .append('rect')
-        .classed('goal', d => d.data instanceof GoalNode)
+        .classed('goal',   d => d.data instanceof GoalNode)
         .classed('tactic', d => d.data instanceof TacticGroupNode)
-        .attr('x', d => d.data.currentScaledX)
-        .attr('y', d => d.data.currentScaledY)
-        .attr('width', d => d.data.getWidth())
-        .attr('height', d => d.data.getHeight())
-        .attr('rx', d => d.data instanceof GoalNode ? 0 : 10)
-    // .style('opacity', 0)
+        .attr('x',         d => d.data.currentScaledX)
+        .attr('y',         d => d.data.currentScaledY)
+        .attr('width',     d => d.data.getWidth())
+        .attr('height',    d => d.data.getHeight())
+        .attr('rx',        d => d.data instanceof GoalNode ? 0 : 10)
 }
 
 export function onRectExit(s : ProofTreeTypes.NodeSelection) : void {
@@ -33,17 +32,16 @@ export function onRectExit(s : ProofTreeTypes.NodeSelection) : void {
                   just : (gp : ProofTreeTypes.Node) => HierarchyNodeUtils.getDestinationScaledY(gp),
               })
              )
-    // .style('opacity', '0')
         .remove()
 }
 
 export function onRectUpdatePostMerge(s : ProofTreeTypes.NodeSelection) : void {
     s
         .classed('currentnode', d => d.data.proofTree.isCurNode(d.data))
-        .classed('solved', d => d.data.isSolved())
+        .classed('solved',      d => d.data.isSolved())
         .transition()
         .duration(ProofTreeUtils.animationDuration)
-        .attr('width', d => d.data.getWidth())
+        .attr('width',  d => d.data.getWidth())
         .attr('height', d => d.data.getHeight())
         .attrTween('x', (d, i, a) => {
             const interpolator = d3Interpolate.interpolateRound(d.data.currentScaledX, HierarchyNodeUtils.getDestinationScaledX(d))
@@ -59,6 +57,4 @@ export function onRectUpdatePostMerge(s : ProofTreeTypes.NodeSelection) : void {
                 return `${d.data.currentScaledY}`
             }
         })
-    // .attr('y', d => d.getDestinationScaledY())
-    // .style('opacity', 1)
 }

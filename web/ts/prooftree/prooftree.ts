@@ -179,7 +179,7 @@ export class ProofTree implements IProofTree {
 
         // TODO: figure out why I was doing this and whether I can avoid it
         // Why?
-        Rx.Observable.interval(2000).subscribe(() => this.updateSubject.onNext({}))
+        // Rx.Observable.interval(2000).subscribe(() => this.updateSubject.onNext({}))
 
         // this updates at most once per second
         this.updateSubject
@@ -538,7 +538,8 @@ export class ProofTree implements IProofTree {
     }
 
     private keydownHandler() {
-        debugger // how does this work in D3 4.0?
+        console.log('FIXME: keydownHandler')
+        // debugger // how does this work in D3 4.0?
         // const ev : any = d3.event
         // // don't interact while typing
         // if (ev.target.type === 'textarea') { return }
@@ -962,8 +963,8 @@ export class ProofTree implements IProofTree {
                     .transition()
                     .attr(
                         'transform',
-                        //'translate(' + this.viewportX + ', ' + this.viewportY + ')'
-                        'translate(0, 0)'
+                        'translate(' + this.viewportX + ', ' + this.viewportY + ')'
+                        //'translate(0, 0)'
                     )
 
             })
