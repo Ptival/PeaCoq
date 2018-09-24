@@ -86,7 +86,10 @@ function displayProofTree() {
         },
         ppgoal : new PeaCoqGoal(
             [],
-            new C_AST.cAST(new ConstrExpr.CPrim(new PrimTokenString('I AM CONCL')), Maybe.nothing())
+            new C_AST.C_AST(
+                new ConstrExpr.CPrim(new PrimTokenString('I AM CONCL')),
+                Maybe.nothing()
+            )
         ),
     }
 

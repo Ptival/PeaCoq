@@ -30,7 +30,7 @@ export class Completed {
 export class Added {
     constructor(
         public stateId : StateId.t,
-        public location : Loc.t,
+        public location : Loc.T,
         public tip : Tip.NewTip | Tip.Unfocus
     ) { }
 }

@@ -1,4 +1,4 @@
-import * as Pp from "../lib/pp"
+import * as Pp from '../lib/pp'
 
 export namespace Id {
     export type T = string

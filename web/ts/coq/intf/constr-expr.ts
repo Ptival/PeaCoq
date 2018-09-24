@@ -4,7 +4,7 @@ import * as CaseStyle from '../case-style'
 import * as EvarKinds from './evar-kinds'
 import * as MiscTypes from './misctypes'
 import * as PpExtend from '../interp/ppextend'
-import { cAST } from '../lib/c-ast'
+import { C_AST } from '../lib/c-ast'
 import * as GenArg from '../lib/genarg'
 import { Located } from '../lib/loc'
 import * as LibNames from '../library/libnames'
@@ -32,7 +32,7 @@ export type ConstrExprR
     | CPrim
     | CDelimiters
 
-export type ConstrExpr = cAST<ConstrExprR>
+export type ConstrExpr = C_AST<ConstrExprR>
 
 export type ConstrNotationSubstitution = [
     ConstrExpr[],
@@ -68,7 +68,7 @@ type CaseExpr = [
     Maybe<CasesPatternExpr>
 ]
 
-export type BranchExpr = cAST<[
+export type BranchExpr = C_AST<[
     CasesPatternExpr[][],
     ConstrExpr
 ]>
@@ -193,7 +193,7 @@ export class CLocalDef {
 
 export class CLocalPattern {
     constructor(
-        public readonly pattern : cAST<[CasesPatternExpr, Maybe<ConstrExpr>]>,
+        public readonly pattern : C_AST<[CasesPatternExpr, Maybe<ConstrExpr>]>,
     ) { }
 }
 
@@ -226,7 +226,7 @@ export class CLocalPattern {
 //     }
 // }
 
-export type CasesPatternExpr = cAST<CasesPatternExprR>
+export type CasesPatternExpr = C_AST<CasesPatternExprR>
 
 export type CasesPatternExprR
     = CPatCstr

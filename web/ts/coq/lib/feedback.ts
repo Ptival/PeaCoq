@@ -87,7 +87,7 @@ export class FileLoaded {
 export class Message<L extends Level> {
     constructor(
         public level : L,
-        public location : Maybe<Loc.t>,
+        public location : Maybe<Loc.T>,
         public message : string
     ) { }
 }
@@ -146,7 +146,7 @@ export namespace FeedbackContent {
                 const [level, maybeLocation, message] = args
                 const location = (
                     maybeLocation.length === 0
-                        ? Maybe.nothing<Loc.t>()
+                        ? Maybe.nothing<Loc.T>()
                         : Maybe.just(SertopUtils.coqLocationFromSexp(maybeLocation[0]))
                 )
                 return new Message(

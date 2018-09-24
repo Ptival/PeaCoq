@@ -1,16 +1,16 @@
 import * as _ from 'lodash'
 import { Maybe } from 'tsmonad'
 
-import { cAST } from './lib/c-ast'
+import { C_AST } from './lib/c-ast'
 import * as Loc from './lib/loc'
 
 class CoqXMLTree {
-    public rootLabel : cAST<CoqXMLTag>
+    public rootLabel : C_AST<CoqXMLTag>
     public subForest : CoqXMLTree[]
-    constructor(t : [Loc.t, ICoqtopResponse<any>]) {
+    constructor(t : [Loc.T, ICoqtopResponse<any>]) {
         const [loc, xmltag] = t
-        this.rootLabel = new cAST(mkCoqXMLTag(xmltag), Maybe.just(loc))
-        this.subForest = _(t[1]).map((t : [Loc.t, ICoqtopResponse<any>]) => {
+        this.rootLabel = new C_AST(mkCoqXMLTag(xmltag), Maybe.just(loc))
+        this.subForest = _(t[1]).map((t : [Loc.T, ICoqtopResponse<any>]) => {
             return new CoqXMLTree(t)
         }).value()
     }

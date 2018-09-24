@@ -1,7 +1,7 @@
-import { cAST } from '../lib/c-ast'
+import { C_AST } from '../lib/c-ast'
 import * as Names from '../kernel/names'
 
-export type lname = cAST<Name>
+export type lname = C_AST<Name>
 
 export abstract class IntroPatternNamingExpr {}
 export class IntroIdentifier extends IntroPatternNamingExpr { constructor(public readonly id : Names.Id.T) { super() } }

@@ -1,10 +1,9 @@
 import * as Names from "../kernel/names"
 import * as C_AST from "../lib/c-ast"
-import { cAST } from "../lib/c-ast"
 import * as Pp from "../lib/pp"
 import { peaCoqBox } from "../../peacoq/coq-utils"
 
-export type Reference = cAST<ReferenceR>
+export type Reference = C_AST.C_AST<ReferenceR>
 
 export type ReferenceR
     = Qualid

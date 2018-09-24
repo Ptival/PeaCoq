@@ -8,7 +8,7 @@ class InFile extends Source {
 
 class ToplevelInput extends Source {}
 
-export class t {
+export class T {
     constructor(
         public readonly fname        : Source,
         public readonly line_nb      : number,
@@ -21,11 +21,11 @@ export class t {
 }
 
 export function makeLoc(bp : number, ep : number) {
-    return new t(ToplevelInput, -1, 0, -1, 0, bp, ep)
+    return new T(ToplevelInput, -1, 0, -1, 0, bp, ep)
 }
 
-export function unLoc(loc : t) : [number, number] {
+export function unLoc(loc : T) : [number, number] {
     return [loc.bp, loc.ep]
 }
 
-export type Located<A> = [Maybe<t>, A]
+export type Located<A> = [Maybe<T>, A]

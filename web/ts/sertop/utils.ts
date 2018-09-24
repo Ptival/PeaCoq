@@ -1,8 +1,8 @@
 import * as Loc from '../coq/lib/loc'
 
-export function coqLocationFromSexp(o : any) : Loc.t {
+export function coqLocationFromSexp(o : any) : Loc.T {
     const [[, fName], [, lineNb], [, bolPos], [, lineNbLast], [, bolPosLast], [, bp], [, ep]] = o
-    return new Loc.t(
+    return new Loc.T(
         fName,
         lineNb,
         bolPos,

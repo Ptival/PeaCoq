@@ -7,7 +7,7 @@ import * as PpExtend from '../interp/ppextend'
 import * as ConstrExpr from '../intf/constr-expr'
 import * as MiscTypes from '../intf/misctypes'
 import * as Names from '../kernel/names'
-import { cAST } from '../lib/c-ast'
+import { C_AST } from '../lib/c-ast'
 import * as Loc from '../lib/loc'
 import * as Pp from '../lib/pp'
 import * as StrToken from '../str-token'
@@ -56,11 +56,11 @@ function prComAt(n : number) : Pp.T { return Pp.mt() }
 
 function prId(id : string) : Pp.T { return Names.Id.print(id) }
 
-function prLIdent(i : cAST<string>) : Pp.T {
+function prLIdent(i : C_AST<string>) : Pp.T {
     const id = i.v
     return i.loc.caseOf({
         nothing : () => prId(id),
-        just : (loc : Loc.t) => {
+        just : (loc : Loc.T) => {
             const [b, ] = Loc.unLoc(loc)
             return PpUtils.prLocated(prId, [Maybe.just(Loc.makeLoc(b, b + Names.Id.toString(id).length)), id])
         },
@@ -72,7 +72,7 @@ function prName(n : Names.Name.T) : Pp.T { return Names.Name.print(n) }
 function prLName(ln : MiscTypes.lname) : Pp.T {
     const v = ln.v
     if (v instanceof Name) {
-        return peaCoqBox(prLIdent(new cAST(v.id, ln.loc)))
+        return peaCoqBox(prLIdent(new C_AST(v.id, ln.loc)))
     } else {
         return peaCoqBox(PpUtils.prAST(Names.Name.print, ln))
     }
@@ -95,7 +95,7 @@ function surroundImplicit(k : BindingKind, p : Pp.T) : Pp.T {
 function prBinder(
     many : boolean,
     pr : (c : ConstrExpr.ConstrExpr) => Pp.T,
-    [nal, k, t] : [cAST<Name>[], BinderKind, ConstrExpr.ConstrExpr]
+    [nal, k, t] : [C_AST<Name>[], BinderKind, ConstrExpr.ConstrExpr]
 ) : Pp.T {
     if (k instanceof Generalized) {
         const [b, bp, tp] = [k.kind1, k.kind2, k.b]
@@ -504,7 +504,7 @@ function prDanglingWithFor(
 }
 
 function prWithComments(
-    loc : Maybe<Loc.t>,
+    loc : Maybe<Loc.T>,
     pp : Pp.T
 ) : Pp.T {
     return PpUtils.prLocated(x => x, [loc, pp])
@@ -664,7 +664,7 @@ function prAsin(
 
 function prCaseItem(
     pr : (_1 : PrecAssoc, _2 : ConstrExpr.ConstrExpr) => Pp.T,
-    [tm, asClause, inClause] : [ConstrExpr.ConstrExpr, Maybe<cAST<Name>>, Maybe<ConstrExpr.CasesPatternExpr>]
+    [tm, asClause, inClause] : [ConstrExpr.ConstrExpr, Maybe<C_AST<Name>>, Maybe<ConstrExpr.CasesPatternExpr>]
 ) : Pp.T {
     return Pp.hov(0, Pp.concat(
         pr([lCast, new ParenRelation.E()], tm),
@@ -674,7 +674,7 @@ function prCaseItem(
 
 function sepV() : Pp.T { return Pp.concat(Pp.str(','), Pp.spc()) }
 
-function constrLoc(c : ConstrExpr.ConstrExpr) : Maybe<Loc.t> {
+function constrLoc(c : ConstrExpr.ConstrExpr) : Maybe<Loc.T> {
     return c.loc
 }
 
@@ -1091,7 +1091,7 @@ function dumbPrintPpCmds(l : Pp.T) : string {
 }
 
 function beginOfBinder(lBi : ConstrExpr.LocalBinderExpr) : number {
-    const bLoc = (l : Maybe<Loc.t>) => (Option.cata(Loc.unLoc, [0, 0], l))[0]
+    const bLoc = (l : Maybe<Loc.T>) => (Option.cata(Loc.unLoc, [0, 0], l))[0]
     if (lBi instanceof ConstrExpr.CLocalDef)     { return bLoc(lBi.name.loc) }
     if (lBi instanceof ConstrExpr.CLocalAssum)   { return bLoc(lBi.names[0].loc) }
     if (lBi instanceof ConstrExpr.CLocalPattern) { return bLoc(lBi.pattern.loc) }

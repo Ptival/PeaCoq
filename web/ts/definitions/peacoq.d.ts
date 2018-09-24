@@ -35,7 +35,7 @@ interface PeaCoqContextElement {
 
 type PeaCoqContext = IGoals<PeaCoqContextElement>
 
-type ConstrExpr = import('../coq/lib/c-ast').cAST<import('../coq/intf/constr-expr').ConstrExprR>
+type ConstrExpr = import('../coq/lib/c-ast').C_AST<import('../coq/intf/constr-expr').ConstrExprR>
 
 interface IPeaCoqGoal {
     hyps : PeaCoqHyp[]
