@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euv
 
-cd peacoqtop/plugin
+cd peacoq-plugin
 eval `opam config env`
 ocamlc -v
 make -B

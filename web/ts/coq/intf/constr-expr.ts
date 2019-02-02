@@ -18,7 +18,7 @@ export type ConstrExprR
     | CLetIn
     | CAppExpl
     | CApp
-// | CRecord
+    | CRecord
     | CCases
     | CLetTuple
 // | CIf
@@ -108,6 +108,15 @@ export class CHole {
     ) { }
 }
 
+export class CIf {
+    constructor(
+        public condition  : ConstrExpr,
+        public returnType : [Maybe<MiscTypes.lname>, Maybe<ConstrExpr>],
+        public thenBranch : ConstrExpr,
+        public elseBranch : ConstrExpr,
+    ) { }
+}
+
 export class CLambdaN {
     constructor(
         public binders : LocalBinderExpr[],
@@ -126,10 +135,10 @@ export class CLetIn {
 
 export class CLetTuple {
     constructor(
-        public names : MiscTypes.lname[],
+        public names      : MiscTypes.lname[],
         public returnType : [Maybe<MiscTypes.lname>, Maybe<ConstrExpr>],
-        public bound : ConstrExpr,
-        public body : ConstrExpr
+        public bound      : ConstrExpr,
+        public body       : ConstrExpr,
     ) { }
 }
 
@@ -137,36 +146,42 @@ export type Notation = String
 
 export class CNotation {
     constructor(
-        public notation : Notation,
+        public notation     : Notation,
         public substitution : ConstrNotationSubstitution,
-        public precedence : number,
-        public unparsing : PpExtend.Unparsing[]
+        public precedence   : number,
+        public unparsing    : PpExtend.Unparsing[],
     ) { }
 }
 
 export class CProdN {
     constructor(
         public binderList : LocalBinderExpr[],
-        public returnExpr : ConstrExpr
+        public returnExpr : ConstrExpr,
     ) { }
 }
 
 export class CPrim {
     constructor(
-        public token : PrimToken
+        public token : PrimToken,
+    ) { }
+}
+
+export class CRecord {
+    constructor(
+        public fields : ReadonlyArray<[LibNames.Reference, InstanceExpr]>,
     ) { }
 }
 
 export class CRef {
     constructor(
-        public reference : LibNames.Reference,
-        public universeInstance : Maybe<InstanceExpr>
+        public reference        : LibNames.Reference,
+        public universeInstance : Maybe<InstanceExpr>,
     ) { }
 }
 
 export class CSort {
     constructor(
-        public globSort : GlobSort
+        public globSort : GlobSort,
     ) { }
 }
 

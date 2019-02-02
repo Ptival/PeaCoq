@@ -75,6 +75,7 @@ export function walkJSON(input : any) : any {
                     // CDelimiters
                     // CFix
                     // CHole
+                case 'CIf'         : return ctor4(ConstrExpr.CIf,         processedArgs)
                 case 'CLambdaN'    : return ctor2(ConstrExpr.CLambdaN,    processedArgs)
                     // CLetIn
                     // CLetTuple
@@ -82,6 +83,7 @@ export function walkJSON(input : any) : any {
                 case 'CNotation'   : return ctor4(ConstrExpr.CNotation,   processedArgs)
                 case 'CPrim'       : return ctor1(ConstrExpr.CPrim,       processedArgs)
                 case 'CProdN'      : return ctor2(ConstrExpr.CProdN,      processedArgs)
+                case 'CRecord'     : return ctor1(ConstrExpr.CRecord,     processedArgs)
                 case 'CRef'        : return ctor2(ConstrExpr.CRef,        processedArgs)
                 case 'CSort'       : return ctor1(ConstrExpr.CSort,       processedArgs)
 
@@ -109,30 +111,13 @@ export function walkJSON(input : any) : any {
                 case 'GSet'  : return ctor0(MiscTypes.GSet,  processedArgs)
                 case 'GType' : return ctor1(MiscTypes.GType, processedArgs)
 
-                case 'PpBrk' : {
-                    const [a, b] = processedArgs
-                    return new PpExtend.PpBrk(a, b)
-                }
-                case 'PpHoVB' : {
-                    const [a] = processedArgs
-                    return new PpExtend.PpHoVB(a)
-                }
-                case 'UnpBox' : {
-                    const [a, b] = processedArgs
-                    return new PpExtend.UnpBox(a, b)
-                }
-                case 'UnpCut' : {
-                    const [a] = processedArgs
-                    return new PpExtend.UnpCut(a)
-                }
-                case 'UnpMetaVar' : {
-                    const [a, b] = processedArgs
-                    return new PpExtend.UnpMetaVar(a, b)
-                }
-                case 'UnpTerminal' : {
-                    const [a] = processedArgs
-                    return new PpExtend.UnpTerminal(a)
-                }
+                case 'PpBrk'          : return ctor2(PpExtend.PpBrk,          processedArgs)
+                case 'PpHoVB'         : return ctor1(PpExtend.PpHoVB,         processedArgs)
+                case 'UnpBox'         : return ctor2(PpExtend.UnpBox,         processedArgs)
+                case 'UnpCut'         : return ctor1(PpExtend.UnpCut,         processedArgs)
+                case 'UnpListMetaVar' : return ctor3(PpExtend.UnpListMetaVar, processedArgs)
+                case 'UnpMetaVar'     : return ctor2(PpExtend.UnpMetaVar,     processedArgs)
+                case 'UnpTerminal'    : return ctor1(PpExtend.UnpTerminal,    processedArgs)
 
                 default :
                     const showme = input.constructorName

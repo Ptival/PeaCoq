@@ -11,14 +11,15 @@ import { C_AST } from '../lib/c-ast'
 import * as Loc from '../lib/loc'
 import * as Pp from '../lib/pp'
 import * as StrToken from '../str-token'
-import { PpCmdGlue } from '../lib/pp';
+import { prListWithSep } from '../lib/pp';
 import * as LibNames from '../library/libnames'
 import * as ParenRelation from '../paren-relation'
 import * as CaseStyle from '../case-style'
 import { peaCoqBox } from '../../peacoq/coq-utils'
 import { MatchFailure } from '../../peacoq/utils'
 import * as PeaCoqUtils from '../../peacoq/utils'
-import { CasesPatternExpr, ConstrNotationSubstitution } from '../intf/constr-expr';
+// import { CasesPatternExpr, ConstrNotationSubstitution } from '../intf/constr-expr';
+import { prReference } from '../library/libnames';
 
 export type PrecAssoc = [number, ParenRelation.ParenRelation]
 
@@ -27,10 +28,10 @@ const lProd = 200
 const lLambda = 200
 const lIf = 200
 const lLetIn = 200
-const lLetPattern = 200
-const lFix = 200
+// const lLetPattern = 200
+// const lFix = 200
 const lCast = 100
-const lArg = 9
+// const lArg = 9
 const lApp = 10
 const lPosInt = 0
 const lNegInt = 35
@@ -52,7 +53,7 @@ export function precLess(child : number, parent : PrecAssoc) {
     if (parentAssoc instanceof ParenRelation.Any) { return true }
 }
 
-function prComAt(n : number) : Pp.T { return Pp.mt() }
+// function prComAt(n : number) : Pp.T { return Pp.mt() }
 
 function prId(id : string) : Pp.T { return Names.Id.print(id) }
 
@@ -67,7 +68,7 @@ function prLIdent(i : C_AST<string>) : Pp.T {
     })
 }
 
-function prName(n : Names.Name.T) : Pp.T { return Names.Name.print(n) }
+// function prName(n : Names.Name.T) : Pp.T { return Names.Name.print(n) }
 
 function prLName(ln : MiscTypes.lname) : Pp.T {
     const v = ln.v
@@ -99,6 +100,7 @@ function prBinder(
 ) : Pp.T {
     if (k instanceof Generalized) {
         const [b, bp, tp] = [k.kind1, k.kind2, k.b]
+        console.log(b, bp, tp)
         debugger
         throw 'TODO : prBinder Generalized'
     }
@@ -140,15 +142,37 @@ function prDelimitedBinders(
     }
 }
 
-function tagEvar(p : Pp.T) : Pp.T { return Pp.tag('evar', p) }
+// function tagEvar(p : Pp.T) : Pp.T { return Pp.tag('evar', p) }
 function tagKeyword(p : Pp.T) : Pp.T { return Pp.tag('keyword', p) }
 function tagNotation(r : Pp.T) : Pp.T { return Pp.tag('notation', r) }
-function tagPath(p : Pp.T) : Pp.T { return Pp.tag('path', p) }
-function tagRef(r : Pp.T) : Pp.T { return Pp.tag('reference', r) }
+// function tagPath(p : Pp.T) : Pp.T { return Pp.tag('path', p) }
+// function tagRef(r : Pp.T) : Pp.T { return Pp.tag('reference', r) }
 function tagType(r : Pp.T) : Pp.T { return Pp.tag('univ', r) }
-function tagVariable(p : Pp.T) : Pp.T { return Pp.tag('variable', p) }
+// function tagVariable(p : Pp.T) : Pp.T { return Pp.tag('variable', p) }
 
 function keyword(s : string) : Pp.T { return tagKeyword(Pp.str(s)) }
+
+function prRecordBodyGen(
+    pr : (_1 : PrecAssoc, _2 : any) => Pp.T,
+    l  : ReadonlyArray<[LibNames.Reference, InstanceExpr]>
+) {
+    return Pp.concat(
+        Pp.spc(),
+        prListWithSep(
+            Pp.prSemicolon,
+            (([id, c] : [LibNames.Reference, InstanceExpr]) => Pp.h(
+                1,
+                Pp.concat(
+                    prReference(id),
+                    Pp.spc(),
+                    Pp.str(':='),
+                    pr(lTop, c)
+                )
+            )),
+            l
+        )
+    )
+}
 
 function prForall() : Pp.T {
     return Pp.concat(keyword('forall'), Pp.spc())
@@ -170,6 +194,7 @@ function prBinderAmongMany(
     }
     if (b instanceof ConstrExpr.CLocalDef) {
         const [na, c, topt] = [b.name, b.value, b.optionalType]
+        console.log(na, c, topt)
         // const cp, topt
 
         /* TODO :
@@ -314,6 +339,7 @@ function prNotation<T>(
     unpl : PpExtend.Unparsing[],
     level : number
 ) : PpResult {
+    s = s // shut up TypeScript-tide
     return [
         printHunks(level, pr, prPatt, prBinders, env, unpl),
         level
@@ -487,8 +513,17 @@ function prDelimiters(key : string, strm : Pp.T) : Pp.T {
     return peaCoqBox(Pp.concat(strm, Pp.str('%' + key)))
 }
 
+function doNotTag<A>(a : A, b : Pp.T) : Pp.T {
+    a = a // shut up TypeScript-tide
+    return peaCoqBox(b)
+}
+
+// function tag(t : string, s : Pp.T) : Pp.T {
+//     return peaCoqBox(Pp.tag(t, s))
+// }
+
 function tagConstrExpr(ce : ConstrExpr.ConstrExpr, cmds : Pp.T) {
-    return peaCoqBox(cmds)
+    return doNotTag(ce, cmds)
 }
 
 function prDanglingWithFor(
@@ -602,7 +637,8 @@ function prPatt(
                     (x : any, y : any) => Pp.mt(),
                     (x : any, y : any, z : any) => Pp.mt(),
                     s,
-                    [[], [], [], []],
+                    [l, ll, [], []],
+                    // we will ignore l and ll, but here to shut up TypeScript-tide
                     pp.unparsing,
                     pp.precedence
                 )
@@ -806,6 +842,20 @@ function pr0(
                 })
             }
 
+            if (aa instanceof ConstrExpr.CRecord) {
+                const [l] = [aa.fields]
+                return [
+                    Pp.hv(0,
+                          Pp.concat(
+                              Pp.str('{|'),
+                              prRecordBodyGen((x, y) => pr(Pp.spc, x, y), l),
+                              Pp.str('|}')
+                          )
+                         ),
+                    lAtom
+                ]
+            }
+
             if (aa instanceof ConstrExpr.CCases) {
                 if (aa.caseStyle instanceof CaseStyle.LetPatternStyle) {
                     debugger
@@ -902,6 +952,51 @@ function pr0(
                          ),
                     lLetIn
                 )
+            }
+
+            if (aa instanceof ConstrExpr.CIf) {
+                const [c, [na, po], b1, b2] = [aa.condition, aa.returnType, aa.thenBranch, aa.elseBranch]
+                return [
+                    Pp.hv(0,
+                          Pp.concat(
+                              Pp.hov(1,
+                                     Pp.concat(
+                                         keyword('if'),
+                                         Pp.spc(),
+                                         pr(Pp.mt, lTop, c),
+                                         prSimpleReturnType(
+                                             (x, y) => pr(Pp.mt, x, y),
+                                             na,
+                                             po
+                                         )
+                                     )
+                                    ),
+                              Pp.spc(),
+                              Pp.hov(0,
+                                     Pp.concat(
+                                         keyword('then'),
+                                         pr(
+                                             () => Pp.brk(1, 1),
+                                             lTop,
+                                             b1
+                                         ),
+                                         Pp.spc()
+                                     )
+                                    ),
+                              Pp.hov(0,
+                                     Pp.concat(
+                                         keyword('else'),
+                                         pr(
+                                             () => Pp.brk(1, 1),
+                                             lTop,
+                                             b2
+                                         )
+                                     )
+                                    )
+                          )
+                         )
+                    , lIf
+                ]
             }
 
             if (aa instanceof ConstrExpr.CNotation) {

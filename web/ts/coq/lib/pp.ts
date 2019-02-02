@@ -141,12 +141,17 @@ export function surround(p : T) : T {
     ))
 }
 
+export function prComma()     : T { return concat(str(','),  spc()) }
+export function prSemicolon() : T { return concat(str(';'),  spc()) }
+export function prBar()       : T { return concat(str('|'),  spc()) }
+export function prSpaceBar()  : T { return concat(str(' |'), spc()) }
+
 function prListSepLastSep<A>(
     noEmpty : boolean,
     sepThunk : () => T,
     lastSepThunk : () => T,
     elem : (e : A) => T,
-    l : A[]
+    l : ReadonlyArray<A>
 ) : T {
     const sep = sepThunk()
     const lastSep = lastSepThunk()
@@ -167,9 +172,6 @@ function prListSepLastSep<A>(
     return insertSeps(filteredElems)
 }
 
-export function prListWithSep<A>(sep : () => T, pr : (t : A) => T, l : A[]) : T {
+export function prListWithSep<A>(sep : () => T, pr : (t : A) => T, l : ReadonlyArray<A>) : T {
     return prListSepLastSep(false, sep, sep, pr, l)
 }
-
-export function prBar()      : T { return concat(str('|'), spc()) }
-export function prSpaceBar() : T { return concat(str(';'), spc()) }
