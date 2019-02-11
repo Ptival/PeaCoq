@@ -16,7 +16,7 @@ nixpkgs.stdenv.mkDerivation {
   ] ++ (with ocamlPackages;
     [
       # Coq:
-      camlp5_6_strict ocaml findlib
+      camlp5 ocaml findlib
       # CoqIDE:
       lablgtk
       # SerAPI:
