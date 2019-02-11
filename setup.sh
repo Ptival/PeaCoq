@@ -23,7 +23,7 @@ function check-and-clone {
 
 check-and-clone "peacoq-server"
 
-if [ -f /etc/NIXOS ]; then
+if [ -f /etc/NIXOS ] || [ ! -z "${NIXSHELL+x}" ]; then
   # should change this test to something portable, like testing for peacoq-server
   if [ -z "${NIXSHELL+x}" ]; then
     log "This seems to be NixOS, use nix-shell before calling setup.sh or set NIXSHELL"
