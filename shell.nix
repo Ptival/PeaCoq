@@ -1,6 +1,9 @@
 { nixpkgs  ? import <nixpkgs> {}
 , compiler ? "ghc802"
 }:
+let
+  coq-serapi = nixpkgs.ocamlPackages.callPackage ./coq-serapi/default.nix {};
+in
 #let callPackage = nixpkgs.pkgs.haskell.packages.${compiler}.callPackage; in
 # We call default.nix because it has some overrides
 #let peacoq-server = callPackage peacoq-server/default.nix {
@@ -9,8 +12,12 @@
 nixpkgs.stdenv.mkDerivation {
   name = "peacoq";
   buildInputs = (with nixpkgs; [
-    #ghc
     #cabal-install
+    coq_8_9
+    coq-serapi
+    dune
+    #ghc
+    ocaml
     nodejs-10_x
     #peacoq-server
   ] ++ (with ocamlPackages;
