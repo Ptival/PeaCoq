@@ -23,7 +23,7 @@
     "lodash": "^4.17.4",
     "mathjax": "^2.7.5",
     "npm": "^6.4.0",
-    "npm-check-updates": "2.14.2",
+    "npm-check-updates": "11.1.9",
     "popper.js": "^1.14.4",
     "react": "^16.4.2",
     "react-dom": "^16.4.2",
