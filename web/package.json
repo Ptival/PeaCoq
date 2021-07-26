@@ -52,7 +52,7 @@
     "@types/jss": "^9.5.4",
     "@types/lodash": "^4.14.116",
     "@types/mathjax": "0.0.34",
-    "@types/react": "^16.4.11",
+    "@types/react": "^17.0.15",
     "@types/react-dom": "^16.0.7",
     "@types/rx": "^4.1.1",
     "@types/tsmonad": "0.5.0",
